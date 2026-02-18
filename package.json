@@ -1,0 +1,17 @@
+{
+  "name": "crm-jdl",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CRM de reservas con sincronizacion de estado en MariaDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "db:migrate": "node scripts/migrate-state-to-relational.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mariadb": "^3.4.0"
+  }
+}

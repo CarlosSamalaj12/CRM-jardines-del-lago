@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CRM Reservas - Salones</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+</head>
+<body>
+  <div class="loginScreen" id="loginScreen">
+    <div class="loginCard">
+      <div class="loginBrand">
+        <div class="loginBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="loginLogoImg" /></div>
+        <div class="loginBrandTitle">CRM RESERVAS</div>
+        <div class="loginBrandSub">Calendario de salones</div>
+      </div>
+
+      <div class="loginAvatarWrap">
+        <img id="loginAvatar" class="loginAvatar" alt="Avatar usuario" />
+      </div>
+
+      <form id="loginForm" class="loginForm">
+        <label class="field">
+          <span>Selecciona usuario</span>
+          <select id="loginUserSelect" required></select>
+        </label>
+
+        <label class="field">
+          <span>Contrasena</span>
+          <input id="loginPassword" type="password" placeholder="********" required />
+        </label>
+
+        <button class="btnPrimary loginBtn" type="submit">LOGIN</button>
+        <div class="loginError" id="loginError"></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="topbarLogoImg" /></div>
+        <div class="brandText">
+          <div class="title">CRM Reservas</div>
+          <div class="brandMeta">
+            <span class="subtitle">Calendario de salones</span>
+            <span class="topbarUserBadge">
+              <img id="topbarUserAvatar" class="topbarUserAvatar" alt="Avatar sesion" />
+            </span>
+            <span class="welcomeUser" id="topbarWelcome">Bienvenido -</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn" id="btnToday" title="Ir a hoy">Hoy</button>
+
+        <div class="nav">
+          <button class="iconBtn" id="btnPrev" title="Anterior">&lsaquo;</button>
+          <div class="weekLabel" id="weekLabel">-</div>
+          <button class="iconBtn" id="btnNext" title="Siguiente">&rsaquo;</button>
+        </div>
+
+        <label class="select">
+          <span>Navegar</span>
+          <select id="navMode">
+            <option value="day">Dia</option>
+            <option value="week">Semana</option>
+            <option value="month">Mes</option>
+          </select>
+        </label>
+
+        <div class="divider"></div>
+
+        <label class="select">
+          <span>Salon</span>
+          <select id="roomSelect"></select>
+        </label>
+
+        <div class="topbarReminderWrap" id="topbarReminderWrap">
+          <button class="iconBtn topbarReminderBtn" id="btnTopbarReminders" type="button" title="Citas pendientes" aria-expanded="false" aria-haspopup="true">
+            <svg class="bellGlyph" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 22a2.2 2.2 0 0 0 2.15-1.7h-4.3A2.2 2.2 0 0 0 12 22Zm7-5.2-1.5-1.8V10a5.5 5.5 0 0 0-4.5-5.4V3.8a1 1 0 0 0-2 0v.8A5.5 5.5 0 0 0 6.5 10v5l-1.5 1.8a1 1 0 0 0 .76 1.64h12.48A1 1 0 0 0 19 16.8Z"/>
+            </svg>
+            <span class="topbarReminderCount" id="topbarReminderCount" hidden>0</span>
+          </button>
+          <div class="topbarReminderPanel" id="topbarReminderPanel" hidden>
+            <div class="topbarReminderHeader">
+              <strong>Citas pendientes</strong>
+              <small id="topbarReminderSubtitle">Sin pendientes</small>
+            </div>
+            <div class="topbarReminderList" id="topbarReminderList"></div>
+          </div>
+        </div>
+
+        <div class="settingsMenu" id="settingsMenu">
+          <button class="btn" id="btnSettings" type="button" aria-haspopup="true" aria-expanded="false">Configuracion</button>
+          <div class="settingsPanel" id="settingsPanel" hidden>
+            <label class="settingsOption">
+              <input id="settingShowLegend" type="checkbox" checked />
+              <span>Mostrar leyenda</span>
+            </label>
+            <label class="settingsOption">
+              <input id="settingCompactEvents" type="checkbox" />
+              <span>Vista compacta de eventos</span>
+            </label>
+            <label class="settingsOption">
+              <input id="settingShowWeekends" type="checkbox" checked />
+              <span>Mostrar fines de semana</span>
+            </label>
+            <div class="settingsDivider"></div>
+            <button class="settingsGroupToggle" id="btnToggleQuickAdd" type="button" aria-expanded="false">Agregar</button>
+            <div class="settingsGroupBody" id="quickAddGroup" hidden>
+              <button class="settingsActionBtn" id="btnQuickAddUser" type="button">Agregar usuario</button>
+              <button class="settingsActionBtn" id="btnQuickAddInstitution" type="button">Agregar institucion</button>
+              <button class="settingsActionBtn" id="btnQuickAddManager" type="button">Agregar encargado</button>
+              <button class="settingsActionBtn" id="btnQuickAddService" type="button">Agregar servicio</button>
+              <button class="settingsActionBtn" id="btnQuickAddSalon" type="button">Agregar salones</button>
+              <button class="settingsActionBtn" id="btnQuickAddGlobalGoal" type="button">Metas globales</button>
+              <button class="settingsActionBtn" id="btnQuickAddTemplate" type="button">Agregar plantillas</button>
+            </div>
+            <button class="settingsGroupToggle" id="btnToggleReports" type="button" aria-expanded="false">Reportes</button>
+            <div class="settingsGroupBody" id="reportsGroup" hidden>
+              <button class="settingsActionBtn" id="btnReportSales" type="button">Reporte Ventas</button>
+              <button class="settingsActionBtn" id="btnReportOccupancy" type="button">Reporte Ocupacion</button>
+              <button class="settingsActionBtn" id="btnReportDashboard" type="button">Reporte Dashboard</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn" id="btnFindEvent" type="button">Buscar evento</button>
+        <button class="btnPrimary" id="btnNew">+ Reservar</button>
+      </div>
+    </header>
+
+    <section class="legend" id="legend"></section>
+
+    <main class="calendar">
+      <aside class="timeCol" id="timeCol"></aside>
+
+      <section class="gridWrap">
+        <div class="daysHeader" id="daysHeader"></div>
+        <div class="grid" id="grid"></div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" aria-live="polite"></div>
+
+    <div class="modalBackdrop" id="modalBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="modalTitle">Reservar salon</div>
+            <div class="modalSubtitle" id="modalSubtitle">-</div>
+          </div>
+          <button class="iconBtn" id="btnClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="eventModalMain">
+          <form class="modalBody" id="eventForm">
+            <input type="hidden" id="eventId" />
+
+          <div class="row2 eventMainRow">
+            <label class="field">
+              <span>Nombre del evento</span>
+              <input id="eventName" type="text" placeholder="Ej: Boda, Corporativo, Cena" required />
+            </label>
+
+            <div class="field">
+              <span>Bloques de salon y horario</span>
+              <div class="userPick">
+                <button class="btn" type="button" id="btnAddSlot">Bloque</button>
+              </div>
+              <div class="quoteTableWrap">
+                <table class="quoteTable">
+                  <thead>
+                    <tr>
+                      <th>Salon</th>
+                      <th>Inicio</th>
+                      <th>Fin</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="slotsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="row3 eventDatesRow">
+            <label class="field">
+              <span>Fecha inicial</span>
+              <input id="eventDate" type="date" required />
+            </label>
+            <label class="field">
+              <span>Fecha final</span>
+              <input id="eventDateEnd" type="date" required />
+            </label>
+          </div>
+
+          <input id="startTime" type="time" hidden />
+          <input id="endTime" type="time" hidden />
+
+          <div class="row2 eventActorRow">
+            <label class="field">
+              <span>Usuario (quien bloquea)</span>
+              <div class="userPick">
+                <select id="eventUser" required></select>
+                <button class="btn" type="button" id="btnAddUser">+ Usuario</button>
+              </div>
+              <small class="hint">Cada usuario tendra su avatar.</small>
+            </label>
+
+            <label class="field">
+              <span>Cantidad Pax</span>
+              <input id="eventPax" type="number" min="1" step="1" placeholder="Ej: 120" required />
+            </label>
+
+            <label class="field">
+              <span>Estado</span>
+              <select id="eventStatus" required></select>
+              <small class="hint" id="statusHint"></small>
+            </label>
+          </div>
+
+          <div class="row1 eventNotesRow">
+            <label class="field">
+              <span>Notas</span>
+              <textarea id="eventNotes" rows="3" placeholder="Notas (opcional)"></textarea>
+            </label>
+          </div>
+
+            <div class="conflictsBox" id="conflictsBox" hidden>
+              <div class="conflictsTitle">Choques detectados</div>
+              <div class="conflictsList" id="conflictsList"></div>
+            </div>
+
+            <div class="modalFooter">
+              <div class="leftActions">
+                <button class="btn" type="button" id="btnToggleHistory" hidden>Historial</button>
+                <button class="btn" type="button" id="btnToggleAppointments" hidden>Ver citas</button>
+                <button class="btn" type="button" id="btnAddAppointment" hidden>Agregar cita</button>
+                <button class="btn" type="button" id="btnSetMaintenance">Poner en mantenimiento</button>
+                <button class="btnDanger" type="button" id="btnCancelEvent" hidden>Cancelar evento</button>
+                <button class="btn" type="button" id="btnQuoteEvent" hidden>Cotizar evento</button>
+                <button class="btn" type="button" id="btnMarkQuoted" hidden>Marcar como cotizado - Seguimiento</button>
+              </div>
+
+              <div class="rightActions">
+                <button class="btn" type="button" id="btnDelete" hidden>Eliminar</button>
+                <button class="btnPrimary" type="submit" id="btnSave">Guardar</button>
+              </div>
+            </div>
+          </form>
+
+          <aside class="historyPanel historyNotebook" id="historyPanel" hidden>
+            <div class="historyTitle">Historial de cambios</div>
+            <div class="historyGrid">
+              <table class="historyTable">
+                <thead>
+                  <tr>
+                    <th>Hora</th>
+                    <th>Vendedor</th>
+                    <th>Cambio</th>
+                  </tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+              </table>
+            </div>
+          </aside>
+
+          <aside class="historyPanel historyNotebook" id="appointmentPanel" hidden>
+            <div class="historyTitle">Citas y recordatorios</div>
+            <div class="historyGrid">
+              <table class="historyTable">
+                <thead>
+                  <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Medio</th>
+                    <th>Detalle</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="appointmentBody"></tbody>
+              </table>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="appointmentBackdrop" hidden>
+      <div class="modal mini" role="dialog" aria-modal="true" aria-labelledby="appointmentTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="appointmentTitle">Agregar cita</div>
+            <div class="modalSubtitle">Recordatorio para esta reserva</div>
+          </div>
+          <button class="iconBtn" id="btnAppointmentClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <form class="modalBody" id="appointmentForm">
+          <div class="row2">
+            <label class="field">
+              <span>Fecha</span>
+              <input id="appointmentDate" type="date" required />
+            </label>
+            <label class="field">
+              <span>Hora</span>
+              <input id="appointmentTime" type="text" placeholder="HH:mm" required />
+            </label>
+          </div>
+          <label class="field">
+            <span>Medio</span>
+            <select id="appointmentChannel" required>
+              <option value="Telefono">Telefono</option>
+              <option value="Correo">Correo</option>
+              <option value="Teams">Teams</option>
+              <option value="Google Meet">Google Meet</option>
+              <option value="WhatsApp">WhatsApp</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Detalle (opcional)</span>
+            <input id="appointmentNotes" type="text" placeholder="Ej: seguimiento de propuesta" />
+          </label>
+          <div class="modalFooter">
+            <div></div>
+            <div class="rightActions">
+              <button class="btnPrimary" type="submit">Guardar cita</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="eventFinderBackdrop" hidden>
+      <div class="modal eventFinderModal" role="dialog" aria-modal="true" aria-labelledby="eventFinderTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="eventFinderTitle">Buscar evento</div>
+            <div class="modalSubtitle">Busca por No Doc, nombre, fecha, salon, institucion o indicio</div>
+          </div>
+          <button class="iconBtn" id="btnEventFinderClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+        <div class="modalBody">
+          <label class="field">
+            <span>Buscar</span>
+            <input id="eventFinderSearch" type="text" placeholder="Ej: COT-001, boda, 2026-11, Santa Cruz..." />
+          </label>
+          <div class="quoteTableWrap">
+            <table class="quoteTable">
+              <thead>
+                <tr>
+                  <th>No Doc</th>
+                  <th>Fecha</th>
+                  <th>Evento</th>
+                  <th>Salon</th>
+                  <th>Institucion</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="eventFinderBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="userBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="userTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="userTitle">Nuevo usuario</div>
+            <div class="modalSubtitle">Datos de acceso y firma</div>
+          </div>
+          <button class="iconBtn" id="btnUserClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <form class="modalBody" id="userForm">
+          <div class="row2">
+            <label class="field">
+              <span>Usuario existente</span>
+              <select id="userEditSelect">
+                <option value="">Crear nuevo usuario</option>
+              </select>
+            </label>
+            <div class="field">
+              <span>Estado</span>
+              <label class="checkInline">
+                <input id="userActive" type="checkbox" checked />
+                <span>Usuario activo</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Nombre completo</span>
+              <input id="userFullName" type="text" placeholder="Ej: Carlos Perez" required />
+            </label>
+            <label class="field">
+              <span>Nombre de usuario</span>
+              <input id="userUsername" type="text" placeholder="Ej: cperez" required />
+            </label>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Correo</span>
+              <input id="userEmail" type="email" placeholder="correo@dominio.com" required />
+            </label>
+            <label class="field">
+              <span>Telefono</span>
+              <input id="userPhone" type="text" placeholder="Ej: 5555-1212" required />
+            </label>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Contrasena</span>
+              <input id="userPassword" type="password" placeholder="Contrasena" required />
+            </label>
+            <label class="field">
+              <span>Firma (JPG/PNG)</span>
+              <input id="userSignature" type="file" accept="image/png,image/jpeg" />
+              <div class="signaturePreviewCard" id="userSignaturePreviewCard" hidden>
+                <img id="userSignaturePreview" alt="Vista previa firma" />
+                <div class="signaturePreviewMeta" id="userSignatureMeta">Sin firma cargada.</div>
+                <div class="signaturePreviewWarn" id="userSignatureWarn" hidden></div>
+              </div>
+            </label>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Avatar (JPG/PNG)</span>
+              <input id="userAvatar" type="file" accept="image/png,image/jpeg" />
+            </label>
+            <div></div>
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <span>Meta de ventas</span>
+              <label class="checkInline">
+                <input id="userSalesTargetEnabled" type="checkbox" />
+                <span>Este vendedor influye en meta mensual</span>
+              </label>
+            </div>
+            <div class="field">
+              <span>Agregar o editar meta mensual</span>
+              <div class="userPick">
+                <input id="userGoalMonth" type="month" />
+                <input id="userGoalAmount" type="number" min="0" step="0.01" placeholder="Monto meta mensual" />
+                <button class="btn" id="btnUserGoalAdd" type="button">Agregar meta</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <span>Metas mensuales del vendedor</span>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Mes</th>
+                    <th>Monto meta</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="userGoalsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="modalFooter">
+            <div class="leftActions">
+              <button class="btnDanger" id="btnUserDisable" type="button">Inhabilitar</button>
+            </div>
+            <div class="rightActions">
+              <button class="btnPrimary" id="btnUserSubmit" type="submit">Guardar</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="quoteBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="quoteTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="quoteTitle">Cotizar evento</div>
+            <div class="modalSubtitle" id="quoteSubtitle">-</div>
+          </div>
+          <button class="iconBtn" id="btnQuoteClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <form class="modalBody" id="quoteForm">
+          <input type="hidden" id="quoteEventId" />
+          <section class="quoteCard quoteVersionCard">
+            <div class="quoteServiceAdder quoteVersionAdder">
+              <label class="field">
+                <span>Version de cotizacion</span>
+                <select id="quoteVersionSelect"></select>
+              </label>
+              <label class="field">
+                <span>Plantilla contrato</span>
+                <select id="quoteTemplateSelect"></select>
+              </label>
+              <div class="quoteServiceActions">
+                <button class="btn quoteAddBtn" type="button" id="btnLoadQuoteVersion">Cargar version</button>
+              </div>
+            </div>
+          </section>
+          <section class="quoteDocPanel quoteDocPanelCard">
+            <details class="quoteFold quoteDocFold" id="quoteDocFold">
+              <summary>Datos de cotizacion</summary>
+              <div class="quoteDocGrid">
+                <div class="quoteDocCol">
+                  <label class="quoteDocRow"><span>Contacto:</span><input id="quoteContact" type="text" required /></label>
+                  <label class="quoteDocRow"><span>Email:</span><input id="quoteEmail" type="email" required /></label>
+                  <div class="quoteDocRow">
+                    <span>Institucion:</span>
+                    <div class="quoteDocInline">
+                      <input id="quoteCompanySearch" list="companiesList" type="text" placeholder="Buscar institucion..." required />
+                      <datalist id="companiesList"></datalist>
+                      <select id="quoteCompany" required hidden></select>
+                      <button class="btn" type="button" id="btnAddCompany">+ Empresa</button>
+                    </div>
+                  </div>
+                  <label class="quoteDocRow"><span>Encargado Evento:</span><select id="quoteManagerSelect" required></select></label>
+                  <label class="quoteDocRow"><span>Facturar A:</span><input id="quoteBillTo" type="text" required /></label>
+                  <label class="quoteDocRow"><span>Direccion:</span><input id="quoteAddress" type="text" required /></label>
+                  <label class="quoteDocRow"><span>Tipo Evento:</span><input id="quoteEventType" type="text" required /></label>
+                  <label class="quoteDocRow"><span>Salon o Jardin:</span><input id="quoteVenue" type="text" required /></label>
+                  <label class="quoteDocRow"><span>Horario y Evento:</span><input id="quoteSchedule" type="text" required /></label>
+                </div>
+
+                <div class="quoteDocCol">
+                  <label class="quoteDocRow"><span>Codigo:</span><input id="quoteCode" type="text" required /></label>
+                  <label class="quoteDocRow"><span>Fecha Documento:</span><input id="quoteDocDate" type="date" required /></label>
+                  <label class="quoteDocRow"><span>Telefono:</span><input id="quotePhone" type="text" required /></label>
+                  <label class="quoteDocRow">
+                    <span>Forma de Pago:</span>
+                    <select id="quotePaymentType" required>
+                      <option value="Credito">Credito</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Mixto">Mixto</option>
+                      <option value="Efectivo">Efectivo</option>
+                    </select>
+                  </label>
+                  <label class="quoteDocRow"><span>NIT:</span><input id="quoteNIT" type="text" required /></label>
+                  <label class="quoteDocRow"><span>No Personas:</span><input id="quotePeople" type="number" min="1" step="1" required /></label>
+                  <label class="quoteDocRow"><span>Fecha evento:</span><input id="quoteEventDate" type="date" required /></label>
+                  <label class="quoteDocRow"><span>Folio No:</span><input id="quoteFolio" type="text" /></label>
+                  <label class="quoteDocRow"><span>Fecha Finalizacion:</span><input id="quoteEndDate" type="date" required /></label>
+                  <label class="quoteDocRow"><span>Fecha Maxima Pago:</span><input id="quoteDueDate" type="date" required /></label>
+                </div>
+              </div>
+            </details>
+          </section>
+
+          <section class="quoteCard quoteServiceCard">
+            <div class="quoteCardTitle">Agregar servicio</div>
+            <div class="quoteServiceAdder">
+              <label class="field">
+                <span>Fecha del servicio</span>
+                <select id="quoteServiceDate" required></select>
+              </label>
+              <label class="field quoteServiceSearchField">
+                <span>Servicio o descripcion</span>
+                <input id="quoteServiceSearch" list="servicesList" type="text" placeholder="Buscar servicio..." />
+                <datalist id="servicesList"></datalist>
+                <datalist id="serviceDescriptionsList"></datalist>
+              </label>
+              <div class="quoteServiceActions">
+                <button class="btn quoteAddBtn" type="button" id="btnAddServiceToQuote">+ Servicio</button>
+                <button class="btn quoteAddBtn" type="button" id="btnOpenServiceCreate">+ Crear servicio</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="quoteCard quoteItemsCard quoteItemsPanel">
+            <div class="quoteCardTitle">Detalle de servicios</div>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Cantidad</th>
+                    <th>Descripcion</th>
+                    <th>Precio</th>
+                    <th>Total</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="quoteItemsBody"></tbody>
+              </table>
+            </div>
+            <div class="quoteDiscountRow">
+              <label class="field">
+                <span>Descuento</span>
+                <select id="quoteDiscountType">
+                  <option value="AMOUNT">Monto (Q)</option>
+                  <option value="PERCENT">Porcentaje (%)</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Valor descuento</span>
+                <input id="quoteDiscountValue" type="number" min="0" step="0.01" value="0" />
+              </label>
+            </div>
+            <div class="quoteTotalRow">
+              <div>
+                <div>Subtotal: <strong id="quoteSubtotal">Q 0.00</strong></div>
+                <div>Descuento: <strong id="quoteDiscountAmount">Q 0.00</strong></div>
+              </div>
+              <div>Total cotizacion: <strong id="quoteTotal">Q 0.00</strong></div>
+            </div>
+            <label class="field">
+              <span>Notas internas</span>
+              <textarea id="quoteInternalNotes" rows="2" placeholder="Observaciones internas"></textarea>
+            </label>
+          </section>
+
+          <div class="modalFooter quoteFooterRow">
+            <div></div>
+            <div class="rightActions">
+              <button class="btn" type="button" id="btnMenuMontaje">Menu &amp; Montaje</button>
+              <button class="btnPrimary" type="submit">Guardar cotizacion</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="menuMontajeBackdrop" hidden>
+      <div class="modal menuMontajeModal" role="dialog" aria-modal="true" aria-labelledby="menuMontajeTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="menuMontajeTitle">Menu &amp; Montaje</div>
+            <div class="modalSubtitle">Define menu y montaje por fecha y salon del evento</div>
+          </div>
+          <button class="iconBtn" id="btnMenuMontajeClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+        <div class="modalBody menuMontajeBody">
+          <section class="quoteCard mmCard mmCardWide">
+            <div class="quoteCardTitle">Datos por fecha y salon</div>
+            <div class="mmGrid">
+              <label class="field">
+                <span>Version Menu &amp; Montaje</span>
+                <div class="quoteServiceActions">
+                  <select id="mmVersionSelect"></select>
+                  <button class="btn" id="btnMenuMontajeLoadVersion" type="button">Cargar</button>
+                </div>
+              </label>
+              <label class="field">
+                <span>Fecha + Salon</span>
+                <select id="mmDateSalonSelect"></select>
+              </label>
+              <label class="field">
+                <span>No Doc</span>
+                <input id="mmDocNo" type="text" readonly />
+              </label>
+            </div>
+          </section>
+
+          <section class="quoteCard mmCard mmMenuCard">
+            <div class="quoteCardTitle">Menu</div>
+            <div class="mmGrid">
+              <label class="field">
+                <span>Titulo menu</span>
+                <input id="mmMenuTitle" type="text" placeholder="Ej: Desayunos buffet" />
+              </label>
+              <label class="field">
+                <span>Cantidad</span>
+                <input id="mmMenuQty" type="number" min="0" step="1" placeholder="Ej: 15" />
+              </label>
+            </div>
+            <label class="field">
+              <span>Descripcion menu</span>
+              <div class="mmTextTools" data-mm-target="mmMenuDescription">
+                <button class="btn mmToolBtn" type="button" data-mm-snippet="menu_section">+ Seccion</button>
+                <button class="btn mmToolBtn" type="button" data-mm-snippet="separator">+ Separador</button>
+                <button class="btn mmToolBtn" type="button" data-mm-snippet="bullet">+ Item</button>
+                <button class="btn mmToolBtn" type="button" data-mm-snippet="line_break">+ Salto</button>
+              </div>
+              <textarea id="mmMenuDescription" rows="4" placeholder="Escribe detalle del menu"></textarea>
+              <div class="mmCountRow"><span id="mmMenuDescCount">0 caracteres</span></div>
+            </label>
+          </section>
+
+          <section class="quoteCard mmCard mmMontajeCard">
+            <div class="quoteCardTitle">Montaje</div>
+            <label class="field">
+              <span>Descripcion montaje</span>
+              <div class="mmTextTools" data-mm-target="mmMontajeDescription">
+                <button class="btn mmToolBtn" type="button" data-mm-snippet="montaje_section">+ Seccion</button>
+                <button class="btn mmToolBtn" type="button" data-mm-snippet="separator">+ Separador</button>
+                <button class="btn mmToolBtn" type="button" data-mm-snippet="bullet">+ Item</button>
+                <button class="btn mmToolBtn" type="button" data-mm-snippet="line_break">+ Salto</button>
+              </div>
+              <textarea id="mmMontajeDescription" rows="4" placeholder="Escribe detalle del montaje"></textarea>
+              <div class="mmCountRow"><span id="mmMontajeDescCount">0 caracteres</span></div>
+            </label>
+          </section>
+
+          <section class="quoteCard mmCard mmCardWide">
+            <div class="quoteCardTitle">Resumen guardado</div>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Salon</th>
+                    <th>Menu</th>
+                    <th>Cant.</th>
+                    <th>Montaje</th>
+                  </tr>
+                </thead>
+                <tbody id="mmEntriesBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <div class="modalFooter">
+          <div class="leftActions">
+            <button class="btn" id="btnMenuMontajePrintDay" type="button">Imprimir/PDF por dia</button>
+          </div>
+          <div class="rightActions">
+            <button class="btn" id="btnMenuMontajeSaveCurrent" type="button">Actualizar version</button>
+            <button class="btnPrimary" id="btnMenuMontajeSave" type="button">Guardar Menu &amp; Montaje</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="companyBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="companyTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="companyTitle">Nueva empresa</div>
+            <div class="modalSubtitle">Se usara en cotizacion</div>
+          </div>
+          <button class="iconBtn" id="btnCompanyClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <form class="modalBody" id="companyForm">
+          <div class="row2">
+            <label class="field">
+              <span>Nombre de la Organizacion</span>
+              <input id="companyName" type="text" placeholder="Ej: Eventos del Lago" required />
+            </label>
+            <label class="field">
+              <span>Encargado de la Organizacion</span>
+              <input id="companyOwner" type="text" placeholder="Nombre del encargado principal" required />
+            </label>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Correo</span>
+              <input id="companyEmail" type="email" placeholder="correo@empresa.com" required />
+            </label>
+            <label class="field">
+              <span>NIT</span>
+              <input id="companyNIT" type="text" placeholder="NIT" required />
+            </label>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Facturar A</span>
+              <input id="companyBusinessName" type="text" placeholder="Nombre para facturacion" required />
+            </label>
+            <label class="field">
+              <span>Tipo Evento</span>
+              <select id="companyEventType" required>
+                <option value="Social">Social</option>
+                <option value="Corporativo">Corporativo</option>
+                <option value="Individual">Individual</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Direccion</span>
+              <input id="companyAddress" type="text" placeholder="Direccion" required />
+            </label>
+            <label class="field">
+              <span>Telefono</span>
+              <input id="companyPhone" type="text" placeholder="Telefono" required />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Observacion</span>
+            <textarea id="companyNotes" rows="2" placeholder="Alguna observacion"></textarea>
+          </label>
+
+          <div class="field">
+            <span>Encargados de la empresa</span>
+            <div class="row2">
+              <input id="managerName" type="text" placeholder="Nombre del encargado" />
+              <input id="managerPhone" type="text" placeholder="Telefono" />
+            </div>
+            <div class="row2">
+              <input id="managerEmail" type="email" placeholder="Correo" />
+              <input id="managerAddress" type="text" placeholder="Direccion (opcional)" />
+            </div>
+            <div class="rightActions">
+              <button class="btn" type="button" id="btnAddManager">+ Encargado</button>
+            </div>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Telefono</th>
+                    <th>Correo</th>
+                    <th>Direccion</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="managersBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="modalFooter">
+            <div></div>
+            <div class="rightActions">
+              <button class="btnPrimary" type="submit">Agregar</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="serviceBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="serviceTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="serviceTitle">Nuevo servicio</div>
+            <div class="modalSubtitle">Se agregara al catalogo de cotizacion</div>
+          </div>
+          <button class="iconBtn" id="btnServiceClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <form class="modalBody" id="serviceForm">
+          <div class="row2">
+            <label class="field">
+              <span>Nombre del servicio</span>
+              <input id="serviceName" type="text" placeholder="Ej: Catering premium" required />
+            </label>
+            <label class="field">
+              <span>Precio base</span>
+              <input id="servicePrice" type="number" min="0" step="0.01" placeholder="Ej: 150.00" required />
+            </label>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Categoria</span>
+              <select id="serviceCategory" required></select>
+            </label>
+            <label class="field">
+              <span>Subcategoria</span>
+              <select id="serviceSubcategory" required></select>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Modo de cantidad</span>
+            <select id="serviceQuantityMode" required>
+              <option value="MANUAL">MANUAL (cantidad editable)</option>
+              <option value="PAX">PAX (calculado por no. de personas)</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Descripcion</span>
+            <textarea id="serviceDescription" rows="2" placeholder="Descripcion del servicio"></textarea>
+          </label>
+
+          <div class="modalFooter">
+            <div></div>
+            <div class="rightActions">
+              <button class="btn" type="button" id="btnServiceDiscard">Cancelar</button>
+              <button class="btnPrimary" type="submit">Guardar servicio</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="templateBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="templateTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="templateTitle">Constructor de plantilla</div>
+            <div class="modalSubtitle">Define encabezado, cuerpo, pie, campos y formulas</div>
+          </div>
+          <button class="iconBtn" id="btnTemplateClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <form class="modalBody" id="templateForm">
+          <div class="row2">
+            <label class="field">
+              <span>Nombre de plantilla</span>
+              <input id="templateName" type="text" placeholder="Ej: Contrato corporativo" required />
+            </label>
+            <label class="field">
+              <span>Plantillas guardadas</span>
+              <div class="userPick">
+                <select id="templateSelect"></select>
+                <button class="btn" type="button" id="btnTemplateLoad">Cargar</button>
+                <button class="btnDanger" type="button" id="btnTemplateDelete">Eliminar</button>
+              </div>
+            </label>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Archivo PDF hoja base (contrato)</span>
+              <input id="templatePageImage" type="file" accept="application/pdf" />
+            </label>
+            <div class="row2">
+              <label class="field">
+                <span>Imagen encabezado</span>
+                <input id="templateHeaderImage" type="file" accept="image/*" />
+              </label>
+              <label class="field">
+                <span>Imagen pie de pagina</span>
+                <input id="templateFooterImage" type="file" accept="image/*" />
+              </label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span>Vista hoja (ubica firmas/campos)</span>
+            <div class="templateBuilderLayout">
+              <div class="templatePageCanvas" id="templatePagePreview"></div>
+              <aside class="templateFieldPanel" id="templateFieldPanel">
+                <details class="templateFieldGroup" open>
+                  <summary>Datos del cliente</summary>
+                  <div class="templateFieldButtons">
+                    <button class="templatePresetBtn" type="button" data-label="Nombre cliente" data-token="{{cliente.nombre}}">Nombre cliente</button>
+                    <button class="templatePresetBtn" type="button" data-label="Firma cliente" data-token="{{cliente.firma}}">Firma cliente</button>
+                    <button class="templatePresetBtn" type="button" data-label="Telefono cliente" data-token="{{cliente.telefono}}">Telefono cliente</button>
+                    <button class="templatePresetBtn" type="button" data-label="Direccion cliente" data-token="{{cliente.direccion}}">Direccion cliente</button>
+                  </div>
+                </details>
+                <details class="templateFieldGroup" open>
+                  <summary>Datos del vendedor</summary>
+                  <div class="templateFieldButtons">
+                    <button class="templatePresetBtn" type="button" data-label="Nombre vendedor" data-token="{{vendedor.nombre}}">Nombre vendedor</button>
+                    <button class="templatePresetBtn" type="button" data-label="Firma vendedor" data-token="{{vendedor.firma}}">Firma vendedor</button>
+                    <button class="templatePresetBtn" type="button" data-label="Telefono vendedor" data-token="{{vendedor.telefono}}">Telefono vendedor</button>
+                    <button class="templatePresetBtn" type="button" data-label="Direccion vendedor" data-token="{{vendedor.direccion}}">Direccion vendedor</button>
+                  </div>
+                </details>
+                <details class="templateFieldGroup" open>
+                  <summary>Fechas</summary>
+                  <div class="templateFieldButtons">
+                    <button class="templatePresetBtn" type="button" data-label="Fecha actual" data-token="{{fecha.hoy}}">Fecha actual</button>
+                    <button class="templatePresetBtn" type="button" data-label="Fecha evento" data-token="{{fecha.evento}}">Fecha evento</button>
+                    <button class="templatePresetBtn" type="button" data-label="Fecha firma" data-token="{{fecha.hoy}}">Fecha firma</button>
+                  </div>
+                </details>
+                <details class="templateFieldGroup" open>
+                  <summary>Evento y montos</summary>
+                  <div class="templateFieldButtons">
+                    <button class="templatePresetBtn" type="button" data-label="Nombre evento" data-token="{{evento.nombre}}">Nombre evento</button>
+                    <button class="templatePresetBtn" type="button" data-label="Cantidad pax" data-token="{{evento.pax}}">Cantidad pax</button>
+                    <button class="templatePresetBtn" type="button" data-label="Institucion" data-token="{{institucion.nombre}}">Institucion</button>
+                    <button class="templatePresetBtn" type="button" data-label="Monto total" data-token="{{monto.total}}">Monto total</button>
+                    <button class="templatePresetBtn" type="button" data-label="Tabla habitaciones" data-token="{{tabla.habitaciones}}">Tabla habitaciones</button>
+                    <button class="templatePresetBtn" type="button" data-label="Campo formula" data-token="{{formula:campo}}">Campo formula</button>
+                  </div>
+                </details>
+              </aside>
+            </div>
+          </div>
+
+          <div class="field">
+            <span>Campos posicionados sobre la hoja</span>
+            <div class="quoteTableWrap">
+              <table class="quoteTable templatePositionTable">
+                <thead>
+                  <tr>
+                    <th>Etiqueta</th>
+                    <th>Token</th>
+                    <th>X (%)</th>
+                    <th>Y (%)</th>
+                    <th>Ancho (%)</th>
+                    <th>Alto (%)</th>
+                    <th>Tam</th>
+                    <th>Fuente</th>
+                    <th>N</th>
+                    <th>I</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="templatePositionBody"></tbody>
+              </table>
+            </div>
+            <div class="rightActions">
+              <button class="btn" type="button" id="btnTemplateFitSignature">Ajustar firma al cuadro</button>
+              <button class="btn" type="button" id="btnTemplateAddPosition">+ Campo posicionado</button>
+            </div>
+            <small class="hint">Firma cliente/vendedor se inserta como cuadro redimensionable (arrastra esquina inferior derecha).</small>
+          </div>
+
+          <div class="field">
+            <span>Encabezado</span>
+            <textarea id="templateHeader" rows="3" placeholder="Texto del encabezado"></textarea>
+          </div>
+
+          <div class="field">
+            <span>Cuerpo</span>
+            <textarea id="templateBody" rows="7" placeholder="Escribe aqui el contenido principal"></textarea>
+          </div>
+
+          <div class="field">
+            <span>Pie de pagina</span>
+            <textarea id="templateFooter" rows="3" placeholder="Texto del pie de pagina"></textarea>
+          </div>
+
+          <div class="field">
+            <span>Campos con formula</span>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Nombre campo</th>
+                    <th>Formula</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="templateFormulaBody"></tbody>
+              </table>
+            </div>
+            <div class="rightActions">
+              <button class="btn" type="button" id="btnTemplateAddFormula">+ Formula</button>
+            </div>
+            <small class="hint">Usa token en cuerpo: {{formula:mi_campo}}. Ejemplo formula: monto.total * 0.12</small>
+          </div>
+
+          <div class="field">
+            <span>Datos de tabla habitaciones (JSON)</span>
+            <textarea id="templateRoomRates" rows="4" placeholder='[{"habitacion":"Suite 101","precio":850.00}]'></textarea>
+            <small class="hint">Estos datos alimentan {{tabla.habitaciones}} para contrato/complementos.</small>
+          </div>
+
+          <div class="field">
+            <span>Vista previa</span>
+            <pre class="templatePreview" id="templatePreview"></pre>
+          </div>
+
+          <div class="modalFooter">
+            <div></div>
+            <div class="rightActions">
+              <button class="btn" type="button" id="btnTemplateDiscard">Cancelar</button>
+              <button class="btnPrimary" type="submit" id="btnTemplateSave">Guardar plantilla</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="salesReportBackdrop" hidden>
+      <div class="modal salesReportModal" role="dialog" aria-modal="true" aria-labelledby="salesReportTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="salesReportTitle">Reporte de ventas</div>
+            <div class="modalSubtitle">Listado de eventos/cotizaciones con filtros avanzados</div>
+          </div>
+          <button class="iconBtn" id="btnSalesReportClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody salesReportBody">
+          <div class="salesReportFilters">
+            <label class="field">
+              <span>Buscar</span>
+              <input id="salesReportSearch" type="text" placeholder="ID, vendedor, institucion, salon..." />
+            </label>
+            <label class="field">
+              <span>Desde</span>
+              <input id="salesReportFrom" type="date" />
+            </label>
+            <label class="field">
+              <span>Hasta</span>
+              <input id="salesReportTo" type="date" />
+            </label>
+            <label class="field">
+              <span>Vendedor</span>
+              <select id="salesReportUser"></select>
+            </label>
+            <label class="field">
+              <span>Estado</span>
+              <select id="salesReportStatus"></select>
+            </label>
+            <label class="field">
+              <span>Salon</span>
+              <select id="salesReportSalon"></select>
+            </label>
+            <label class="field">
+              <span>Institucion</span>
+              <select id="salesReportCompany"></select>
+            </label>
+            <div class="rightActions salesReportActions">
+              <button class="btn" id="btnSalesReportReset" type="button">Limpiar filtros</button>
+              <button class="btnPrimary" id="btnSalesReportExportExcel" type="button">Exportar Excel</button>
+            </div>
+          </div>
+
+          <div class="salesReportTableWrap">
+            <table class="quoteTable salesReportTable">
+              <thead>
+                <tr>
+                  <th>Estado</th>
+                  <th>ID Cotizacion/Reserva</th>
+                  <th>Vendedor</th>
+                  <th>Fecha evento</th>
+                  <th>Tipo evento</th>
+                  <th>Hora inicio</th>
+                  <th>Hora final</th>
+                  <th>Salon</th>
+                  <th>Institucion</th>
+                  <th>Encargado evento</th>
+                  <th>PAX</th>
+                  <th>Cant Desayunos</th>
+                  <th>Monto Desayunos</th>
+                  <th>Cant Refa</th>
+                  <th>Monto Refa</th>
+                  <th>Cant Almuerzos</th>
+                  <th>Monto Almuerzos</th>
+                  <th>Cant AM Refa</th>
+                  <th>Monto AM Refa</th>
+                  <th>Cant PM Refa</th>
+                  <th>Monto PM Refa</th>
+                  <th>Cant Cenas Buffet</th>
+                  <th>Monto Cenas Buffet</th>
+                  <th>Cant Miscelaneos</th>
+                  <th>Monto Miscelaneos</th>
+                  <th>Cat A&B Cant</th>
+                  <th>Cat A&B Monto</th>
+                  <th>Cat Hospedaje JDL Cant</th>
+                  <th>Cat Hospedaje JDL Monto</th>
+                  <th>Cat Hospedaje Terceros Cant</th>
+                  <th>Cat Hospedaje Terceros Monto</th>
+                  <th>Cat Miscelaneos Cant</th>
+                  <th>Cat Miscelaneos Monto</th>
+                  <th>Descuento</th>
+                  <th>Ultima modificacion</th>
+                </tr>
+              </thead>
+              <tbody id="salesReportBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="occupancyReportBackdrop" hidden>
+      <div class="modal occupancyReportModal" role="dialog" aria-modal="true" aria-labelledby="occupancyReportTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="occupancyReportTitle">Reporte de ocupacion</div>
+            <div class="modalSubtitle" id="occupancyReportSubtitle">Semana de Lunes a Domingo</div>
+          </div>
+          <button class="iconBtn" id="btnOccupancyReportClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody occupancyReportBody">
+          <div class="occupancyToolbar">
+            <label class="field">
+              <span>Semana</span>
+              <input id="occupancyReportWeek" type="week" />
+            </label>
+            <div class="rightActions">
+              <button class="btn" id="btnOccupancyReportTodayWeek" type="button">Semana actual</button>
+              <button class="btnPrimary" id="btnOccupancyReportExportExcel" type="button">Exportar Excel</button>
+            </div>
+          </div>
+
+          <div class="occupancySummary" id="occupancyReportSummary"></div>
+          <div class="occupancyDaysStrip" id="occupancyDaysStrip"></div>
+          <div class="occupancyDayDetail" id="occupancyDayDetail"></div>
+
+          <div class="occupancyTableWrap">
+            <table class="quoteTable occupancyTable">
+              <thead>
+                <tr>
+                  <th>Estado</th>
+                  <th>PAX</th>
+                  <th>Fecha evento</th>
+                  <th>Hora inicio</th>
+                  <th>Hora final</th>
+                  <th>Evento</th>
+                  <th>Salon</th>
+                  <th>Institucion</th>
+                  <th>Encargado evento</th>
+                  <th>Vendedor</th>
+                  <th>Ultima cotizacion enviada</th>
+                  <th>Ultimo informe menu/montaje</th>
+                  <th>Total evento</th>
+                  <th>Ingreso dia</th>
+                  <th>Ingreso salon-dia</th>
+                  <th>Ultima modificacion</th>
+                </tr>
+              </thead>
+              <tbody id="occupancyReportBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
