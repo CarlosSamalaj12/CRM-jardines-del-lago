@@ -26,6 +26,23 @@ const REQUIRED_TABLES = [
   "items_cotizacion_version_evento",
   "historial_evento",
   "recordatorios_evento",
+  "menu_platos_fuertes",
+  "menu_preparaciones",
+  "menu_salsas",
+  "menu_preparacion_salsa_sugerida",
+  "menu_preparacion_postre_sugerido",
+  "menu_plato_guarnicion_sugerida",
+  "menu_guarniciones",
+  "menu_postres",
+  "menu_bebidas",
+  "menu_comentarios_adicionales",
+  "montaje_tipos",
+  "montaje_adicionales",
+  "montaje_tipo_adicional_sugerido",
+  "menu_montaje_plantillas",
+  "menu_montaje_plantilla_detalle",
+  "menu_montaje_plantilla_guarnicion",
+  "menu_montaje_plantilla_adicional",
 ];
 
 const pool = mariadb.createPool({
@@ -191,6 +208,13 @@ function normalizeQuantityMode(mode) {
 
 function normalizeDiscountType(type) {
   return String(type || "").trim().toUpperCase() === "PERCENT" ? "PERCENT" : "AMOUNT";
+}
+
+function normalizeMenuDishType(type) {
+  const value = String(type || "").trim().toUpperCase();
+  if (value === "VEGETARIANO") return "VEGETARIANO";
+  if (value === "VEGANO") return "VEGANO";
+  return "NORMAL";
 }
 
 function parseQuoteCodeNumber(rawCode) {
@@ -491,6 +515,335 @@ async function ensureQuoteVersionStructure() {
   }
 }
 
+async function ensureMenuMontajeCatalogStructure() {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_platos_fuertes (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(180) NOT NULL,
+        tipo_plato VARCHAR(20) NOT NULL DEFAULT 'NORMAL',
+        es_sin_proteina TINYINT(1) NOT NULL DEFAULT 0,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_menu_platos_fuertes_nombre (nombre)
+      )
+    `);
+
+    const menuPlatoCols = await conn.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_schema = ? AND table_name = 'menu_platos_fuertes'`,
+      [DB_NAME]
+    );
+    const menuPlatoColSet = new Set(menuPlatoCols.map((r) => String(r.column_name || "").toLowerCase()));
+    if (!menuPlatoColSet.has("tipo_plato")) {
+      await conn.query("ALTER TABLE menu_platos_fuertes ADD COLUMN tipo_plato VARCHAR(20) NOT NULL DEFAULT 'NORMAL'");
+    }
+    if (!menuPlatoColSet.has("es_sin_proteina")) {
+      await conn.query("ALTER TABLE menu_platos_fuertes ADD COLUMN es_sin_proteina TINYINT(1) NOT NULL DEFAULT 0");
+    }
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_preparaciones (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+        nombre VARCHAR(180) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_menu_preparaciones_plato_nombre (id_plato_fuerte, nombre),
+        KEY idx_menu_preparaciones_plato (id_plato_fuerte),
+        CONSTRAINT fk_menu_preparaciones_plato
+          FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_salsas (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(180) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_menu_salsas_nombre (nombre)
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_preparacion_salsa_sugerida (
+        id_preparacion BIGINT UNSIGNED NOT NULL,
+        id_salsa BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_preparacion, id_salsa),
+        KEY idx_menu_preparacion_salsa_sugerida_salsa (id_salsa),
+        CONSTRAINT fk_menu_preparacion_sugerida_preparacion
+          FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_preparacion_sugerida_salsa
+          FOREIGN KEY (id_salsa) REFERENCES menu_salsas(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_preparacion_postre_sugerido (
+        id_preparacion BIGINT UNSIGNED NOT NULL,
+        id_postre BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_preparacion, id_postre),
+        KEY idx_menu_preparacion_postre_sugerido_postre (id_postre),
+        CONSTRAINT fk_menu_preparacion_postre_preparacion
+          FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_preparacion_postre_postre
+          FOREIGN KEY (id_postre) REFERENCES menu_postres(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_plato_guarnicion_sugerida (
+        id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+        id_guarnicion BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_plato_fuerte, id_guarnicion),
+        KEY idx_menu_plato_guarnicion_sugerida_guarnicion (id_guarnicion),
+        CONSTRAINT fk_menu_plato_guarnicion_plato
+          FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_plato_guarnicion_guarnicion
+          FOREIGN KEY (id_guarnicion) REFERENCES menu_guarniciones(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_guarniciones (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(180) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_menu_guarniciones_nombre (nombre)
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_postres (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(180) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_menu_postres_nombre (nombre)
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_bebidas (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(180) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_menu_bebidas_nombre (nombre)
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_comentarios_adicionales (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(240) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_menu_comentarios_adicionales_nombre (nombre)
+      )
+    `);
+
+    // Migracion legacy: si bebidas existian en app_state_kv JSON, pasarlas a tabla relacional.
+    try {
+      const legacyRows = await conn.query(
+        "SELECT valor_json FROM app_state_kv WHERE clave = 'menuMontajeBebidas' LIMIT 1"
+      );
+      const raw = str(legacyRows?.[0]?.valor_json);
+      if (raw) {
+        let parsed = [];
+        try {
+          parsed = JSON.parse(raw);
+        } catch (_) {
+          parsed = [];
+        }
+        if (Array.isArray(parsed)) {
+          for (const row of parsed) {
+            const nombre = str(row?.nombre || row?.name || row).trim();
+            if (!nombre) continue;
+            const activo = row?.activo === false ? 0 : 1;
+            await conn.query(
+              `INSERT INTO menu_bebidas (nombre, activo) VALUES (?, ?)
+               ON DUPLICATE KEY UPDATE activo = VALUES(activo)`,
+              [nombre, activo]
+            );
+          }
+        }
+      }
+    } catch (_) {
+      // app_state_kv puede no existir todavia en instalaciones viejas durante bootstrap.
+    }
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS montaje_tipos (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(180) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_montaje_tipos_nombre (nombre)
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS montaje_adicionales (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(180) NOT NULL,
+        tipo VARCHAR(120) NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_montaje_adicionales_nombre (nombre)
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS montaje_tipo_adicional_sugerido (
+        id_montaje_tipo BIGINT UNSIGNED NOT NULL,
+        id_adicional BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_montaje_tipo, id_adicional),
+        KEY idx_montaje_tipo_adicional_sugerido_adicional (id_adicional),
+        CONSTRAINT fk_montaje_tipo_adicional_sugerido_tipo
+          FOREIGN KEY (id_montaje_tipo) REFERENCES montaje_tipos(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_montaje_tipo_adicional_sugerido_adicional
+          FOREIGN KEY (id_adicional) REFERENCES montaje_adicionales(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_montaje_plantillas (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(200) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_menu_montaje_plantillas_nombre (nombre)
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_montaje_plantilla_detalle (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        id_plantilla BIGINT UNSIGNED NOT NULL,
+        id_plato_fuerte BIGINT UNSIGNED NULL,
+        id_preparacion BIGINT UNSIGNED NULL,
+        id_salsa BIGINT UNSIGNED NULL,
+        id_postre BIGINT UNSIGNED NULL,
+        cantidad INT NULL,
+        notas TEXT NULL,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_menu_montaje_plantilla_detalle_plantilla (id_plantilla),
+        KEY idx_menu_montaje_plantilla_detalle_plato (id_plato_fuerte),
+        KEY idx_menu_montaje_plantilla_detalle_preparacion (id_preparacion),
+        KEY idx_menu_montaje_plantilla_detalle_salsa (id_salsa),
+        KEY idx_menu_montaje_plantilla_detalle_postre (id_postre),
+        CONSTRAINT fk_menu_montaje_plantilla_detalle_plantilla
+          FOREIGN KEY (id_plantilla) REFERENCES menu_montaje_plantillas(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_montaje_plantilla_detalle_plato
+          FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id)
+          ON DELETE SET NULL
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_montaje_plantilla_detalle_preparacion
+          FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id)
+          ON DELETE SET NULL
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_montaje_plantilla_detalle_salsa
+          FOREIGN KEY (id_salsa) REFERENCES menu_salsas(id)
+          ON DELETE SET NULL
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_montaje_plantilla_detalle_postre
+          FOREIGN KEY (id_postre) REFERENCES menu_postres(id)
+          ON DELETE SET NULL
+          ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_montaje_plantilla_guarnicion (
+        id_detalle BIGINT UNSIGNED NOT NULL,
+        id_guarnicion BIGINT UNSIGNED NOT NULL,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_detalle, id_guarnicion),
+        KEY idx_menu_montaje_plantilla_guarnicion_guarnicion (id_guarnicion),
+        CONSTRAINT fk_menu_montaje_plantilla_guarnicion_detalle
+          FOREIGN KEY (id_detalle) REFERENCES menu_montaje_plantilla_detalle(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_montaje_plantilla_guarnicion_guarnicion
+          FOREIGN KEY (id_guarnicion) REFERENCES menu_guarniciones(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_montaje_plantilla_adicional (
+        id_detalle BIGINT UNSIGNED NOT NULL,
+        id_montaje_tipo BIGINT UNSIGNED NULL,
+        id_adicional BIGINT UNSIGNED NOT NULL,
+        cantidad INT NULL,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_detalle, id_adicional),
+        KEY idx_menu_montaje_plantilla_adicional_tipo (id_montaje_tipo),
+        KEY idx_menu_montaje_plantilla_adicional_adicional (id_adicional),
+        CONSTRAINT fk_menu_montaje_plantilla_adicional_detalle
+          FOREIGN KEY (id_detalle) REFERENCES menu_montaje_plantilla_detalle(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_montaje_plantilla_adicional_tipo
+          FOREIGN KEY (id_montaje_tipo) REFERENCES montaje_tipos(id)
+          ON DELETE SET NULL
+          ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_montaje_plantilla_adicional_adicional
+          FOREIGN KEY (id_adicional) REFERENCES montaje_adicionales(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE
+      )
+    `);
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
 async function ensureRequiredTables() {
   let conn;
   try {
@@ -523,6 +876,7 @@ async function readStateFromTables() {
       eventos,
       historial,
       recordatorios,
+      bebidasCatalog,
       appStateRows,
     ] = await Promise.all([
       conn.query("SELECT id, nombre FROM salones ORDER BY id"),
@@ -548,7 +902,8 @@ async function readStateFromTables() {
       conn.query("SELECT id, id_grupo, nombre, nombre_salon, fecha_evento, hora_inicio, hora_fin, estado, id_usuario, pax, notas, cotizacion_json FROM eventos ORDER BY fecha_evento, hora_inicio, id"),
       conn.query("SELECT clave_evento, cambiado_en_iso, id_usuario_actor, nombre_actor, cambio_texto FROM historial_evento ORDER BY id DESC"),
       conn.query("SELECT id, clave_evento, fecha_recordatorio, hora_recordatorio, medio, notas, creado_en_iso, id_usuario_creador FROM recordatorios_evento ORDER BY id"),
-      conn.query("SELECT clave, valor_json FROM app_state_kv WHERE clave IN ('quickTemplates','disabledCompanies','disabledServices','disabledManagers','disabledSalones','globalMonthlyGoals')"),
+      conn.query("SELECT id, nombre, activo FROM menu_bebidas ORDER BY nombre ASC"),
+      conn.query("SELECT clave, valor_json FROM app_state_kv WHERE clave IN ('quickTemplates','disabledCompanies','disabledServices','disabledManagers','disabledSalones','globalMonthlyGoals','checklistTemplateItems','checklistTemplateSections','menuMontajeSections','menuMontajeBebidas','eventChecklists')"),
     ]);
 
     const hasData = salones.length || usuarios.length || empresas.length || servicios.length || eventos.length;
@@ -628,6 +983,15 @@ async function readStateFromTables() {
       disabledManagers: [],
       disabledSalones: [],
       globalMonthlyGoals: [],
+      checklistTemplateItems: [],
+      checklistTemplateSections: ["General"],
+      menuMontajeSections: ["General"],
+      menuMontajeBebidas: (Array.isArray(bebidasCatalog) ? bebidasCatalog : []).map((b) => ({
+        id: str(b.id),
+        nombre: str(b.nombre),
+        activo: Number(b.activo) !== 0,
+      })),
+      eventChecklists: {},
       changeHistory: {},
       reminders: {},
       events: eventos.map((e) => {
@@ -682,6 +1046,11 @@ async function readStateFromTables() {
     const disabledManagersRow = appStateRows.find((r) => str(r.clave) === "disabledManagers");
     const disabledSalonesRow = appStateRows.find((r) => str(r.clave) === "disabledSalones");
     const globalMonthlyGoalsRow = appStateRows.find((r) => str(r.clave) === "globalMonthlyGoals");
+    const checklistTemplateItemsRow = appStateRows.find((r) => str(r.clave) === "checklistTemplateItems");
+    const checklistTemplateSectionsRow = appStateRows.find((r) => str(r.clave) === "checklistTemplateSections");
+    const menuMontajeSectionsRow = appStateRows.find((r) => str(r.clave) === "menuMontajeSections");
+    const menuMontajeBebidasRow = appStateRows.find((r) => str(r.clave) === "menuMontajeBebidas");
+    const eventChecklistsRow = appStateRows.find((r) => str(r.clave) === "eventChecklists");
 
     const parseArray = (row) => {
       if (!row?.valor_json) return [];
@@ -706,6 +1075,52 @@ async function readStateFromTables() {
         : [];
     } catch (_) {
       state.globalMonthlyGoals = [];
+    }
+    try {
+      const parsed = JSON.parse(str(checklistTemplateItemsRow?.valor_json) || "[]");
+      state.checklistTemplateItems = Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      state.checklistTemplateItems = [];
+    }
+    try {
+      const parsed = JSON.parse(str(checklistTemplateSectionsRow?.valor_json) || '["General"]');
+      state.checklistTemplateSections = Array.isArray(parsed)
+        ? parsed.map((s) => str(s)).filter(Boolean)
+        : ["General"];
+      if (!state.checklistTemplateSections.length) state.checklistTemplateSections = ["General"];
+    } catch (_) {
+      state.checklistTemplateSections = ["General"];
+    }
+    try {
+      const parsed = JSON.parse(str(menuMontajeSectionsRow?.valor_json) || '["General"]');
+      state.menuMontajeSections = Array.isArray(parsed)
+        ? parsed.map((s) => str(s)).filter(Boolean)
+        : ["General"];
+      if (!state.menuMontajeSections.length) state.menuMontajeSections = ["General"];
+    } catch (_) {
+      state.menuMontajeSections = ["General"];
+    }
+    if (!Array.isArray(state.menuMontajeBebidas) || !state.menuMontajeBebidas.length) {
+      try {
+        const parsed = JSON.parse(str(menuMontajeBebidasRow?.valor_json) || "[]");
+        state.menuMontajeBebidas = Array.isArray(parsed)
+          ? parsed
+            .map((b) => ({
+              id: str(b?.id),
+              nombre: str(b?.nombre || b?.name),
+              activo: b?.activo === false ? false : true,
+            }))
+            .filter((b) => b.id && b.nombre)
+          : [];
+      } catch (_) {
+        state.menuMontajeBebidas = [];
+      }
+    }
+    try {
+      const parsed = JSON.parse(str(eventChecklistsRow?.valor_json) || "{}");
+      state.eventChecklists = (parsed && typeof parsed === "object") ? parsed : {};
+    } catch (_) {
+      state.eventChecklists = {};
     }
 
     for (const row of recordatorios) {
@@ -773,6 +1188,316 @@ async function readSubcategoriasServicioFromTables(categoriaId = null) {
       id_categoria: Number(r.id_categoria),
       nombre: str(r.nombre),
     }));
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+const MENU_CATALOG_TABLES = {
+  plato_fuerte: "menu_platos_fuertes",
+  salsa: "menu_salsas",
+  guarnicion: "menu_guarniciones",
+  postre: "menu_postres",
+  bebida: "menu_bebidas",
+  comentario: "menu_comentarios_adicionales",
+  montaje_tipo: "montaje_tipos",
+  montaje_adicional: "montaje_adicionales",
+};
+
+async function readSimpleMenuCatalog(kind) {
+  const table = MENU_CATALOG_TABLES[String(kind || "").trim()];
+  if (!table) return [];
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query(
+      table === "menu_platos_fuertes"
+        ? `SELECT id, nombre, activo, tipo_plato, es_sin_proteina FROM ${table} ORDER BY nombre ASC`
+        : (
+      table === "montaje_adicionales"
+        ? `SELECT id, nombre, activo, tipo FROM ${table} ORDER BY nombre ASC`
+        : `SELECT id, nombre, activo FROM ${table} ORDER BY nombre ASC`
+        )
+    );
+    return rows.map((r) => ({
+      id: Number(r.id),
+      nombre: str(r.nombre),
+      activo: Number(r.activo) !== 0,
+      tipo: str(r.tipo),
+      tipo_plato: normalizeMenuDishType(r.tipo_plato),
+      es_sin_proteina: Number(r.es_sin_proteina) !== 0,
+    }));
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function createSimpleMenuCatalog(kind, nombre, extras = {}) {
+  const table = MENU_CATALOG_TABLES[String(kind || "").trim()];
+  if (!table) throw new Error("catalog_kind_invalid");
+  const cleanName = str(nombre).trim();
+  if (!cleanName) throw new Error("catalog_name_required");
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    if (table === "menu_platos_fuertes") {
+      const tipoPlato = normalizeMenuDishType(extras?.tipo_plato);
+      const esSinProteina = Number(extras?.es_sin_proteina) ? 1 : 0;
+      await conn.query(
+        `INSERT INTO menu_platos_fuertes (nombre, tipo_plato, es_sin_proteina, activo) VALUES (?, ?, ?, 1)
+         ON DUPLICATE KEY UPDATE
+           nombre = VALUES(nombre),
+           tipo_plato = VALUES(tipo_plato),
+           es_sin_proteina = VALUES(es_sin_proteina),
+           activo = 1`,
+        [cleanName, tipoPlato, esSinProteina]
+      );
+      return;
+    }
+    if (table === "montaje_adicionales") {
+      const tipo = str(extras?.tipo).trim() || null;
+      await conn.query(
+        `INSERT INTO montaje_adicionales (nombre, tipo, activo) VALUES (?, ?, 1)
+         ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), tipo = COALESCE(VALUES(tipo), tipo), activo = 1`,
+        [cleanName, tipo]
+      );
+      return;
+    }
+    await conn.query(
+      `INSERT INTO ${table} (nombre, activo) VALUES (?, 1)
+       ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), activo = 1`,
+      [cleanName]
+    );
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function readPreparacionesByPlato(idPlatoFuerte) {
+  const id = Number(idPlatoFuerte);
+  if (!Number.isFinite(id) || id <= 0) return [];
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query(
+      `SELECT id, id_plato_fuerte, nombre, activo
+       FROM menu_preparaciones
+       WHERE id_plato_fuerte = ?
+       ORDER BY nombre ASC`,
+      [id]
+    );
+    return rows.map((r) => ({
+      id: Number(r.id),
+      id_plato_fuerte: Number(r.id_plato_fuerte),
+      nombre: str(r.nombre),
+      activo: Number(r.activo) !== 0,
+    }));
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function createPreparacionForPlato(idPlatoFuerte, nombre) {
+  const id = Number(idPlatoFuerte);
+  const cleanName = str(nombre).trim();
+  if (!Number.isFinite(id) || id <= 0) throw new Error("plato_fuerte_required");
+  if (!cleanName) throw new Error("preparacion_required");
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query(
+      `INSERT INTO menu_preparaciones (id_plato_fuerte, nombre, activo)
+       VALUES (?, ?, 1)
+       ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), activo = 1`,
+      [id, cleanName]
+    );
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function updateSimpleMenuCatalog(kind, id, changes = {}) {
+  const table = MENU_CATALOG_TABLES[String(kind || "").trim()];
+  const itemId = Number(id);
+  if (!table) throw new Error("catalog_kind_invalid");
+  if (!Number.isFinite(itemId) || itemId <= 0) throw new Error("catalog_id_invalid");
+
+  const hasName = Object.prototype.hasOwnProperty.call(changes || {}, "nombre");
+  const hasActive = Object.prototype.hasOwnProperty.call(changes || {}, "activo");
+  const hasTipo = table === "montaje_adicionales" && Object.prototype.hasOwnProperty.call(changes || {}, "tipo");
+  const hasTipoPlato = table === "menu_platos_fuertes" && Object.prototype.hasOwnProperty.call(changes || {}, "tipo_plato");
+  const hasSinProteina = table === "menu_platos_fuertes" && Object.prototype.hasOwnProperty.call(changes || {}, "es_sin_proteina");
+
+  const setParts = [];
+  const values = [];
+  if (hasName) {
+    const cleanName = str(changes.nombre).trim();
+    if (!cleanName) throw new Error("catalog_name_required");
+    setParts.push("nombre = ?");
+    values.push(cleanName);
+  }
+  if (hasActive) {
+    setParts.push("activo = ?");
+    values.push(Number(changes.activo) ? 1 : 0);
+  }
+  if (hasTipo) {
+    const tipo = str(changes.tipo).trim() || null;
+    setParts.push("tipo = ?");
+    values.push(tipo);
+  }
+  if (hasTipoPlato) {
+    setParts.push("tipo_plato = ?");
+    values.push(normalizeMenuDishType(changes.tipo_plato));
+  }
+  if (hasSinProteina) {
+    setParts.push("es_sin_proteina = ?");
+    values.push(Number(changes.es_sin_proteina) ? 1 : 0);
+  }
+  if (!setParts.length) throw new Error("catalog_changes_required");
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query(
+      `UPDATE ${table} SET ${setParts.join(", ")} WHERE id = ?`,
+      [...values, itemId]
+    );
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function updatePreparacionById(id, changes = {}) {
+  const itemId = Number(id);
+  if (!Number.isFinite(itemId) || itemId <= 0) throw new Error("catalog_id_invalid");
+
+  const hasName = Object.prototype.hasOwnProperty.call(changes || {}, "nombre");
+  const hasActive = Object.prototype.hasOwnProperty.call(changes || {}, "activo");
+  const hasPlato = Object.prototype.hasOwnProperty.call(changes || {}, "id_plato_fuerte");
+  const setParts = [];
+  const values = [];
+
+  if (hasName) {
+    const cleanName = str(changes.nombre).trim();
+    if (!cleanName) throw new Error("preparacion_required");
+    setParts.push("nombre = ?");
+    values.push(cleanName);
+  }
+  if (hasActive) {
+    setParts.push("activo = ?");
+    values.push(Number(changes.activo) ? 1 : 0);
+  }
+  if (hasPlato) {
+    const platoId = Number(changes.id_plato_fuerte);
+    if (!Number.isFinite(platoId) || platoId <= 0) throw new Error("plato_fuerte_required");
+    setParts.push("id_plato_fuerte = ?");
+    values.push(platoId);
+  }
+  if (!setParts.length) throw new Error("catalog_changes_required");
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query(
+      `UPDATE menu_preparaciones SET ${setParts.join(", ")} WHERE id = ?`,
+      [...values, itemId]
+    );
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+function normalizeIdList(rawList) {
+  if (!Array.isArray(rawList)) return [];
+  const out = [];
+  for (const x of rawList) {
+    const n = Number(x);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    out.push(Math.floor(n));
+  }
+  return Array.from(new Set(out));
+}
+
+async function readMenuSuggestionLinks({ idPlatoFuerte, idPreparacion }) {
+  const platoId = Number(idPlatoFuerte);
+  const prepId = Number(idPreparacion);
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const [salsas, postres, guarniciones] = await Promise.all([
+      Number.isFinite(prepId) && prepId > 0
+        ? conn.query(
+          "SELECT id_salsa FROM menu_preparacion_salsa_sugerida WHERE id_preparacion = ? ORDER BY prioridad, id_salsa",
+          [prepId]
+        )
+        : Promise.resolve([]),
+      Number.isFinite(prepId) && prepId > 0
+        ? conn.query(
+          "SELECT id_postre FROM menu_preparacion_postre_sugerido WHERE id_preparacion = ? ORDER BY prioridad, id_postre",
+          [prepId]
+        )
+        : Promise.resolve([]),
+      Number.isFinite(platoId) && platoId > 0
+        ? conn.query(
+          "SELECT id_guarnicion FROM menu_plato_guarnicion_sugerida WHERE id_plato_fuerte = ? ORDER BY prioridad, id_guarnicion",
+          [platoId]
+        )
+        : Promise.resolve([]),
+    ]);
+    return {
+      salsaIds: salsas.map((r) => Number(r.id_salsa)).filter((x) => Number.isFinite(x)),
+      postreIds: postres.map((r) => Number(r.id_postre)).filter((x) => Number.isFinite(x)),
+      guarnicionIds: guarniciones.map((r) => Number(r.id_guarnicion)).filter((x) => Number.isFinite(x)),
+    };
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function saveMenuSuggestionLinks({ idPlatoFuerte, idPreparacion, salsaIds, postreIds, guarnicionIds }) {
+  const platoId = Number(idPlatoFuerte);
+  const prepId = Number(idPreparacion);
+  if (!Number.isFinite(platoId) || platoId <= 0) throw new Error("plato_fuerte_required");
+  if (!Number.isFinite(prepId) || prepId <= 0) throw new Error("preparacion_required");
+
+  const salsaList = normalizeIdList(salsaIds);
+  const postreList = normalizeIdList(postreIds);
+  const guarnicionList = normalizeIdList(guarnicionIds);
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    await conn.query("DELETE FROM menu_preparacion_salsa_sugerida WHERE id_preparacion = ?", [prepId]);
+    for (let i = 0; i < salsaList.length; i++) {
+      await conn.query(
+        "INSERT INTO menu_preparacion_salsa_sugerida (id_preparacion, id_salsa, prioridad) VALUES (?, ?, ?)",
+        [prepId, salsaList[i], i + 1]
+      );
+    }
+
+    await conn.query("DELETE FROM menu_preparacion_postre_sugerido WHERE id_preparacion = ?", [prepId]);
+    for (let i = 0; i < postreList.length; i++) {
+      await conn.query(
+        "INSERT INTO menu_preparacion_postre_sugerido (id_preparacion, id_postre, prioridad) VALUES (?, ?, ?)",
+        [prepId, postreList[i], i + 1]
+      );
+    }
+
+    await conn.query("DELETE FROM menu_plato_guarnicion_sugerida WHERE id_plato_fuerte = ?", [platoId]);
+    for (let i = 0; i < guarnicionList.length; i++) {
+      await conn.query(
+        "INSERT INTO menu_plato_guarnicion_sugerida (id_plato_fuerte, id_guarnicion, prioridad) VALUES (?, ?, ?)",
+        [platoId, guarnicionList[i], i + 1]
+      );
+    }
+
+    await conn.commit();
+  } catch (error) {
+    if (conn) await conn.rollback();
+    throw error;
   } finally {
     if (conn) conn.release();
   }
@@ -884,6 +1609,11 @@ async function writeStateToTables(state) {
     const disabledManagers = Array.isArray(state.disabledManagers) ? state.disabledManagers : [];
     const disabledSalones = Array.isArray(state.disabledSalones) ? state.disabledSalones : [];
     const globalMonthlyGoals = Array.isArray(state.globalMonthlyGoals) ? state.globalMonthlyGoals : [];
+    const checklistTemplateItems = Array.isArray(state.checklistTemplateItems) ? state.checklistTemplateItems : [];
+    const checklistTemplateSections = Array.isArray(state.checklistTemplateSections) ? state.checklistTemplateSections : [];
+    const menuMontajeSections = Array.isArray(state.menuMontajeSections) ? state.menuMontajeSections : [];
+    const menuMontajeBebidas = Array.isArray(state.menuMontajeBebidas) ? state.menuMontajeBebidas : [];
+    const eventChecklists = (state.eventChecklists && typeof state.eventChecklists === "object") ? state.eventChecklists : {};
     const events = Array.isArray(state.events)
       ? state.events.map((e) => ({ ...e, salon: e?.salon ?? "" }))
       : [];
@@ -1349,6 +2079,52 @@ async function writeStateToTables(state) {
         ),
       ]
     );
+    await conn.query(
+      `
+        INSERT INTO app_state_kv (clave, valor_json)
+        VALUES ('checklistTemplateItems', ?)
+        ON DUPLICATE KEY UPDATE valor_json = VALUES(valor_json)
+      `,
+      [JSON.stringify(checklistTemplateItems)]
+    );
+    await conn.query(
+      `
+        INSERT INTO app_state_kv (clave, valor_json)
+        VALUES ('checklistTemplateSections', ?)
+        ON DUPLICATE KEY UPDATE valor_json = VALUES(valor_json)
+      `,
+      [JSON.stringify(checklistTemplateSections.map((s) => str(s)).filter(Boolean))]
+    );
+    await conn.query(
+      `
+        INSERT INTO app_state_kv (clave, valor_json)
+        VALUES ('menuMontajeSections', ?)
+        ON DUPLICATE KEY UPDATE valor_json = VALUES(valor_json)
+      `,
+      [JSON.stringify(menuMontajeSections.map((s) => str(s)).filter(Boolean))]
+    );
+    await conn.query(
+      `
+        INSERT INTO app_state_kv (clave, valor_json)
+        VALUES ('menuMontajeBebidas', ?)
+        ON DUPLICATE KEY UPDATE valor_json = VALUES(valor_json)
+      `,
+      [
+        JSON.stringify(
+          menuMontajeBebidas
+            .map((b) => ({ id: str(b?.id), nombre: str(b?.nombre || b?.name), activo: b?.activo === false ? false : true }))
+            .filter((b) => b.id && b.nombre)
+        ),
+      ]
+    );
+    await conn.query(
+      `
+        INSERT INTO app_state_kv (clave, valor_json)
+        VALUES ('eventChecklists', ?)
+        ON DUPLICATE KEY UPDATE valor_json = VALUES(valor_json)
+      `,
+      [JSON.stringify(eventChecklists)]
+    );
 
     await conn.commit();
   } catch (error) {
@@ -1452,6 +2228,92 @@ app.get("/api/subcategorias-servicio", async (req, res) => {
   }
 });
 
+app.get("/api/menu-catalog/:kind", async (req, res) => {
+  try {
+    const kind = str(req.params?.kind).trim();
+    if (kind === "preparacion") {
+      const platoId = Number(req.query?.plato_id);
+      const rows = await readPreparacionesByPlato(platoId);
+      return res.json({ items: rows });
+    }
+    const rows = await readSimpleMenuCatalog(kind);
+    return res.json({ items: rows });
+  } catch (error) {
+    return res.status(500).json({ message: "No se pudo leer el catalogo de Menu & Montaje.", detail: error.message });
+  }
+});
+
+app.post("/api/menu-catalog/:kind", async (req, res) => {
+  try {
+    const kind = str(req.params?.kind).trim();
+    const nombre = str(req.body?.nombre).trim();
+    if (kind === "preparacion") {
+      const idPlatoFuerte = Number(req.body?.id_plato_fuerte);
+      await createPreparacionForPlato(idPlatoFuerte, nombre);
+      return res.json({ ok: true });
+    }
+    await createSimpleMenuCatalog(kind, nombre, {
+      tipo: req.body?.tipo,
+      tipo_plato: req.body?.tipo_plato,
+      es_sin_proteina: req.body?.es_sin_proteina,
+    });
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudo guardar el catalogo de Menu & Montaje.", detail: error.message });
+  }
+});
+
+app.put("/api/menu-catalog/:kind/:id", async (req, res) => {
+  try {
+    const kind = str(req.params?.kind).trim();
+    const id = Number(req.params?.id);
+    if (kind === "preparacion") {
+      await updatePreparacionById(id, {
+        nombre: req.body?.nombre,
+        activo: req.body?.activo,
+        id_plato_fuerte: req.body?.id_plato_fuerte,
+      });
+      return res.json({ ok: true });
+    }
+    await updateSimpleMenuCatalog(kind, id, {
+      nombre: req.body?.nombre,
+      activo: req.body?.activo,
+      tipo: req.body?.tipo,
+      tipo_plato: req.body?.tipo_plato,
+      es_sin_proteina: req.body?.es_sin_proteina,
+    });
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudo actualizar el catalogo de Menu & Montaje.", detail: error.message });
+  }
+});
+
+app.get("/api/menu-suggestions", async (req, res) => {
+  try {
+    const idPlatoFuerte = Number(req.query?.plato_id);
+    const idPreparacion = Number(req.query?.preparacion_id);
+    const payload = await readMenuSuggestionLinks({ idPlatoFuerte, idPreparacion });
+    return res.json(payload);
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudieron leer las sugerencias de Menu.", detail: error.message });
+  }
+});
+
+app.put("/api/menu-suggestions", async (req, res) => {
+  try {
+    await saveMenuSuggestionLinks({
+      idPlatoFuerte: req.body?.id_plato_fuerte,
+      idPreparacion: req.body?.id_preparacion,
+      salsaIds: req.body?.salsaIds,
+      postreIds: req.body?.postreIds,
+      guarnicionIds: req.body?.guarnicionIds,
+    });
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudieron guardar las sugerencias de Menu.", detail: error.message });
+  }
+});
+
 app.put("/api/state", async (req, res) => {
   const nextState = req.body && req.body.state;
   if (!nextState || typeof nextState !== "object" || Array.isArray(nextState)) {
@@ -1478,9 +2340,10 @@ app.get("*", (req, res) => {
 
 async function start() {
   try {
+    await ensureAppStateExtraStructure();
     await ensureServiceCatalogStructure();
     await ensureQuoteVersionStructure();
-    await ensureAppStateExtraStructure();
+    await ensureMenuMontajeCatalogStructure();
     await ensureDocumentSequenceStructure();
     await ensureUsersExtendedStructure();
     await ensureRequiredTables();

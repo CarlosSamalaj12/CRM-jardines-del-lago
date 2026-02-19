@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    CRM Reservas - Calendario tipo Google Calendar (frontend)
    - Salones
    - Estados con colores
@@ -95,6 +95,16 @@ const AUTO_SCROLL_STEP_PX = 26;
 const USE_ENHANCED_SELECTS = false;
 const SETTINGS_STORAGE_KEY = "crm_topbar_settings_v1";
 const QUICK_TEMPLATES_STORAGE_KEY = "crm_quick_templates_v1";
+const CORPORATE_TEMPLATE_ID = "tpl-corporativo";
+const CORPORATE_TEMPLATE_NAME = "Corporativo";
+const TEMPLATE_SIGNATURE_MIN_W_PCT = 10;
+const TEMPLATE_SIGNATURE_MIN_H_PCT = 3;
+const TEMPLATE_SIGNATURE_MAX_W_PCT = 35;
+const TEMPLATE_SIGNATURE_MAX_H_PCT = 12;
+const TEMPLATE_SIGNATURE_FALLBACK_W_PCT = 22;
+const TEMPLATE_SIGNATURE_FALLBACK_H_PCT = 5;
+const TEMPLATE_COORD_BASE_W_PT = 612;
+const TEMPLATE_COORD_BASE_H_PT = 792;
 const PAST_EVENT_ADMIN_EDIT_CODE = "JDL-ADMIN-2026";
 const DEFAULT_TOPBAR_SETTINGS = {
   showLegend: true,
@@ -121,6 +131,12 @@ let userMonthlyGoalsDraft = [];
 let editingUserGoalMonth = "";
 let occupancySelectedDayIso = "";
 let authSession = { userId: "", fullName: "", username: "", avatarDataUrl: "", signatureDataUrl: "" };
+let userSignatureNormalizedDataUrl = "";
+let checklistTemplateDraft = [];
+let checklistTemplateEditingId = "";
+let checklistTemplateSectionsDraft = [];
+let currentEventChecklistId = "";
+let eventChecklistDraft = null;
 const interaction = {
   selecting: null,
   selectionBox: null,
@@ -137,35 +153,36 @@ const uiEnhancers = {
   openCustomSelect: null,
 };
 let topbarSettings = loadTopbarSettings();
-let quickTemplates = Array.isArray(state.quickTemplates) ? state.quickTemplates : [];
-let activeTemplateId = "";
-let activeTemplateEditor = null;
-let templateAssetsDraft = {
-  pagePdf: "",
-  headerImage: "",
-  footerImage: "",
-};
-const templateUiState = {
-  activePositionIndex: -1,
-  dragging: null,
-  resizing: null,
-  pdfRenderKey: "",
-  signatureDefaultW: 22,
-  signatureDefaultH: 5,
-};
-const TEMPLATE_SIGNATURE_MIN_W_PCT = 10;
-const TEMPLATE_SIGNATURE_MIN_H_PCT = 3;
-const TEMPLATE_SIGNATURE_MAX_W_PCT = 35;
-const TEMPLATE_SIGNATURE_MAX_H_PCT = 12;
-const TEMPLATE_SIGNATURE_FALLBACK_W_PCT = 22;
-const TEMPLATE_SIGNATURE_FALLBACK_H_PCT = 5;
-const TEMPLATE_COORD_BASE_W_PT = 612;
-const TEMPLATE_COORD_BASE_H_PT = 792;
+let quickTemplates = ensureCorporateTemplateSeed(Array.isArray(state.quickTemplates) ? state.quickTemplates : []);
 const signatureImageAnalysisCache = new Map();
 const pastEventEditAuthorizedKeys = new Set();
 const notifiedReminderKeys = new Set();
 let menuMontajeSelectedKey = "";
 let menuMontajeSelectedVersion = 0;
+let menuMontajeSelectableSelectedKey = "";
+let menuMontajeSelectableSelectedVersion = 0;
+let menuMontajeSelectableSilentUpdate = false;
+let mmsShowAllGuarniciones = false;
+let mmsShowAllPostres = false;
+let mmsCurrentStage = "plato";
+let mmsSelectedSalsaIds = [];
+let mmsSelectedBebidaIds = [];
+let mmsPostreQtyById = {};
+let menuMontajeSelectableCatalogCache = {
+  proteins: [],
+  preparationsByProtein: new Map(),
+  salsas: [],
+  guarniciones: [],
+  postres: [],
+  bebidas: [],
+  comentarios: [],
+  montajeTipos: [],
+  montajeAdicionales: [],
+};
+let menuCatalogManagerKind = "plato_fuerte";
+let menuCatalogManagerEditingId = "";
+let menuCatalogManagerRows = [];
+let menuSuggestionDraggingRow = null;
 
 const el = {
   loginScreen: document.getElementById("loginScreen"),
@@ -205,7 +222,7 @@ const el = {
   btnQuickAddService: document.getElementById("btnQuickAddService"),
   btnQuickAddSalon: document.getElementById("btnQuickAddSalon"),
   btnQuickAddGlobalGoal: document.getElementById("btnQuickAddGlobalGoal"),
-  btnQuickAddTemplate: document.getElementById("btnQuickAddTemplate"),
+  btnQuickAddChecklist: document.getElementById("btnQuickAddChecklist"),
   btnReportSales: document.getElementById("btnReportSales"),
   btnReportOccupancy: document.getElementById("btnReportOccupancy"),
   btnReportDashboard: document.getElementById("btnReportDashboard"),
@@ -231,6 +248,23 @@ const el = {
   occupancyDaysStrip: document.getElementById("occupancyDaysStrip"),
   occupancyDayDetail: document.getElementById("occupancyDayDetail"),
   occupancyReportBody: document.getElementById("occupancyReportBody"),
+  checklistTemplateBackdrop: document.getElementById("checklistTemplateBackdrop"),
+  btnChecklistTemplateClose: document.getElementById("btnChecklistTemplateClose"),
+  checklistTemplateInput: document.getElementById("checklistTemplateInput"),
+  checklistTemplateSectionSelect: document.getElementById("checklistTemplateSectionSelect"),
+  checklistTemplateSectionInput: document.getElementById("checklistTemplateSectionInput"),
+  btnChecklistTemplateAdd: document.getElementById("btnChecklistTemplateAdd"),
+  btnChecklistTemplateAddSection: document.getElementById("btnChecklistTemplateAddSection"),
+  checklistTemplateBody: document.getElementById("checklistTemplateBody"),
+  eventChecklistBackdrop: document.getElementById("eventChecklistBackdrop"),
+  btnEventChecklistClose: document.getElementById("btnEventChecklistClose"),
+  btnEventChecklistDiscard: document.getElementById("btnEventChecklistDiscard"),
+  btnEventChecklistSave: document.getElementById("btnEventChecklistSave"),
+  eventChecklistSubtitle: document.getElementById("eventChecklistSubtitle"),
+  eventChecklistDate: document.getElementById("eventChecklistDate"),
+  eventChecklistEventName: document.getElementById("eventChecklistEventName"),
+  eventChecklistNotes: document.getElementById("eventChecklistNotes"),
+  eventChecklistBody: document.getElementById("eventChecklistBody"),
   legend: document.getElementById("legend"),
   timeCol: document.getElementById("timeCol"),
   daysHeader: document.getElementById("daysHeader"),
@@ -357,6 +391,8 @@ const el = {
   quoteTotal: document.getElementById("quoteTotal"),
   quoteInternalNotes: document.getElementById("quoteInternalNotes"),
   btnMenuMontaje: document.getElementById("btnMenuMontaje"),
+  btnMenuMontajeSelectable: document.getElementById("btnMenuMontajeSelectable"),
+  btnQuotePrintTemplate: document.getElementById("btnQuotePrintTemplate"),
 
   menuMontajeBackdrop: document.getElementById("menuMontajeBackdrop"),
   btnMenuMontajeClose: document.getElementById("btnMenuMontajeClose"),
@@ -374,6 +410,79 @@ const el = {
   btnMenuMontajeSave: document.getElementById("btnMenuMontajeSave"),
   btnMenuMontajeSaveCurrent: document.getElementById("btnMenuMontajeSaveCurrent"),
   btnMenuMontajePrintDay: document.getElementById("btnMenuMontajePrintDay"),
+  menuMontajeSelectableBackdrop: document.getElementById("menuMontajeSelectableBackdrop"),
+  btnMenuMontajeSelectableClose: document.getElementById("btnMenuMontajeSelectableClose"),
+  mmsDateSalonSelect: document.getElementById("mmsDateSalonSelect"),
+  mmsVersionSelect: document.getElementById("mmsVersionSelect"),
+  btnMmsLoadVersion: document.getElementById("btnMmsLoadVersion"),
+  mmsDocNo: document.getElementById("mmsDocNo"),
+  mmsProtein: document.getElementById("mmsProtein"),
+  mmsPreparation: document.getElementById("mmsPreparation"),
+  mmsStageTabs: document.getElementById("mmsStageTabs"),
+  btnMmsStagePlato: document.getElementById("btnMmsStagePlato"),
+  btnMmsStagePrep: document.getElementById("btnMmsStagePrep"),
+  btnMmsStageSalsa: document.getElementById("btnMmsStageSalsa"),
+  btnMmsStageGuarnicion: document.getElementById("btnMmsStageGuarnicion"),
+  btnMmsStagePostre: document.getElementById("btnMmsStagePostre"),
+  btnMmsStageBebida: document.getElementById("btnMmsStageBebida"),
+  btnMmsStageMontajeTipo: document.getElementById("btnMmsStageMontajeTipo"),
+  btnMmsStageMontajeAdicional: document.getElementById("btnMmsStageMontajeAdicional"),
+  mmsStageFilter: document.getElementById("mmsStageFilter"),
+  btnMmsStageMoreOptions: document.getElementById("btnMmsStageMoreOptions"),
+  btnMmsStageCancelSelection: document.getElementById("btnMmsStageCancelSelection"),
+  btnMmsOpenCatalog: document.getElementById("btnMmsOpenCatalog"),
+  mmsStageTitle: document.getElementById("mmsStageTitle"),
+  mmsStageOptions: document.getElementById("mmsStageOptions"),
+  mmsMenuSection: document.getElementById("mmsMenuSection"),
+  mmsMenuSectionInput: document.getElementById("mmsMenuSectionInput"),
+  btnMmsMenuSectionAdd: document.getElementById("btnMmsMenuSectionAdd"),
+  mmsMenuTitle: document.getElementById("mmsMenuTitle"),
+  mmsMenuQty: document.getElementById("mmsMenuQty"),
+  mmsGuarnicionesSuggested: document.getElementById("mmsGuarnicionesSuggested"),
+  mmsGuarnicionesAll: document.getElementById("mmsGuarnicionesAll"),
+  mmsGuarnicionFilter: document.getElementById("mmsGuarnicionFilter"),
+  btnMmsToggleGuarnicionesGlobal: document.getElementById("btnMmsToggleGuarnicionesGlobal"),
+  mmsGuarnicionesQuickSuggested: document.getElementById("mmsGuarnicionesQuickSuggested"),
+  mmsGuarnicionesQuickGlobal: document.getElementById("mmsGuarnicionesQuickGlobal"),
+  mmsPostresSuggested: document.getElementById("mmsPostresSuggested"),
+  mmsPostresAll: document.getElementById("mmsPostresAll"),
+  mmsPostreFilter: document.getElementById("mmsPostreFilter"),
+  btnMmsTogglePostresGlobal: document.getElementById("btnMmsTogglePostresGlobal"),
+  mmsPostresQuickSuggested: document.getElementById("mmsPostresQuickSuggested"),
+  mmsPostresQuickGlobal: document.getElementById("mmsPostresQuickGlobal"),
+  mmsComandaPreview: document.getElementById("mmsComandaPreview"),
+  mmsComandaPlato: document.getElementById("mmsComandaPlato"),
+  mmsComandaSalsas: document.getElementById("mmsComandaSalsas"),
+  mmsComandaGuarniciones: document.getElementById("mmsComandaGuarniciones"),
+  mmsComandaPostres: document.getElementById("mmsComandaPostres"),
+  mmsComandaBebidas: document.getElementById("mmsComandaBebidas"),
+  mmsComandaMontaje: document.getElementById("mmsComandaMontaje"),
+  mmsPlatoDescripcion: document.getElementById("mmsPlatoDescripcion"),
+  mmsComentariosAll: document.getElementById("mmsComentariosAll"),
+  mmsBebidaInput: document.getElementById("mmsBebidaInput"),
+  btnMmsAddBebida: document.getElementById("btnMmsAddBebida"),
+  mmsComentarioLibre: document.getElementById("mmsComentarioLibre"),
+  btnMmsUseSuggested: document.getElementById("btnMmsUseSuggested"),
+  btnMmsClearMenuSelection: document.getElementById("btnMmsClearMenuSelection"),
+  btnMmsMenuAppend: document.getElementById("btnMmsMenuAppend"),
+  btnMmsMenuReplace: document.getElementById("btnMmsMenuReplace"),
+  mmsSummaryMenu: document.getElementById("mmsSummaryMenu"),
+  mmsSummaryGuarniciones: document.getElementById("mmsSummaryGuarniciones"),
+  mmsSummaryPostres: document.getElementById("mmsSummaryPostres"),
+  mmsSummaryComentarios: document.getElementById("mmsSummaryComentarios"),
+  mmsMenuDescription: document.getElementById("mmsMenuDescription"),
+  mmsMontajeTipo: document.getElementById("mmsMontajeTipo"),
+  mmsMontajeAdicionales: document.getElementById("mmsMontajeAdicionales"),
+  mmsMontajeDescription: document.getElementById("mmsMontajeDescription"),
+  btnMmsMontajeClear: document.getElementById("btnMmsMontajeClear"),
+  btnMmsMontajeAppend: document.getElementById("btnMmsMontajeAppend"),
+  btnMmsMontajeReplace: document.getElementById("btnMmsMontajeReplace"),
+  mmsSummaryMontajeTipo: document.getElementById("mmsSummaryMontajeTipo"),
+  mmsSummaryMontajeAdicionales: document.getElementById("mmsSummaryMontajeAdicionales"),
+  mmsEntriesBody: document.getElementById("mmsEntriesBody"),
+  btnMmsSave: document.getElementById("btnMmsSave"),
+  btnMmsSaveCurrent: document.getElementById("btnMmsSaveCurrent"),
+  btnMmsPrintDay: document.getElementById("btnMmsPrintDay"),
   btnAddCompany: document.getElementById("btnAddCompany"),
   btnOpenServiceCreate: document.getElementById("btnOpenServiceCreate"),
 
@@ -389,6 +498,9 @@ const el = {
   companyAddress: document.getElementById("companyAddress"),
   companyPhone: document.getElementById("companyPhone"),
   companyNotes: document.getElementById("companyNotes"),
+  companyRecordSection: document.getElementById("companyRecordSection"),
+  companyRecordSummary: document.getElementById("companyRecordSummary"),
+  companyRecordBody: document.getElementById("companyRecordBody"),
   managerName: document.getElementById("managerName"),
   managerPhone: document.getElementById("managerPhone"),
   managerEmail: document.getElementById("managerEmail"),
@@ -410,30 +522,32 @@ const el = {
   btnServiceClose: document.getElementById("btnServiceClose"),
   btnServiceDiscard: document.getElementById("btnServiceDiscard"),
 
-  templateBackdrop: document.getElementById("templateBackdrop"),
-  templateForm: document.getElementById("templateForm"),
-  templateName: document.getElementById("templateName"),
-  templateSelect: document.getElementById("templateSelect"),
-  btnTemplateLoad: document.getElementById("btnTemplateLoad"),
-  btnTemplateDelete: document.getElementById("btnTemplateDelete"),
-  templatePageImage: document.getElementById("templatePageImage"),
-  templateHeaderImage: document.getElementById("templateHeaderImage"),
-  templateFooterImage: document.getElementById("templateFooterImage"),
-  templatePagePreview: document.getElementById("templatePagePreview"),
-  templateFieldPanel: document.getElementById("templateFieldPanel"),
-  templateHeader: document.getElementById("templateHeader"),
-  templateBody: document.getElementById("templateBody"),
-  templateFooter: document.getElementById("templateFooter"),
-  templatePositionBody: document.getElementById("templatePositionBody"),
-  btnTemplateAddPosition: document.getElementById("btnTemplateAddPosition"),
-  btnTemplateFitSignature: document.getElementById("btnTemplateFitSignature"),
-  templateFormulaBody: document.getElementById("templateFormulaBody"),
-  btnTemplateAddFormula: document.getElementById("btnTemplateAddFormula"),
-  templateTokenGrid: document.getElementById("templateTokenGrid"),
-  templateRoomRates: document.getElementById("templateRoomRates"),
-  templatePreview: document.getElementById("templatePreview"),
-  btnTemplateClose: document.getElementById("btnTemplateClose"),
-  btnTemplateDiscard: document.getElementById("btnTemplateDiscard"),
+  menuSuggestionsBackdrop: document.getElementById("menuSuggestionsBackdrop"),
+  btnMenuSuggestionsClose: document.getElementById("btnMenuSuggestionsClose"),
+  btnMenuSuggestionsDiscard: document.getElementById("btnMenuSuggestionsDiscard"),
+  btnMenuSuggestionsSave: document.getElementById("btnMenuSuggestionsSave"),
+  btnMenuSuggestionsManageCatalog: document.getElementById("btnMenuSuggestionsManageCatalog"),
+  menuSuggestionsProtein: document.getElementById("menuSuggestionsProtein"),
+  menuSuggestionsPreparation: document.getElementById("menuSuggestionsPreparation"),
+  menuSuggestionsSalsas: document.getElementById("menuSuggestionsSalsas"),
+  menuSuggestionsPostres: document.getElementById("menuSuggestionsPostres"),
+  menuSuggestionsGuarniciones: document.getElementById("menuSuggestionsGuarniciones"),
+
+  menuCatalogBackdrop: document.getElementById("menuCatalogBackdrop"),
+  btnMenuCatalogClose: document.getElementById("btnMenuCatalogClose"),
+  btnMenuCatalogDiscard: document.getElementById("btnMenuCatalogDiscard"),
+  btnMenuCatalogOpenSuggestions: document.getElementById("btnMenuCatalogOpenSuggestions"),
+  btnMenuCatalogSave: document.getElementById("btnMenuCatalogSave"),
+  btnMenuCatalogReset: document.getElementById("btnMenuCatalogReset"),
+  menuCatalogKind: document.getElementById("menuCatalogKind"),
+  menuCatalogProteinWrap: document.getElementById("menuCatalogProteinWrap"),
+  menuCatalogProtein: document.getElementById("menuCatalogProtein"),
+  menuCatalogName: document.getElementById("menuCatalogName"),
+  menuCatalogDishTypeWrap: document.getElementById("menuCatalogDishTypeWrap"),
+  menuCatalogDishType: document.getElementById("menuCatalogDishType"),
+  menuCatalogNoProteinWrap: document.getElementById("menuCatalogNoProteinWrap"),
+  menuCatalogNoProtein: document.getElementById("menuCatalogNoProtein"),
+  menuCatalogBody: document.getElementById("menuCatalogBody"),
 };
 
 function goToTodayView() {
@@ -552,25 +666,82 @@ function normalizeTemplateRecord(candidate) {
   };
 }
 
+function buildCorporateTemplateSeed() {
+  const nowIso = new Date().toISOString();
+  return normalizeTemplateRecord({
+    id: CORPORATE_TEMPLATE_ID,
+    name: CORPORATE_TEMPLATE_NAME,
+    header: "",
+    body: "",
+    footer: "",
+    assets: {
+      pagePdf: "",
+      headerImage: "./Oficial_JDL_acua.png",
+      footerImage: "",
+    },
+    positionedFields: [],
+    signatureDefaults: {
+      w: TEMPLATE_SIGNATURE_FALLBACK_W_PCT,
+      h: TEMPLATE_SIGNATURE_FALLBACK_H_PCT,
+    },
+    roomRates: [],
+    formulas: [],
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  });
+}
+
+function ensureCorporateTemplateSeed(listLike) {
+  const list = Array.isArray(listLike)
+    ? listLike.map(normalizeTemplateRecord).filter(Boolean)
+    : [];
+  const seed = buildCorporateTemplateSeed();
+  const byId = list.find((t) => String(t?.id || "").trim() === CORPORATE_TEMPLATE_ID) || null;
+  const byName = list.find((t) => /corporativ/i.test(String(t?.name || ""))) || null;
+  const rich = list.find((t) =>
+    String(t?.assets?.pagePdf || "").trim() &&
+    Array.isArray(t?.positionedFields) &&
+    t.positionedFields.length > 0
+  ) || null;
+  const base = byId || byName || rich || seed;
+  const corporate = normalizeTemplateRecord({
+    ...seed,
+    ...base,
+    id: CORPORATE_TEMPLATE_ID,
+    name: CORPORATE_TEMPLATE_NAME,
+    assets: {
+      pagePdf: String(base?.assets?.pagePdf || "").trim(),
+      headerImage: String(base?.assets?.headerImage || seed.assets.headerImage || "").trim(),
+      footerImage: String(base?.assets?.footerImage || "").trim(),
+    },
+  });
+  const out = [corporate];
+  for (const t of list) {
+    const id = String(t?.id || "").trim();
+    if (!id || id === String(base?.id || "").trim() || id === CORPORATE_TEMPLATE_ID) continue;
+    out.push(t);
+  }
+  return out.filter(Boolean);
+}
+
 function loadQuickTemplates() {
   try {
     const raw = localStorage.getItem(QUICK_TEMPLATES_STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) return ensureCorporateTemplateSeed([]);
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
+    if (!Array.isArray(parsed)) return ensureCorporateTemplateSeed([]);
+    return ensureCorporateTemplateSeed(parsed
       .map(normalizeTemplateRecord)
-      .filter(Boolean);
+      .filter(Boolean));
   } catch (_) {
-    return [];
+    return ensureCorporateTemplateSeed([]);
   }
 }
 
 function syncQuickTemplatesIntoState() {
   if (!state || typeof state !== "object") return;
-  state.quickTemplates = quickTemplates
-    .map(normalizeTemplateRecord)
-    .filter(Boolean);
+  quickTemplates = ensureCorporateTemplateSeed(quickTemplates);
+  state.quickTemplates = quickTemplates;
 }
 
 function saveQuickTemplates({ persistRemote = true, backupLocal = true } = {}) {
@@ -587,6 +758,100 @@ function backupQuickTemplatesLocal() {
   try {
     localStorage.setItem(QUICK_TEMPLATES_STORAGE_KEY, JSON.stringify(quickTemplates));
   } catch (_) { }
+}
+
+function buildTemplatePrintContextFromQuoteForm() {
+  const selectedDate = String(el.quoteDocDate?.value || el.quoteEventDate?.value || toISODate(new Date())).trim();
+  const d = selectedDate ? new Date(`${selectedDate}T00:00:00`) : new Date();
+  const safeDate = Number.isNaN(d.getTime()) ? new Date() : d;
+  const monthName = safeDate.toLocaleDateString("es-GT", { month: "long" });
+  const company = (state.companies || []).find((c) => String(c.id || "") === String(el.quoteCompany?.value || ""));
+  const quoteEventId = String(el.quoteEventId?.value || "").trim();
+  const ev = quoteEventId ? (state.events || []).find((x) => String(x.id || "") === quoteEventId) : null;
+  const sellerUser = normalizeUserRecord((state.users || []).find((u) => String(u.id || "") === String(ev?.userId || "")) || {});
+  const authUser = normalizeUserRecord(getAuthUserRecord() || {});
+  const vendorSignature = String(
+    sellerUser?.signatureDataUrl
+    || authSession.signatureDataUrl
+    || authUser?.signatureDataUrl
+    || ""
+  ).trim();
+  const vendorName = String(
+    sellerUser?.fullName
+    || sellerUser?.name
+    || authSession.fullName
+    || authUser?.fullName
+    || authUser?.name
+    || ""
+  ).trim();
+  const vendorPhone = String(sellerUser?.phone || authUser?.phone || "").trim();
+  const vendorEmail = String(sellerUser?.email || authUser?.email || "").trim();
+  const clientName = String(el.quoteCompanySearch?.value || company?.name || quoteDraft?.companyName || "").trim();
+  const clientContact = String(el.quoteContact?.value || quoteDraft?.contact || company?.owner || clientName).trim();
+  const clientPhone = String(el.quotePhone?.value || quoteDraft?.phone || company?.phone || "").trim();
+  const clientEmail = String(el.quoteEmail?.value || quoteDraft?.email || company?.email || "").trim();
+  const venue = String(el.quoteVenue?.value || "").trim();
+  const departmentRaw = String(el.quoteAddress?.value || company?.address || "").trim();
+  const department = departmentRaw || "Solola";
+  return {
+    NO_DOC: String(el.quoteCode?.value || quoteDraft?.code || "").trim(),
+    CLIENTE: clientName,
+    LUGAR: venue || "Panajachel",
+    DEPARTAMENTO: department,
+    DIA: String(safeDate.getDate()),
+    MES: String(monthName || "").trim(),
+    ANIO: String(safeDate.getFullYear()),
+    VENDEDOR_FIRMA_URL: vendorSignature,
+    VENDEDOR_NOMBRE: vendorName,
+    VENDEDOR_TELEFONO: vendorPhone,
+    VENDEDOR_CORREO: vendorEmail,
+    CLIENTE_NOMBRE: clientContact,
+    CLIENTE_TELEFONO: clientPhone,
+    CLIENTE_CORREO: clientEmail,
+  };
+}
+
+function fillTemplateHtmlTokens(htmlText, contextMap) {
+  let out = String(htmlText || "");
+  const pairs = Object.entries(contextMap || {});
+  for (const [key, rawValue] of pairs) {
+    const token = `{{${String(key)}}}`;
+    const textValue = String(rawValue || "");
+    const value = /_URL$/i.test(String(key)) ? textValue : escapeHtml(textValue);
+    out = out.split(token).join(value);
+  }
+  return out;
+}
+
+async function printSelectedQuoteTemplate() {
+  const selectedTemplateId = String(el.quoteTemplateSelect?.value || quoteDraft?.templateId || "").trim();
+  if (!selectedTemplateId) return toast("Selecciona una plantilla.");
+  if (selectedTemplateId !== CORPORATE_TEMPLATE_ID) {
+    return toast("Esta opcion imprime la plantilla HTML Corporativo.");
+  }
+  const win = window.open("", "_blank");
+  if (!win) return toast("Tu navegador bloqueo la ventana emergente.");
+  try {
+    const res = await fetch("./Corporativo.html", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    let html = await res.text();
+    html = html.replace("<head>", `<head><base href="${escapeHtml(String(window.location.href || ""))}" />`);
+    const ctx = buildTemplatePrintContextFromQuoteForm();
+    html = fillTemplateHtmlTokens(html, ctx);
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => {
+      try {
+        win.focus();
+        win.print();
+      } catch (_) { }
+    }, 700);
+  } catch (err) {
+    try { win.close(); } catch (_) { }
+    console.error("No se pudo imprimir plantilla Corporativo:", err?.message || err);
+    toast("No se pudo abrir la plantilla Corporativo.");
+  }
 }
 
 async function promptTextRequired({ title, label = "", placeholder = "" }) {
@@ -763,7 +1028,7 @@ async function manageSalonesFromQuickMenu() {
 }
 
 async function manageInstitutionsFromQuickMenu() {
-  const action = await promptCrudAction("Instituciones");
+  const action = await promptCrudAction("Empresas");
   if (!action) return;
   if (action === "add") return openCompanyModal();
 
@@ -772,7 +1037,7 @@ async function manageInstitutionsFromQuickMenu() {
   );
   if (!companies.length) return toast("No hay instituciones registradas.");
   const selectedId = await promptSelectRequired({
-    title: action === "edit" ? "Editar institucion" : "Inhabilitar institucion",
+    title: action === "edit" ? "Editar empresa" : "Inhabilitar empresa",
     options: companies.map((c) => ({
       value: c.id,
       label: `${c.name}${isCompanyDisabled(c.id) ? " (Inhabilitada)" : ""}`,
@@ -789,7 +1054,7 @@ async function manageInstitutionsFromQuickMenu() {
     persist();
     renderCompaniesSelect();
   }
-  toast("Institucion inhabilitada.");
+  toast("Empresa inhabilitada.");
 }
 
 async function manageServicesFromQuickMenu() {
@@ -1017,153 +1282,567 @@ async function manageGlobalGoalsFromQuickMenu() {
   toast("Meta global eliminada.");
 }
 
-function renderTemplateSelect(selectedId = "") {
-  if (!el.templateSelect) return;
-  el.templateSelect.innerHTML = "";
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = quickTemplates.length
-    ? "Selecciona plantilla guardada"
-    : "Sin plantillas guardadas";
-  el.templateSelect.appendChild(placeholder);
+async function readMenuCatalog(kind, extraQuery = "") {
+  const q = String(extraQuery || "").trim();
+  const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, `menu-catalog/${encodeURIComponent(kind)}${q ? `?${q}` : ""}`);
+  const res = await fetch(endpoint, { cache: "no-store" });
+  if (!res.ok) throw new Error(`menu_catalog_read_${kind}`);
+  const payload = await res.json();
+  return Array.isArray(payload?.items) ? payload.items : [];
+}
 
-  const ordered = quickTemplates
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
-  for (const t of ordered) {
+async function createMenuCatalog(kind, body) {
+  const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, `menu-catalog/${encodeURIComponent(kind)}`);
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const payload = await res.json();
+      detail = String(payload?.detail || payload?.message || "").trim();
+    } catch (_) { }
+    throw new Error(detail || `menu_catalog_create_${kind}`);
+  }
+}
+
+async function updateMenuCatalog(kind, id, body) {
+  const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, `menu-catalog/${encodeURIComponent(kind)}/${encodeURIComponent(String(id || ""))}`);
+  const res = await fetch(endpoint, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const payload = await res.json();
+      detail = String(payload?.detail || payload?.message || "").trim();
+    } catch (_) { }
+    throw new Error(detail || `menu_catalog_update_${kind}`);
+  }
+}
+
+async function readMenuSuggestions({ platoId, preparacionId }) {
+  const q = `plato_id=${encodeURIComponent(String(platoId || ""))}&preparacion_id=${encodeURIComponent(String(preparacionId || ""))}`;
+  const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, `menu-suggestions?${q}`);
+  const res = await fetch(endpoint, { cache: "no-store" });
+  if (!res.ok) throw new Error("menu_suggestions_read_failed");
+  return res.json();
+}
+
+async function saveMenuSuggestions(payload) {
+  const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, "menu-suggestions");
+  const res = await fetch(endpoint, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const body = await res.json();
+      detail = String(body?.detail || body?.message || "").trim();
+    } catch (_) { }
+    throw new Error(detail || "menu_suggestions_save_failed");
+  }
+}
+
+function renderMenuSuggestionCheckboxList(container, items, selectedIds) {
+  if (!container) return;
+  container.innerHTML = "";
+  const rows = Array.isArray(items) ? items.filter((x) => x && x.activo !== false) : [];
+  if (!rows.length) {
+    container.innerHTML = `<div class="menuSuggestEmpty">Sin datos en catalogo.</div>`;
+    return;
+  }
+  const selectedSet = new Set((Array.isArray(selectedIds) ? selectedIds : []).map((x) => String(x)));
+  for (const item of rows) {
+    const id = String(item.id || "").trim();
+    if (!id) continue;
+    const isChecked = selectedSet.has(id);
+    const row = document.createElement("label");
+    row.className = "menuSuggestRow";
+    row.dataset.mmSuggestId = id;
+    row.draggable = isChecked;
+    row.classList.toggle("isChecked", isChecked);
+    row.innerHTML = `
+      <span class="menuSuggestDrag" title="Arrastra para priorizar">&#9776;</span>
+      <input type="checkbox" value="${escapeHtml(id)}" ${isChecked ? "checked" : ""} />
+      <span>${escapeHtml(String(item.nombre || "").trim())}</span>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function selectedIdsFromChecklist(container) {
+  if (!container) return [];
+  const out = [];
+  const checks = container.querySelectorAll("input[type='checkbox']:checked");
+  for (const node of checks) {
+    const n = Number(node.value);
+    if (Number.isFinite(n) && n > 0) out.push(n);
+  }
+  return out;
+}
+
+function setMenuSuggestRowDraggableByCheckbox(row) {
+  if (!row) return;
+  const checkbox = row.querySelector("input[type='checkbox']");
+  const isChecked = !!checkbox?.checked;
+  row.draggable = isChecked;
+  row.classList.toggle("isChecked", isChecked);
+}
+
+function bindMenuSuggestDnD(container) {
+  if (!container) return;
+
+  container.addEventListener("change", (e) => {
+    const checkbox = e.target.closest("input[type='checkbox']");
+    if (!checkbox) return;
+    const row = checkbox.closest(".menuSuggestRow");
+    setMenuSuggestRowDraggableByCheckbox(row);
+  });
+
+  container.addEventListener("dragstart", (e) => {
+    const row = e.target.closest(".menuSuggestRow");
+    if (!row || !row.draggable) return;
+    menuSuggestionDraggingRow = row;
+    row.classList.add("isDragging");
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", row.dataset.mmSuggestId || "");
+    }
+  });
+
+  container.addEventListener("dragover", (e) => {
+    if (!menuSuggestionDraggingRow) return;
+    e.preventDefault();
+    const over = e.target.closest(".menuSuggestRow");
+    if (!over || over === menuSuggestionDraggingRow || over.parentElement !== container) return;
+    const rect = over.getBoundingClientRect();
+    const placeAfter = e.clientY > (rect.top + rect.height / 2);
+    container.insertBefore(menuSuggestionDraggingRow, placeAfter ? over.nextSibling : over);
+  });
+
+  container.addEventListener("drop", (e) => {
+    if (!menuSuggestionDraggingRow) return;
+    e.preventDefault();
+  });
+
+  container.addEventListener("dragend", () => {
+    if (menuSuggestionDraggingRow) {
+      menuSuggestionDraggingRow.classList.remove("isDragging");
+    }
+    menuSuggestionDraggingRow = null;
+  });
+}
+
+function formatPlatoCatalogLabel(item) {
+  const name = String(item?.nombre || "").trim() || "(sin nombre)";
+  const tipo = String(item?.tipo_plato || "NORMAL").trim();
+  const sinProteina = item?.es_sin_proteina === true || Number(item?.es_sin_proteina) !== 0;
+  const tags = [];
+  if (tipo && tipo !== "NORMAL") tags.push(tipo);
+  if (sinProteina) tags.push("SIN PROTEINA");
+  return tags.length ? `${name} [${tags.join(" | ")}]` : name;
+}
+
+function resetMenuCatalogManagerForm() {
+  menuCatalogManagerEditingId = "";
+  if (el.menuCatalogName) el.menuCatalogName.value = "";
+  if (el.menuCatalogDishType) el.menuCatalogDishType.value = "NORMAL";
+  if (el.menuCatalogNoProtein) el.menuCatalogNoProtein.checked = false;
+}
+
+function syncMenuCatalogManagerFormByKind() {
+  const kind = String(el.menuCatalogKind?.value || menuCatalogManagerKind || "plato_fuerte");
+  menuCatalogManagerKind = kind;
+  const isPlato = kind === "plato_fuerte";
+  const isPrep = kind === "preparacion";
+  if (el.menuCatalogDishTypeWrap) el.menuCatalogDishTypeWrap.hidden = !isPlato;
+  if (el.menuCatalogNoProteinWrap) el.menuCatalogNoProteinWrap.hidden = !isPlato;
+  if (el.menuCatalogProteinWrap) el.menuCatalogProteinWrap.hidden = !isPrep;
+}
+
+async function loadMenuCatalogProteinOptionsForManager() {
+  if (!el.menuCatalogProtein) return [];
+  const platos = await readMenuCatalog("plato_fuerte");
+  el.menuCatalogProtein.innerHTML = "";
+  for (const p of platos.filter((x) => x && x.activo !== false)) {
     const opt = document.createElement("option");
-    opt.value = t.id;
-    opt.textContent = t.name;
-    el.templateSelect.appendChild(opt);
+    opt.value = String(p.id);
+    opt.textContent = formatPlatoCatalogLabel(p);
+    el.menuCatalogProtein.appendChild(opt);
   }
-  el.templateSelect.value = selectedId || "";
+  if (!el.menuCatalogProtein.options.length) {
+    el.menuCatalogProtein.innerHTML = `<option value="">Sin proteinas activas</option>`;
+  }
+  return platos;
 }
 
-function addTemplateFormulaRow({ key = "", expression = "" } = {}) {
-  if (!el.templateFormulaBody) return;
-  const tr = document.createElement("tr");
-  tr.className = "templateFormulaRow";
-  tr.innerHTML = `
-    <td><input class="quoteInput formulaKey" type="text" placeholder="ej: impuesto" value="${escapeHtml(key)}" /></td>
-    <td><input class="quoteInput formulaExpr" type="text" placeholder="ej: monto.total * 0.12" value="${escapeHtml(expression)}" /></td>
-    <td class="formulaRowActions"><button class="btnDanger formulaRemoveBtn" type="button">X</button></td>
-  `;
-  el.templateFormulaBody.appendChild(tr);
+function renderMenuCatalogManagerRows(kind, rows, proteins = []) {
+  if (!el.menuCatalogBody) return;
+  el.menuCatalogBody.innerHTML = "";
+  const list = Array.isArray(rows) ? rows : [];
+  if (!list.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="4">Sin registros.</td>`;
+    el.menuCatalogBody.appendChild(tr);
+    return;
+  }
+  const proteinById = new Map((Array.isArray(proteins) ? proteins : []).map((p) => [String(p.id), p]));
+  for (const item of list) {
+    const tr = document.createElement("tr");
+    const id = String(item.id || "");
+    const isActive = item.activo !== false;
+    let detail = "-";
+    if (kind === "plato_fuerte") {
+      const tipo = String(item.tipo_plato || "NORMAL");
+      const sp = item.es_sin_proteina ? " | SIN PROTEINA" : "";
+      detail = `${tipo}${sp}`;
+    } else if (kind === "preparacion") {
+      const protein = proteinById.get(String(item.id_plato_fuerte || ""));
+      detail = `Proteina: ${protein ? formatPlatoCatalogLabel(protein) : String(item.id_plato_fuerte || "-")}`;
+    } else if (kind === "montaje_adicional") {
+      detail = String(item.tipo || "-");
+    }
+    tr.innerHTML = `
+      <td>${escapeHtml(String(item.nombre || "-"))}</td>
+      <td>${escapeHtml(detail)}</td>
+      <td>${isActive ? "Activo" : "Inhabilitado"}</td>
+      <td>
+        <div class="appointmentActions">
+          <button type="button" class="btn" data-mmcat-action="edit" data-mmcat-id="${escapeHtml(id)}">Editar</button>
+          <button type="button" class="btnDanger" data-mmcat-action="toggle" data-mmcat-id="${escapeHtml(id)}">${isActive ? "Inhabilitar" : "Reactivar"}</button>
+        </div>
+      </td>
+    `;
+    el.menuCatalogBody.appendChild(tr);
+  }
 }
 
-function addTemplatePositionRow({
-  label = "",
-  token = "",
-  x = 50,
-  y = 50,
-  w = null,
-  h = null,
-  fontSize = 12,
-  fontFamily = "Arial",
-  bold = false,
-  italic = false,
-} = {}) {
-  const isSignature = isTemplateSignatureToken(token);
-  const minW = isSignature ? TEMPLATE_SIGNATURE_MIN_W_PCT : 4;
-  const minH = isSignature ? TEMPLATE_SIGNATURE_MIN_H_PCT : 2;
-  const baseW = Number.isFinite(Number(w))
-    ? Number(w)
-    : (isSignature ? Number(templateUiState.signatureDefaultW || TEMPLATE_SIGNATURE_FALLBACK_W_PCT) : TEMPLATE_SIGNATURE_FALLBACK_W_PCT);
-  const baseH = Number.isFinite(Number(h))
-    ? Number(h)
-    : (isSignature ? Number(templateUiState.signatureDefaultH || TEMPLATE_SIGNATURE_FALLBACK_H_PCT) : TEMPLATE_SIGNATURE_FALLBACK_H_PCT);
-  const widthValue = clamp(baseW, minW, isSignature ? TEMPLATE_SIGNATURE_MAX_W_PCT : 95);
-  const heightValue = clamp(baseH, minH, isSignature ? TEMPLATE_SIGNATURE_MAX_H_PCT : 60);
-  if (!el.templatePositionBody) return;
-  const tr = document.createElement("tr");
-  tr.className = "templatePositionRow";
-  tr.dataset.signature = isSignature ? "1" : "0";
-  tr.innerHTML = `
-    <td><input class="quoteInput posLabel" type="text" placeholder="Ej: Firma cliente" value="${escapeHtml(label)}" /></td>
-    <td><input class="quoteInput posToken" type="text" placeholder="{{cliente.firma}}" value="${escapeHtml(token)}" /></td>
-    <td><input class="quoteInput posX" type="number" min="0" max="100" step="0.1" value="${escapeHtml(String(clamp(Number(x), 0, 100)))}" /></td>
-    <td><input class="quoteInput posY" type="number" min="0" max="100" step="0.1" value="${escapeHtml(String(clamp(Number(y), 0, 100)))}" /></td>
-    <td><input class="quoteInput posW" type="number" min="${isSignature ? TEMPLATE_SIGNATURE_MIN_W_PCT : 4}" max="${isSignature ? TEMPLATE_SIGNATURE_MAX_W_PCT : 95}" step="0.1" value="${escapeHtml(String(widthValue))}" ${isSignature ? "" : "disabled"} /></td>
-    <td><input class="quoteInput posH" type="number" min="${isSignature ? TEMPLATE_SIGNATURE_MIN_H_PCT : 2}" max="${isSignature ? TEMPLATE_SIGNATURE_MAX_H_PCT : 60}" step="0.1" value="${escapeHtml(String(heightValue))}" ${isSignature ? "" : "disabled"} /></td>
-    <td><input class="quoteInput posFontSize" type="number" min="8" max="72" step="1" value="${escapeHtml(String(clamp(Number(fontSize), 8, 72)))}" /></td>
-    <td>
-      <select class="quoteInput posFontFamily">
-        <option value="Arial"${fontFamily === "Arial" ? " selected" : ""}>Arial</option>
-        <option value="Calibri"${fontFamily === "Calibri" ? " selected" : ""}>Calibri</option>
-        <option value="Verdana"${fontFamily === "Verdana" ? " selected" : ""}>Verdana</option>
-        <option value="Tahoma"${fontFamily === "Tahoma" ? " selected" : ""}>Tahoma</option>
-        <option value="Georgia"${fontFamily === "Georgia" ? " selected" : ""}>Georgia</option>
-        <option value="Avant Garde"${fontFamily === "Avant Garde" ? " selected" : ""}>Avant Garde</option>
-        <option value="Times New Roman"${fontFamily === "Times New Roman" ? " selected" : ""}>Times New Roman</option>
-        <option value="Courier New"${fontFamily === "Courier New" ? " selected" : ""}>Courier New</option>
-      </select>
-    </td>
-    <td><input class="posBold" type="checkbox"${bold ? " checked" : ""} /></td>
-    <td><input class="posItalic" type="checkbox"${italic ? " checked" : ""} /></td>
-    <td class="formulaRowActions"><button class="btnDanger posRemoveBtn" type="button">X</button></td>
-  `;
-  el.templatePositionBody.appendChild(tr);
-  applyTemplatePositionRowSignatureState(tr);
+async function refreshMenuCatalogManagerRows() {
+  const kind = String(el.menuCatalogKind?.value || menuCatalogManagerKind || "plato_fuerte");
+  menuCatalogManagerKind = kind;
+  const proteins = await loadMenuCatalogProteinOptionsForManager();
+  let rows;
+  if (kind === "preparacion") {
+    const proteinId = Number(el.menuCatalogProtein?.value || 0);
+    rows = await readMenuCatalog("preparacion", `plato_id=${encodeURIComponent(String(proteinId || ""))}`);
+  } else {
+    rows = await readMenuCatalog(kind);
+  }
+  menuCatalogManagerRows = Array.isArray(rows) ? rows : [];
+  renderMenuCatalogManagerRows(kind, menuCatalogManagerRows, proteins);
 }
 
-function addPresetFieldToTemplatePosition(label, token) {
-  if (!el.templatePositionBody) return;
-  const markerLayer = el.templatePagePreview?.querySelector(".templateMarkerLayer");
-  const canvas = el.templatePagePreview;
-  const totalHeight = Math.max(1, markerLayer?.clientHeight || 1);
-  const defaultX = 50;
-  const defaultY = canvas
-    ? clamp(((canvas.scrollTop + canvas.clientHeight * 0.5) / totalHeight) * 100, 4, 96)
-    : 50;
-  addTemplatePositionRow({ label, token, x: defaultX, y: defaultY });
-  const rows = getTemplatePositionRows();
-  const idx = rows.length - 1;
-  setActiveTemplatePosition(idx);
-  refreshTemplatePreview();
-  rows[idx]?.scrollIntoView({ block: "nearest" });
+async function saveMenuCatalogManagerRecord() {
+  const kind = String(el.menuCatalogKind?.value || menuCatalogManagerKind || "plato_fuerte");
+  const name = String(el.menuCatalogName?.value || "").trim();
+  if (!name) return toast("Nombre requerido.");
+  const editingId = String(menuCatalogManagerEditingId || "").trim();
+
+  if (kind === "preparacion") {
+    const proteinId = Number(el.menuCatalogProtein?.value || 0);
+    if (!Number.isFinite(proteinId) || proteinId <= 0) return toast("Selecciona proteina base.");
+    if (editingId) {
+      await updateMenuCatalog("preparacion", editingId, {
+        nombre: name,
+        id_plato_fuerte: proteinId,
+        activo: true,
+      });
+    } else {
+      await createMenuCatalog("preparacion", {
+        nombre: name,
+        id_plato_fuerte: proteinId,
+      });
+    }
+  } else if (kind === "plato_fuerte") {
+    const tipoPlato = String(el.menuCatalogDishType?.value || "NORMAL");
+    const sinProteina = !!el.menuCatalogNoProtein?.checked;
+    if (editingId) {
+      await updateMenuCatalog(kind, editingId, {
+        nombre: name,
+        tipo_plato: tipoPlato,
+        es_sin_proteina: sinProteina ? 1 : 0,
+        activo: true,
+      });
+    } else {
+      await createMenuCatalog(kind, {
+        nombre: name,
+        tipo_plato: tipoPlato,
+        es_sin_proteina: sinProteina ? 1 : 0,
+      });
+    }
+  } else {
+    if (editingId) {
+      await updateMenuCatalog(kind, editingId, { nombre: name, activo: true });
+    } else {
+      await createMenuCatalog(kind, { nombre: name });
+    }
+  }
+
+  resetMenuCatalogManagerForm();
+  await refreshMenuCatalogManagerRows();
 }
 
-function collectTemplatePositionedFields() {
-  if (!el.templatePositionBody) return [];
-  const rows = Array.from(el.templatePositionBody.querySelectorAll(".templatePositionRow"));
-  const result = [];
-  for (const row of rows) {
-    const label = String(row.querySelector(".posLabel")?.value || "").trim();
-    const token = String(row.querySelector(".posToken")?.value || "").trim();
-    const x = clamp(Number(row.querySelector(".posX")?.value || 0), 0, 100);
-    const y = clamp(Number(row.querySelector(".posY")?.value || 0), 0, 100);
-    const isSignature = row.dataset.signature === "1";
-    const minW = isSignature ? TEMPLATE_SIGNATURE_MIN_W_PCT : 4;
-    const minH = isSignature ? TEMPLATE_SIGNATURE_MIN_H_PCT : 2;
-    const w = clamp(Number(row.querySelector(".posW")?.value || TEMPLATE_SIGNATURE_FALLBACK_W_PCT), minW, isSignature ? TEMPLATE_SIGNATURE_MAX_W_PCT : 95);
-    const h = clamp(Number(row.querySelector(".posH")?.value || TEMPLATE_SIGNATURE_FALLBACK_H_PCT), minH, isSignature ? TEMPLATE_SIGNATURE_MAX_H_PCT : 60);
-    const fontSize = clamp(Number(row.querySelector(".posFontSize")?.value || 12), 8, 72);
-    const fontFamily = String(row.querySelector(".posFontFamily")?.value || "Arial").trim() || "Arial";
-    const bold = row.querySelector(".posBold")?.checked === true;
-    const italic = row.querySelector(".posItalic")?.checked === true;
-    if (!label && !token) continue;
-    result.push({
-      label,
-      token,
-      x,
-      y,
-      w,
-      h,
-      xPt: Number(((x / 100) * TEMPLATE_COORD_BASE_W_PT).toFixed(2)),
-      yPt: Number(((y / 100) * TEMPLATE_COORD_BASE_H_PT).toFixed(2)),
-      wPt: Number(((w / 100) * TEMPLATE_COORD_BASE_W_PT).toFixed(2)),
-      hPt: Number(((h / 100) * TEMPLATE_COORD_BASE_H_PT).toFixed(2)),
-      isSignature,
-      fontSize,
-      fontFamily,
-      bold,
-      italic,
+async function openMenuCatalogManagerModal(initialKind = "plato_fuerte") {
+  if (!el.menuCatalogBackdrop || !el.menuCatalogKind) return;
+  menuCatalogManagerEditingId = "";
+  menuCatalogManagerKind = String(initialKind || "plato_fuerte");
+  el.menuCatalogKind.value = menuCatalogManagerKind;
+  resetMenuCatalogManagerForm();
+  syncMenuCatalogManagerFormByKind();
+  await refreshMenuCatalogManagerRows();
+  el.menuCatalogBackdrop.hidden = false;
+}
+
+function closeMenuCatalogManagerModal() {
+  if (!el.menuCatalogBackdrop) return;
+  el.menuCatalogBackdrop.hidden = true;
+  resetMenuCatalogManagerForm();
+}
+
+async function refreshMenuSuggestionsModalData() {
+  if (!el.menuSuggestionsProtein || !el.menuSuggestionsPreparation) return;
+  const platoId = Number(el.menuSuggestionsProtein.value || 0);
+  const preparacionId = Number(el.menuSuggestionsPreparation.value || 0);
+  if (!Number.isFinite(platoId) || platoId <= 0 || !Number.isFinite(preparacionId) || preparacionId <= 0) {
+    renderMenuSuggestionCheckboxList(el.menuSuggestionsSalsas, [], []);
+    renderMenuSuggestionCheckboxList(el.menuSuggestionsPostres, [], []);
+    renderMenuSuggestionCheckboxList(el.menuSuggestionsGuarniciones, [], []);
+    return;
+  }
+
+  const [salsas, postres, guarniciones, links] = await Promise.all([
+    readMenuCatalog("salsa"),
+    readMenuCatalog("postre"),
+    readMenuCatalog("guarnicion"),
+    readMenuSuggestions({ platoId, preparacionId }),
+  ]);
+  renderMenuSuggestionCheckboxList(el.menuSuggestionsSalsas, salsas, links?.salsaIds || []);
+  renderMenuSuggestionCheckboxList(el.menuSuggestionsPostres, postres, links?.postreIds || []);
+  renderMenuSuggestionCheckboxList(el.menuSuggestionsGuarniciones, guarniciones, links?.guarnicionIds || []);
+}
+
+async function openMenuSuggestionsModal() {
+  if (!el.menuSuggestionsBackdrop || !el.menuSuggestionsProtein || !el.menuSuggestionsPreparation) return;
+  const platos = await readMenuCatalog("plato_fuerte");
+  el.menuSuggestionsProtein.innerHTML = "";
+  for (const p of platos.filter((x) => x && x.activo !== false)) {
+    const opt = document.createElement("option");
+    opt.value = String(p.id);
+    opt.textContent = formatPlatoCatalogLabel(p);
+    el.menuSuggestionsProtein.appendChild(opt);
+  }
+  if (!el.menuSuggestionsProtein.options.length) {
+    el.menuSuggestionsProtein.innerHTML = `<option value="">Sin proteinas registradas</option>`;
+    el.menuSuggestionsPreparation.innerHTML = `<option value="">Sin preparaciones</option>`;
+    renderMenuSuggestionCheckboxList(el.menuSuggestionsSalsas, [], []);
+    renderMenuSuggestionCheckboxList(el.menuSuggestionsPostres, [], []);
+    renderMenuSuggestionCheckboxList(el.menuSuggestionsGuarniciones, [], []);
+    el.menuSuggestionsBackdrop.hidden = false;
+    return;
+  }
+
+  const proteinId = Number(el.menuSuggestionsProtein.value || el.menuSuggestionsProtein.options[0].value || 0);
+  const preps = await readMenuCatalog("preparacion", `plato_id=${encodeURIComponent(String(proteinId || ""))}`);
+  el.menuSuggestionsPreparation.innerHTML = "";
+  for (const p of preps.filter((x) => x && x.activo !== false)) {
+    const opt = document.createElement("option");
+    opt.value = String(p.id);
+    opt.textContent = String(p.nombre || "");
+    el.menuSuggestionsPreparation.appendChild(opt);
+  }
+  if (!el.menuSuggestionsPreparation.options.length) {
+    el.menuSuggestionsPreparation.innerHTML = `<option value="">Sin preparaciones para esta proteina</option>`;
+  }
+
+  await refreshMenuSuggestionsModalData();
+  el.menuSuggestionsBackdrop.hidden = false;
+}
+
+function closeMenuSuggestionsModal() {
+  if (!el.menuSuggestionsBackdrop) return;
+  el.menuSuggestionsBackdrop.hidden = true;
+}
+
+async function manageMenuMontajeCatalogFromQuickMenu() {
+  const kind = await promptSelectRequired({
+    title: "Catalogo Menu & Montaje",
+    options: [
+      { value: "plato_fuerte", label: "Proteina / Plato fuerte" },
+      { value: "preparacion", label: "Preparacion (ej. empanizado)" },
+      { value: "salsa", label: "Salsa o aderezo" },
+      { value: "guarnicion", label: "Guarnicion" },
+      { value: "postre", label: "Postre" },
+      { value: "comentario", label: "Comentario adicional" },
+      { value: "montaje_tipo", label: "Tipo de montaje" },
+      { value: "montaje_adicional", label: "Adicional de montaje" },
+    ],
+  });
+  if (!kind) return;
+
+  const action = await promptCrudAction("Catalogo");
+  if (!action) return;
+
+  const titleByKind = {
+    plato_fuerte: "Nueva proteina / plato fuerte",
+    salsa: "Nueva salsa o aderezo",
+    guarnicion: "Nueva guarnicion",
+    postre: "Nuevo postre",
+    comentario: "Nuevo comentario adicional",
+    montaje_tipo: "Nuevo tipo de montaje",
+    montaje_adicional: "Nuevo adicional de montaje",
+  };
+
+  if (kind === "preparacion") {
+    const platos = await readMenuCatalog("plato_fuerte");
+    if (!platos.length) return toast("Primero agrega una proteina/plato fuerte.");
+    const platoId = await promptSelectRequired({
+      title: "Proteina base",
+      options: platos.map((p) => ({ value: String(p.id), label: formatPlatoCatalogLabel(p) })),
     });
+    if (!platoId) return;
+
+    const preparaciones = await readMenuCatalog("preparacion", `plato_id=${encodeURIComponent(String(platoId))}`);
+    if (action === "add") {
+      const nombrePrep = await promptTextRequired({
+        title: "Nueva preparacion",
+        label: "Nombre de la preparacion",
+        placeholder: "Ej: A la parrilla",
+      });
+      if (!nombrePrep) return;
+      await createMenuCatalog("preparacion", {
+        nombre: nombrePrep,
+        id_plato_fuerte: Number(platoId),
+      });
+      return toast("Preparacion de menu agregada.");
+    }
+
+    if (!preparaciones.length) return toast("No hay preparaciones registradas para esa proteina.");
+    const selectedPrepId = await promptSelectRequired({
+      title: action === "edit" ? "Editar preparacion" : "Inhabilitar preparacion",
+      options: preparaciones.map((p) => ({
+        value: String(p.id),
+        label: `${String(p.nombre || "")}${p.activo === false ? " (Inhabilitada)" : ""}`,
+      })),
+    });
+    if (!selectedPrepId) return;
+
+    if (action === "edit") {
+      const target = preparaciones.find((p) => String(p.id) === String(selectedPrepId));
+      const nextName = await promptTextRequired({
+        title: "Nuevo nombre de preparacion",
+        label: "Nombre",
+        placeholder: String(target?.nombre || ""),
+      });
+      if (!nextName) return;
+      await updateMenuCatalog("preparacion", selectedPrepId, {
+        nombre: nextName,
+        activo: true,
+        id_plato_fuerte: Number(platoId),
+      });
+      return toast("Preparacion actualizada.");
+    }
+
+    await updateMenuCatalog("preparacion", selectedPrepId, { activo: false });
+    return toast("Preparacion inhabilitada.");
   }
-  return result;
+
+  const items = await readMenuCatalog(kind);
+  if (action === "add") {
+    const nombre = await promptTextRequired({
+      title: titleByKind[kind] || "Nuevo registro",
+      label: "Nombre",
+      placeholder: "Escribe el nombre",
+    });
+    if (!nombre) return;
+    if (kind === "plato_fuerte") {
+      const tipoPlato = await promptSelectRequired({
+        title: "Tipo de plato",
+        options: [
+          { value: "NORMAL", label: "Normal" },
+          { value: "VEGETARIANO", label: "Vegetariano" },
+          { value: "VEGANO", label: "Vegano" },
+        ],
+      });
+      if (!tipoPlato) return;
+      const sinProteina = await promptSelectRequired({
+        title: "Este plato puede ser sin proteina?",
+        options: [
+          { value: "0", label: "No" },
+          { value: "1", label: "Si" },
+        ],
+      });
+      if (sinProteina === null || sinProteina === undefined) return;
+      await createMenuCatalog(kind, {
+        nombre,
+        tipo_plato: tipoPlato,
+        es_sin_proteina: Number(sinProteina) ? 1 : 0,
+      });
+    } else {
+      await createMenuCatalog(kind, { nombre });
+    }
+    return toast("Catalogo de Menu & Montaje actualizado.");
+  }
+
+  if (!items.length) return toast("No hay registros en ese catalogo.");
+  const selectedId = await promptSelectRequired({
+    title: action === "edit" ? "Editar registro" : "Inhabilitar registro",
+    options: items.map((it) => ({
+      value: String(it.id),
+      label: `${kind === "plato_fuerte" ? formatPlatoCatalogLabel(it) : String(it.nombre || "")}${it.activo === false ? " (Inhabilitado)" : ""}`,
+    })),
+  });
+  if (!selectedId) return;
+
+  if (action === "edit") {
+    const target = items.find((it) => String(it.id) === String(selectedId));
+    const nextName = await promptTextRequired({
+      title: "Nuevo nombre",
+      label: "Nombre",
+      placeholder: String(target?.nombre || ""),
+    });
+    if (!nextName) return;
+    if (kind === "plato_fuerte") {
+      const tipoPlato = await promptSelectRequired({
+        title: "Tipo de plato",
+        options: [
+          { value: "NORMAL", label: "Normal" },
+          { value: "VEGETARIANO", label: "Vegetariano" },
+          { value: "VEGANO", label: "Vegano" },
+        ],
+      });
+      if (!tipoPlato) return;
+      const sinProteina = await promptSelectRequired({
+        title: "Este plato puede ser sin proteina?",
+        options: [
+          { value: "0", label: "No" },
+          { value: "1", label: "Si" },
+        ],
+      });
+      if (sinProteina === null || sinProteina === undefined) return;
+      await updateMenuCatalog(kind, selectedId, {
+        nombre: nextName,
+        activo: true,
+        tipo_plato: tipoPlato,
+        es_sin_proteina: Number(sinProteina) ? 1 : 0,
+      });
+    } else {
+      await updateMenuCatalog(kind, selectedId, { nombre: nextName, activo: true });
+    }
+    return toast("Registro actualizado.");
+  }
+
+  await updateMenuCatalog(kind, selectedId, { activo: false });
+  toast("Registro inhabilitado.");
 }
 
-async function readImageFileAsDataUrl(file) {
+function readImageFileAsDataUrl(file) {
   return new Promise((resolve) => {
     if (!file) return resolve("");
     const reader = new FileReader();
@@ -1171,6 +1850,11 @@ async function readImageFileAsDataUrl(file) {
     reader.onerror = () => resolve("");
     reader.readAsDataURL(file);
   });
+}
+
+function isTemplateSignatureToken(token) {
+  const t = String(token || "").toLowerCase().trim();
+  return t === "{{cliente.firma}}" || t === "{{vendedor.firma}}" || t.includes(".firma");
 }
 
 function normalizeTemplateSignatureDefaults(rawDefaults, positionedFields = []) {
@@ -1181,49 +1865,6 @@ function normalizeTemplateSignatureDefaults(rawDefaults, positionedFields = []) 
     w: clamp(Number(rawDefaults?.w || fallbackW), TEMPLATE_SIGNATURE_MIN_W_PCT, TEMPLATE_SIGNATURE_MAX_W_PCT),
     h: clamp(Number(rawDefaults?.h || fallbackH), TEMPLATE_SIGNATURE_MIN_H_PCT, TEMPLATE_SIGNATURE_MAX_H_PCT),
   };
-}
-
-function getTemplateSignatureDefaultsFromEditor(positionedFields = null) {
-  const fields = Array.isArray(positionedFields) ? positionedFields : collectTemplatePositionedFields();
-  const firstSignature = fields.find((p) => p?.isSignature === true || isTemplateSignatureToken(p?.token));
-  const defaults = normalizeTemplateSignatureDefaults({
-    w: firstSignature?.w || templateUiState.signatureDefaultW || TEMPLATE_SIGNATURE_FALLBACK_W_PCT,
-    h: firstSignature?.h || templateUiState.signatureDefaultH || TEMPLATE_SIGNATURE_FALLBACK_H_PCT,
-  }, fields);
-  templateUiState.signatureDefaultW = defaults.w;
-  templateUiState.signatureDefaultH = defaults.h;
-  return defaults;
-}
-
-function getBestTemplateSignatureRowIndex() {
-  const rows = getTemplatePositionRows();
-  const activeIdx = templateUiState.activePositionIndex;
-  if (Number.isInteger(activeIdx) && activeIdx >= 0 && rows[activeIdx]?.dataset.signature === "1") return activeIdx;
-  return rows.findIndex((row) => row.dataset.signature === "1");
-}
-
-function fitSignatureRowToAspect(index, ratio = 4) {
-  const rows = getTemplatePositionRows();
-  const row = rows[index];
-  if (!row || row.dataset.signature !== "1") return false;
-  const x = clamp(Number(row.querySelector(".posX")?.value || 0), 0, 100);
-  const y = clamp(Number(row.querySelector(".posY")?.value || 0), 0, 100);
-  const minW = TEMPLATE_SIGNATURE_MIN_W_PCT;
-  const minH = TEMPLATE_SIGNATURE_MIN_H_PCT;
-  const maxW = Math.min(TEMPLATE_SIGNATURE_MAX_W_PCT, Math.max(minW, 100 - x));
-  const maxH = Math.min(TEMPLATE_SIGNATURE_MAX_H_PCT, Math.max(minH, 100 - y));
-  const safeRatio = clamp(Number(ratio) || 4, 1.8, 10);
-  let nextW = clamp(Number(row.querySelector(".posW")?.value || templateUiState.signatureDefaultW || TEMPLATE_SIGNATURE_FALLBACK_W_PCT), minW, maxW);
-  let nextH = clamp(nextW / safeRatio, minH, maxH);
-  if (Math.abs((nextW / Math.max(0.1, nextH)) - safeRatio) > 0.08) {
-    nextW = clamp(nextH * safeRatio, minW, maxW);
-  }
-  updateTemplatePositionSizeRow(index, nextW, nextH);
-  updateTemplateMarkerSize(index, nextW, nextH);
-  syncTemplateSignatureBounds(index);
-  templateUiState.signatureDefaultW = clamp(nextW, minW, TEMPLATE_SIGNATURE_MAX_W_PCT);
-  templateUiState.signatureDefaultH = clamp(nextH, minH, TEMPLATE_SIGNATURE_MAX_H_PCT);
-  return true;
 }
 
 function loadImageFromDataUrl(dataUrl) {
@@ -1298,6 +1939,157 @@ async function analyzeSignatureDataUrl(dataUrl) {
   }
 }
 
+async function normalizeSignatureDataUrlForContract(dataUrl) {
+  const safeData = String(dataUrl || "").trim();
+  if (!isImageDataUrl(safeData)) return "";
+  try {
+    const img = await loadImageFromDataUrl(safeData);
+    const srcW = Math.max(1, Number(img.naturalWidth || img.width || 1));
+    const srcH = Math.max(1, Number(img.naturalHeight || img.height || 1));
+    const scanMax = 1000;
+    const scanScale = Math.min(1, scanMax / Math.max(srcW, srcH));
+    const scanW = Math.max(1, Math.round(srcW * scanScale));
+    const scanH = Math.max(1, Math.round(srcH * scanScale));
+    const scanCanvas = document.createElement("canvas");
+    scanCanvas.width = scanW;
+    scanCanvas.height = scanH;
+    const scanCtx = scanCanvas.getContext("2d", { willReadFrequently: true });
+    if (!scanCtx) return safeData;
+    scanCtx.drawImage(img, 0, 0, scanW, scanH);
+    const pixels = scanCtx.getImageData(0, 0, scanW, scanH).data;
+
+    let minX = scanW;
+    let minY = scanH;
+    let maxX = -1;
+    let maxY = -1;
+    const binary = new Uint8Array(scanW * scanH);
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+      const a = pixels[i + 3];
+      const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      const colorDiff = Math.max(r, g, b) - Math.min(r, g, b);
+      const isInkLike = (a > 18 && luma < 235 && colorDiff > 8) || (a > 30 && luma < 210);
+      const isStroke = isInkLike;
+      if (!isStroke) continue;
+      const p = i / 4;
+      const x = p % scanW;
+      const y = Math.floor(p / scanW);
+      binary[p] = 1;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+
+    const hasStroke = maxX >= minX && maxY >= minY;
+    const srcToScan = 1 / scanScale;
+    let cropX = 0;
+    let cropY = 0;
+    let cropW = srcW;
+    let cropH = srcH;
+
+    if (hasStroke) {
+      const visited = new Uint8Array(scanW * scanH);
+      const qx = new Int32Array(scanW * scanH);
+      const qy = new Int32Array(scanW * scanH);
+      const comps = [];
+      for (let y = 0; y < scanH; y++) {
+        for (let x = 0; x < scanW; x++) {
+          const idx = y * scanW + x;
+          if (!binary[idx] || visited[idx]) continue;
+          let head = 0;
+          let tail = 0;
+          qx[tail] = x;
+          qy[tail] = y;
+          tail++;
+          visited[idx] = 1;
+          let cMinX = x, cMaxX = x, cMinY = y, cMaxY = y, count = 0;
+          while (head < tail) {
+            const cx = qx[head];
+            const cy = qy[head];
+            head++;
+            count++;
+            if (cx < cMinX) cMinX = cx;
+            if (cx > cMaxX) cMaxX = cx;
+            if (cy < cMinY) cMinY = cy;
+            if (cy > cMaxY) cMaxY = cy;
+            for (let oy = -1; oy <= 1; oy++) {
+              for (let ox = -1; ox <= 1; ox++) {
+                if (ox === 0 && oy === 0) continue;
+                const nx = cx + ox;
+                const ny = cy + oy;
+                if (nx < 0 || ny < 0 || nx >= scanW || ny >= scanH) continue;
+                const nIdx = ny * scanW + nx;
+                if (!binary[nIdx] || visited[nIdx]) continue;
+                visited[nIdx] = 1;
+                qx[tail] = nx;
+                qy[tail] = ny;
+                tail++;
+              }
+            }
+          }
+          const cw = cMaxX - cMinX + 1;
+          const ch = cMaxY - cMinY + 1;
+          const ratio = cw / Math.max(1, ch);
+          const cxMid = (cMinX + cMaxX) / 2;
+          const leftWeight = 1 - Math.max(0, (cxMid / Math.max(1, scanW)) - 0.62);
+          const shapeWeight = ratio >= 1.6 ? 1.2 : 0.8;
+          const score = count * leftWeight * shapeWeight;
+          comps.push({ cMinX, cMinY, cMaxX, cMaxY, count, score, ratio });
+        }
+      }
+      let target = null;
+      const minPixels = Math.max(40, Math.floor((scanW * scanH) * 0.0004));
+      const candidates = comps.filter((c) => c.count >= minPixels);
+      if (candidates.length) {
+        candidates.sort((a, b) => b.score - a.score);
+        target = candidates[0];
+      }
+      const bx0Base = target ? target.cMinX : minX;
+      const by0Base = target ? target.cMinY : minY;
+      const bx1Base = target ? target.cMaxX : maxX;
+      const by1Base = target ? target.cMaxY : maxY;
+      const padX = Math.max(6, Math.round((bx1Base - bx0Base + 1) * 0.12));
+      const padY = Math.max(6, Math.round((by1Base - by0Base + 1) * 0.20));
+      const bx0 = Math.max(0, bx0Base - padX);
+      const by0 = Math.max(0, by0Base - padY);
+      const bx1 = Math.min(scanW - 1, bx1Base + padX);
+      const by1 = Math.min(scanH - 1, by1Base + padY);
+      cropX = Math.max(0, Math.floor(bx0 * srcToScan));
+      cropY = Math.max(0, Math.floor(by0 * srcToScan));
+      cropW = Math.min(srcW - cropX, Math.max(1, Math.ceil((bx1 - bx0 + 1) * srcToScan)));
+      cropH = Math.min(srcH - cropY, Math.max(1, Math.ceil((by1 - by0 + 1) * srcToScan)));
+    }
+
+    const targetW = 1100;
+    const targetH = 320;
+    const out = document.createElement("canvas");
+    out.width = targetW;
+    out.height = targetH;
+    const outCtx = out.getContext("2d");
+    if (!outCtx) return safeData;
+    outCtx.clearRect(0, 0, targetW, targetH);
+
+    const padOutX = 28;
+    const padOutY = 26;
+    const availW = targetW - (padOutX * 2);
+    const availH = targetH - (padOutY * 2);
+    const scale = Math.min(availW / Math.max(1, cropW), availH / Math.max(1, cropH));
+    const drawW = Math.max(1, Math.round(cropW * scale));
+    const drawH = Math.max(1, Math.round(cropH * scale));
+    const dx = Math.round((targetW - drawW) / 2);
+    const dy = Math.round((targetH - drawH) / 2);
+    outCtx.imageSmoothingEnabled = true;
+    outCtx.imageSmoothingQuality = "high";
+    outCtx.drawImage(img, cropX, cropY, cropW, cropH, dx, dy, drawW, drawH);
+    return out.toDataURL("image/png");
+  } catch (_) {
+    return safeData;
+  }
+}
+
 function getSignatureWhitespaceWarning(analysis) {
   if (!analysis) return "";
   if (!analysis.hasStroke) return "No se detecta trazo claro de firma. Revisa el archivo.";
@@ -1346,583 +2138,155 @@ function getBestAvailableSignatureDataUrl() {
   return anySig || "";
 }
 
-function setTemplateEditorContent(template) {
-  const t = normalizeTemplateRecord(template) || normalizeTemplateRecord({ name: "" });
-  if (!t) return;
-  activeTemplateId = t.id || "";
-  templateAssetsDraft = { ...t.assets };
-  templateUiState.activePositionIndex = -1;
-  templateUiState.pdfRenderKey = "";
-  templateUiState.signatureDefaultW = clamp(Number(t.signatureDefaults?.w || TEMPLATE_SIGNATURE_FALLBACK_W_PCT), TEMPLATE_SIGNATURE_MIN_W_PCT, TEMPLATE_SIGNATURE_MAX_W_PCT);
-  templateUiState.signatureDefaultH = clamp(Number(t.signatureDefaults?.h || TEMPLATE_SIGNATURE_FALLBACK_H_PCT), TEMPLATE_SIGNATURE_MIN_H_PCT, TEMPLATE_SIGNATURE_MAX_H_PCT);
-  if (el.templateName) el.templateName.value = t.name || "";
-  if (el.templateHeader) el.templateHeader.value = t.header || "";
-  if (el.templateBody) el.templateBody.value = t.body || "";
-  if (el.templateFooter) el.templateFooter.value = t.footer || "";
-  if (el.templateRoomRates) el.templateRoomRates.value = JSON.stringify(t.roomRates || [], null, 2);
-  if (el.templatePositionBody) {
-    el.templatePositionBody.innerHTML = "";
-    for (const p of t.positionedFields || []) addTemplatePositionRow(p);
-    if (!(t.positionedFields || []).length) {
-      addTemplatePositionRow({ label: "Firma cliente", token: "{{cliente.firma}}", x: 25, y: 84 });
-      addTemplatePositionRow({ label: "Firma vendedor", token: "{{vendedor.firma}}", x: 75, y: 84 });
-    }
-  }
-  if (el.templateFormulaBody) {
-    el.templateFormulaBody.innerHTML = "";
-    for (const f of t.formulas || []) addTemplateFormulaRow(f);
-    if (!(t.formulas || []).length) addTemplateFormulaRow();
-  }
-  renderTemplateSelect(activeTemplateId);
-  activeTemplateEditor = el.templateBody || null;
-  refreshTemplatePreview();
+const CHECKLIST_STATUS_CYCLE = ["ok", "x", "na"];
+
+function normalizeChecklistStatus(status) {
+  const s = String(status || "").trim().toLowerCase();
+  if (s === "ok" || s === "x" || s === "na") return s;
+  return "";
 }
 
-function clearTemplateEditor() {
-  activeTemplateId = "";
-  templateAssetsDraft = { pagePdf: "", headerImage: "", footerImage: "" };
-  templateUiState.activePositionIndex = -1;
-  templateUiState.pdfRenderKey = "";
-  templateUiState.dragging = null;
-  templateUiState.signatureDefaultW = TEMPLATE_SIGNATURE_FALLBACK_W_PCT;
-  templateUiState.signatureDefaultH = TEMPLATE_SIGNATURE_FALLBACK_H_PCT;
-  if (el.templateName) el.templateName.value = "";
-  if (el.templateHeader) el.templateHeader.value = "";
-  if (el.templateBody) el.templateBody.value = "";
-  if (el.templateFooter) el.templateFooter.value = "";
-  if (el.templateRoomRates) el.templateRoomRates.value = "";
-  if (el.templateFormulaBody) {
-    el.templateFormulaBody.innerHTML = "";
-    addTemplateFormulaRow();
-  }
-  if (el.templatePositionBody) {
-    el.templatePositionBody.innerHTML = "";
-    addTemplatePositionRow({ label: "Firma cliente", token: "{{cliente.firma}}", x: 25, y: 84 });
-    addTemplatePositionRow({ label: "Firma vendedor", token: "{{vendedor.firma}}", x: 75, y: 84 });
-    addTemplatePositionRow({ label: "Nombre cliente", token: "{{cliente.nombre}}", x: 25, y: 90 });
-    addTemplatePositionRow({ label: "Nombre vendedor", token: "{{vendedor.nombre}}", x: 75, y: 90 });
-  }
-  if (el.templatePageImage) el.templatePageImage.value = "";
-  if (el.templateHeaderImage) el.templateHeaderImage.value = "";
-  if (el.templateFooterImage) el.templateFooterImage.value = "";
-  renderTemplateSelect("");
-  refreshTemplatePreview();
+function checklistStatusLabel(status) {
+  const s = normalizeChecklistStatus(status);
+  if (s === "ok") return "Correcto";
+  if (s === "x") return "X";
+  if (s === "na") return "No aplica";
+  return "Pendiente";
 }
 
-function collectTemplateFormulas() {
-  if (!el.templateFormulaBody) return [];
-  const rows = Array.from(el.templateFormulaBody.querySelectorAll(".templateFormulaRow"));
-  const formulas = [];
-  for (const row of rows) {
-    const key = String(row.querySelector(".formulaKey")?.value || "").trim();
-    const expression = String(row.querySelector(".formulaExpr")?.value || "").trim();
-    if (!key && !expression) continue;
-    formulas.push({ key, expression });
-  }
-  return formulas;
+function checklistStatusBadgeText(status) {
+  const s = normalizeChecklistStatus(status);
+  if (s === "ok") return "OK";
+  if (s === "x") return "X";
+  if (s === "na") return "N/A";
+  return "...";
 }
 
-function collectTemplateDraft() {
-  const name = String(el.templateName?.value || "").trim();
-  const header = String(el.templateHeader?.value || "").trim();
-  const body = String(el.templateBody?.value || "").trim();
-  const footer = String(el.templateFooter?.value || "").trim();
-  const positionedFields = collectTemplatePositionedFields();
-  const formulas = collectTemplateFormulas();
-  const roomRates = parseRoomRatesFromEditor().items;
-  const signatureDefaults = getTemplateSignatureDefaultsFromEditor(positionedFields);
-  return { name, header, body, footer, formulas, positionedFields, signatureDefaults, roomRates, assets: { ...templateAssetsDraft } };
+function cycleChecklistStatus(status) {
+  const s = normalizeChecklistStatus(status);
+  if (!s) return CHECKLIST_STATUS_CYCLE[0];
+  const idx = CHECKLIST_STATUS_CYCLE.indexOf(s);
+  const next = CHECKLIST_STATUS_CYCLE[(idx + 1) % CHECKLIST_STATUS_CYCLE.length];
+  return normalizeChecklistStatus(next);
 }
 
-function parseRoomRatesFromEditor() {
-  const roomRatesRaw = String(el.templateRoomRates?.value || "").trim();
-  if (!roomRatesRaw) return { ok: true, items: [] };
-  try {
-    const parsed = JSON.parse(roomRatesRaw);
-    if (!Array.isArray(parsed)) return { ok: false, items: [] };
-    const items = parsed
-      .map((r) => ({
-        habitacion: String(r?.habitacion || "").trim(),
-        precio: Number(r?.precio || 0),
-      }))
-      .filter((r) => r.habitacion);
-    return { ok: true, items };
-  } catch (_) {
-    return { ok: false, items: [] };
-  }
+function ensureChecklistStores() {
+  if (!Array.isArray(state.checklistTemplateItems)) state.checklistTemplateItems = [];
+  if (!Array.isArray(state.checklistTemplateSections)) state.checklistTemplateSections = ["General"];
+  state.checklistTemplateSections = state.checklistTemplateSections
+    .map((s) => String(s || "").trim())
+    .filter(Boolean);
+  if (!state.checklistTemplateSections.length) state.checklistTemplateSections = ["General"];
+  if (!state.eventChecklists || typeof state.eventChecklists !== "object") state.eventChecklists = {};
 }
 
-function applyTemplateTokenInsertion(token) {
-  const editor = activeTemplateEditor || el.templateBody || el.templateHeader || el.templateFooter;
-  if (!editor) return;
-  const value = String(editor.value || "");
-  const start = Number(editor.selectionStart || 0);
-  const end = Number(editor.selectionEnd || start);
-  const next = `${value.slice(0, start)}${token}${value.slice(end)}`;
-  editor.value = next;
-  const cursor = start + token.length;
-  editor.focus();
-  editor.setSelectionRange(cursor, cursor);
-  refreshTemplatePreview();
-}
-
-function refreshTemplatePreview() {
-  if (!el.templatePreview) return;
-  const draft = collectTemplateDraft();
-  const samples = {
-    "{{cliente.nombre}}": "Juan Perez",
-    "{{cliente.firma}}": "Firma Cliente",
-    "{{cliente.telefono}}": "5555-0101",
-    "{{cliente.direccion}}": "Zona 10, Ciudad",
-    "{{vendedor.nombre}}": "Ana Lopez",
-    "{{vendedor.firma}}": "Firma Vendedor",
-    "{{vendedor.telefono}}": "5555-0202",
-    "{{vendedor.direccion}}": "Sucursal Central",
-    "{{fecha.hoy}}": toISODate(new Date()),
-    "{{fecha.evento}}": toISODate(addDays(new Date(), 15)),
-    "{{evento.nombre}}": "Cena corporativa",
-    "{{evento.pax}}": "120",
-    "{{institucion.nombre}}": "Instituto Ejemplo",
-    "{{monto.total}}": "Q 12,500.00",
-    "{{tabla.habitaciones}}": "[Tabla habitaciones]",
+function normalizeChecklistTemplateItem(raw) {
+  const label = String(raw?.label || raw?.name || "").trim();
+  if (!label) return null;
+  const section = String(raw?.section || "General").trim() || "General";
+  return {
+    id: String(raw?.id || uid()).trim(),
+    label,
+    section,
+    active: raw?.active !== false,
   };
-  const material = [draft.header, draft.body, draft.footer].filter(Boolean).join("\n\n");
-  let preview = material || "Sin contenido.";
-  for (const [token, sample] of Object.entries(samples)) {
-    preview = preview.split(token).join(sample);
+}
+
+function getChecklistSections() {
+  ensureChecklistStores();
+  const fromState = (state.checklistTemplateSections || []).map((s) => String(s || "").trim()).filter(Boolean);
+  const fromItems = (state.checklistTemplateItems || [])
+    .map((x) => String(x?.section || "").trim())
+    .filter(Boolean);
+  const merged = Array.from(new Set(["General", ...fromState, ...fromItems]));
+  state.checklistTemplateSections = merged;
+  return merged;
+}
+
+function getChecklistTemplateItems() {
+  ensureChecklistStores();
+  state.checklistTemplateItems = (state.checklistTemplateItems || [])
+    .map(normalizeChecklistTemplateItem)
+    .filter(Boolean);
+  return state.checklistTemplateItems.filter((x) => x.active !== false);
+}
+
+function normalizeEventChecklistRecord(raw, fallbackEventId = "") {
+  const eventId = String(raw?.eventId || fallbackEventId || "").trim();
+  const items = Array.isArray(raw?.items) ? raw.items : [];
+  return {
+    eventId,
+    notes: String(raw?.notes || "").trim(),
+    items: items.map((it) => ({
+      id: String(it?.id || uid()).trim(),
+      templateId: String(it?.templateId || "").trim(),
+      label: String(it?.label || "").trim(),
+      section: String(it?.section || "General").trim() || "General",
+      status: normalizeChecklistStatus(it?.status),
+      comment: String(it?.comment || "").trim(),
+    })).filter((it) => it.label),
+    updatedAt: String(raw?.updatedAt || "").trim(),
+    completedAt: String(raw?.completedAt || "").trim(),
+  };
+}
+
+function isChecklistCompleted(record) {
+  const items = Array.isArray(record?.items) ? record.items : [];
+  if (!items.length) return false;
+  return items.every((it) => ["ok", "x", "na"].includes(normalizeChecklistStatus(it?.status)));
+}
+
+function getEventChecklistMeta(eventId) {
+  ensureChecklistStores();
+  const key = String(eventId || "").trim();
+  const raw = key ? state.eventChecklists?.[key] : null;
+  const rec = raw ? normalizeEventChecklistRecord(raw, key) : null;
+  return {
+    hasChecklist: !!rec && Array.isArray(rec.items) && rec.items.length > 0,
+    completed: !!rec && isChecklistCompleted(rec),
+    updatedAt: String(rec?.updatedAt || "").trim(),
+  };
+}
+
+function buildEventChecklistDraft(eventId) {
+  ensureChecklistStores();
+  const key = String(eventId || "").trim();
+  const ev = (state.events || []).find((x) => String(x.id || "") === key);
+  if (!ev) return null;
+  const templateItems = getChecklistTemplateItems();
+  const savedRaw = state.eventChecklists?.[key] || null;
+  const saved = savedRaw ? normalizeEventChecklistRecord(savedRaw, key) : null;
+  const savedByTemplate = new Map();
+  const savedByLabel = new Map();
+  for (const it of saved?.items || []) {
+    const tpl = String(it.templateId || "").trim();
+    const lbl = String(it.label || "").trim().toLowerCase();
+    if (tpl) savedByTemplate.set(tpl, it);
+    if (lbl) savedByLabel.set(lbl, it);
   }
-  preview = preview.replace(/\{\{\s*formula:([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, key) => {
-    const row = draft.formulas.find((f) => f.key === key);
-    if (!row) return `[formula:${key}]`;
-    return `[${row.key} = ${row.expression || "sin expresion"}]`;
+  const items = templateItems.map((tpl) => {
+    const tplId = String(tpl.id || "").trim();
+    const lbl = String(tpl.label || "").trim();
+    const savedHit = (tplId && savedByTemplate.get(tplId)) || savedByLabel.get(lbl.toLowerCase()) || null;
+    return {
+      id: String(savedHit?.id || uid()).trim(),
+      templateId: tplId,
+      label: lbl,
+      section: String(tpl.section || "General").trim() || "General",
+      status: normalizeChecklistStatus(savedHit?.status),
+      comment: String(savedHit?.comment || "").trim(),
+    };
   });
-  if (preview.includes("[Tabla habitaciones]") && draft.roomRates.length) {
-    const tableRows = draft.roomRates.map((r) => `${r.habitacion}: Q ${Number(r.precio || 0).toFixed(2)}`).join(" | ");
-    preview = preview.replace("[Tabla habitaciones]", tableRows);
-  }
-  el.templatePreview.textContent = preview;
-  renderTemplatePagePreview(draft);
-}
-
-function getTemplatePositionRows() {
-  return Array.from(el.templatePositionBody?.querySelectorAll(".templatePositionRow") || []);
-}
-
-function setActiveTemplatePosition(index) {
-  templateUiState.activePositionIndex = Number.isInteger(index) ? index : -1;
-  const rows = getTemplatePositionRows();
-  for (let i = 0; i < rows.length; i++) {
-    rows[i].classList.toggle("active", i === templateUiState.activePositionIndex);
-  }
-  const markers = Array.from(el.templatePagePreview?.querySelectorAll(".templatePosBadge") || []);
-  for (let i = 0; i < markers.length; i++) {
-    markers[i].classList.toggle("active", i === templateUiState.activePositionIndex);
-  }
-}
-
-function updateTemplatePositionRow(index, x, y) {
-  const rows = getTemplatePositionRows();
-  const row = rows[index];
-  if (!row) return;
-  const xInput = row.querySelector(".posX");
-  const yInput = row.querySelector(".posY");
-  const isSignature = row.dataset.signature === "1";
-  let maxX = 100;
-  let maxY = 100;
-  if (isSignature) {
-    const width = clamp(Number(row.querySelector(".posW")?.value || TEMPLATE_SIGNATURE_FALLBACK_W_PCT), TEMPLATE_SIGNATURE_MIN_W_PCT, TEMPLATE_SIGNATURE_MAX_W_PCT);
-    const height = clamp(Number(row.querySelector(".posH")?.value || TEMPLATE_SIGNATURE_FALLBACK_H_PCT), TEMPLATE_SIGNATURE_MIN_H_PCT, TEMPLATE_SIGNATURE_MAX_H_PCT);
-    maxX = Math.max(0, 100 - width);
-    maxY = Math.max(0, 100 - height);
-  }
-  if (xInput) xInput.value = clamp(Number(x), 0, maxX).toFixed(1);
-  if (yInput) yInput.value = clamp(Number(y), 0, maxY).toFixed(1);
-}
-
-function updateTemplatePositionSizeRow(index, w, h) {
-  const rows = getTemplatePositionRows();
-  const row = rows[index];
-  if (!row) return;
-  const wInput = row.querySelector(".posW");
-  const hInput = row.querySelector(".posH");
-  const isSignature = row.dataset.signature === "1";
-  const minW = isSignature ? TEMPLATE_SIGNATURE_MIN_W_PCT : 4;
-  const minH = isSignature ? TEMPLATE_SIGNATURE_MIN_H_PCT : 2;
-  if (wInput) wInput.value = clamp(Number(w), minW, isSignature ? TEMPLATE_SIGNATURE_MAX_W_PCT : 95).toFixed(1);
-  if (hInput) hInput.value = clamp(Number(h), minH, isSignature ? TEMPLATE_SIGNATURE_MAX_H_PCT : 60).toFixed(1);
-}
-
-function updateTemplateMarkerPosition(index, x, y) {
-  const marker = el.templatePagePreview?.querySelector(`.templatePosBadge[data-index="${index}"]`);
-  if (!marker) return;
-  marker.style.left = `${clamp(Number(x), 0, 100)}%`;
-  marker.style.top = `${clamp(Number(y), 0, 100)}%`;
-}
-
-function updateTemplateMarkerSize(index, w, h) {
-  const marker = el.templatePagePreview?.querySelector(`.templatePosBadge[data-index="${index}"]`);
-  if (!marker || !marker.classList.contains("signatureBox")) return;
-  marker.style.width = `${clamp(Number(w), TEMPLATE_SIGNATURE_MIN_W_PCT, TEMPLATE_SIGNATURE_MAX_W_PCT)}%`;
-  marker.style.height = `${clamp(Number(h), TEMPLATE_SIGNATURE_MIN_H_PCT, TEMPLATE_SIGNATURE_MAX_H_PCT)}%`;
-}
-
-function isTemplateSignatureToken(token) {
-  const t = String(token || "").toLowerCase().trim();
-  return t === "{{cliente.firma}}" || t === "{{vendedor.firma}}" || t.includes(".firma");
-}
-
-function applyTemplatePositionRowSignatureState(row) {
-  if (!row) return;
-  const token = String(row.querySelector(".posToken")?.value || "").trim();
-  const isSignature = isTemplateSignatureToken(token);
-  row.dataset.signature = isSignature ? "1" : "0";
-  row.classList.toggle("signatureRow", isSignature);
-  const wInput = row.querySelector(".posW");
-  const hInput = row.querySelector(".posH");
-  if (wInput) {
-    wInput.disabled = !isSignature;
-    wInput.min = String(isSignature ? TEMPLATE_SIGNATURE_MIN_W_PCT : 4);
-    wInput.max = String(isSignature ? TEMPLATE_SIGNATURE_MAX_W_PCT : 95);
-    if (isSignature) wInput.value = String(clamp(Number(wInput.value || TEMPLATE_SIGNATURE_FALLBACK_W_PCT), TEMPLATE_SIGNATURE_MIN_W_PCT, TEMPLATE_SIGNATURE_MAX_W_PCT));
-  }
-  if (hInput) {
-    hInput.disabled = !isSignature;
-    hInput.min = String(isSignature ? TEMPLATE_SIGNATURE_MIN_H_PCT : 2);
-    hInput.max = String(isSignature ? TEMPLATE_SIGNATURE_MAX_H_PCT : 60);
-    if (isSignature) hInput.value = String(clamp(Number(hInput.value || TEMPLATE_SIGNATURE_FALLBACK_H_PCT), TEMPLATE_SIGNATURE_MIN_H_PCT, TEMPLATE_SIGNATURE_MAX_H_PCT));
-  }
-}
-
-function renderTemplatePositionMarkers(fields = []) {
-  const layer = el.templatePagePreview?.querySelector(".templateMarkerLayer");
-  if (!layer) return;
-  layer.innerHTML = fields
-    .map((p, idx) => {
-      const left = clamp(Number(p.x), 0, 100);
-      const top = clamp(Number(p.y), 0, 100);
-      const isSignature = p.isSignature === true || isTemplateSignatureToken(p.token);
-      const width = clamp(Number(p.w || TEMPLATE_SIGNATURE_FALLBACK_W_PCT), isSignature ? TEMPLATE_SIGNATURE_MIN_W_PCT : 4, isSignature ? TEMPLATE_SIGNATURE_MAX_W_PCT : 95);
-      const height = clamp(Number(p.h || TEMPLATE_SIGNATURE_FALLBACK_H_PCT), isSignature ? TEMPLATE_SIGNATURE_MIN_H_PCT : 2, isSignature ? TEMPLATE_SIGNATURE_MAX_H_PCT : 60);
-      const label = escapeHtml(p.label || p.token || "Campo");
-      const title = escapeHtml(p.token || "");
-      const fontSize = clamp(Number(p.fontSize || 12), 8, 72);
-      const fontFamily = escapeHtml(String(p.fontFamily || "Arial"));
-      const fontWeight = p.bold ? 800 : 600;
-      const fontStyle = p.italic ? "italic" : "normal";
-      if (isSignature) {
-        return `<div class="templatePosBadge signatureBox${idx === templateUiState.activePositionIndex ? " active" : ""}" data-signature="1" data-index="${idx}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%" title="${title}"><span class="signatureBoxLabel">${label}</span><span class="templateResizeHandle" data-action="resize"></span></div>`;
-      }
-      return `<div class="templatePosBadge${idx === templateUiState.activePositionIndex ? " active" : ""}" data-index="${idx}" style="left:${left}%;top:${top}%;font-size:${fontSize}px;font-family:${fontFamily}, sans-serif;font-weight:${fontWeight};font-style:${fontStyle}" title="${title}">${label}</div>`;
-    })
-    .join("");
-}
-
-function syncTemplateSignatureBounds(index) {
-  const rows = getTemplatePositionRows();
-  const row = rows[index];
-  if (!row || row.dataset.signature !== "1") return;
-  const xInput = row.querySelector(".posX");
-  const yInput = row.querySelector(".posY");
-  const wInput = row.querySelector(".posW");
-  const hInput = row.querySelector(".posH");
-  const w = clamp(Number(wInput?.value || TEMPLATE_SIGNATURE_FALLBACK_W_PCT), TEMPLATE_SIGNATURE_MIN_W_PCT, TEMPLATE_SIGNATURE_MAX_W_PCT);
-  const h = clamp(Number(hInput?.value || TEMPLATE_SIGNATURE_FALLBACK_H_PCT), TEMPLATE_SIGNATURE_MIN_H_PCT, TEMPLATE_SIGNATURE_MAX_H_PCT);
-  const maxX = Math.max(0, 100 - w);
-  const maxY = Math.max(0, 100 - h);
-  if (xInput) xInput.value = clamp(Number(xInput.value || 0), 0, maxX).toFixed(1);
-  if (yInput) yInput.value = clamp(Number(yInput.value || 0), 0, maxY).toFixed(1);
-}
-
-function syncTemplateDocumentHeight() {
-  if (!el.templatePagePreview) return;
-  const doc = el.templatePagePreview.querySelector(".templatePageDocument");
-  const pageLayer = el.templatePagePreview.querySelector(".templatePageLayer.page");
-  const markerLayer = el.templatePagePreview.querySelector(".templateMarkerLayer");
-  if (!doc || !pageLayer || !markerLayer) return;
-  syncTemplatePreviewLetterFrame();
-  const h = Math.max(420, pageLayer.scrollHeight || pageLayer.offsetHeight || 420);
-  doc.style.height = `${h}px`;
-  markerLayer.style.height = `${h}px`;
-}
-
-function syncTemplatePreviewLetterFrame() {
-  if (!el.templatePagePreview) return;
-  const doc = el.templatePagePreview.querySelector(".templatePageDocument");
-  if (!doc) return;
-  const pad = 18;
-  const availW = Math.max(320, (el.templatePagePreview.clientWidth || 760) - pad);
-  const availH = Math.max(420, (el.templatePagePreview.clientHeight || 680) - pad);
-  const ratio = TEMPLATE_COORD_BASE_W_PT / TEMPLATE_COORD_BASE_H_PT;
-  const fitByH = availH * ratio;
-  const frameW = Math.max(320, Math.min(availW, fitByH));
-  doc.style.width = `${Math.round(frameW)}px`;
-  doc.style.margin = "0 auto";
-}
-
-async function renderTemplatePdfToLayer(pdfDataUrl) {
-  const layer = el.templatePagePreview?.querySelector(".templatePageLayer.page");
-  if (!layer) return;
-  const key = String(pdfDataUrl || "");
-  if (!key) {
-    templateUiState.pdfRenderKey = "";
-    layer.innerHTML = "";
-    syncTemplateDocumentHeight();
-    return;
-  }
-  if (templateUiState.pdfRenderKey === key && layer.querySelector("canvas")) return;
-  templateUiState.pdfRenderKey = key;
-
-  if (!window.pdfjsLib || typeof window.pdfjsLib.getDocument !== "function") {
-    layer.innerHTML = `<div class="templatePosBadge" style="left:50%;top:50%;">No se pudo cargar visor PDF</div>`;
-    return;
-  }
-  try {
-    if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-    }
-    const b64 = String(pdfDataUrl).split(",")[1] || "";
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const loadingTask = window.pdfjsLib.getDocument({ data: bytes });
-    const pdf = await loadingTask.promise;
-    layer.innerHTML = "";
-    syncTemplatePreviewLetterFrame();
-    const doc = el.templatePagePreview?.querySelector(".templatePageDocument");
-    const desiredWidth = Math.max(320, doc?.clientWidth || layer.clientWidth || el.templatePagePreview?.clientWidth || 760);
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const baseViewport = page.getViewport({ scale: 1 });
-      const scale = desiredWidth / baseViewport.width;
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(viewport.width);
-      canvas.height = Math.round(viewport.height);
-      canvas.dataset.page = String(pageNum);
-      const ctx = canvas.getContext("2d");
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      layer.appendChild(canvas);
-    }
-    if (templateUiState.pdfRenderKey !== key) return;
-    syncTemplateDocumentHeight();
-    renderTemplatePositionMarkers(collectTemplatePositionedFields());
-  } catch (_) {
-    layer.innerHTML = `<div class="templatePosBadge" style="left:50%;top:50%;">Error al renderizar PDF</div>`;
-    syncTemplateDocumentHeight();
-  }
-}
-
-function renderTemplatePagePreview(draft = null) {
-  if (!el.templatePagePreview) return;
-  const data = draft || collectTemplateDraft();
-  let pageLayer = el.templatePagePreview.querySelector(".templatePageLayer.page");
-  let headerLayer = el.templatePagePreview.querySelector(".templatePageLayer.header");
-  let footerLayer = el.templatePagePreview.querySelector(".templatePageLayer.footer");
-  let markerLayer = el.templatePagePreview.querySelector(".templateMarkerLayer");
-  if (!pageLayer || !headerLayer || !footerLayer || !markerLayer) {
-    el.templatePagePreview.innerHTML = `
-      <div class="templatePageDocument">
-        <div class="templatePageLayer page"></div>
-        <div class="templatePageLayer header"></div>
-        <div class="templatePageLayer footer"></div>
-        <div class="templateMarkerLayer"></div>
-      </div>
-    `;
-    pageLayer = el.templatePagePreview.querySelector(".templatePageLayer.page");
-    headerLayer = el.templatePagePreview.querySelector(".templatePageLayer.header");
-    footerLayer = el.templatePagePreview.querySelector(".templatePageLayer.footer");
-    markerLayer = el.templatePagePreview.querySelector(".templateMarkerLayer");
-  }
-  if (headerLayer) {
-    headerLayer.style.backgroundImage = data.assets?.headerImage ? `url('${data.assets.headerImage}')` : "none";
-  }
-  if (footerLayer) {
-    footerLayer.style.backgroundImage = data.assets?.footerImage ? `url('${data.assets.footerImage}')` : "none";
-  }
-  renderTemplatePositionMarkers(data.positionedFields || []);
-  syncTemplateDocumentHeight();
-  renderTemplatePdfToLayer(data.assets?.pagePdf || "").catch(() => { });
-}
-
-function beginTemplateMarkerDrag(e, index) {
-  if (!el.templatePagePreview) return;
-  const markerLayer = el.templatePagePreview.querySelector(".templateMarkerLayer");
-  const dragRect = markerLayer?.getBoundingClientRect() || el.templatePagePreview.getBoundingClientRect();
-  const marker = el.templatePagePreview.querySelector(`.templatePosBadge[data-index="${index}"]`);
-  if (!marker) return;
-  if (e.target?.closest(".templateResizeHandle")) return;
-  const isSignature = marker.classList.contains("signatureBox");
-  const markerRect = marker.getBoundingClientRect();
-  templateUiState.dragging = {
-    index,
-    rect: dragRect,
-    markerW: isSignature ? clamp((markerRect.width / Math.max(1, dragRect.width)) * 100, TEMPLATE_SIGNATURE_MIN_W_PCT, TEMPLATE_SIGNATURE_MAX_W_PCT) : 0,
-    markerH: isSignature ? clamp((markerRect.height / Math.max(1, dragRect.height)) * 100, TEMPLATE_SIGNATURE_MIN_H_PCT, TEMPLATE_SIGNATURE_MAX_H_PCT) : 0,
+  return {
+    eventId: key,
+    eventName: String(ev.name || "").trim(),
+    eventDate: String(ev.date || "").trim(),
+    salon: String(ev.salon || "").trim(),
+    notes: String(saved?.notes || "").trim(),
+    items,
+    updatedAt: String(saved?.updatedAt || "").trim(),
+    completedAt: String(saved?.completedAt || "").trim(),
   };
-  setActiveTemplatePosition(index);
-  if (marker) marker.classList.add("dragging");
-  e.preventDefault();
-}
-
-function onTemplateMarkerDragMove(e) {
-  const drag = templateUiState.dragging;
-  if (!drag) return;
-  const markerLayer = el.templatePagePreview?.querySelector(".templateMarkerLayer");
-  const rect = markerLayer?.getBoundingClientRect() || drag.rect;
-  const maxX = 100 - Math.max(0, Number(drag.markerW || 0));
-  const maxY = 100 - Math.max(0, Number(drag.markerH || 0));
-  const x = clamp(((e.clientX - rect.left) / Math.max(1, rect.width)) * 100, 0, Math.max(0, maxX));
-  const y = clamp(((e.clientY - rect.top) / Math.max(1, rect.height)) * 100, 0, Math.max(0, maxY));
-  updateTemplatePositionRow(drag.index, x, y);
-  updateTemplateMarkerPosition(drag.index, x, y);
-}
-
-function endTemplateMarkerDrag() {
-  if (!templateUiState.dragging) return;
-  const drag = templateUiState.dragging;
-  const marker = el.templatePagePreview?.querySelector(`.templatePosBadge[data-index="${drag.index}"]`);
-  if (marker) marker.classList.remove("dragging");
-  templateUiState.dragging = null;
-}
-
-function beginTemplateMarkerResize(e, index) {
-  if (!el.templatePagePreview) return;
-  const markerLayer = el.templatePagePreview.querySelector(".templateMarkerLayer");
-  const rect = markerLayer?.getBoundingClientRect() || el.templatePagePreview.getBoundingClientRect();
-  const marker = el.templatePagePreview.querySelector(`.templatePosBadge[data-index="${index}"]`);
-  if (!marker || !marker.classList.contains("signatureBox")) return;
-  const markerRect = marker.getBoundingClientRect();
-  templateUiState.resizing = {
-    index,
-    rect,
-    startClientX: e.clientX,
-    startClientY: e.clientY,
-    startW: clamp((markerRect.width / Math.max(1, rect.width)) * 100, TEMPLATE_SIGNATURE_MIN_W_PCT, TEMPLATE_SIGNATURE_MAX_W_PCT),
-    startH: clamp((markerRect.height / Math.max(1, rect.height)) * 100, TEMPLATE_SIGNATURE_MIN_H_PCT, TEMPLATE_SIGNATURE_MAX_H_PCT),
-  };
-  setActiveTemplatePosition(index);
-  marker.classList.add("resizing");
-  e.preventDefault();
-  e.stopPropagation();
-}
-
-function onTemplateMarkerResizeMove(e) {
-  const resize = templateUiState.resizing;
-  if (!resize) return;
-  const rows = getTemplatePositionRows();
-  const row = rows[resize.index];
-  if (!row) return;
-  const rect = resize.rect;
-  const dxPct = ((e.clientX - resize.startClientX) / Math.max(1, rect.width)) * 100;
-  const dyPct = ((e.clientY - resize.startClientY) / Math.max(1, rect.height)) * 100;
-  const posX = clamp(Number(row.querySelector(".posX")?.value || 0), 0, 100);
-  const posY = clamp(Number(row.querySelector(".posY")?.value || 0), 0, 100);
-  const maxW = Math.min(TEMPLATE_SIGNATURE_MAX_W_PCT, Math.max(TEMPLATE_SIGNATURE_MIN_W_PCT, 100 - posX));
-  const maxH = Math.min(TEMPLATE_SIGNATURE_MAX_H_PCT, Math.max(TEMPLATE_SIGNATURE_MIN_H_PCT, 100 - posY));
-  const nextW = clamp(resize.startW + dxPct, TEMPLATE_SIGNATURE_MIN_W_PCT, maxW);
-  const nextH = clamp(resize.startH + dyPct, TEMPLATE_SIGNATURE_MIN_H_PCT, maxH);
-  updateTemplatePositionSizeRow(resize.index, nextW, nextH);
-  updateTemplateMarkerSize(resize.index, nextW, nextH);
-}
-
-function endTemplateMarkerResize() {
-  if (!templateUiState.resizing) return;
-  const resize = templateUiState.resizing;
-  const marker = el.templatePagePreview?.querySelector(`.templatePosBadge[data-index="${resize.index}"]`);
-  if (marker) marker.classList.remove("resizing");
-  templateUiState.resizing = null;
-}
-
-function openTemplateBuilderModal() {
-  if (!el.templateBackdrop) return;
-  closeSettingsPanel();
-  clearTemplateEditor();
-  activeTemplateEditor = el.templateBody || null;
-  el.templateBackdrop.hidden = false;
-  setTimeout(() => el.templateName?.focus(), 0);
-}
-
-function closeTemplateBuilderModal() {
-  if (!el.templateBackdrop) return;
-  el.templateBackdrop.hidden = true;
-  activeTemplateEditor = null;
-  endTemplateMarkerDrag();
-  endTemplateMarkerResize();
-}
-
-function saveTemplateFromBuilder() {
-  const draft = collectTemplateDraft();
-  if (!draft.name) return toast("Nombre de plantilla es obligatorio.");
-  const roomRatesCheck = parseRoomRatesFromEditor();
-  if (!roomRatesCheck.ok) return toast("JSON de tabla habitaciones invalido.");
-
-  const seen = new Set();
-  for (const f of draft.formulas) {
-    if (!f.key) return toast("Cada formula debe tener nombre de campo.");
-    if (seen.has(f.key)) return toast("No repitas nombres de campos de formula.");
-    seen.add(f.key);
-  }
-
-  const existingByName = quickTemplates.find(
-    (t) => t.name.toLowerCase() === draft.name.toLowerCase() && t.id !== activeTemplateId
-  );
-  if (existingByName) return toast("Ya existe una plantilla con ese nombre.");
-
-  const nowIso = new Date().toISOString();
-  const payload = {
-    id: activeTemplateId || uid(),
-    name: draft.name,
-    header: draft.header,
-    body: draft.body,
-    footer: draft.footer,
-    assets: { ...draft.assets },
-    positionedFields: draft.positionedFields,
-    signatureDefaults: draft.signatureDefaults,
-    roomRates: roomRatesCheck.items,
-    formulas: draft.formulas,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-  };
-
-  const idx = quickTemplates.findIndex((t) => t.id === payload.id);
-  if (idx >= 0) {
-    payload.createdAt = quickTemplates[idx].createdAt || nowIso;
-    quickTemplates[idx] = payload;
-  } else {
-    quickTemplates.push(payload);
-  }
-  saveQuickTemplates();
-  renderTemplateSelect(payload.id);
-  activeTemplateId = payload.id;
-  toast("Plantilla guardada.");
-}
-
-function loadSelectedTemplateIntoBuilder() {
-  const id = String(el.templateSelect?.value || "").trim();
-  if (!id) return toast("Selecciona una plantilla para cargar.");
-  const found = quickTemplates.find((t) => t.id === id);
-  if (!found) return toast("Plantilla no encontrada.");
-  setTemplateEditorContent(found);
-  activeTemplateEditor = el.templateBody || null;
-  toast("Plantilla cargada.");
-}
-
-async function deleteSelectedTemplateFromBuilder() {
-  const id = String(el.templateSelect?.value || activeTemplateId || "").trim();
-  if (!id) return toast("Selecciona una plantilla para eliminar.");
-  const found = quickTemplates.find((t) => t.id === id);
-  if (!found) return toast("Plantilla no encontrada.");
-  const ok = await modernConfirm({
-    title: "Eliminar plantilla",
-    message: `Esta seguro de eliminar la plantilla "${found.name}"?`,
-    confirmText: "Si, eliminar",
-    cancelText: "No",
-  });
-  if (!ok) return;
-  quickTemplates = quickTemplates.filter((t) => t.id !== id);
-  saveQuickTemplates();
-  clearTemplateEditor();
-  toast(`Plantilla eliminada: ${found.name}`);
 }
 
 function setSettingsPanelOpen(open) {
@@ -2441,7 +2805,19 @@ function buildOccupancyMenuMontajeActionHtml(row) {
   const versionLabel = version > 0 ? `V${version}` : "Ver";
   const sentLabel = formatQuoteSentAtLabel(row.latestMenuMontajeAt);
   const text = sentLabel ? `${versionLabel} - ${sentLabel}` : versionLabel;
-  return `<button type="button" class="occupancyMenuMontajeLinkBtn" data-event-id="${escapeHtml(String(row.eventId || ""))}" data-quote-version="${escapeHtml(String(version || ""))}">${escapeHtml(text)}</button>`;
+  return `<button type="button" class="occupancyQuoteLinkBtn occupancyMenuMontajeLinkBtn" data-event-id="${escapeHtml(String(row.eventId || ""))}" data-quote-version="${escapeHtml(String(version || ""))}">${escapeHtml(text)}</button>`;
+}
+
+function buildOccupancyChecklistActionHtml(row) {
+  const eventId = String(row?.eventId || "").trim();
+  if (!eventId) return `<span class="occupancyQuoteEmpty">-</span>`;
+  const completed = row?.checklistCompleted === true;
+  const hasChecklist = row?.hasChecklist === true;
+  const label = completed ? "Completo" : (hasChecklist ? "En proceso" : "Iniciar");
+  const cls = hasChecklist
+    ? "occupancyChecklistLinkBtn occupancyChecklistLinkBtn--has"
+    : "occupancyChecklistLinkBtn occupancyChecklistLinkBtn--missing";
+  return `<button type="button" class="${cls}" data-event-id="${escapeHtml(eventId)}">${escapeHtml(label)}</button>`;
 }
 
 async function openOccupancyQuoteByRow(eventId, versionRaw = "") {
@@ -2486,6 +2862,12 @@ function openOccupancyMenuMontajeByRow(eventId, versionRaw = "") {
   const entries = Array.isArray(snapshot.menuMontajeEntries) ? snapshot.menuMontajeEntries : [];
   if (!entries.length) return toast("La version seleccionada no contiene informe de Menu & Montaje.");
   openMenuMontajeReportDocument(ev, snapshot);
+}
+
+function openEventChecklistByRow(eventId) {
+  const id = String(eventId || "").trim();
+  if (!id) return;
+  openEventChecklistModal(id);
 }
 
 function buildOccupancyReportRows() {
@@ -2541,6 +2923,7 @@ function buildOccupancyReportRows() {
     const company = quote?.companyId ? (state.companies || []).find((c) => String(c.id) === String(quote.companyId)) : null;
     const manager = company?.managers?.find((m) => String(m.id) === String(quote?.managerId));
     const totals = getQuoteTotals(quote || {});
+    const checklistMeta = getEventChecklistMeta(ev.id);
     rows.push({
       eventId: String(ev.id || ""),
       status: String(ev.status || ""),
@@ -2566,6 +2949,9 @@ function buildOccupancyReportRows() {
       hasMenuMontajeReport: !!latestMenuMontajeEntries.length,
       latestMenuMontajeVersion: latestMenuMontajeVersion > 0 ? latestMenuMontajeVersion : "",
       latestMenuMontajeAt: String(metrics?.latestMenuMontajeAt || latestMenuMontajeSnap?.quotedAt || ""),
+      hasChecklist: checklistMeta.hasChecklist,
+      checklistCompleted: checklistMeta.completed,
+      checklistUpdatedAt: checklistMeta.updatedAt,
       updatedAt: getEventLastUpdatedLabel(ev),
     });
   }
@@ -2680,6 +3066,7 @@ function renderOccupancyDayDetail(rows) {
         <span><b>PAX:</b> ${escapeHtml(String(r.pax || 0))}</span>
         <span><b>Ult. cotizacion:</b> ${buildOccupancyQuoteActionHtml(r)}</span>
         <span><b>Ult. informe:</b> ${buildOccupancyMenuMontajeActionHtml(r)}</span>
+        <span><b>Check List:</b> ${buildOccupancyChecklistActionHtml(r)}</span>
         <span><b>Total evento:</b> ${escapeHtml(moneyGT(r.totalEvent || 0))}</span>
         <span><b>Ingreso dia:</b> ${escapeHtml(moneyGT(r.incomePerDay || 0))}</span>
         <span><b>Ingreso salon-dia:</b> ${escapeHtml(moneyGT(r.incomePerSalonDay || 0))}</span>
@@ -2701,7 +3088,7 @@ function renderOccupancyReportTable() {
   renderOccupancyDayDetail(rows);
   if (!rows.length) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="16">Sin eventos Confirmados/Pre reserva para esta semana.</td>`;
+    tr.innerHTML = `<td colspan="17">Sin eventos Confirmados/Pre reserva para esta semana.</td>`;
     el.occupancyReportBody.appendChild(tr);
     return;
   }
@@ -2720,6 +3107,7 @@ function renderOccupancyReportTable() {
       <td>${escapeHtml(r.seller || "-")}</td>
       <td>${buildOccupancyQuoteActionHtml(r)}</td>
       <td>${buildOccupancyMenuMontajeActionHtml(r)}</td>
+      <td>${buildOccupancyChecklistActionHtml(r)}</td>
       <td>${escapeHtml(moneyGT(r.totalEvent || 0))}</td>
       <td>${escapeHtml(moneyGT(r.incomePerDay || 0))}</td>
       <td>${escapeHtml(moneyGT(r.incomePerSalonDay || 0))}</td>
@@ -2766,6 +3154,7 @@ function exportOccupancyReportToExcel() {
     const sent = formatQuoteSentAtLabel(r.latestMenuMontajeAt);
     return sent ? `${versionLabel} - ${sent}` : versionLabel;
   })())}</td>
+      <td>${escapeHtml(r.checklistCompleted ? "Completo" : (r.hasChecklist ? "En proceso" : "Sin iniciar"))}</td>
       <td>${escapeHtml(moneyGT(r.totalEvent || 0))}</td>
       <td>${escapeHtml(moneyGT(r.incomePerDay || 0))}</td>
       <td>${escapeHtml(moneyGT(r.incomePerSalonDay || 0))}</td>
@@ -2802,7 +3191,7 @@ function exportOccupancyReportToExcel() {
     <table>
       <thead>
         <tr>
-          <th>Estado</th><th>PAX</th><th>Fecha evento</th><th>Hora inicio</th><th>Hora final</th><th>Evento</th><th>Salon</th><th>Institucion</th><th>Encargado evento</th><th>Vendedor</th><th>Ultima cotizacion enviada</th><th>Ultimo informe menu/montaje</th><th>Total evento</th><th>Ingreso dia</th><th>Ingreso salon-dia</th><th>Ultima modificacion</th>
+          <th>Estado</th><th>PAX</th><th>Fecha evento</th><th>Hora inicio</th><th>Hora final</th><th>Evento</th><th>Salon</th><th>Institucion</th><th>Encargado evento</th><th>Vendedor</th><th>Ultima cotizacion enviada</th><th>Ultimo informe menu/montaje</th><th>Check List</th><th>Total evento</th><th>Ingreso dia</th><th>Ingreso salon-dia</th><th>Ultima modificacion</th>
         </tr>
       </thead>
       <tbody>${htmlRows}</tbody>
@@ -2842,6 +3231,215 @@ function openOccupancyReportModal() {
 function closeOccupancyReportModal() {
   if (!el.occupancyReportBackdrop) return;
   el.occupancyReportBackdrop.hidden = true;
+}
+
+function renderChecklistTemplateTable() {
+  if (!el.checklistTemplateBody) return;
+  checklistTemplateDraft = (checklistTemplateDraft || []).map(normalizeChecklistTemplateItem).filter(Boolean);
+  el.checklistTemplateBody.innerHTML = "";
+  if (!checklistTemplateDraft.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="3">Sin puntos configurados.</td>`;
+    el.checklistTemplateBody.appendChild(tr);
+    return;
+  }
+  checklistTemplateDraft.forEach((item, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${escapeHtml(String(item.section || "General"))}</td>
+      <td>${escapeHtml(String(item.label || ""))}</td>
+      <td>
+        <button class="btn" type="button" data-checklist-template-up="${escapeHtml(String(item.id || ""))}">↑</button>
+        <button class="btn" type="button" data-checklist-template-down="${escapeHtml(String(item.id || ""))}">↓</button>
+      </td>
+      <td>
+        <button class="btn" type="button" data-checklist-template-edit="${escapeHtml(String(item.id || ""))}">Editar</button>
+        <button class="btnDanger" type="button" data-checklist-template-remove="${escapeHtml(String(item.id || ""))}">X</button>
+      </td>
+    `;
+    el.checklistTemplateBody.appendChild(tr);
+  });
+}
+
+function renderChecklistSectionSelect(selected = "") {
+  if (!el.checklistTemplateSectionSelect) return;
+  const sections = checklistTemplateSectionsDraft.length
+    ? checklistTemplateSectionsDraft
+    : getChecklistSections();
+  el.checklistTemplateSectionSelect.innerHTML = "";
+  for (const s of sections) {
+    const opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = s;
+    el.checklistTemplateSectionSelect.appendChild(opt);
+  }
+  const preferred = String(selected || "").trim();
+  if (preferred) el.checklistTemplateSectionSelect.value = preferred;
+  if (!el.checklistTemplateSectionSelect.value && el.checklistTemplateSectionSelect.options.length) {
+    el.checklistTemplateSectionSelect.value = el.checklistTemplateSectionSelect.options[0].value;
+  }
+}
+
+function resetChecklistTemplateEditor() {
+  checklistTemplateEditingId = "";
+  if (el.btnChecklistTemplateAdd) el.btnChecklistTemplateAdd.textContent = "Agregar punto";
+  if (el.checklistTemplateInput) el.checklistTemplateInput.value = "";
+  renderChecklistSectionSelect("General");
+}
+
+function openChecklistTemplateModal() {
+  ensureChecklistStores();
+  checklistTemplateDraft = getChecklistTemplateItems().map((x) => ({ ...x }));
+  checklistTemplateSectionsDraft = getChecklistSections().slice();
+  renderChecklistTemplateTable();
+  resetChecklistTemplateEditor();
+  if (el.checklistTemplateSectionInput) el.checklistTemplateSectionInput.value = "";
+  if (el.checklistTemplateBackdrop) el.checklistTemplateBackdrop.hidden = false;
+}
+
+function closeChecklistTemplateModal() {
+  if (el.checklistTemplateBackdrop) el.checklistTemplateBackdrop.hidden = true;
+  resetChecklistTemplateEditor();
+}
+
+function saveChecklistTemplateDraft() {
+  ensureChecklistStores();
+  state.checklistTemplateItems = (checklistTemplateDraft || []).map(normalizeChecklistTemplateItem).filter(Boolean);
+  state.checklistTemplateSections = Array.from(new Set((checklistTemplateSectionsDraft || []).map((s) => String(s || "").trim()).filter(Boolean)));
+  persist();
+}
+
+function addChecklistSectionFromInput() {
+  const name = String(el.checklistTemplateSectionInput?.value || "").trim();
+  if (!name) return toast("Escribe el nombre de la seccion.");
+  const exists = (checklistTemplateSectionsDraft || []).some((s) => String(s || "").trim().toLowerCase() === name.toLowerCase());
+  if (exists) return toast("Esa seccion ya existe.");
+  checklistTemplateSectionsDraft.push(name);
+  saveChecklistTemplateDraft();
+  renderChecklistSectionSelect(name);
+  if (el.checklistTemplateSectionInput) {
+    el.checklistTemplateSectionInput.value = "";
+    el.checklistTemplateSectionInput.focus();
+  }
+  toast("Seccion agregada.");
+}
+
+function addChecklistTemplateItemFromInput() {
+  const label = String(el.checklistTemplateInput?.value || "").trim();
+  const section = String(el.checklistTemplateSectionSelect?.value || "General").trim() || "General";
+  if (!label) return toast("Escribe un punto para el check list.");
+  const wasEditing = !!checklistTemplateEditingId;
+  const exists = (checklistTemplateDraft || []).some((x) => {
+    const sameLabel = String(x?.label || "").trim().toLowerCase() === label.toLowerCase();
+    const sameId = String(x?.id || "") === String(checklistTemplateEditingId || "");
+    return sameLabel && !sameId;
+  });
+  if (exists) return toast("Ese punto ya existe en el check list.");
+  if (checklistTemplateEditingId) {
+    const idx = (checklistTemplateDraft || []).findIndex((x) => String(x?.id || "") === String(checklistTemplateEditingId));
+    if (idx >= 0) checklistTemplateDraft[idx] = { ...checklistTemplateDraft[idx], label, section };
+  } else {
+    checklistTemplateDraft.push({ id: uid(), label, section, active: true });
+  }
+  saveChecklistTemplateDraft();
+  renderChecklistTemplateTable();
+  resetChecklistTemplateEditor();
+  if (el.checklistTemplateInput) el.checklistTemplateInput.focus();
+  toast(wasEditing ? "Punto actualizado." : "Punto agregado al check list.");
+}
+
+function renderEventChecklistRows() {
+  if (!el.eventChecklistBody) return;
+  const items = Array.isArray(eventChecklistDraft?.items) ? eventChecklistDraft.items : [];
+  el.eventChecklistBody.innerHTML = "";
+  if (!items.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="4">No hay puntos configurados. Usa "Agregar Check List" en Configuracion.</td>`;
+    el.eventChecklistBody.appendChild(tr);
+    return;
+  }
+  let lastSection = "";
+  items.forEach((item, idx) => {
+    const section = String(item?.section || "General").trim() || "General";
+    if (section !== lastSection) {
+      const sectionTr = document.createElement("tr");
+      sectionTr.className = "checklistSectionRow";
+      sectionTr.innerHTML = `<td colspan="4">${escapeHtml(section)}</td>`;
+      el.eventChecklistBody.appendChild(sectionTr);
+      lastSection = section;
+    }
+    const status = normalizeChecklistStatus(item?.status);
+    const statusCls = status === "ok"
+      ? "checklistStateBtn checklistStateBtn--ok"
+      : (status === "x"
+        ? "checklistStateBtn checklistStateBtn--x"
+        : (status === "na"
+          ? "checklistStateBtn checklistStateBtn--na"
+          : "checklistStateBtn checklistStateBtn--pending"));
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td><b>${escapeHtml(String(item?.section || "General"))}</b> - ${escapeHtml(String(item?.label || ""))}</td>
+      <td>
+        <button type="button" class="${statusCls}" data-checklist-cycle-index="${idx}" data-checklist-state="${escapeHtml(status)}">
+          ${escapeHtml(checklistStatusBadgeText(status))} - ${escapeHtml(checklistStatusLabel(status))}
+        </button>
+      </td>
+      <td>
+        <input type="text" class="quoteInput" data-checklist-comment-index="${idx}" value="${escapeHtml(String(item?.comment || ""))}" placeholder="Comentario adicional" />
+      </td>
+    `;
+    el.eventChecklistBody.appendChild(tr);
+  });
+}
+
+function openEventChecklistModal(eventId) {
+  const draft = buildEventChecklistDraft(eventId);
+  if (!draft) return toast("No se pudo abrir el check list del evento.");
+  currentEventChecklistId = String(eventId || "").trim();
+  eventChecklistDraft = draft;
+  if (el.eventChecklistDate) el.eventChecklistDate.value = draft.eventDate || "";
+  if (el.eventChecklistEventName) el.eventChecklistEventName.value = draft.eventName || "";
+  if (el.eventChecklistSubtitle) {
+    el.eventChecklistSubtitle.textContent = `${draft.eventName || "-"} | ${draft.eventDate || "-"} | ${draft.salon || "-"}`;
+  }
+  if (el.eventChecklistNotes) el.eventChecklistNotes.value = String(draft.notes || "");
+  renderEventChecklistRows();
+  if (el.eventChecklistBackdrop) el.eventChecklistBackdrop.hidden = false;
+}
+
+function closeEventChecklistModal() {
+  if (el.eventChecklistBackdrop) el.eventChecklistBackdrop.hidden = true;
+  currentEventChecklistId = "";
+  eventChecklistDraft = null;
+}
+
+function saveEventChecklistFromModal() {
+  if (!eventChecklistDraft || !currentEventChecklistId) return;
+  ensureChecklistStores();
+  const notes = String(el.eventChecklistNotes?.value || "").trim();
+  const items = Array.isArray(eventChecklistDraft.items) ? eventChecklistDraft.items : [];
+  const normalizedItems = items.map((it) => ({
+    id: String(it?.id || uid()).trim(),
+    templateId: String(it?.templateId || "").trim(),
+    label: String(it?.label || "").trim(),
+    section: String(it?.section || "General").trim() || "General",
+    status: normalizeChecklistStatus(it?.status),
+    comment: String(it?.comment || "").trim(),
+  })).filter((it) => it.label);
+  const nowIso = new Date().toISOString();
+  const completed = normalizedItems.length > 0 && normalizedItems.every((it) => ["ok", "x", "na"].includes(it.status));
+  state.eventChecklists[currentEventChecklistId] = {
+    eventId: currentEventChecklistId,
+    notes,
+    items: normalizedItems,
+    updatedAt: nowIso,
+    completedAt: completed ? nowIso : "",
+  };
+  persist();
+  renderOccupancyReportTable();
+  toast(completed ? "Check list completado y guardado." : "Check list guardado.");
 }
 
 function applyTopbarSettings({ rerender = false } = {}) {
@@ -3055,35 +3653,44 @@ function getVisibleDayCount() {
 }
 
 // -------- init ----------
-goToTodayView();
-autoMarkLostEvents();
-renderTopbarWelcome();
-renderLegend();
-applyTopbarSettings();
-renderTimeColumn();
-renderRoomSelects();
-renderStatusSelect();
-renderUsersSelect();
-renderCompaniesSelect();
-renderServicesList();
-render();
-runUpcomingReminderChecks();
-refreshTopbarReminders();
-setInterval(runUpcomingReminderChecks, 60 * 1000);
-setInterval(refreshTopbarReminders, 60 * 1000);
+try {
+  goToTodayView();
+  autoMarkLostEvents();
+  renderTopbarWelcome();
+  renderLegend();
+  applyTopbarSettings();
+  renderTimeColumn();
+  renderRoomSelects();
+  renderStatusSelect();
+  renderUsersSelect();
+  renderCompaniesSelect();
+  renderServicesList();
+  render();
+  runUpcomingReminderChecks();
+  refreshTopbarReminders();
+  setInterval(runUpcomingReminderChecks, 60 * 1000);
+  setInterval(refreshTopbarReminders, 60 * 1000);
 
-bindEvents();
-initEnhancedSelects();
-initCustomTopbarSelects();
-syncWithServerState()
-  .catch(() => { })
-  .finally(() => {
-    loadLoginUsers()
-      .then(() => {
-        if (el.loginScreen) el.loginScreen.hidden = false;
-      })
-      .catch(() => setLoginError("No se pudo cargar usuarios desde MariaDB."));
-  });
+  bindEvents();
+  initEnhancedSelects();
+  initCustomTopbarSelects();
+  syncWithServerState()
+    .catch(() => { })
+    .finally(() => {
+      loadLoginUsers()
+        .then(() => {
+          if (el.loginScreen) el.loginScreen.hidden = false;
+        })
+        .catch(() => {
+          if (el.loginScreen) el.loginScreen.hidden = false;
+          setLoginError("No se pudo cargar usuarios desde MariaDB.");
+        });
+    });
+} catch (bootErr) {
+  console.error("Fallo al iniciar app:", bootErr);
+  if (el.loginScreen) el.loginScreen.hidden = false;
+  setLoginError("Fallo al iniciar la app. Revisa consola.");
+}
 
 // ================== Rendering ==================
 
@@ -3963,7 +4570,13 @@ function renderQuoteTemplateSelect(selectedId = "") {
     opt.textContent = String(tpl.name || "Plantilla");
     el.quoteTemplateSelect.appendChild(opt);
   }
-  el.quoteTemplateSelect.value = selectedId && ordered.some((x) => x.id === selectedId) ? selectedId : "";
+  const fallbackId = ordered.some((x) => String(x.id) === CORPORATE_TEMPLATE_ID)
+    ? CORPORATE_TEMPLATE_ID
+    : (ordered[0]?.id || "");
+  const selected = selectedId && ordered.some((x) => x.id === selectedId)
+    ? selectedId
+    : fallbackId;
+  el.quoteTemplateSelect.value = selected || "";
 }
 
 function applyQuoteSnapshotToDraft(snapshot) {
@@ -4638,6 +5251,1260 @@ function closeMenuMontajeModal() {
   if (el.menuMontajeBackdrop) el.menuMontajeBackdrop.hidden = true;
 }
 
+function closeMenuMontajeSelectableModal() {
+  if (el.menuMontajeSelectableBackdrop) el.menuMontajeSelectableBackdrop.hidden = true;
+}
+
+function selectedIdsUnionFromTwoLists(a, b) {
+  const set = new Set();
+  for (const n of selectedIdsFromChecklist(a)) set.add(n);
+  for (const n of selectedIdsFromChecklist(b)) set.add(n);
+  return Array.from(set.values());
+}
+
+function setChecklistCheckedByIds(container, idSet) {
+  if (!container) return;
+  const checks = container.querySelectorAll("input[type='checkbox']");
+  for (const node of checks) {
+    const id = Number(node.value);
+    node.checked = Number.isFinite(id) && idSet.has(id);
+    const row = node.closest(".menuSuggestRow");
+    setMenuSuggestRowDraggableByCheckbox(row);
+  }
+}
+
+function syncMirrorChecklistValue(source, target, changed) {
+  if (!source || !target || !changed) return;
+  const id = Number(changed.value || 0);
+  if (!Number.isFinite(id) || id <= 0) return;
+  const mirror = target.querySelector(`input[type='checkbox'][value="${id}"]`);
+  if (!mirror) return;
+  mirror.checked = !!changed.checked;
+  const row = mirror.closest(".menuSuggestRow");
+  setMenuSuggestRowDraggableByCheckbox(row);
+}
+
+function ensureMmsCatalogDefaults() {
+  if (!menuMontajeSelectableCatalogCache || typeof menuMontajeSelectableCatalogCache !== "object") {
+    menuMontajeSelectableCatalogCache = {
+      proteins: [],
+      preparationsByProtein: new Map(),
+      salsas: [],
+      guarniciones: [],
+      postres: [],
+      bebidas: [],
+      comentarios: [],
+      montajeTipos: [],
+      montajeAdicionales: [],
+    };
+  }
+  if (!(menuMontajeSelectableCatalogCache.preparationsByProtein instanceof Map)) {
+    menuMontajeSelectableCatalogCache.preparationsByProtein = new Map();
+  }
+}
+
+function ensureMenuMontajeSectionsStore() {
+  if (!Array.isArray(state.menuMontajeSections)) state.menuMontajeSections = ["General"];
+  state.menuMontajeSections = state.menuMontajeSections
+    .map((s) => String(s || "").trim())
+    .filter(Boolean);
+  if (!state.menuMontajeSections.length) state.menuMontajeSections = ["General"];
+  return state.menuMontajeSections;
+}
+
+function renderMmsMenuSectionSelect(selected = "") {
+  if (!el.mmsMenuSection) return;
+  const sections = ensureMenuMontajeSectionsStore();
+  el.mmsMenuSection.innerHTML = "";
+  for (const s of sections) {
+    const opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = s;
+    el.mmsMenuSection.appendChild(opt);
+  }
+  const preferred = String(selected || "").trim();
+  if (preferred) el.mmsMenuSection.value = preferred;
+  if (!el.mmsMenuSection.value && el.mmsMenuSection.options.length) {
+    el.mmsMenuSection.value = el.mmsMenuSection.options[0].value;
+  }
+}
+
+function addMmsMenuSectionFromInput() {
+  const value = String(el.mmsMenuSectionInput?.value || "").trim();
+  if (!value) return toast("Escribe un nombre de seccion.");
+  const sections = ensureMenuMontajeSectionsStore();
+  const exists = sections.some((s) => String(s || "").trim().toLowerCase() === value.toLowerCase());
+  if (exists) return toast("Esa seccion ya existe.");
+  sections.push(value);
+  state.menuMontajeSections = sections;
+  persist();
+  renderMmsMenuSectionSelect(value);
+  if (el.mmsMenuSectionInput) {
+    el.mmsMenuSectionInput.value = "";
+    el.mmsMenuSectionInput.focus();
+  }
+  refreshMmsDescriptionAuto();
+  toast("Seccion agregada.");
+}
+
+function ensureMenuMontajeBebidasStore() {
+  if (!Array.isArray(state.menuMontajeBebidas)) state.menuMontajeBebidas = [];
+  state.menuMontajeBebidas = state.menuMontajeBebidas
+    .map((x) => {
+      if (typeof x === "string") return { id: uid(), nombre: String(x).trim(), activo: true };
+      return {
+        id: String(x?.id || uid()).trim() || uid(),
+        nombre: String(x?.nombre || x?.name || "").trim(),
+        activo: x?.activo === false ? false : true,
+      };
+    })
+    .filter((x) => x.nombre);
+  return state.menuMontajeBebidas;
+}
+
+function addMmsBebidaFromInput() {
+  const nombre = String(el.mmsBebidaInput?.value || "").trim();
+  if (!nombre) return toast("Escribe una bebida.");
+  const rows = ensureMenuMontajeBebidasStore();
+  if (rows.some((x) => String(x.nombre || "").toLowerCase() === nombre.toLowerCase())) {
+    return toast("Esa bebida ya existe.");
+  }
+  rows.push({ id: uid(), nombre, activo: true });
+  state.menuMontajeBebidas = rows;
+  if (el.mmsBebidaInput) el.mmsBebidaInput.value = "";
+  persist();
+  renderMmsStageOptions();
+  renderMmsComandaPreview();
+  toast("Bebida agregada.");
+}
+
+function getMmsSuggestedSalsaIds() {
+  return Array.isArray(menuMontajeSelectableCatalogCache?.suggestedSalsaIds)
+    ? menuMontajeSelectableCatalogCache.suggestedSalsaIds.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0)
+    : [];
+}
+
+function setMmsStage(stage) {
+  const valid = new Set(["plato", "preparacion", "salsa", "guarnicion", "postre", "bebida", "montaje_tipo", "montaje_adicional"]);
+  const next = valid.has(String(stage || "")) ? String(stage) : "plato";
+  mmsCurrentStage = next;
+  // Evita que un filtro previo deje vacia la siguiente etapa (ej. montaje).
+  if (el.mmsStageFilter) el.mmsStageFilter.value = "";
+  renderMmsStageTabs();
+  renderMmsStageOptions();
+}
+
+function renderMmsStageTabs() {
+  const buttons = Array.from(el.mmsStageTabs?.querySelectorAll("[data-mms-stage]") || []);
+  for (const btn of buttons) {
+    btn.classList.toggle("isActive", String(btn.dataset.mmsStage || "") === mmsCurrentStage);
+  }
+}
+
+function getMmsStageLabel(stage) {
+  const map = {
+    plato: "Elija plato fuerte",
+    preparacion: "Elija preparacion",
+    salsa: "Elija salsa/aderezo",
+    guarnicion: "Elija guarnicion",
+    postre: "Elija postre",
+    bebida: "Elija bebida",
+    montaje_tipo: "Elija tipo de montaje",
+    montaje_adicional: "Elija adicionales de montaje",
+  };
+  return map[stage] || "Elija una opcion";
+}
+
+function renderMmsStageOptions() {
+  ensureMmsCatalogDefaults();
+  if (el.mmsStageTitle) el.mmsStageTitle.textContent = getMmsStageLabel(mmsCurrentStage);
+  if (el.btnMmsStageMoreOptions) {
+    const canToggle = mmsCurrentStage === "salsa" || mmsCurrentStage === "guarnicion" || mmsCurrentStage === "postre";
+    el.btnMmsStageMoreOptions.disabled = !canToggle;
+    if (mmsCurrentStage === "postre") {
+      el.btnMmsStageMoreOptions.textContent = mmsShowAllPostres ? "Solo sugeridas" : "Mas opciones";
+    } else if (mmsCurrentStage === "salsa" || mmsCurrentStage === "guarnicion") {
+      el.btnMmsStageMoreOptions.textContent = mmsShowAllGuarniciones ? "Solo sugeridas" : "Mas opciones";
+    } else {
+      el.btnMmsStageMoreOptions.textContent = "Mas opciones";
+    }
+  }
+  if (!el.mmsStageOptions) return;
+
+  const filter = String(el.mmsStageFilter?.value || "").trim().toLowerCase();
+  const selectedGuarnicionSet = new Set(getMmsSelectedGuarnicionIds().map((x) => Number(x)));
+  const selectedPostreSet = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
+  const selectedSalsaSet = new Set((Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)));
+  const selectedBebidaSet = new Set((Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
+  let rows = [];
+  let selected = new Set();
+  let kind = mmsCurrentStage;
+
+  if (mmsCurrentStage === "plato") {
+    rows = menuMontajeSelectableCatalogCache.proteins || [];
+  } else if (mmsCurrentStage === "preparacion") {
+    const pid = Number(el.mmsProtein?.value || 0);
+    rows = pid > 0 ? (menuMontajeSelectableCatalogCache.preparationsByProtein.get(pid) || []) : [];
+  } else if (mmsCurrentStage === "salsa") {
+    const all = menuMontajeSelectableCatalogCache.salsas || [];
+    const suggestedSet = new Set(getMmsSuggestedSalsaIds().map((x) => Number(x)));
+    const suggestedRows = all.filter((x) => suggestedSet.has(Number(x.id || 0)));
+    rows = mmsShowAllGuarniciones ? all : (suggestedRows.length ? suggestedRows : all);
+    selected = selectedSalsaSet;
+  } else if (mmsCurrentStage === "guarnicion") {
+    const all = menuMontajeSelectableCatalogCache.guarniciones || [];
+    const suggestedSet = new Set(listAllCheckboxIds(el.mmsGuarnicionesSuggested));
+    rows = mmsShowAllGuarniciones ? all : all.filter((x) => suggestedSet.has(Number(x.id || 0)));
+    selected = selectedGuarnicionSet;
+  } else if (mmsCurrentStage === "postre") {
+    const all = menuMontajeSelectableCatalogCache.postres || [];
+    const suggestedSet = new Set(listAllCheckboxIds(el.mmsPostresSuggested));
+    const suggestedRows = all.filter((x) => suggestedSet.has(Number(x.id || 0)));
+    rows = mmsShowAllPostres ? all : (suggestedRows.length ? suggestedRows : all);
+    selected = selectedPostreSet;
+  } else if (mmsCurrentStage === "bebida") {
+    rows = menuMontajeSelectableCatalogCache.bebidas || [];
+    selected = selectedBebidaSet;
+    kind = "bebida";
+  } else if (mmsCurrentStage === "montaje_tipo") {
+    rows = menuMontajeSelectableCatalogCache.montajeTipos || [];
+    selected = new Set([Number(el.mmsMontajeTipo?.value || 0)]);
+  } else if (mmsCurrentStage === "montaje_adicional") {
+    const all = menuMontajeSelectableCatalogCache.montajeAdicionales || [];
+    rows = mmsShowAllPostres ? all : all;
+    selected = new Set(selectedIdsFromChecklist(el.mmsMontajeAdicionales).map((x) => Number(x)));
+  }
+
+  rows = rows.filter((x) => {
+    const name = String(x?.nombre || "").trim().toLowerCase();
+    return !filter || name.includes(filter);
+  });
+
+  renderMmsQuickButtonsGroup(el.mmsStageOptions, rows, selected, kind);
+}
+
+function handleMmsStageOptionClick(kind, id) {
+  if (kind === "plato") {
+    if (el.mmsProtein) el.mmsProtein.value = String(id || "");
+    refreshMmsByProteinPreparation({ preserveSelection: false }).catch(() => { });
+    return;
+  }
+  if (kind === "preparacion") {
+    if (el.mmsPreparation) el.mmsPreparation.value = String(id || "");
+    refreshMmsByProteinPreparation({ preserveSelection: true }).catch(() => { });
+    return;
+  }
+  if (kind === "salsa") {
+    const n = Number(id || 0);
+    const set = new Set((Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)));
+    if (set.has(n)) set.delete(n);
+    else set.add(n);
+    mmsSelectedSalsaIds = Array.from(set.values()).filter((x) => Number.isFinite(x) && x > 0);
+    refreshMmsDescriptionAuto();
+    renderMmsStageOptions();
+    renderMmsComandaPreview();
+    return;
+  }
+  if (kind === "guarnicion") {
+    toggleMmsQuickItem("guarnicion", id);
+    return;
+  }
+  if (kind === "postre") {
+    const n = Number(id || 0);
+    if (!Number.isFinite(n) || n <= 0) return;
+    const selected = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
+    if (!selected.has(n)) {
+      selected.add(n);
+      setMmsSelectionSets({
+        guarnicionIds: getMmsSelectedGuarnicionIds(),
+        postreIds: Array.from(selected.values()),
+        comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
+        adicionalIds: selectedIdsFromChecklist(el.mmsMontajeAdicionales),
+      });
+      mmsPostreQtyById[n] = 1;
+    } else {
+      mmsPostreQtyById[n] = Math.max(1, Math.floor(Number(mmsPostreQtyById[n] || 1)) + 1);
+    }
+    refreshMmsDescriptionAuto();
+    renderMmsStageOptions();
+    renderMmsComandaPreview();
+    return;
+  }
+  if (kind === "bebida") {
+    const n = Number(id || 0);
+    if (!Number.isFinite(n) || n <= 0) return;
+    const set = new Set((Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((v) => Number.isFinite(v) && v > 0));
+    if (set.has(n)) set.delete(n);
+    else set.add(n);
+    mmsSelectedBebidaIds = Array.from(set.values());
+    refreshMmsDescriptionAuto();
+    renderMmsStageOptions();
+    renderMmsComandaPreview();
+    return;
+  }
+  if (kind === "montaje_tipo") {
+    if (el.mmsMontajeTipo) el.mmsMontajeTipo.value = String(id || "");
+    refreshMmsDescriptionAuto();
+    renderMmsStageOptions();
+    renderMmsComandaPreview();
+    return;
+  }
+  if (kind === "montaje_adicional") {
+    const n = Number(id || 0);
+    const current = new Set(selectedIdsFromChecklist(el.mmsMontajeAdicionales).map((x) => Number(x)));
+    if (current.has(n)) current.delete(n);
+    else current.add(n);
+    setMmsSelectionSets({
+      guarnicionIds: getMmsSelectedGuarnicionIds(),
+      postreIds: getMmsSelectedPostreIds(),
+      comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
+      adicionalIds: Array.from(current.values()),
+    });
+    refreshMmsDescriptionAuto();
+    renderMmsStageOptions();
+    renderMmsComandaPreview();
+  }
+}
+
+function cancelMmsCurrentStageSelection() {
+  if (mmsCurrentStage === "salsa") {
+    mmsSelectedSalsaIds = [];
+  } else if (mmsCurrentStage === "guarnicion") {
+    setMmsSelectionSets({
+      guarnicionIds: [],
+      postreIds: getMmsSelectedPostreIds(),
+      comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
+      adicionalIds: selectedIdsFromChecklist(el.mmsMontajeAdicionales),
+    });
+  } else if (mmsCurrentStage === "postre") {
+    setMmsSelectionSets({
+      guarnicionIds: getMmsSelectedGuarnicionIds(),
+      postreIds: [],
+      comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
+      adicionalIds: selectedIdsFromChecklist(el.mmsMontajeAdicionales),
+    });
+  } else if (mmsCurrentStage === "bebida") {
+    mmsSelectedBebidaIds = [];
+  } else if (mmsCurrentStage === "montaje_tipo") {
+    if (el.mmsMontajeTipo && el.mmsMontajeTipo.options.length) el.mmsMontajeTipo.value = el.mmsMontajeTipo.options[0].value;
+  } else if (mmsCurrentStage === "montaje_adicional") {
+    setMmsSelectionSets({
+      guarnicionIds: getMmsSelectedGuarnicionIds(),
+      postreIds: getMmsSelectedPostreIds(),
+      comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
+      adicionalIds: [],
+    });
+  } else if (mmsCurrentStage === "preparacion") {
+    if (el.mmsPreparation && el.mmsPreparation.options.length) el.mmsPreparation.value = el.mmsPreparation.options[0].value;
+  } else if (mmsCurrentStage === "plato") {
+    if (el.mmsProtein && el.mmsProtein.options.length) el.mmsProtein.value = el.mmsProtein.options[0].value;
+  }
+  refreshMmsDescriptionAuto();
+  renderMmsStageOptions();
+  renderMmsComandaPreview();
+}
+
+async function ensureMenuMontajeSelectableCatalogLoaded(force = false) {
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
+  if (!force && cache.proteins.length) return cache;
+  const [proteins, salsas, guarniciones, postres, bebidas, comentarios, montajeTipos, montajeAdicionales] = await Promise.all([
+    readMenuCatalog("plato_fuerte"),
+    readMenuCatalog("salsa"),
+    readMenuCatalog("guarnicion"),
+    readMenuCatalog("postre"),
+    readMenuCatalog("bebida"),
+    readMenuCatalog("comentario"),
+    readMenuCatalog("montaje_tipo"),
+    readMenuCatalog("montaje_adicional"),
+  ]);
+  cache.proteins = Array.isArray(proteins) ? proteins.filter((x) => x && x.activo !== false) : [];
+  cache.salsas = Array.isArray(salsas) ? salsas.filter((x) => x && x.activo !== false) : [];
+  cache.guarniciones = Array.isArray(guarniciones) ? guarniciones.filter((x) => x && x.activo !== false) : [];
+  cache.postres = Array.isArray(postres) ? postres.filter((x) => x && x.activo !== false) : [];
+  cache.bebidas = Array.isArray(bebidas) ? bebidas.filter((x) => x && x.activo !== false) : [];
+  cache.comentarios = Array.isArray(comentarios) ? comentarios.filter((x) => x && x.activo !== false) : [];
+  cache.montajeTipos = Array.isArray(montajeTipos) ? montajeTipos.filter((x) => x && x.activo !== false) : [];
+  cache.montajeAdicionales = Array.isArray(montajeAdicionales) ? montajeAdicionales.filter((x) => x && x.activo !== false) : [];
+  cache.preparationsByProtein = new Map();
+  return cache;
+}
+
+async function loadMmsPreparationsByProtein(proteinId) {
+  ensureMmsCatalogDefaults();
+  const pid = Number(proteinId || 0);
+  if (!Number.isFinite(pid) || pid <= 0) return [];
+  const cache = menuMontajeSelectableCatalogCache;
+  if (cache.preparationsByProtein.has(pid)) return cache.preparationsByProtein.get(pid) || [];
+  const rows = await readMenuCatalog("preparacion", `plato_id=${encodeURIComponent(String(pid))}`);
+  const active = Array.isArray(rows) ? rows.filter((x) => x && x.activo !== false) : [];
+  cache.preparationsByProtein.set(pid, active);
+  return active;
+}
+
+function buildMmsNameMap(rows) {
+  const m = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const id = Number(row?.id || 0);
+    if (!Number.isFinite(id) || id <= 0) continue;
+    m.set(id, String(row?.nombre || "").trim());
+  }
+  return m;
+}
+
+function namesFromIds(rows, ids) {
+  const map = buildMmsNameMap(rows);
+  const out = [];
+  for (const idRaw of Array.isArray(ids) ? ids : []) {
+    const id = Number(idRaw || 0);
+    if (!Number.isFinite(id) || id <= 0) continue;
+    const name = String(map.get(id) || "").trim();
+    if (name) out.push(name);
+  }
+  return out;
+}
+
+function listAllCheckboxIds(container) {
+  if (!container) return [];
+  return Array.from(container.querySelectorAll("input[type='checkbox']"))
+    .map((x) => Number(x.value || 0))
+    .filter((n) => Number.isFinite(n) && n > 0);
+}
+
+function setMmsSelectionSets({ guarnicionIds = [], postreIds = [], comentarioIds = [], adicionalIds = [] } = {}) {
+  const guarnicionSet = new Set((Array.isArray(guarnicionIds) ? guarnicionIds : []).map((x) => Number(x)));
+  const postreSet = new Set((Array.isArray(postreIds) ? postreIds : []).map((x) => Number(x)));
+  const comentarioSet = new Set((Array.isArray(comentarioIds) ? comentarioIds : []).map((x) => Number(x)));
+  const adicionalSet = new Set((Array.isArray(adicionalIds) ? adicionalIds : []).map((x) => Number(x)));
+  setChecklistCheckedByIds(el.mmsGuarnicionesSuggested, guarnicionSet);
+  setChecklistCheckedByIds(el.mmsGuarnicionesAll, guarnicionSet);
+  setChecklistCheckedByIds(el.mmsPostresSuggested, postreSet);
+  setChecklistCheckedByIds(el.mmsPostresAll, postreSet);
+  setChecklistCheckedByIds(el.mmsComentariosAll, comentarioSet);
+  setChecklistCheckedByIds(el.mmsMontajeAdicionales, adicionalSet);
+  syncMmsPostreQtyWithSelection();
+}
+
+function getMmsSelectedGuarnicionIds() {
+  return selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll);
+}
+
+function getMmsSelectedPostreIds() {
+  return selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll);
+}
+
+function normalizeMmsPostreQtyMap(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, v] of Object.entries(raw)) {
+    const id = Number(k);
+    const qty = Math.max(0, Math.floor(Number(v || 0)));
+    if (!Number.isFinite(id) || id <= 0 || qty <= 0) continue;
+    out[id] = qty;
+  }
+  return out;
+}
+
+function syncMmsPostreQtyWithSelection() {
+  const selected = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
+  const next = {};
+  for (const id of selected) {
+    const qty = Math.max(1, Math.floor(Number(mmsPostreQtyById[id] || 1)));
+    next[id] = qty;
+  }
+  mmsPostreQtyById = next;
+}
+
+function renderMmsQuickButtonsGroup(container, rows, selectedSet, kind) {
+  if (!container) return;
+  container.innerHTML = "";
+  const list = Array.isArray(rows) ? rows : [];
+  if (!list.length) {
+    container.innerHTML = `<span class="muted">Sin opciones.</span>`;
+    return;
+  }
+  for (const row of list) {
+    const isBebida = kind === "bebida";
+    const idRaw = isBebida ? String(row?.id || "").trim() : Number(row?.id || 0);
+    if (isBebida) {
+      if (!idRaw) continue;
+    } else if (!Number.isFinite(idRaw) || idRaw <= 0) {
+      continue;
+    }
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "mmsQuickBtn";
+    if (selectedSet.has(idRaw)) btn.classList.add("isSelected");
+    btn.dataset.mmsQuickKind = kind;
+    btn.dataset.mmsQuickId = String(idRaw);
+    btn.textContent = String(row?.nombre || "").trim() || "-";
+    container.appendChild(btn);
+  }
+}
+
+function renderMmsQuickSelectors() {
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
+  const selectedGuarnicionSet = new Set(getMmsSelectedGuarnicionIds().map((x) => Number(x)));
+  const selectedPostreSet = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
+
+  const suggestedGuarnicionIds = new Set(listAllCheckboxIds(el.mmsGuarnicionesSuggested));
+  const suggestedPostreIds = new Set(listAllCheckboxIds(el.mmsPostresSuggested));
+  const suggestedGuarniciones = cache.guarniciones.filter((x) => suggestedGuarnicionIds.has(Number(x.id || 0)));
+  const suggestedPostres = cache.postres.filter((x) => suggestedPostreIds.has(Number(x.id || 0)));
+
+  const guarnicionFilter = String(el.mmsGuarnicionFilter?.value || "").trim().toLowerCase();
+  const postreFilter = String(el.mmsPostreFilter?.value || "").trim().toLowerCase();
+  const allGuarnicionesFiltered = cache.guarniciones.filter((x) => {
+    const name = String(x?.nombre || "").trim().toLowerCase();
+    return !guarnicionFilter || name.includes(guarnicionFilter);
+  });
+  const allPostresFiltered = cache.postres.filter((x) => {
+    const name = String(x?.nombre || "").trim().toLowerCase();
+    return !postreFilter || name.includes(postreFilter);
+  });
+
+  renderMmsQuickButtonsGroup(el.mmsGuarnicionesQuickSuggested, suggestedGuarniciones, selectedGuarnicionSet, "guarnicion");
+  renderMmsQuickButtonsGroup(el.mmsPostresQuickSuggested, suggestedPostres, selectedPostreSet, "postre");
+  renderMmsQuickButtonsGroup(el.mmsGuarnicionesQuickGlobal, allGuarnicionesFiltered, selectedGuarnicionSet, "guarnicion");
+  renderMmsQuickButtonsGroup(el.mmsPostresQuickGlobal, allPostresFiltered, selectedPostreSet, "postre");
+
+  if (el.mmsGuarnicionesQuickGlobal) el.mmsGuarnicionesQuickGlobal.hidden = !mmsShowAllGuarniciones;
+  if (el.mmsPostresQuickGlobal) el.mmsPostresQuickGlobal.hidden = !mmsShowAllPostres;
+}
+
+function toggleMmsQuickItem(kind, id) {
+  const itemId = Number(id || 0);
+  if (!Number.isFinite(itemId) || itemId <= 0) return;
+  const guarniciones = new Set(getMmsSelectedGuarnicionIds().map((x) => Number(x)));
+  const postres = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
+  const comentarios = new Set(selectedIdsFromChecklist(el.mmsComentariosAll).map((x) => Number(x)));
+  const adicionales = new Set(selectedIdsFromChecklist(el.mmsMontajeAdicionales).map((x) => Number(x)));
+  if (kind === "guarnicion") {
+    if (guarniciones.has(itemId)) guarniciones.delete(itemId);
+    else guarniciones.add(itemId);
+  } else if (kind === "postre") {
+    if (postres.has(itemId)) postres.delete(itemId);
+    else postres.add(itemId);
+  }
+  setMmsSelectionSets({
+    guarnicionIds: Array.from(guarniciones.values()),
+    postreIds: Array.from(postres.values()),
+    comentarioIds: Array.from(comentarios.values()),
+    adicionalIds: Array.from(adicionales.values()),
+  });
+  refreshMmsDescriptionAuto();
+  renderMmsQuickSelectors();
+  renderMmsComandaPreview();
+}
+
+function renderMmsComandaTag(container, label, removeKind, removeId) {
+  if (!container) return;
+  const tag = document.createElement("span");
+  tag.className = "mmsComandaTag";
+  tag.innerHTML = `${escapeHtml(label)} <button type="button" data-mms-remove-kind="${escapeHtml(removeKind)}" data-mms-remove-id="${escapeHtml(String(removeId))}" title="Quitar">x</button>`;
+  container.appendChild(tag);
+}
+
+function renderMmsComandaPreview() {
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
+  if (el.mmsComandaPlato) {
+    el.mmsComandaPlato.innerHTML = "";
+    const plato = String(el.mmsProtein?.selectedOptions?.[0]?.textContent || "").trim().split(" [")[0];
+    const prep = String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim();
+    const label = [plato, prep].filter(Boolean).join(" - ") || "(sin plato fuerte)";
+    const plain = document.createElement("span");
+    plain.className = "mmsComandaTag";
+    plain.textContent = label;
+    el.mmsComandaPlato.appendChild(plain);
+  }
+
+  if (el.mmsComandaGuarniciones) {
+    el.mmsComandaGuarniciones.innerHTML = "";
+    const ids = getMmsSelectedGuarnicionIds();
+    const names = namesFromIds(cache.guarniciones, ids);
+    if (!names.length) {
+      const empty = document.createElement("span");
+      empty.className = "muted";
+      empty.textContent = "Sin guarniciones";
+      el.mmsComandaGuarniciones.appendChild(empty);
+    } else {
+      for (let i = 0; i < names.length; i++) renderMmsComandaTag(el.mmsComandaGuarniciones, names[i], "guarnicion", ids[i]);
+    }
+  }
+
+  if (el.mmsComandaSalsas) {
+    el.mmsComandaSalsas.innerHTML = "";
+    const ids = (Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x));
+    const names = namesFromIds(cache.salsas, ids);
+    if (!names.length) {
+      const empty = document.createElement("span");
+      empty.className = "muted";
+      empty.textContent = "Sin salsas";
+      el.mmsComandaSalsas.appendChild(empty);
+    } else {
+      for (let i = 0; i < names.length; i++) renderMmsComandaTag(el.mmsComandaSalsas, names[i], "salsa", ids[i]);
+    }
+  }
+
+  if (el.mmsComandaPostres) {
+    el.mmsComandaPostres.innerHTML = "";
+    const ids = getMmsSelectedPostreIds();
+    if (!ids.length) {
+      const empty = document.createElement("span");
+      empty.className = "muted";
+      empty.textContent = "Sin postres";
+      el.mmsComandaPostres.appendChild(empty);
+    } else {
+      const map = new Map((cache.postres || []).map((p) => [Number(p.id), String(p.nombre || "").trim()]));
+      for (const id of ids) {
+        const name = String(map.get(Number(id)) || "").trim();
+        if (!name) continue;
+        const qty = Math.max(1, Math.floor(Number(mmsPostreQtyById[id] || 1)));
+        const tag = document.createElement("span");
+        tag.className = "mmsComandaTag";
+        tag.innerHTML = `${escapeHtml(name)} x${qty} <button type="button" data-mms-qty-kind="postre" data-mms-qty-action="dec" data-mms-qty-id="${escapeHtml(String(id))}" title="Disminuir">-</button><button type="button" data-mms-remove-kind="postre" data-mms-remove-id="${escapeHtml(String(id))}" title="Quitar">x</button>`;
+        el.mmsComandaPostres.appendChild(tag);
+      }
+    }
+  }
+
+  if (el.mmsComandaBebidas) {
+    el.mmsComandaBebidas.innerHTML = "";
+    const ids = (Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+    const names = namesFromIds(cache.bebidas, ids);
+    if (!names.length) {
+      const empty = document.createElement("span");
+      empty.className = "muted";
+      empty.textContent = "Sin bebidas";
+      el.mmsComandaBebidas.appendChild(empty);
+    } else {
+      for (let i = 0; i < names.length; i++) renderMmsComandaTag(el.mmsComandaBebidas, names[i], "bebida", ids[i]);
+    }
+  }
+  if (el.mmsComandaMontaje) {
+    el.mmsComandaMontaje.innerHTML = "";
+    const tipo = String(el.mmsMontajeTipo?.selectedOptions?.[0]?.textContent || "").trim();
+    const adicionales = namesFromIds(cache.montajeAdicionales, selectedIdsFromChecklist(el.mmsMontajeAdicionales));
+    if (tipo) {
+      const tag = document.createElement("span");
+      tag.className = "mmsComandaTag";
+      tag.textContent = `Tipo: ${tipo}`;
+      el.mmsComandaMontaje.appendChild(tag);
+    }
+    if (adicionales.length) {
+      for (const a of adicionales) {
+        const tag = document.createElement("span");
+        tag.className = "mmsComandaTag";
+        tag.textContent = a;
+        el.mmsComandaMontaje.appendChild(tag);
+      }
+    }
+    if (!tipo && !adicionales.length) {
+      const empty = document.createElement("span");
+      empty.className = "muted";
+      empty.textContent = "Sin montaje";
+      el.mmsComandaMontaje.appendChild(empty);
+    }
+  }
+}
+
+function removeMmsComandaItem(kind, id) {
+  const itemId = Number(id || 0);
+  if (!Number.isFinite(itemId) || itemId <= 0) return;
+  const guarniciones = new Set(getMmsSelectedGuarnicionIds().map((x) => Number(x)));
+  const postres = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
+  const salsas = new Set((Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)));
+  const bebidas = new Set((Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
+  if (kind === "guarnicion") guarniciones.delete(itemId);
+  if (kind === "postre") {
+    postres.delete(itemId);
+    delete mmsPostreQtyById[itemId];
+  }
+  if (kind === "salsa") salsas.delete(itemId);
+  if (kind === "bebida") bebidas.delete(Number(id || 0));
+  setMmsSelectionSets({
+    guarnicionIds: Array.from(guarniciones.values()),
+    postreIds: Array.from(postres.values()),
+    comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
+    adicionalIds: selectedIdsFromChecklist(el.mmsMontajeAdicionales),
+  });
+  mmsSelectedSalsaIds = Array.from(salsas.values()).filter((x) => Number.isFinite(x) && x > 0);
+  mmsSelectedBebidaIds = Array.from(bebidas.values()).filter((n) => Number.isFinite(n) && n > 0);
+  refreshMmsDescriptionAuto();
+  renderMmsQuickSelectors();
+  renderMmsStageOptions();
+  renderMmsComandaPreview();
+}
+
+function renderMmsSelectionSummary() {
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
+  const proteinName = String(el.mmsProtein?.selectedOptions?.[0]?.textContent || "").trim();
+  const prepName = String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim();
+  const guarniciones = namesFromIds(cache.guarniciones, selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll));
+  const postres = namesFromIds(cache.postres, selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll));
+  const comentarios = namesFromIds(cache.comentarios, selectedIdsFromChecklist(el.mmsComentariosAll));
+  const comentarioLibre = String(el.mmsComentarioLibre?.value || "").trim();
+  const montajeTipo = String(el.mmsMontajeTipo?.selectedOptions?.[0]?.textContent || "").trim();
+  const montajeAdicionales = namesFromIds(cache.montajeAdicionales, selectedIdsFromChecklist(el.mmsMontajeAdicionales));
+
+  if (el.mmsSummaryMenu) el.mmsSummaryMenu.value = [proteinName, prepName].filter(Boolean).join(" | ") || "(sin seleccionar)";
+  if (el.mmsSummaryGuarniciones) el.mmsSummaryGuarniciones.value = guarniciones.length ? guarniciones.join(", ") : "(sin seleccionar)";
+  if (el.mmsSummaryPostres) el.mmsSummaryPostres.value = postres.length ? postres.join(", ") : "(sin seleccionar)";
+  if (el.mmsSummaryComentarios) {
+    const all = [...comentarios, ...(comentarioLibre ? [comentarioLibre] : [])];
+    el.mmsSummaryComentarios.value = all.length ? all.join(", ") : "(sin comentarios)";
+  }
+  if (el.mmsSummaryMontajeTipo) el.mmsSummaryMontajeTipo.value = montajeTipo || "(sin seleccionar)";
+  if (el.mmsSummaryMontajeAdicionales) el.mmsSummaryMontajeAdicionales.value = montajeAdicionales.length ? montajeAdicionales.join(", ") : "(sin seleccionar)";
+}
+
+function appendTextBlock(textarea, blockText) {
+  if (!(textarea instanceof HTMLTextAreaElement)) return;
+  const current = String(textarea.value || "").trim();
+  const incoming = String(blockText || "").trim();
+  if (!incoming) return;
+  textarea.value = current ? `${current}\n\n${incoming}` : incoming;
+}
+
+function applyMmsMenuBuilder(mode = "append") {
+  const block = buildMmsMenuDescriptionFromForm();
+  if (!String(block || "").trim()) return;
+  if (mode === "replace") {
+    if (el.mmsMenuDescription) el.mmsMenuDescription.value = block;
+  } else {
+    appendTextBlock(el.mmsMenuDescription, block);
+  }
+  maybeAutofillMmsTitle();
+  renderMmsSelectionSummary();
+}
+
+function applyMmsMontajeBuilder(mode = "append") {
+  const block = buildMmsMontajeDescriptionFromForm();
+  if (!String(block || "").trim()) return;
+  if (mode === "replace") {
+    if (el.mmsMontajeDescription) el.mmsMontajeDescription.value = block;
+  } else {
+    appendTextBlock(el.mmsMontajeDescription, block);
+  }
+  renderMmsSelectionSummary();
+}
+
+function useMmsSuggestedSelections() {
+  const guarnicionIds = listAllCheckboxIds(el.mmsGuarnicionesSuggested);
+  const postreIds = listAllCheckboxIds(el.mmsPostresSuggested);
+  const salsaIds = getMmsSuggestedSalsaIds();
+  if (!guarnicionIds.length && !postreIds.length && !salsaIds.length) {
+    return toast("No hay sugerencias para esta combinacion.");
+  }
+  mmsSelectedSalsaIds = salsaIds;
+  setMmsSelectionSets({ guarnicionIds, postreIds });
+  refreshMmsDescriptionAuto();
+  renderMmsSelectionSummary();
+  renderMmsStageOptions();
+  toast("Sugerencias aplicadas.");
+}
+
+function clearMmsMenuSelections() {
+  setMmsSelectionSets({ guarnicionIds: [], postreIds: [], comentarioIds: [] });
+  mmsSelectedSalsaIds = [];
+  mmsSelectedBebidaIds = [];
+  mmsPostreQtyById = {};
+  if (el.mmsComentarioLibre) el.mmsComentarioLibre.value = "";
+  if (el.mmsPlatoDescripcion) el.mmsPlatoDescripcion.value = "";
+  refreshMmsDescriptionAuto();
+  renderMmsQuickSelectors();
+  renderMmsStageOptions();
+  renderMmsSelectionSummary();
+}
+
+function clearMmsMontajeSelections() {
+  setMmsSelectionSets({ adicionalIds: [] });
+  if (el.mmsMontajeTipo && el.mmsMontajeTipo.options.length) {
+    el.mmsMontajeTipo.value = el.mmsMontajeTipo.options[0].value;
+  }
+  refreshMmsDescriptionAuto();
+  renderMmsQuickSelectors();
+  renderMmsSelectionSummary();
+}
+
+function renderMmsEntriesTable() {
+  if (!el.mmsEntriesBody || !quoteDraft) return;
+  const entries = ensureMenuMontajeDraft()
+    .slice()
+    .sort((a, b) => {
+      const d = String(a.date || "").localeCompare(String(b.date || ""));
+      if (d !== 0) return d;
+      return String(a.salon || "").localeCompare(String(b.salon || ""));
+    });
+  el.mmsEntriesBody.innerHTML = "";
+  if (!entries.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="5">Sin informacion de menu/montaje.</td>`;
+    el.mmsEntriesBody.appendChild(tr);
+    return;
+  }
+  for (const item of entries) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(String(item.date || "-"))}</td>
+      <td>${escapeHtml(String(item.salon || "-"))}</td>
+      <td>${escapeHtml(String(item.menuTitle || "-"))}</td>
+      <td>${escapeHtml(String(item.menuQty || "-"))}</td>
+      <td>${escapeHtml(String(item.montajeDescription || "-").slice(0, 120))}</td>
+    `;
+    el.mmsEntriesBody.appendChild(tr);
+  }
+}
+
+function renderMmsVersionControls() {
+  if (!el.mmsVersionSelect || !quoteDraft) return;
+  const model = ensureMenuMontajeModel();
+  const previous = Number(menuMontajeSelectableSelectedVersion || model.currentVersion);
+  el.mmsVersionSelect.innerHTML = "";
+  for (const v of model.versions.slice().sort((a, b) => Number(b.version || 0) - Number(a.version || 0))) {
+    const opt = document.createElement("option");
+    const stamp = formatQuoteSentAtLabel(v.savedAt);
+    opt.value = String(v.version);
+    opt.textContent = stamp ? `V${v.version} - ${stamp}` : `V${v.version}`;
+    el.mmsVersionSelect.appendChild(opt);
+  }
+  const selected = model.versions.some((v) => Number(v.version) === previous)
+    ? previous
+    : model.currentVersion;
+  menuMontajeSelectableSelectedVersion = selected;
+  el.mmsVersionSelect.value = String(selected);
+}
+
+function renderMmsDateSalonSelect() {
+  if (!el.mmsDateSalonSelect || !quoteDraft) return;
+  ensureMenuMontajeModel();
+  const combos = getQuoteDateSalonCombos();
+  const previous = String(menuMontajeSelectableSelectedKey || "").trim();
+  el.mmsDateSalonSelect.innerHTML = "";
+  for (const c of combos) {
+    const opt = document.createElement("option");
+    opt.value = c.key;
+    opt.textContent = `${c.date} - ${c.salon}`;
+    el.mmsDateSalonSelect.appendChild(opt);
+  }
+  if (previous && combos.some((x) => x.key === previous)) {
+    menuMontajeSelectableSelectedKey = previous;
+  } else {
+    menuMontajeSelectableSelectedKey = combos[0]?.key || "";
+  }
+  el.mmsDateSalonSelect.value = menuMontajeSelectableSelectedKey;
+}
+
+function renderMmsMontajeCatalogs() {
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
+  if (el.mmsMontajeTipo) {
+    el.mmsMontajeTipo.innerHTML = "";
+    for (const row of cache.montajeTipos) {
+      const opt = document.createElement("option");
+      opt.value = String(row.id);
+      opt.textContent = String(row.nombre || "");
+      el.mmsMontajeTipo.appendChild(opt);
+    }
+    if (!el.mmsMontajeTipo.options.length) {
+      el.mmsMontajeTipo.innerHTML = `<option value="">Sin tipos de montaje</option>`;
+    }
+  }
+  renderMenuSuggestionCheckboxList(el.mmsMontajeAdicionales, cache.montajeAdicionales, []);
+  renderMenuSuggestionCheckboxList(el.mmsComentariosAll, cache.comentarios, []);
+}
+
+function renderMmsProteinOptions() {
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
+  if (!el.mmsProtein) return;
+  const prev = Number(el.mmsProtein.value || 0);
+  el.mmsProtein.innerHTML = "";
+  for (const row of cache.proteins) {
+    const opt = document.createElement("option");
+    opt.value = String(row.id);
+    opt.textContent = formatPlatoCatalogLabel(row);
+    el.mmsProtein.appendChild(opt);
+  }
+  const hasPrev = prev > 0 && cache.proteins.some((x) => Number(x.id) === prev);
+  if (hasPrev) el.mmsProtein.value = String(prev);
+  if (!el.mmsProtein.options.length) {
+    el.mmsProtein.innerHTML = `<option value="">Sin proteinas activas</option>`;
+  }
+}
+
+function buildMmsMenuDescriptionFromForm() {
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
+  const sectionName = String(el.mmsMenuSection?.value || "General").trim() || "General";
+  const proteinName = String(el.mmsProtein?.selectedOptions?.[0]?.textContent || "").trim();
+  const prepName = String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim();
+  const salsaNames = namesFromIds(cache.salsas, mmsSelectedSalsaIds);
+  const guarnicionIds = selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll);
+  const postreIds = selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll);
+  const comentarioIds = selectedIdsFromChecklist(el.mmsComentariosAll);
+  const guarniciones = namesFromIds(cache.guarniciones, guarnicionIds);
+  const postres = namesFromIds(cache.postres, postreIds);
+  const comentarios = namesFromIds(cache.comentarios, comentarioIds);
+  const bebidas = namesFromIds(cache.bebidas, Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []);
+  const comentarioLibre = String(el.mmsComentarioLibre?.value || "").trim();
+  const lines = [];
+  lines.push(`[SECCION: ${sectionName.toUpperCase()}]`);
+  lines.push("");
+  if (proteinName || prepName) {
+    lines.push("[PLATO FUERTE]");
+    lines.push(`- ${[proteinName, prepName].filter(Boolean).join(" - ") || "-"}`);
+    lines.push("");
+  }
+  lines.push("[GUARNICIONES]");
+  if (guarniciones.length) for (const g of guarniciones) lines.push(`- ${g}`);
+  else lines.push("- Por definir");
+  lines.push("");
+  lines.push("[SALSAS / ADEREZOS]");
+  if (salsaNames.length) for (const s of salsaNames) lines.push(`- ${s}`);
+  else lines.push("- Por definir");
+  lines.push("");
+  lines.push("[POSTRES]");
+  if (postres.length) {
+    for (const pId of postreIds) {
+      const pName = namesFromIds(cache.postres, [pId])[0] || "";
+      if (!pName) continue;
+      const qty = Math.max(1, Math.floor(Number(mmsPostreQtyById[pId] || 1)));
+      lines.push(`- ${pName}${qty > 1 ? ` x${qty}` : ""}`);
+    }
+  }
+  else lines.push("- Por definir");
+  if (bebidas.length) {
+    lines.push("");
+    lines.push("[BEBIDAS]");
+    for (const b of bebidas) lines.push(`- ${b}`);
+  }
+  if (comentarios.length || comentarioLibre) {
+    lines.push("");
+    lines.push("[COMENTARIOS ADICIONALES]");
+    for (const c of comentarios) lines.push(`- ${c}`);
+    if (comentarioLibre) lines.push(`- ${comentarioLibre}`);
+  }
+  return lines.join("\n").trim();
+}
+
+function buildMmsMontajeDescriptionFromForm() {
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
+  const tipoId = Number(el.mmsMontajeTipo?.value || 0);
+  const adicionalesIds = selectedIdsFromChecklist(el.mmsMontajeAdicionales);
+  const tipoMap = buildMmsNameMap(cache.montajeTipos);
+  const tipoName = String(tipoMap.get(tipoId) || "").trim();
+  const adicionales = namesFromIds(cache.montajeAdicionales, adicionalesIds);
+  const manual = String(el.mmsMontajeDescription?.value || "").trim();
+  const lines = [];
+  lines.push("[MONTAJE]");
+  lines.push(`- Tipo: ${tipoName || "Por definir"}`);
+  lines.push("- Adicionales:");
+  if (adicionales.length) {
+    for (const a of adicionales) lines.push(`  - ${a}`);
+  } else {
+    lines.push("  - Ninguno");
+  }
+  if (manual) {
+    lines.push("");
+    lines.push("[DETALLE]");
+    lines.push(manual);
+  }
+  return lines.join("\n").trim();
+}
+
+function maybeAutofillMmsTitle() {
+  const current = String(el.mmsMenuTitle?.value || "").trim();
+  if (current) return;
+  const proteinName = String(el.mmsProtein?.selectedOptions?.[0]?.textContent || "").trim().split(" [")[0];
+  const prepName = String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim();
+  const label = [prepName, proteinName].filter(Boolean).join(" - ");
+  if (label && el.mmsMenuTitle) el.mmsMenuTitle.value = label;
+}
+
+function refreshMmsDescriptionAuto() {
+  if (menuMontajeSelectableSilentUpdate) return;
+  const autoMenu = buildMmsMenuDescriptionFromForm();
+  if (el.mmsMenuDescription && !String(el.mmsMenuDescription.value || "").trim()) {
+    el.mmsMenuDescription.value = autoMenu;
+  }
+  if (el.mmsMontajeDescription && !String(el.mmsMontajeDescription.value || "").trim()) {
+    el.mmsMontajeDescription.value = buildMmsMontajeDescriptionFromForm();
+  }
+  renderMmsSelectionSummary();
+  renderMmsComandaPreview();
+}
+
+async function refreshMmsByProteinPreparation({ preserveSelection = true } = {}) {
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
+  const platoId = Number(el.mmsProtein?.value || 0);
+  const previousPrep = Number(el.mmsPreparation?.value || 0);
+  const preps = await loadMmsPreparationsByProtein(platoId);
+  if (el.mmsPreparation) {
+    el.mmsPreparation.innerHTML = "";
+    for (const p of preps) {
+      const opt = document.createElement("option");
+      opt.value = String(p.id);
+      opt.textContent = String(p.nombre || "");
+      el.mmsPreparation.appendChild(opt);
+    }
+    const keepPrep = preserveSelection && previousPrep > 0 && preps.some((x) => Number(x.id) === previousPrep);
+    if (keepPrep) el.mmsPreparation.value = String(previousPrep);
+    if (!el.mmsPreparation.options.length) {
+      el.mmsPreparation.innerHTML = `<option value="">Sin preparaciones para esta proteina</option>`;
+    }
+  }
+  const prepId = Number(el.mmsPreparation?.value || 0);
+  let links = { salsaIds: [], postreIds: [], guarnicionIds: [] };
+  if (platoId > 0 && prepId > 0) {
+    try {
+      links = await readMenuSuggestions({ platoId, preparacionId: prepId });
+    } catch (_) { }
+  }
+
+  const selectedGuarniciones = selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll);
+  const selectedPostres = selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll);
+  cache.suggestedSalsaIds = Array.isArray(links.salsaIds) ? links.salsaIds.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0) : [];
+  const guarnicionSet = new Set([...(Array.isArray(links.guarnicionIds) ? links.guarnicionIds : []), ...selectedGuarniciones].map((x) => Number(x)));
+  const postreSet = new Set([...(Array.isArray(links.postreIds) ? links.postreIds : []), ...selectedPostres].map((x) => Number(x)));
+
+  const guarnicionesSuggested = cache.guarniciones.filter((x) => guarnicionSet.has(Number(x.id || 0)));
+  const postresSuggested = cache.postres.filter((x) => postreSet.has(Number(x.id || 0)));
+  renderMenuSuggestionCheckboxList(el.mmsGuarnicionesSuggested, guarnicionesSuggested, Array.from(guarnicionSet.values()));
+  renderMenuSuggestionCheckboxList(el.mmsGuarnicionesAll, cache.guarniciones, Array.from(guarnicionSet.values()));
+  renderMenuSuggestionCheckboxList(el.mmsPostresSuggested, postresSuggested, Array.from(postreSet.values()));
+  renderMenuSuggestionCheckboxList(el.mmsPostresAll, cache.postres, Array.from(postreSet.values()));
+  renderMmsQuickSelectors();
+  renderMmsStageOptions();
+  maybeAutofillMmsTitle();
+  refreshMmsDescriptionAuto();
+  renderMmsSelectionSummary();
+  renderMmsComandaPreview();
+}
+
+async function loadMmsFormByKey(key) {
+  if (!quoteDraft) return;
+  const entries = ensureMenuMontajeDraft();
+  const [date, salon] = String(key || "").split("|");
+  const found = entries.find((x) => String(x.date || "") === String(date || "") && String(x.salon || "") === String(salon || ""));
+  const menuSelection = found?.menuSelection || {};
+  const montajeSelection = found?.montajeSelection || {};
+  renderMmsMenuSectionSelect(String(menuSelection?.section || "General"));
+
+  menuMontajeSelectableSilentUpdate = true;
+  if (el.mmsMenuTitle) el.mmsMenuTitle.value = String(found?.menuTitle || "");
+  if (el.mmsMenuQty) el.mmsMenuQty.value = found?.menuQty === null || found?.menuQty === undefined || found?.menuQty === "" ? "" : String(found.menuQty);
+  if (el.mmsComentarioLibre) el.mmsComentarioLibre.value = String(menuSelection?.comentarioLibre || "");
+  if (el.mmsPlatoDescripcion) el.mmsPlatoDescripcion.value = String(menuSelection?.comentarioLibre || "");
+  if (el.mmsMenuDescription) el.mmsMenuDescription.value = String(found?.menuDescription || "");
+  if (el.mmsMontajeDescription) el.mmsMontajeDescription.value = String(found?.montajeDescription || "");
+  menuMontajeSelectableSilentUpdate = false;
+
+  const pid = Number(menuSelection?.platoId || 0);
+  if (pid > 0 && el.mmsProtein && Array.from(el.mmsProtein.options).some((o) => Number(o.value || 0) === pid)) {
+    el.mmsProtein.value = String(pid);
+  }
+  await refreshMmsByProteinPreparation({ preserveSelection: false });
+
+  const prepId = Number(menuSelection?.preparacionId || 0);
+  if (prepId > 0 && el.mmsPreparation && Array.from(el.mmsPreparation.options).some((o) => Number(o.value || 0) === prepId)) {
+    el.mmsPreparation.value = String(prepId);
+    await refreshMmsByProteinPreparation({ preserveSelection: true });
+  }
+  mmsSelectedSalsaIds = (Array.isArray(menuSelection?.salsaIds) ? menuSelection.salsaIds : [])
+    .map((x) => Number(x))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  mmsSelectedBebidaIds = (Array.isArray(menuSelection?.bebidaIds) ? menuSelection.bebidaIds : [])
+    .map((x) => Number(x))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  mmsPostreQtyById = normalizeMmsPostreQtyMap(menuSelection?.postreQtys);
+
+  const guarnicionSet = new Set((Array.isArray(menuSelection?.guarnicionIds) ? menuSelection.guarnicionIds : []).map((x) => Number(x)));
+  const postreSet = new Set((Array.isArray(menuSelection?.postreIds) ? menuSelection.postreIds : []).map((x) => Number(x)));
+  const comentarioSet = new Set((Array.isArray(menuSelection?.comentarioIds) ? menuSelection.comentarioIds : []).map((x) => Number(x)));
+  const adicionalSet = new Set((Array.isArray(montajeSelection?.adicionalIds) ? montajeSelection.adicionalIds : []).map((x) => Number(x)));
+  setChecklistCheckedByIds(el.mmsGuarnicionesSuggested, guarnicionSet);
+  setChecklistCheckedByIds(el.mmsGuarnicionesAll, guarnicionSet);
+  setChecklistCheckedByIds(el.mmsPostresSuggested, postreSet);
+  setChecklistCheckedByIds(el.mmsPostresAll, postreSet);
+  syncMmsPostreQtyWithSelection();
+  setChecklistCheckedByIds(el.mmsComentariosAll, comentarioSet);
+  setChecklistCheckedByIds(el.mmsMontajeAdicionales, adicionalSet);
+
+  const montajeTipoId = Number(montajeSelection?.tipoId || 0);
+  if (montajeTipoId > 0 && el.mmsMontajeTipo && Array.from(el.mmsMontajeTipo.options).some((o) => Number(o.value || 0) === montajeTipoId)) {
+    el.mmsMontajeTipo.value = String(montajeTipoId);
+  }
+  if (el.mmsDocNo) el.mmsDocNo.value = String(quoteDraft.code || "").trim() || "(sin codigo)";
+  renderMmsQuickSelectors();
+  renderMmsStageOptions();
+  renderMmsSelectionSummary();
+  renderMmsComandaPreview();
+}
+
+async function loadMmsVersion(versionNumber) {
+  loadMenuMontajeVersion(versionNumber);
+  menuMontajeSelectableSelectedVersion = Number(versionNumber || quoteDraft?.menuMontajeVersion || 1);
+  renderMmsVersionControls();
+  renderMmsDateSalonSelect();
+  renderMmsEntriesTable();
+  await loadMmsFormByKey(menuMontajeSelectableSelectedKey);
+}
+
+async function openMenuMontajeSelectableModal() {
+  if (!quoteDraft) return toast("Primero abre una cotizacion.");
+  await ensureMenuMontajeSelectableCatalogLoaded(false);
+  mmsShowAllGuarniciones = false;
+  mmsShowAllPostres = false;
+  mmsSelectedSalsaIds = [];
+  mmsSelectedBebidaIds = [];
+  mmsPostreQtyById = {};
+  mmsCurrentStage = "plato";
+  if (el.mmsStageFilter) el.mmsStageFilter.value = "";
+  if (el.btnMmsToggleGuarnicionesGlobal) el.btnMmsToggleGuarnicionesGlobal.textContent = "Mas guarniciones";
+  if (el.btnMmsTogglePostresGlobal) el.btnMmsTogglePostresGlobal.textContent = "Mas postres";
+  renderMmsMenuSectionSelect("General");
+  renderMmsProteinOptions();
+  renderMmsMontajeCatalogs();
+  const model = ensureMenuMontajeModel();
+  menuMontajeSelectableSelectedVersion = Number(model.currentVersion || 1);
+  renderMmsVersionControls();
+  renderMmsDateSalonSelect();
+  renderMmsEntriesTable();
+  await loadMmsFormByKey(menuMontajeSelectableSelectedKey);
+  renderMmsStageTabs();
+  renderMmsStageOptions();
+  renderMmsSelectionSummary();
+  renderMmsComandaPreview();
+  if (el.menuMontajeSelectableBackdrop) el.menuMontajeSelectableBackdrop.hidden = false;
+}
+
+function buildMmsSelectionPayload() {
+  return {
+    section: String(el.mmsMenuSection?.value || "General").trim() || "General",
+    platoId: Number(el.mmsProtein?.value || 0) || null,
+    preparacionId: Number(el.mmsPreparation?.value || 0) || null,
+    salsaIds: (Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+    guarnicionIds: selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll),
+    postreIds: selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll),
+    postreQtys: normalizeMmsPostreQtyMap(mmsPostreQtyById),
+    bebidaIds: (Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+    comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
+    comentarioLibre: String(el.mmsComentarioLibre?.value || "").trim(),
+  };
+}
+
+function buildMmsMontajeSelectionPayload() {
+  return {
+    tipoId: Number(el.mmsMontajeTipo?.value || 0) || null,
+    adicionalIds: selectedIdsFromChecklist(el.mmsMontajeAdicionales),
+  };
+}
+
+async function saveMenuMontajeSelectableFromModal({ updateCurrentVersion = false } = {}) {
+  if (!quoteDraft) return;
+  const key = String(el.mmsDateSalonSelect?.value || "").trim();
+  if (!key || !key.includes("|")) return toast("Selecciona fecha y salon.");
+  const [date, salon] = key.split("|");
+  const menuTitle = String(el.mmsMenuTitle?.value || "").trim();
+  const menuQtyRaw = String(el.mmsMenuQty?.value || "").trim();
+  const menuQty = menuQtyRaw ? Math.max(0, Number(menuQtyRaw)) : "";
+  const menuDescription = String(el.mmsMenuDescription?.value || "").trim() || buildMmsMenuDescriptionFromForm();
+  const montajeDescription = String(el.mmsMontajeDescription?.value || "").trim() || buildMmsMontajeDescriptionFromForm();
+  if (!menuTitle && !menuDescription && !montajeDescription) {
+    return toast("Agrega al menos menu o montaje para guardar.");
+  }
+  const entries = ensureMenuMontajeDraft();
+  const idx = entries.findIndex((x) => String(x.date || "") === date && String(x.salon || "") === salon);
+  const row = {
+    id: idx >= 0 ? String(entries[idx].id || uid()) : uid(),
+    date,
+    salon,
+    menuTitle,
+    menuQty: menuQty === "" ? "" : Number.isFinite(menuQty) ? Math.floor(menuQty) : "",
+    menuDescription,
+    montajeDescription,
+    menuSelection: buildMmsSelectionPayload(),
+    montajeSelection: buildMmsMontajeSelectionPayload(),
+    updatedAt: new Date().toISOString(),
+  };
+  if (idx >= 0) entries[idx] = row;
+  else entries.push(row);
+
+  syncQuoteDraftFromQuoteFormLoose();
+  const model = ensureMenuMontajeModel();
+  let targetVersion = Number(menuMontajeSelectableSelectedVersion || model.currentVersion || 1);
+  const nowIso = new Date().toISOString();
+  const compactEntries = compactMenuMontajeEntries(entries);
+  let createdNewVersion = false;
+  let unchanged = false;
+  if (updateCurrentVersion) {
+    const targetIdx = model.versions.findIndex((v) => Number(v.version) === targetVersion);
+    if (targetIdx >= 0) {
+      model.versions[targetIdx] = { ...model.versions[targetIdx], entries: compactEntries, savedAt: nowIso };
+    } else {
+      model.versions.push({ version: targetVersion, entries: compactEntries, savedAt: nowIso });
+    }
+  } else {
+    const currentSnapshot = model.versions.find((v) => Number(v.version || 0) === Number(targetVersion || 0))
+      || model.versions[model.versions.length - 1]
+      || null;
+    if (currentSnapshot && areMenuMontajeEntriesEqual(currentSnapshot.entries, compactEntries)) {
+      unchanged = true;
+    } else {
+      const nextVersion = Math.max(0, ...model.versions.map((v) => Number(v.version || 0))) + 1;
+      targetVersion = nextVersion;
+      model.versions.push({ version: nextVersion, entries: compactEntries, savedAt: nowIso });
+      createdNewVersion = true;
+    }
+  }
+
+  quoteDraft.menuMontajeVersions = normalizeMenuMontajeVersionHistory(model.versions);
+  quoteDraft.menuMontajeVersion = targetVersion;
+  quoteDraft.menuMontajeEntries = deepClone(entries);
+  if (!String(quoteDraft.code || "").trim()) {
+    const code = await requestServerQuoteCode();
+    quoteDraft.code = code || buildQuoteCode();
+    if (el.quoteCode) el.quoteCode.value = quoteDraft.code;
+  }
+  if (el.mmsDocNo) el.mmsDocNo.value = quoteDraft.code;
+  quoteDraft.quotedAt = nowIso;
+  menuMontajeSelectableSelectedVersion = targetVersion;
+  renderMmsVersionControls();
+
+  const eventId = String(el.quoteEventId?.value || "").trim();
+  const ev = (state.events || []).find((x) => String(x.id || "") === eventId);
+  if (ev) {
+    const reservationKey = reservationKeyFromEvent(ev);
+    const series = getEventSeries(ev);
+    for (const item of series) item.quote = deepClone(quoteDraft);
+    quoteDraft = deepClone(quoteDraft);
+    appendHistoryByKey(reservationKey, ev.userId || "", unchanged
+      ? `Menu & Montaje (listas) verificado sin cambios (V${targetVersion}).`
+      : `Menu & Montaje (listas) ${updateCurrentVersion ? "actualizado" : "guardado"} en V${targetVersion}.`);
+    persist();
+    render();
+    renderQuoteVersionControls();
+  }
+
+  renderMenuMontajeSelect();
+  renderMenuMontajeEntriesTable();
+  renderMmsDateSalonSelect();
+  renderMmsEntriesTable();
+  toast(unchanged
+    ? `Sin cambios detectados. Se mantiene V${targetVersion}.`
+    : (updateCurrentVersion
+      ? `Menu & Montaje actualizado en V${targetVersion}.`
+      : (createdNewVersion
+        ? `Menu & Montaje guardado. Version V${targetVersion} creada.`
+        : `Menu & Montaje guardado en V${targetVersion}.`)));
+}
+
 async function requestServerQuoteCode() {
   try {
     const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, "doc-code-next");
@@ -5185,10 +7052,6 @@ function bindEvents() {
   });
   window.addEventListener("resize", () => {
     syncCalendarVerticalOffset();
-    if (el.templateBackdrop && !el.templateBackdrop.hidden) {
-      templateUiState.pdfRenderKey = "";
-      refreshTemplatePreview();
-    }
   });
   if (el.navMode) {
     el.navMode.addEventListener("change", (e) => {
@@ -5305,11 +7168,13 @@ function bindEvents() {
       });
     }
 
-    if (el.btnQuickAddTemplate) {
-      el.btnQuickAddTemplate.addEventListener("click", () => {
-        openTemplateBuilderModal();
+    if (el.btnQuickAddChecklist) {
+      el.btnQuickAddChecklist.addEventListener("click", () => {
+        closeSettingsPanel();
+        openChecklistTemplateModal();
       });
     }
+
     if (el.btnReportSales) {
       el.btnReportSales.addEventListener("click", () => {
         closeSettingsPanel();
@@ -5474,12 +7339,20 @@ function bindEvents() {
     if (!id) return;
     const ev = state.events.find(x => x.id === id);
     if (!ev) return;
+    const previousStatus = ev.status;
+    const releasedWindows = isHardBlockingStatus(ev.status) ? buildBlockingWindowsFromEvents([ev]) : [];
     ev.status = STATUS.CANCELADO;
     appendHistoryByKey(reservationKeyFromEvent(ev), ev.userId, "Estado cambiado a Cancelado.");
+    notifyReleasedCapacityForWaitingReservations({
+      releasedWindows,
+      sourceEvent: ev,
+      reasonText: "se cancelo",
+      actorUserId: ev.userId || "",
+    });
     persist();
     render();
     openModalForEdit(id);
-    toast("Evento cancelado.");
+    toast(buildStatusChangeToast(previousStatus, ev.status, "Evento cancelado."));
   });
 
   el.btnMarkQuoted.addEventListener("click", () => {
@@ -5487,12 +7360,13 @@ function bindEvents() {
     if (!id) return;
     const ev = state.events.find(x => x.id === id);
     if (!ev) return;
+    const previousStatus = ev.status;
     ev.status = STATUS.SEGUIMIENTO;
     appendHistoryByKey(reservationKeyFromEvent(ev), ev.userId, "Estado cambiado a Seguimiento.");
     persist();
     render();
     openModalForEdit(id);
-    toast("Movido a Seguimiento.");
+    toast(buildStatusChangeToast(previousStatus, ev.status, "Movido a Seguimiento."));
   });
   if (el.btnSetMaintenance) {
     el.btnSetMaintenance.addEventListener("click", async () => {
@@ -5569,6 +7443,19 @@ function bindEvents() {
   }
   if (el.topbarReminderList) {
     el.topbarReminderList.addEventListener("click", (e) => {
+      const dismissBtn = e.target.closest("[data-dismiss-global-notification-id]");
+      if (dismissBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const notificationId = String(dismissBtn.dataset.dismissGlobalNotificationId || "").trim();
+        if (!notificationId) return;
+        const removed = dismissGlobalNotificationForSession(notificationId, { persistRemote: true });
+        if (removed) {
+          refreshTopbarReminders();
+          toast("Notificacion quitada.");
+        }
+        return;
+      }
       const item = e.target.closest(".topbarReminderItem");
       if (!item) return;
       const eventId = String(item.dataset.eventId || "").trim();
@@ -5592,6 +7479,18 @@ function bindEvents() {
   if (el.btnMenuMontaje) {
     el.btnMenuMontaje.addEventListener("click", () => {
       openMenuMontajeModal();
+    });
+  }
+  if (el.btnMenuMontajeSelectable) {
+    el.btnMenuMontajeSelectable.addEventListener("click", () => {
+      openMenuMontajeSelectableModal().catch(() => {
+        toast("No se pudo abrir Menu & Montaje (Listas).");
+      });
+    });
+  }
+  if (el.btnQuotePrintTemplate) {
+    el.btnQuotePrintTemplate.addEventListener("click", async () => {
+      await printSelectedQuoteTemplate();
     });
   }
   if (el.btnMenuMontajeClose) {
@@ -5647,6 +7546,328 @@ function bindEvents() {
   if (el.btnMenuMontajePrintDay) {
     el.btnMenuMontajePrintDay.addEventListener("click", () => {
       printMenuMontajeByDay();
+    });
+  }
+  if (el.btnMenuMontajeSelectableClose) {
+    el.btnMenuMontajeSelectableClose.addEventListener("click", closeMenuMontajeSelectableModal);
+  }
+  if (el.menuMontajeSelectableBackdrop) {
+    bindSafeBackdropClose(el.menuMontajeSelectableBackdrop, closeMenuMontajeSelectableModal);
+    el.menuMontajeSelectableBackdrop.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mm-snippet]");
+      if (!btn) return;
+      e.preventDefault();
+      const tools = btn.closest(".mmTextTools");
+      const targetId = String(btn.dataset.mmTarget || tools?.dataset.mmTarget || "").trim();
+      if (!targetId) return;
+      const target = document.getElementById(targetId);
+      if (!(target instanceof HTMLTextAreaElement)) return;
+      const snippet = getMenuMontajeSnippet(btn.dataset.mmSnippet);
+      if (!snippet) return;
+      insertTextAtCursor(target, snippet);
+      target.focus();
+    });
+  }
+  if (el.mmsProtein) {
+    el.mmsProtein.addEventListener("change", () => {
+      refreshMmsByProteinPreparation({ preserveSelection: false }).catch(() => {
+        toast("No se pudieron cargar preparaciones del menu.");
+      });
+    });
+  }
+  if (el.mmsPreparation) {
+    el.mmsPreparation.addEventListener("change", () => {
+      refreshMmsByProteinPreparation({ preserveSelection: true }).catch(() => {
+        toast("No se pudieron cargar sugerencias del menu.");
+      });
+    });
+  }
+  if (el.mmsStageTabs) {
+    el.mmsStageTabs.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mms-stage]");
+      if (!btn) return;
+      setMmsStage(String(btn.dataset.mmsStage || "plato"));
+    });
+  }
+  if (el.btnMmsStageMoreOptions) {
+    el.btnMmsStageMoreOptions.addEventListener("click", () => {
+      if (mmsCurrentStage === "salsa" || mmsCurrentStage === "guarnicion") {
+        mmsShowAllGuarniciones = !mmsShowAllGuarniciones;
+      } else if (mmsCurrentStage === "postre") {
+        mmsShowAllPostres = !mmsShowAllPostres;
+      } else {
+        return;
+      }
+      renderMmsStageOptions();
+    });
+  }
+  if (el.btnMmsStageCancelSelection) {
+    el.btnMmsStageCancelSelection.addEventListener("click", () => {
+      cancelMmsCurrentStageSelection();
+    });
+  }
+  if (el.btnMmsOpenCatalog) {
+    el.btnMmsOpenCatalog.addEventListener("click", async () => {
+      await openMenuCatalogManagerModal("plato_fuerte");
+    });
+  }
+  if (el.mmsStageFilter) {
+    el.mmsStageFilter.addEventListener("input", () => {
+      renderMmsStageOptions();
+    });
+  }
+  if (el.mmsStageOptions) {
+    el.mmsStageOptions.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mms-quick-kind]");
+      if (!btn) return;
+      handleMmsStageOptionClick(btn.dataset.mmsQuickKind, btn.dataset.mmsQuickId);
+    });
+  }
+  if (el.btnMmsAddBebida) {
+    el.btnMmsAddBebida.addEventListener("click", () => {
+      addMmsBebidaFromInput();
+    });
+  }
+  if (el.mmsBebidaInput) {
+    el.mmsBebidaInput.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      addMmsBebidaFromInput();
+    });
+  }
+  if (el.btnMmsToggleGuarnicionesGlobal) {
+    el.btnMmsToggleGuarnicionesGlobal.addEventListener("click", () => {
+      mmsShowAllGuarniciones = !mmsShowAllGuarniciones;
+      if (el.btnMmsToggleGuarnicionesGlobal) {
+        el.btnMmsToggleGuarnicionesGlobal.textContent = mmsShowAllGuarniciones ? "Ocultar globales" : "Mas guarniciones";
+      }
+      renderMmsQuickSelectors();
+    });
+  }
+  if (el.btnMmsTogglePostresGlobal) {
+    el.btnMmsTogglePostresGlobal.addEventListener("click", () => {
+      mmsShowAllPostres = !mmsShowAllPostres;
+      if (el.btnMmsTogglePostresGlobal) {
+        el.btnMmsTogglePostresGlobal.textContent = mmsShowAllPostres ? "Ocultar globales" : "Mas postres";
+      }
+      renderMmsQuickSelectors();
+    });
+  }
+  if (el.mmsGuarnicionFilter) {
+    el.mmsGuarnicionFilter.addEventListener("input", () => {
+      renderMmsQuickSelectors();
+    });
+  }
+  if (el.mmsPostreFilter) {
+    el.mmsPostreFilter.addEventListener("input", () => {
+      renderMmsQuickSelectors();
+    });
+  }
+  if (el.mmsGuarnicionesQuickSuggested) {
+    el.mmsGuarnicionesQuickSuggested.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mms-quick-kind='guarnicion']");
+      if (!btn) return;
+      toggleMmsQuickItem("guarnicion", btn.dataset.mmsQuickId);
+    });
+  }
+  if (el.mmsGuarnicionesQuickGlobal) {
+    el.mmsGuarnicionesQuickGlobal.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mms-quick-kind='guarnicion']");
+      if (!btn) return;
+      toggleMmsQuickItem("guarnicion", btn.dataset.mmsQuickId);
+    });
+  }
+  if (el.mmsPostresQuickSuggested) {
+    el.mmsPostresQuickSuggested.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mms-quick-kind='postre']");
+      if (!btn) return;
+      toggleMmsQuickItem("postre", btn.dataset.mmsQuickId);
+    });
+  }
+  if (el.mmsPostresQuickGlobal) {
+    el.mmsPostresQuickGlobal.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mms-quick-kind='postre']");
+      if (!btn) return;
+      toggleMmsQuickItem("postre", btn.dataset.mmsQuickId);
+    });
+  }
+  if (el.mmsComandaPreview) {
+    el.mmsComandaPreview.addEventListener("click", (e) => {
+      const qtyBtn = e.target.closest("[data-mms-qty-kind]");
+      if (qtyBtn) {
+        const kind = String(qtyBtn.dataset.mmsQtyKind || "");
+        const action = String(qtyBtn.dataset.mmsQtyAction || "");
+        const id = Number(qtyBtn.dataset.mmsQtyId || 0);
+        if (kind === "postre" && Number.isFinite(id) && id > 0) {
+          const current = Math.max(1, Math.floor(Number(mmsPostreQtyById[id] || 1)));
+          if (action === "dec") {
+            if (current <= 1) {
+              removeMmsComandaItem("postre", id);
+              return;
+            }
+            mmsPostreQtyById[id] = current - 1;
+            refreshMmsDescriptionAuto();
+            renderMmsComandaPreview();
+          }
+        }
+        return;
+      }
+      const btn = e.target.closest("[data-mms-remove-kind]");
+      if (!btn) return;
+      removeMmsComandaItem(btn.dataset.mmsRemoveKind, btn.dataset.mmsRemoveId);
+    });
+  }
+  if (el.btnMmsUseSuggested) {
+    el.btnMmsUseSuggested.addEventListener("click", () => {
+      useMmsSuggestedSelections();
+    });
+  }
+  if (el.btnMmsClearMenuSelection) {
+    el.btnMmsClearMenuSelection.addEventListener("click", () => {
+      clearMmsMenuSelections();
+    });
+  }
+  if (el.btnMmsMenuAppend) {
+    el.btnMmsMenuAppend.addEventListener("click", () => {
+      applyMmsMenuBuilder("append");
+      toast("Bloque de menu agregado.");
+    });
+  }
+  if (el.btnMmsMenuReplace) {
+    el.btnMmsMenuReplace.addEventListener("click", () => {
+      applyMmsMenuBuilder("replace");
+      toast("Descripcion de menu reemplazada.");
+    });
+  }
+  if (el.mmsMenuSection) {
+    el.mmsMenuSection.addEventListener("change", () => {
+      refreshMmsDescriptionAuto();
+    });
+  }
+  if (el.btnMmsMenuSectionAdd) {
+    el.btnMmsMenuSectionAdd.addEventListener("click", () => {
+      addMmsMenuSectionFromInput();
+    });
+  }
+  if (el.mmsMenuSectionInput) {
+    el.mmsMenuSectionInput.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      addMmsMenuSectionFromInput();
+    });
+  }
+  if (el.mmsDateSalonSelect) {
+    el.mmsDateSalonSelect.addEventListener("change", () => {
+      menuMontajeSelectableSelectedKey = String(el.mmsDateSalonSelect.value || "").trim();
+      loadMmsFormByKey(menuMontajeSelectableSelectedKey).catch(() => {
+        toast("No se pudo cargar el detalle de menu.");
+      });
+    });
+  }
+  if (el.btnMmsLoadVersion) {
+    el.btnMmsLoadVersion.addEventListener("click", () => {
+      const v = Number(el.mmsVersionSelect?.value || 0);
+      if (!Number.isFinite(v) || v <= 0) return toast("Version invalida.");
+      loadMmsVersion(v).catch(() => {
+        toast("No se pudo cargar la version.");
+      });
+    });
+  }
+  if (el.btnMmsSave) {
+    el.btnMmsSave.addEventListener("click", async () => {
+      await saveMenuMontajeSelectableFromModal({ updateCurrentVersion: false });
+    });
+  }
+  if (el.btnMmsSaveCurrent) {
+    el.btnMmsSaveCurrent.addEventListener("click", async () => {
+      await saveMenuMontajeSelectableFromModal({ updateCurrentVersion: true });
+    });
+  }
+  if (el.btnMmsMontajeClear) {
+    el.btnMmsMontajeClear.addEventListener("click", () => {
+      clearMmsMontajeSelections();
+    });
+  }
+  if (el.btnMmsMontajeAppend) {
+    el.btnMmsMontajeAppend.addEventListener("click", () => {
+      applyMmsMontajeBuilder("append");
+      toast("Bloque de montaje agregado.");
+    });
+  }
+  if (el.btnMmsMontajeReplace) {
+    el.btnMmsMontajeReplace.addEventListener("click", () => {
+      applyMmsMontajeBuilder("replace");
+      toast("Descripcion de montaje reemplazada.");
+    });
+  }
+  if (el.btnMmsPrintDay) {
+    el.btnMmsPrintDay.addEventListener("click", () => {
+      printMenuMontajeByDay();
+    });
+  }
+  if (el.mmsMontajeTipo) {
+    el.mmsMontajeTipo.addEventListener("change", () => {
+      refreshMmsDescriptionAuto();
+    });
+  }
+  if (el.mmsMenuTitle) {
+    el.mmsMenuTitle.addEventListener("input", () => {
+      renderMmsSelectionSummary();
+    });
+  }
+  if (el.mmsMenuQty) {
+    el.mmsMenuQty.addEventListener("input", () => {
+      renderMmsSelectionSummary();
+    });
+  }
+  if (el.mmsMenuDescription) {
+    el.mmsMenuDescription.addEventListener("input", () => {
+      renderMmsSelectionSummary();
+    });
+  }
+  if (el.mmsMontajeDescription) {
+    el.mmsMontajeDescription.addEventListener("input", () => {
+      renderMmsSelectionSummary();
+    });
+  }
+  const bindMirror = (left, right) => {
+    if (!left || !right) return;
+    left.addEventListener("change", (e) => {
+      const check = e.target.closest("input[type='checkbox']");
+      if (!check) return;
+      syncMirrorChecklistValue(left, right, check);
+      refreshMmsDescriptionAuto();
+      renderMmsQuickSelectors();
+    });
+    right.addEventListener("change", (e) => {
+      const check = e.target.closest("input[type='checkbox']");
+      if (!check) return;
+      syncMirrorChecklistValue(right, left, check);
+      refreshMmsDescriptionAuto();
+      renderMmsQuickSelectors();
+    });
+  };
+  bindMirror(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll);
+  bindMirror(el.mmsPostresSuggested, el.mmsPostresAll);
+  if (el.mmsComentariosAll) {
+    el.mmsComentariosAll.addEventListener("change", () => {
+      refreshMmsDescriptionAuto();
+    });
+  }
+  if (el.mmsMontajeAdicionales) {
+    el.mmsMontajeAdicionales.addEventListener("change", () => {
+      refreshMmsDescriptionAuto();
+    });
+  }
+  if (el.mmsComentarioLibre) {
+    el.mmsComentarioLibre.addEventListener("input", () => {
+      refreshMmsDescriptionAuto();
+    });
+  }
+  if (el.mmsPlatoDescripcion) {
+    el.mmsPlatoDescripcion.addEventListener("input", () => {
+      if (el.mmsComentarioLibre) el.mmsComentarioLibre.value = String(el.mmsPlatoDescripcion.value || "");
+      refreshMmsDescriptionAuto();
     });
   }
 
@@ -5712,6 +7933,7 @@ function bindEvents() {
     el.userSignature.addEventListener("change", async () => {
       const file = el.userSignature.files?.[0] || null;
       if (!file) {
+        userSignatureNormalizedDataUrl = "";
         const existing = userModalEditingId
           ? (state.users || []).map(normalizeUserRecord).find((u) => String(u.id) === userModalEditingId)?.signatureDataUrl || ""
           : "";
@@ -5723,11 +7945,14 @@ function bindEvents() {
       if (!isPng && !isJpg) {
         toast("La firma debe ser JPG o PNG.");
         el.userSignature.value = "";
+        userSignatureNormalizedDataUrl = "";
         renderUserSignaturePreview("");
         return;
       }
       const dataUrl = await readImageFileAsDataUrl(file);
-      renderUserSignaturePreview(dataUrl);
+      const normalized = await normalizeSignatureDataUrlForContract(dataUrl);
+      userSignatureNormalizedDataUrl = String(normalized || dataUrl || "").trim();
+      renderUserSignaturePreview(userSignatureNormalizedDataUrl);
     });
   }
   if (el.btnUserDisable) {
@@ -5780,7 +8005,11 @@ function bindEvents() {
       const isPng = /image\/png/i.test(signatureFile.type) || /\.png$/i.test(signatureFile.name || "");
       const isJpg = /image\/jpeg/i.test(signatureFile.type) || /\.(jpe?g)$/i.test(signatureFile.name || "");
       if (!isPng && !isJpg) return toast("La firma debe ser JPG o PNG.");
-      signatureDataUrl = await readImageFileAsDataUrl(signatureFile);
+      signatureDataUrl = String(userSignatureNormalizedDataUrl || "").trim();
+      if (!signatureDataUrl) {
+        const rawSignature = await readImageFileAsDataUrl(signatureFile);
+        signatureDataUrl = await normalizeSignatureDataUrlForContract(rawSignature);
+      }
       const signatureAnalysis = await analyzeSignatureDataUrl(signatureDataUrl);
       const warn = getSignatureWhitespaceWarning(signatureAnalysis);
       if (warn) toast(`Aviso firma: ${warn}`);
@@ -5871,221 +8100,158 @@ function bindEvents() {
   if (el.serviceBackdrop) {
     bindSafeBackdropClose(el.serviceBackdrop, closeServiceModal);
   }
+  if (el.menuSuggestionsBackdrop) {
+    bindSafeBackdropClose(el.menuSuggestionsBackdrop, closeMenuSuggestionsModal);
+  }
+  bindMenuSuggestDnD(el.menuSuggestionsSalsas);
+  bindMenuSuggestDnD(el.menuSuggestionsPostres);
+  bindMenuSuggestDnD(el.menuSuggestionsGuarniciones);
+  bindMenuSuggestDnD(el.mmsGuarnicionesSuggested);
+  bindMenuSuggestDnD(el.mmsGuarnicionesAll);
+  bindMenuSuggestDnD(el.mmsPostresSuggested);
+  bindMenuSuggestDnD(el.mmsPostresAll);
+  bindMenuSuggestDnD(el.mmsComentariosAll);
+  bindMenuSuggestDnD(el.mmsMontajeAdicionales);
+  if (el.btnMenuSuggestionsClose) {
+    el.btnMenuSuggestionsClose.addEventListener("click", closeMenuSuggestionsModal);
+  }
+  if (el.btnMenuSuggestionsDiscard) {
+    el.btnMenuSuggestionsDiscard.addEventListener("click", closeMenuSuggestionsModal);
+  }
+  if (el.menuSuggestionsProtein) {
+    el.menuSuggestionsProtein.addEventListener("change", async () => {
+      const proteinId = Number(el.menuSuggestionsProtein.value || 0);
+      const preps = await readMenuCatalog("preparacion", `plato_id=${encodeURIComponent(String(proteinId || ""))}`);
+      if (el.menuSuggestionsPreparation) {
+        el.menuSuggestionsPreparation.innerHTML = "";
+        for (const p of preps.filter((x) => x && x.activo !== false)) {
+          const opt = document.createElement("option");
+          opt.value = String(p.id);
+          opt.textContent = String(p.nombre || "");
+          el.menuSuggestionsPreparation.appendChild(opt);
+        }
+        if (!el.menuSuggestionsPreparation.options.length) {
+          el.menuSuggestionsPreparation.innerHTML = `<option value="">Sin preparaciones para esta proteina</option>`;
+        }
+      }
+      await refreshMenuSuggestionsModalData();
+    });
+  }
+  if (el.menuSuggestionsPreparation) {
+    el.menuSuggestionsPreparation.addEventListener("change", () => {
+      refreshMenuSuggestionsModalData().catch(() => {
+        toast("No se pudieron cargar sugerencias.");
+      });
+    });
+  }
+  if (el.btnMenuSuggestionsSave) {
+    el.btnMenuSuggestionsSave.addEventListener("click", async () => {
+      const platoId = Number(el.menuSuggestionsProtein?.value || 0);
+      const preparacionId = Number(el.menuSuggestionsPreparation?.value || 0);
+      if (!Number.isFinite(platoId) || platoId <= 0) return toast("Selecciona una proteina.");
+      if (!Number.isFinite(preparacionId) || preparacionId <= 0) return toast("Selecciona una preparacion.");
+      await saveMenuSuggestions({
+        id_plato_fuerte: platoId,
+        id_preparacion: preparacionId,
+        salsaIds: selectedIdsFromChecklist(el.menuSuggestionsSalsas),
+        postreIds: selectedIdsFromChecklist(el.menuSuggestionsPostres),
+        guarnicionIds: selectedIdsFromChecklist(el.menuSuggestionsGuarniciones),
+      });
+      toast("Sugerencias de menu actualizadas.");
+    });
+  }
+  if (el.btnMenuSuggestionsManageCatalog) {
+    el.btnMenuSuggestionsManageCatalog.addEventListener("click", async () => {
+      await openMenuCatalogManagerModal("plato_fuerte");
+    });
+  }
+  if (el.menuCatalogBackdrop) {
+    bindSafeBackdropClose(el.menuCatalogBackdrop, closeMenuCatalogManagerModal);
+  }
+  if (el.btnMenuCatalogClose) {
+    el.btnMenuCatalogClose.addEventListener("click", closeMenuCatalogManagerModal);
+  }
+  if (el.btnMenuCatalogDiscard) {
+    el.btnMenuCatalogDiscard.addEventListener("click", closeMenuCatalogManagerModal);
+  }
+  if (el.btnMenuCatalogOpenSuggestions) {
+    el.btnMenuCatalogOpenSuggestions.addEventListener("click", async () => {
+      closeMenuCatalogManagerModal();
+      await openMenuSuggestionsModal();
+    });
+  }
+  if (el.btnMenuCatalogReset) {
+    el.btnMenuCatalogReset.addEventListener("click", () => {
+      resetMenuCatalogManagerForm();
+    });
+  }
+  if (el.menuCatalogKind) {
+    el.menuCatalogKind.addEventListener("change", async () => {
+      resetMenuCatalogManagerForm();
+      syncMenuCatalogManagerFormByKind();
+      await refreshMenuCatalogManagerRows();
+    });
+  }
+  if (el.menuCatalogProtein) {
+    el.menuCatalogProtein.addEventListener("change", async () => {
+      if (String(el.menuCatalogKind?.value || "") !== "preparacion") return;
+      await refreshMenuCatalogManagerRows();
+    });
+  }
+  if (el.btnMenuCatalogSave) {
+    el.btnMenuCatalogSave.addEventListener("click", async () => {
+      try {
+        await saveMenuCatalogManagerRecord();
+        toast("Catalogo actualizado.");
+      } catch (_) {
+        toast("No se pudo guardar en catalogo.");
+      }
+    });
+  }
+  if (el.menuCatalogBody) {
+    el.menuCatalogBody.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-mmcat-action]");
+      if (!btn) return;
+      const action = String(btn.dataset.mmcatAction || "").trim();
+      const id = String(btn.dataset.mmcatId || "").trim();
+      if (!action || !id) return;
+      const kind = String(el.menuCatalogKind?.value || menuCatalogManagerKind || "plato_fuerte");
+      const target = menuCatalogManagerRows.find((x) => String(x.id) === id);
+      if (!target) return;
+
+      if (action === "edit") {
+        menuCatalogManagerEditingId = id;
+        if (el.menuCatalogName) el.menuCatalogName.value = String(target.nombre || "");
+        if (kind === "plato_fuerte") {
+          if (el.menuCatalogDishType) el.menuCatalogDishType.value = String(target.tipo_plato || "NORMAL");
+          if (el.menuCatalogNoProtein) el.menuCatalogNoProtein.checked = target.es_sin_proteina === true || Number(target.es_sin_proteina) !== 0;
+        }
+        if (kind === "preparacion" && el.menuCatalogProtein) {
+          const pid = String(target.id_plato_fuerte || "").trim();
+          if (pid) el.menuCatalogProtein.value = pid;
+        }
+        return;
+      }
+
+      if (action === "toggle") {
+        const nextActive = target.activo === false ? true : false;
+        const ok = await modernConfirm({
+          title: nextActive ? "Reactivar registro" : "Inhabilitar registro",
+          message: `Esta seguro de ${nextActive ? "reactivar" : "inhabilitar"} "${target.nombre}"?`,
+          confirmText: nextActive ? "Si, reactivar" : "Si, inhabilitar",
+          cancelText: "No",
+        });
+        if (!ok) return;
+        await updateMenuCatalog(kind, id, { activo: nextActive ? 1 : 0 });
+        await refreshMenuCatalogManagerRows();
+        toast(nextActive ? "Registro reactivado." : "Registro inhabilitado.");
+      }
+    });
+  }
   if (el.serviceForm) {
     el.serviceForm.addEventListener("submit", (e) => {
       e.preventDefault();
       saveServiceFromForm();
-    });
-  }
-
-  if (el.btnTemplateClose) el.btnTemplateClose.addEventListener("click", closeTemplateBuilderModal);
-  if (el.btnTemplateDiscard) el.btnTemplateDiscard.addEventListener("click", closeTemplateBuilderModal);
-  if (el.templateBackdrop) {
-    bindSafeBackdropClose(el.templateBackdrop, closeTemplateBuilderModal);
-  }
-  if (el.btnTemplateAddFormula) {
-    el.btnTemplateAddFormula.addEventListener("click", () => {
-      addTemplateFormulaRow();
-      refreshTemplatePreview();
-    });
-  }
-  if (el.templateFormulaBody) {
-    el.templateFormulaBody.addEventListener("click", async (e) => {
-      const removeBtn = e.target.closest(".formulaRemoveBtn");
-      if (!removeBtn) return;
-      const ok = await modernConfirm({
-        title: "Eliminar formula",
-        message: "Esta seguro de eliminar esta formula?",
-        confirmText: "Si, eliminar",
-        cancelText: "No",
-      });
-      if (!ok) return;
-      removeBtn.closest(".templateFormulaRow")?.remove();
-      if (!el.templateFormulaBody.querySelector(".templateFormulaRow")) {
-        addTemplateFormulaRow();
-      }
-      refreshTemplatePreview();
-    });
-    el.templateFormulaBody.addEventListener("input", refreshTemplatePreview);
-    el.templateFormulaBody.addEventListener("change", refreshTemplatePreview);
-  }
-  if (el.btnTemplateAddPosition) {
-    el.btnTemplateAddPosition.addEventListener("click", () => {
-      addTemplatePositionRow({ label: "Nuevo campo", token: "{{cliente.nombre}}", x: 50, y: 50 });
-      refreshTemplatePreview();
-    });
-  }
-  if (el.btnTemplateFitSignature) {
-    el.btnTemplateFitSignature.addEventListener("click", async () => {
-      const idx = getBestTemplateSignatureRowIndex();
-      if (idx < 0) return toast("No hay un campo de firma para ajustar.");
-      let ratio = 4;
-      const signatureDataUrl = getBestAvailableSignatureDataUrl();
-      if (signatureDataUrl) {
-        const analysis = await analyzeSignatureDataUrl(signatureDataUrl);
-        if (analysis?.recommendedAspectRatio) ratio = analysis.recommendedAspectRatio;
-      }
-      const ok = fitSignatureRowToAspect(idx, ratio);
-      if (!ok) return toast("No se pudo ajustar la firma.");
-      setActiveTemplatePosition(idx);
-      refreshTemplatePreview();
-      toast("Firma ajustada al cuadro.");
-    });
-  }
-  if (el.templatePositionBody) {
-    el.templatePositionBody.addEventListener("click", async (e) => {
-      const removeBtn = e.target.closest(".posRemoveBtn");
-      if (!removeBtn) return;
-      const ok = await modernConfirm({
-        title: "Eliminar posicion",
-        message: "Esta seguro de eliminar esta posicion de plantilla?",
-        confirmText: "Si, eliminar",
-        cancelText: "No",
-      });
-      if (!ok) return;
-      removeBtn.closest(".templatePositionRow")?.remove();
-      if (!el.templatePositionBody.querySelector(".templatePositionRow")) {
-        addTemplatePositionRow({ label: "Firma cliente", token: "{{cliente.firma}}", x: 25, y: 84 });
-      }
-      setActiveTemplatePosition(-1);
-      refreshTemplatePreview();
-    });
-    el.templatePositionBody.addEventListener("click", (e) => {
-      const row = e.target.closest(".templatePositionRow");
-      if (!row) return;
-      const rows = getTemplatePositionRows();
-      const idx = rows.indexOf(row);
-      setActiveTemplatePosition(idx);
-    });
-    el.templatePositionBody.addEventListener("input", (e) => {
-      const row = e.target.closest(".templatePositionRow");
-      if (row && e.target.closest(".posToken")) {
-        applyTemplatePositionRowSignatureState(row);
-        const rows = getTemplatePositionRows();
-        const idx = rows.indexOf(row);
-        if (idx >= 0) syncTemplateSignatureBounds(idx);
-      }
-      if (row && (e.target.closest(".posW") || e.target.closest(".posH"))) {
-        const rows = getTemplatePositionRows();
-        const idx = rows.indexOf(row);
-        if (idx >= 0) syncTemplateSignatureBounds(idx);
-      }
-      refreshTemplatePreview();
-    });
-    el.templatePositionBody.addEventListener("change", (e) => {
-      const row = e.target.closest(".templatePositionRow");
-      if (row) {
-        applyTemplatePositionRowSignatureState(row);
-        const rows = getTemplatePositionRows();
-        const idx = rows.indexOf(row);
-        if (idx >= 0) syncTemplateSignatureBounds(idx);
-      }
-      refreshTemplatePreview();
-    });
-  }
-  if (el.templatePageImage) {
-    el.templatePageImage.addEventListener("change", async () => {
-      const file = el.templatePageImage.files?.[0];
-      if (!file) {
-        templateAssetsDraft.pagePdf = "";
-        refreshTemplatePreview();
-        return;
-      }
-      if (!/pdf$/i.test(file.type) && !/\.pdf$/i.test(file.name || "")) {
-        toast("Solo se permite PDF para la hoja base.");
-        el.templatePageImage.value = "";
-        return;
-      }
-      templateAssetsDraft.pagePdf = await readImageFileAsDataUrl(file);
-      refreshTemplatePreview();
-    });
-  }
-  if (el.templateHeaderImage) {
-    el.templateHeaderImage.addEventListener("change", async () => {
-      const file = el.templateHeaderImage.files?.[0];
-      templateAssetsDraft.headerImage = await readImageFileAsDataUrl(file);
-      refreshTemplatePreview();
-    });
-  }
-  if (el.templateFooterImage) {
-    el.templateFooterImage.addEventListener("change", async () => {
-      const file = el.templateFooterImage.files?.[0];
-      templateAssetsDraft.footerImage = await readImageFileAsDataUrl(file);
-      refreshTemplatePreview();
-    });
-  }
-  if (el.templateFieldPanel) {
-    el.templateFieldPanel.addEventListener("click", (e) => {
-      const btn = e.target.closest(".templatePresetBtn");
-      if (!btn) return;
-      let token = String(btn.dataset.token || "").trim();
-      let label = String(btn.dataset.label || btn.textContent || "").trim();
-      if (!token) return;
-      if (token === "{{formula:campo}}") {
-        const key = prompt("Nombre del campo formula (ej: impuesto):", "impuesto");
-        const safe = String(key || "").trim().replace(/\s+/g, "_");
-        if (!safe) return;
-        token = `{{formula:${safe}}}`;
-        label = `Formula ${safe}`;
-      }
-      addPresetFieldToTemplatePosition(label, token);
-    });
-  }
-  [el.templateHeader, el.templateBody, el.templateFooter].forEach((node) => {
-    if (!node) return;
-    node.addEventListener("focus", () => { activeTemplateEditor = node; });
-    node.addEventListener("click", () => { activeTemplateEditor = node; });
-    node.addEventListener("keyup", () => { activeTemplateEditor = node; });
-    node.addEventListener("input", refreshTemplatePreview);
-    node.addEventListener("change", refreshTemplatePreview);
-  });
-  if (el.templateName) {
-    el.templateName.addEventListener("input", refreshTemplatePreview);
-    el.templateName.addEventListener("change", refreshTemplatePreview);
-  }
-  if (el.templateRoomRates) {
-    el.templateRoomRates.addEventListener("input", refreshTemplatePreview);
-    el.templateRoomRates.addEventListener("change", refreshTemplatePreview);
-  }
-  if (el.templatePagePreview) {
-    el.templatePagePreview.addEventListener("mousedown", (e) => {
-      const marker = e.target.closest(".templatePosBadge");
-      if (!marker) return;
-      const idx = Number(marker.dataset.index);
-      if (!Number.isInteger(idx)) return;
-      if (e.target.closest(".templateResizeHandle")) {
-        beginTemplateMarkerResize(e, idx);
-        return;
-      }
-      beginTemplateMarkerDrag(e, idx);
-    });
-    el.templatePagePreview.addEventListener("click", (e) => {
-      const marker = e.target.closest(".templatePosBadge");
-      if (!marker) return;
-      const idx = Number(marker.dataset.index);
-      if (!Number.isInteger(idx)) return;
-      setActiveTemplatePosition(idx);
-    });
-  }
-  window.addEventListener("mousemove", onTemplateMarkerDragMove);
-  window.addEventListener("mousemove", onTemplateMarkerResizeMove);
-  window.addEventListener("mouseup", endTemplateMarkerDrag);
-  window.addEventListener("mouseup", endTemplateMarkerResize);
-  if (el.btnTemplateLoad) el.btnTemplateLoad.addEventListener("click", loadSelectedTemplateIntoBuilder);
-  if (el.btnTemplateDelete) {
-    el.btnTemplateDelete.addEventListener("click", async () => {
-      await deleteSelectedTemplateFromBuilder();
-    });
-  }
-  if (el.templateSelect) {
-    el.templateSelect.addEventListener("change", () => {
-      activeTemplateId = String(el.templateSelect.value || "").trim();
-    });
-  }
-  if (el.templateForm) {
-    el.templateForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      saveTemplateFromBuilder();
     });
   }
   if (el.serviceCategory) {
@@ -6173,6 +8339,11 @@ function bindEvents() {
       if (!btn) return;
       openOccupancyMenuMontajeByRow(btn.dataset.eventId, btn.dataset.quoteVersion);
     });
+    el.occupancyReportBody.addEventListener("click", (e) => {
+      const btn = e.target.closest(".occupancyChecklistLinkBtn");
+      if (!btn) return;
+      openEventChecklistByRow(btn.dataset.eventId);
+    });
   }
   if (el.occupancyDayDetail) {
     el.occupancyDayDetail.addEventListener("click", (e) => {
@@ -6184,6 +8355,118 @@ function bindEvents() {
       const btn = e.target.closest(".occupancyMenuMontajeLinkBtn");
       if (!btn) return;
       openOccupancyMenuMontajeByRow(btn.dataset.eventId, btn.dataset.quoteVersion);
+    });
+    el.occupancyDayDetail.addEventListener("click", (e) => {
+      const btn = e.target.closest(".occupancyChecklistLinkBtn");
+      if (!btn) return;
+      openEventChecklistByRow(btn.dataset.eventId);
+    });
+  }
+  if (el.btnChecklistTemplateClose) el.btnChecklistTemplateClose.addEventListener("click", closeChecklistTemplateModal);
+  if (el.checklistTemplateBackdrop) bindSafeBackdropClose(el.checklistTemplateBackdrop, closeChecklistTemplateModal);
+  if (el.btnChecklistTemplateAdd) {
+    el.btnChecklistTemplateAdd.addEventListener("click", () => {
+      addChecklistTemplateItemFromInput();
+    });
+  }
+  if (el.btnChecklistTemplateAddSection) {
+    el.btnChecklistTemplateAddSection.addEventListener("click", () => {
+      addChecklistSectionFromInput();
+    });
+  }
+  if (el.checklistTemplateSectionInput) {
+    el.checklistTemplateSectionInput.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      addChecklistSectionFromInput();
+    });
+  }
+  if (el.checklistTemplateInput) {
+    el.checklistTemplateInput.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      addChecklistTemplateItemFromInput();
+    });
+  }
+  if (el.checklistTemplateBody) {
+    el.checklistTemplateBody.addEventListener("click", (e) => {
+      const editBtn = e.target.closest("[data-checklist-template-edit]");
+      if (editBtn) {
+        const id = String(editBtn.dataset.checklistTemplateEdit || "").trim();
+        const row = (checklistTemplateDraft || []).find((x) => String(x?.id || "") === id);
+        if (!row) return;
+        checklistTemplateEditingId = id;
+        if (el.checklistTemplateInput) {
+          el.checklistTemplateInput.value = String(row.label || "");
+          el.checklistTemplateInput.focus();
+        }
+        renderChecklistSectionSelect(String(row.section || "General"));
+        if (el.btnChecklistTemplateAdd) el.btnChecklistTemplateAdd.textContent = "Guardar cambio";
+        return;
+      }
+      const upBtn = e.target.closest("[data-checklist-template-up]");
+      if (upBtn) {
+        const id = String(upBtn.dataset.checklistTemplateUp || "").trim();
+        const idx = (checklistTemplateDraft || []).findIndex((x) => String(x?.id || "") === id);
+        if (idx > 0) {
+          const tmp = checklistTemplateDraft[idx - 1];
+          checklistTemplateDraft[idx - 1] = checklistTemplateDraft[idx];
+          checklistTemplateDraft[idx] = tmp;
+          saveChecklistTemplateDraft();
+          renderChecklistTemplateTable();
+        }
+        return;
+      }
+      const downBtn = e.target.closest("[data-checklist-template-down]");
+      if (downBtn) {
+        const id = String(downBtn.dataset.checklistTemplateDown || "").trim();
+        const idx = (checklistTemplateDraft || []).findIndex((x) => String(x?.id || "") === id);
+        if (idx >= 0 && idx < checklistTemplateDraft.length - 1) {
+          const tmp = checklistTemplateDraft[idx + 1];
+          checklistTemplateDraft[idx + 1] = checklistTemplateDraft[idx];
+          checklistTemplateDraft[idx] = tmp;
+          saveChecklistTemplateDraft();
+          renderChecklistTemplateTable();
+        }
+        return;
+      }
+      const btn = e.target.closest("[data-checklist-template-remove]");
+      if (!btn) return;
+      const id = String(btn.dataset.checklistTemplateRemove || "").trim();
+      checklistTemplateDraft = (checklistTemplateDraft || []).filter((x) => String(x?.id || "") !== id);
+      saveChecklistTemplateDraft();
+      renderChecklistTemplateTable();
+      if (checklistTemplateEditingId === id) resetChecklistTemplateEditor();
+      toast("Punto eliminado.");
+    });
+  }
+  if (el.btnEventChecklistClose) el.btnEventChecklistClose.addEventListener("click", closeEventChecklistModal);
+  if (el.btnEventChecklistDiscard) el.btnEventChecklistDiscard.addEventListener("click", closeEventChecklistModal);
+  if (el.eventChecklistBackdrop) bindSafeBackdropClose(el.eventChecklistBackdrop, closeEventChecklistModal);
+  if (el.btnEventChecklistSave) {
+    el.btnEventChecklistSave.addEventListener("click", () => {
+      saveEventChecklistFromModal();
+    });
+  }
+  if (el.eventChecklistBody) {
+    el.eventChecklistBody.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-checklist-cycle-index]");
+      if (!btn || !eventChecklistDraft) return;
+      const idx = Number(btn.dataset.checklistCycleIndex || -1);
+      if (!Number.isFinite(idx) || idx < 0) return;
+      const item = eventChecklistDraft.items?.[idx];
+      if (!item) return;
+      item.status = cycleChecklistStatus(item.status);
+      renderEventChecklistRows();
+    });
+    el.eventChecklistBody.addEventListener("input", (e) => {
+      const input = e.target.closest("[data-checklist-comment-index]");
+      if (!input || !eventChecklistDraft) return;
+      const idx = Number(input.dataset.checklistCommentIndex || -1);
+      if (!Number.isFinite(idx) || idx < 0) return;
+      const item = eventChecklistDraft.items?.[idx];
+      if (!item) return;
+      item.comment = String(input.value || "").trim();
     });
   }
   if (el.appointmentBackdrop) {
@@ -6414,7 +8697,9 @@ function bindEvents() {
       else if (el.occupancyReportBackdrop && !el.occupancyReportBackdrop.hidden) closeOccupancyReportModal();
       else if (!el.appointmentBackdrop.hidden) closeAppointmentModal();
       else if (el.menuMontajeBackdrop && !el.menuMontajeBackdrop.hidden) closeMenuMontajeModal();
-      else if (el.templateBackdrop && !el.templateBackdrop.hidden) closeTemplateBuilderModal();
+      else if (el.menuMontajeSelectableBackdrop && !el.menuMontajeSelectableBackdrop.hidden) closeMenuMontajeSelectableModal();
+      else if (el.menuSuggestionsBackdrop && !el.menuSuggestionsBackdrop.hidden) closeMenuSuggestionsModal();
+      else if (el.menuCatalogBackdrop && !el.menuCatalogBackdrop.hidden) closeMenuCatalogManagerModal();
       else if (!el.serviceBackdrop.hidden) closeServiceModal();
       else if (!el.companyBackdrop.hidden) closeCompanyModal();
       else if (!el.quoteBackdrop.hidden) closeQuoteModal();
@@ -6514,7 +8799,7 @@ async function openModalForEdit(id) {
   el.eventPax.value = Number(ev.pax || 0) > 0 ? String(ev.pax) : "";
   el.eventNotes.value = ev.notes || "";
 
-  el.btnDelete.hidden = false;
+  el.btnDelete.hidden = true;
   el.btnCancelEvent.hidden = (ev.status === STATUS.CANCELADO);
   el.btnQuoteEvent.hidden = false;
   el.btnQuoteEvent.textContent = ev.quote ? "Editar cotizacion" : "Cotizar evento";
@@ -6645,6 +8930,7 @@ function loadUserInModal(userId) {
   const target = (state.users || []).map(normalizeUserRecord).find((u) => u.id === userId);
   if (!target) return;
   userModalEditingId = target.id;
+  userSignatureNormalizedDataUrl = "";
   if (el.userFullName) el.userFullName.value = target.fullName || "";
   if (el.userUsername) el.userUsername.value = target.username || "";
   if (el.userEmail) el.userEmail.value = target.email || "";
@@ -6661,6 +8947,7 @@ function loadUserInModal(userId) {
 
 function resetUserModalForm() {
   userModalEditingId = "";
+  userSignatureNormalizedDataUrl = "";
   if (el.userName) el.userName.value = "";
   if (el.userFullName) el.userFullName.value = "";
   if (el.userUsername) el.userUsername.value = "";
@@ -6732,7 +9019,7 @@ function openQuoteModal(eventId) {
     discountValue: 0,
     items: [],
     notes: "",
-    templateId: "",
+    templateId: CORPORATE_TEMPLATE_ID,
   };
   quoteDraft.version = currentVersion;
   quoteDraft.versions = existingVersions;
@@ -6776,6 +9063,9 @@ function openQuoteModal(eventId) {
       }
     });
   }
+  if (!String(quoteDraft.templateId || "").trim()) {
+    quoteDraft.templateId = CORPORATE_TEMPLATE_ID;
+  }
   setTimeout(() => el.quoteServiceSearch.focus(), 0);
 }
 
@@ -6784,6 +9074,7 @@ function closeQuoteModal() {
   el.quoteBackdrop.classList.remove("docFloatOpen");
   if (el.quoteDocFold) el.quoteDocFold.open = false;
   closeMenuMontajeModal();
+  closeMenuMontajeSelectableModal();
   closeServiceModal();
   quoteDraft = null;
 }
@@ -6861,6 +9152,156 @@ function saveAppointmentFromForm() {
   toast("Cita agregada y recordatorio activo.");
 }
 
+function normalizeCompanyMatchText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function quoteBelongsToCompany(quote, company) {
+  if (!quote || !company) return false;
+  const companyId = String(company.id || "").trim();
+  const quoteCompanyId = String(quote.companyId || "").trim();
+  if (companyId && quoteCompanyId && companyId === quoteCompanyId) return true;
+  const companyName = normalizeCompanyMatchText(company.name);
+  const quoteCompanyName = normalizeCompanyMatchText(quote.companyName);
+  return !!companyName && !!quoteCompanyName && companyName === quoteCompanyName;
+}
+
+function quoteVersionCount(quote) {
+  if (!quote || typeof quote !== "object") return 0;
+  const versions = normalizeQuoteVersionHistory(quote.versions);
+  const currentVersion = Math.max(1, Number(quote.version || (versions.length + 1)) || 1);
+  const versionSet = new Set(versions.map((v) => String(Math.max(1, Number(v.version || 1)))));
+  versionSet.add(String(currentVersion));
+  return versionSet.size;
+}
+
+function collectCompanyRecord(company) {
+  const stats = {
+    quotedReservations: 0,
+    quoteVersionsSent: 0,
+    confirmed: 0,
+    preReserved: 0,
+    canceled: 0,
+    lost: 0,
+    topManagerName: "",
+    topManagerEvents: 0,
+    rows: [],
+  };
+  if (!company) return stats;
+
+  const grouped = new Map();
+  const managerCounter = new Map();
+  for (const ev of state.events || []) {
+    if (!ev) continue;
+    const key = String(reservationKeyFromEvent(ev) || ev.id || "").trim();
+    if (!key) continue;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(ev);
+  }
+
+  for (const [reservationKey, series] of grouped.entries()) {
+    const ordered = series.slice().sort((a, b) => {
+      const dateCmp = String(a.date || "").localeCompare(String(b.date || ""));
+      if (dateCmp !== 0) return dateCmp;
+      return compareTime(String(a.startTime || "00:00"), String(b.startTime || "00:00"));
+    });
+    const representative = ordered[0];
+    const quoteHost = ordered.find((e) => quoteBelongsToCompany(e.quote, company));
+    if (!quoteHost) continue;
+
+    const currentStatus = String(representative?.status || "").trim();
+    if (currentStatus === STATUS.CONFIRMADO) stats.confirmed += 1;
+    if (currentStatus === STATUS.PRERESERVA) stats.preReserved += 1;
+    if (currentStatus === STATUS.CANCELADO) stats.canceled += 1;
+    if (currentStatus === STATUS.PERDIDO) stats.lost += 1;
+
+    const quote = quoteHost.quote || {};
+    const versionCount = quoteVersionCount(quote);
+    stats.quotedReservations += 1;
+    stats.quoteVersionsSent += versionCount;
+    const managerId = String(quote.managerId || "").trim();
+    const managerById = managerId
+      ? (company.managers || []).find((m) => String(m.id || "") === managerId)
+      : null;
+    const managerName = String(
+      managerById?.name
+      || quote.manager
+      || quote.contact
+      || "Sin encargado"
+    ).trim();
+    const currentManagerCount = Number(managerCounter.get(managerName) || 0);
+    managerCounter.set(managerName, currentManagerCount + 1);
+
+    const latestSnapshot = getLatestQuoteSnapshotForEvent(quoteHost) || quote || {};
+    const totals = getQuoteTotals(latestSnapshot);
+    const sellerName = getUserNameById(representative?.userId || "");
+    stats.rows.push({
+      reservationKey,
+      code: String(quote.code || latestSnapshot.code || reservationKey || "-"),
+      versionCount,
+      docDate: String(latestSnapshot.docDate || quote.docDate || representative?.date || ""),
+      eventName: String(representative?.name || "Reserva"),
+      status: currentStatus || "-",
+      total: Number(totals.total || 0),
+      sellerName: String(sellerName || "").trim(),
+      managerName,
+    });
+  }
+
+  stats.rows.sort((a, b) => String(b.docDate || "").localeCompare(String(a.docDate || "")));
+  for (const [managerName, total] of managerCounter.entries()) {
+    const n = Number(total || 0);
+    if (n > stats.topManagerEvents) {
+      stats.topManagerEvents = n;
+      stats.topManagerName = managerName;
+    }
+  }
+  return stats;
+}
+
+function renderCompanyRecord(company) {
+  if (!el.companyRecordSection || !el.companyRecordSummary || !el.companyRecordBody) return;
+  if (!company) {
+    el.companyRecordSection.hidden = true;
+    el.companyRecordSummary.innerHTML = "";
+    el.companyRecordBody.innerHTML = "";
+    return;
+  }
+
+  const record = collectCompanyRecord(company);
+  el.companyRecordSection.hidden = false;
+  el.companyRecordSummary.innerHTML = `
+    <span class="pill">Cotizaciones (reservas): ${escapeHtml(String(record.quotedReservations))}</span>
+    <span class="pill">Versiones cotizadas: ${escapeHtml(String(record.quoteVersionsSent))}</span>
+    <span class="pill">Confirmados: ${escapeHtml(String(record.confirmed))}</span>
+    <span class="pill">Pre reserva: ${escapeHtml(String(record.preReserved))}</span>
+    <span class="pill">Cancelados: ${escapeHtml(String(record.canceled))}</span>
+    <span class="pill">Perdidos: ${escapeHtml(String(record.lost))}</span>
+    <span class="pill">Encargado top: ${escapeHtml(record.topManagerName || "-")} (${escapeHtml(String(record.topManagerEvents || 0))})</span>
+  `;
+
+  el.companyRecordBody.innerHTML = "";
+  if (!record.rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="6">Sin cotizaciones registradas para esta empresa.</td>`;
+    el.companyRecordBody.appendChild(tr);
+    return;
+  }
+
+  for (const row of record.rows.slice(0, 80)) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(row.code || "-")}</td>
+      <td>${escapeHtml(String(row.versionCount || 0))}</td>
+      <td>${escapeHtml(row.docDate || "-")}</td>
+      <td>${escapeHtml(row.eventName || "-")}</td>
+      <td>${escapeHtml(row.status || "-")}</td>
+      <td>Q ${escapeHtml(Number(row.total || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</td>
+    `;
+    el.companyRecordBody.appendChild(tr);
+  }
+}
+
 function openCompanyModal(companyId = "") {
   editingCompanyId = String(companyId || "").trim();
   const target = editingCompanyId
@@ -6879,6 +9320,7 @@ function openCompanyModal(companyId = "") {
     el.companyAddress.value = String(target.address || "");
     el.companyPhone.value = String(target.phone || "");
     el.companyNotes.value = String(target.notes || "");
+    renderCompanyRecord(target);
   } else {
     if (el.companyTitle) el.companyTitle.textContent = "Nueva empresa";
     el.companyName.value = "";
@@ -6890,6 +9332,7 @@ function openCompanyModal(companyId = "") {
     el.companyAddress.value = "";
     el.companyPhone.value = "";
     el.companyNotes.value = "";
+    renderCompanyRecord(null);
   }
   el.managerName.value = "";
   el.managerPhone.value = "";
@@ -6913,6 +9356,7 @@ function closeCompanyModal() {
   el.companyAddress.value = "";
   el.companyPhone.value = "";
   el.companyNotes.value = "";
+  renderCompanyRecord(null);
   el.managerName.value = "";
   el.managerPhone.value = "";
   el.managerEmail.value = "";
@@ -7338,12 +9782,6 @@ async function saveQuoteFromForm() {
   if (!isValidEmail(quoteDraft.email)) return toast("Correo de cotizacion invalido.");
   if (!quoteDraft.dueDate) return toast("Falta fecha maxima de pago.");
   if (!quoteDraft.items.length) return toast("Agrega al menos un servicio.");
-  if (!quoteDraft.templateId) return toast("Selecciona una plantilla de contrato para generar el PDF final.");
-  const selectedTemplate = (quickTemplates || []).find((t) => String(t?.id || "") === quoteDraft.templateId);
-  if (!selectedTemplate) return toast("La plantilla seleccionada ya no existe.");
-  if (!String(selectedTemplate?.assets?.pagePdf || "").trim()) {
-    return toast("La plantilla seleccionada no tiene PDF base.");
-  }
 
   const company = (state.companies || []).find(c => c.id === quoteDraft.companyId);
   const manager = company?.managers?.find(m => m.id === quoteDraft.managerId);
@@ -7410,15 +9848,6 @@ async function saveQuoteFromForm() {
   );
 
   persist();
-  let mergedOk = false;
-  try {
-    mergedOk = await tryOpenCombinedQuotePdf(ev, savedQuote);
-  } catch (err) {
-    console.error("PDF final combinado fallo:", err?.message || err);
-  }
-  if (!mergedOk) {
-    toast("No se pudo generar el PDF final con plantilla.");
-  }
   await openQuoteDocument(ev, savedQuote);
   render();
   closeQuoteModal();
@@ -7530,6 +9959,29 @@ function evaluateTemplateFormula(expression, ctx) {
   }
 }
 
+function buildQuoteSummaryText(quote) {
+  const items = Array.isArray(quote?.items) ? quote.items : [];
+  if (!items.length) return "Sin detalle comercial.";
+  const lines = [];
+  for (const item of items) {
+    const name = String(item?.name || "").trim();
+    if (!name) continue;
+    const qty = Math.max(0, Number(item?.qty || 0));
+    const price = Math.max(0, Number(item?.price || 0));
+    const total = qty * price;
+    lines.push(`- ${name}${qty > 0 ? ` (${qty})` : ""} | Q ${total.toFixed(2)}`);
+  }
+  return lines.length ? lines.join("\n") : "Sin detalle comercial.";
+}
+
+function buildQuoteTermsText(quote, template) {
+  const notes = String(quote?.internalNotes || quote?.notes || "").trim();
+  if (notes) return notes;
+  const tplBody = String(template?.body || "").trim();
+  if (tplBody) return tplBody;
+  return "Condiciones sujetas a politicas internas y disponibilidad.";
+}
+
 function buildTemplateTokenContext(ev, quote, company, manager, template) {
   const totals = getQuoteTotals(quote);
   const sellerUser = (state.users || []).map(normalizeUserRecord).find((u) => String(u.id) === String(ev?.userId || ""));
@@ -7539,6 +9991,8 @@ function buildTemplateTokenContext(ev, quote, company, manager, template) {
   const sellerSignature = String(sellerUser?.signatureDataUrl || "").trim();
   const vendorSignature = authSessionSignature || authSignature || sellerSignature || "________________";
   const vendorName = String(authSession.fullName || authUser?.fullName || authUser?.name || sellerUser?.fullName || sellerUser?.name || quote?.managerName || "").trim();
+  const summaryText = buildQuoteSummaryText(quote);
+  const termsText = buildQuoteTermsText(quote, template);
   const ctx = {
     cliente: {
       nombre: String(quote?.contact || "").trim(),
@@ -7567,6 +10021,11 @@ function buildTemplateTokenContext(ev, quote, company, manager, template) {
     evento: {
       nombre: String(ev?.name || "").trim(),
       pax: String(quote?.people || "").trim(),
+    },
+    quote: {
+      summary: summaryText,
+      terms: termsText,
+      notes: String(quote?.internalNotes || quote?.notes || "").trim(),
     },
     monto: {
       subtotal: Number(totals.subtotal || 0),
@@ -7604,6 +10063,53 @@ function resolveTemplateTokenValue(token, ctx, template) {
   return String(cur);
 }
 
+function resolveTemplateFieldByHint(hint, ctx) {
+  const h = String(hint || "").toLowerCase();
+  if (!h) return "";
+  if (h.includes("resumen") && h.includes("comercial")) return String(ctx?.quote?.summary || "");
+  if (h.includes("condicion")) return String(ctx?.quote?.terms || "");
+  if (h.includes("nombre") && h.includes("cliente")) return String(ctx?.cliente?.nombre || "");
+  if (h.includes("telefono") && h.includes("cliente")) return String(ctx?.cliente?.telefono || "");
+  if (h.includes("nombre") && h.includes("vendedor")) return String(ctx?.vendedor?.nombre || "");
+  if (h.includes("telefono") && h.includes("vendedor")) return String(ctx?.vendedor?.telefono || "");
+  if (h.includes("firma") && h.includes("vendedor")) return String(ctx?.vendedor?.firma || "");
+  if (h.includes("firma") && h.includes("cliente")) return String(ctx?.cliente?.firma || "");
+  return "";
+}
+
+function tryGetPdfFormFieldText(field) {
+  try {
+    if (typeof field?.getText === "function") return String(field.getText() || "");
+  } catch (_) { }
+  try {
+    if (typeof field?.getValue === "function") return String(field.getValue() || "");
+  } catch (_) { }
+  return "";
+}
+
+function fillTemplateAcroFormIfPresent(srcDoc, tokenCtx) {
+  try {
+    const form = srcDoc?.getForm?.();
+    if (!form) return;
+    const fields = form.getFields?.() || [];
+    for (const field of fields) {
+      if (!field || typeof field.getName !== "function") continue;
+      if (typeof field.setText !== "function") continue;
+      const name = String(field.getName() || "");
+      const current = tryGetPdfFormFieldText(field);
+      const hint = `${name} ${current}`.trim();
+      const value = resolveTemplateFieldByHint(hint, tokenCtx);
+      if (!String(value || "").trim()) continue;
+      try {
+        field.setText(String(value));
+      } catch (_) { }
+    }
+    try {
+      form.flatten();
+    } catch (_) { }
+  } catch (_) { }
+}
+
 async function buildQuotePdfDocument(ev, quote, company, manager) {
   if (!window.PDFLib) return null;
   const { PDFDocument, StandardFonts } = window.PDFLib;
@@ -7616,6 +10122,24 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const contentW = pageSize.w - margin * 2;
   let page = doc.addPage([pageSize.w, pageSize.h]);
   let y = pageSize.h - margin;
+  const headerBandH = 28;
+
+  const drawQuotePageHeader = () => {
+    const title = `Cotizacion ${quote?.code ? quote.code : ""}${quote?.version ? ` - V${quote.version}` : ""}`.trim();
+    drawRect(margin, y, contentW, headerBandH, {
+      fill: window.PDFLib.rgb(0.06, 0.43, 0.72),
+      border: window.PDFLib.rgb(0.05, 0.33, 0.56),
+      borderWidth: 1,
+    });
+    page.drawText(title || "Cotizacion", {
+      x: margin + 10,
+      y: y - 18,
+      size: 13,
+      font: fontBold,
+      color: window.PDFLib.rgb(1, 1, 1),
+    });
+    y -= headerBandH + 6;
+  };
 
   const drawRect = (x, yTop, w, h, opts = {}) => {
     page.drawRectangle({
@@ -7633,6 +10157,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     if (y - need > margin) return;
     page = doc.addPage([pageSize.w, pageSize.h]);
     y = pageSize.h - margin - 2;
+    drawQuotePageHeader();
   };
 
   const drawLine = (text, opts = {}) => {
@@ -7720,21 +10245,8 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const { catBuckets } = aggregateQuoteBuckets(quote || {});
   const grandTotalWords = numberToWordsEs(totals.total);
 
-  // Header band
-  const headH = 28;
-  drawRect(margin, y, contentW, headH, {
-    fill: window.PDFLib.rgb(0.06, 0.43, 0.72),
-    border: window.PDFLib.rgb(0.05, 0.33, 0.56),
-    borderWidth: 1,
-  });
-  page.drawText(`Cotizacion ${quote?.code ? quote.code : ""}${quote?.version ? ` - V${quote.version}` : ""}`, {
-    x: margin + 10,
-    y: y - 18,
-    size: 13,
-    font: fontBold,
-    color: window.PDFLib.rgb(1, 1, 1),
-  });
-  y -= headH + 6;
+  // Header band (first page)
+  drawQuotePageHeader();
 
   // Info grid (2 columns)
   const pairs = [
@@ -8129,6 +10641,8 @@ async function appendTemplateToFinalPdf(finalDoc, template, ev, quote, company, 
   const pdfData = String(template?.assets?.pagePdf || "").trim();
   if (!pdfData) return;
   const src = await PDFDocument.load(dataUrlToUint8Array(pdfData));
+  const tokenCtx = buildTemplateTokenContext(ev, quote, company, manager, template);
+  fillTemplateAcroFormIfPresent(src, tokenCtx);
   const pageIndices = src.getPageIndices();
   const copied = await finalDoc.copyPages(src, pageIndices);
   for (const p of copied) finalDoc.addPage(p);
@@ -8136,7 +10650,6 @@ async function appendTemplateToFinalPdf(finalDoc, template, ev, quote, company, 
   const templatePages = finalDoc.getPages().slice(-copied.length);
   const totalHeight = templatePages.reduce((acc, p) => acc + p.getHeight(), 0);
   if (!totalHeight) return;
-  const tokenCtx = buildTemplateTokenContext(ev, quote, company, manager, template);
   const fontCache = new Map();
   const getFont = async (field) => {
     const fontName = mapTemplateFontToPdfLib(StandardFonts, field);
@@ -8702,6 +11215,8 @@ function saveEventFromForm() {
   const replaceEvents = editingId
     ? getEventSeries(state.events.find(x => x.id === editingId))
     : [];
+  const previousStatus = String(replaceEvents[0]?.status || "").trim();
+  const oldBlockingWindows = buildBlockingWindowsFromEvents(replaceEvents);
   const oldKey = replaceEvents[0] ? reservationKeyFromEvent(replaceEvents[0]) : "";
   const oldSnapshot = buildSeriesSnapshot(replaceEvents);
   const replaceIds = new Set(replaceEvents.map(e => e.id));
@@ -8764,6 +11279,8 @@ function saveEventFromForm() {
   state.events = state.events.filter(x => !replaceIds.has(x.id));
   state.events.push(...drafts);
   const newKey = resultingGroupId || drafts[0]?.id || oldKey;
+  const newBlockingWindows = buildBlockingWindowsFromEvents(drafts);
+  const releasedWindows = computeReleasedWindows(oldBlockingWindows, newBlockingWindows);
   moveHistoryKey(oldKey, newKey);
   moveReminderKey(oldKey, newKey);
   if (editingId) {
@@ -8773,23 +11290,51 @@ function saveEventFromForm() {
     appendHistoryByKey(newKey, userId, `Reserva creada: ${summarizeDraftWindow(drafts)}.`);
   }
 
+  if (editingId && releasedWindows.length) {
+    notifyReleasedCapacityForWaitingReservations({
+      releasedWindows,
+      sourceEvent: drafts[0] || replaceEvents[0] || null,
+      reasonText: "dejo de bloquear ese horario",
+      actorUserId: userId || "",
+    });
+  }
+
   persist();
   autoMarkLostEvents(); // in case
-  render();
+  interaction.suppressClickUntil = Date.now() + 450;
   closeModal();
-  toast(`Guardado: ${drafts.length} bloque(s).`);
+  render();
+  requestAnimationFrame(() => {
+    render();
+  });
+  setTimeout(() => {
+    render();
+  }, 120);
+  const nextStatus = String(drafts[0]?.status || "").trim();
+  const statusToast = buildStatusChangeToast(previousStatus, nextStatus, "Guardado con exito.");
+  toast(`${statusToast} Guardado: ${drafts.length} bloque(s).`);
 }
 
 function removeEvent(id, actorUserId = "") {
   const ev = state.events.find(x => x.id === id);
   if (!ev) return;
+  const series = getEventSeries(ev);
+  const releasedWindows = buildBlockingWindowsFromEvents(series);
   const key = reservationKeyFromEvent(ev);
-  const summary = summarizeSeriesWindow(getEventSeries(ev));
+  const summary = summarizeSeriesWindow(series);
   appendHistoryByKey(key, actorUserId || ev.userId, `Reserva eliminada (${summary}).`);
-  const removeIds = new Set(getEventSeries(ev).map(x => x.id));
+  const removeIds = new Set(series.map(x => x.id));
   state.events = state.events.filter(x => !removeIds.has(x.id));
   ensureReminderStore();
   delete state.reminders[key];
+  if (releasedWindows.length) {
+    notifyReleasedCapacityForWaitingReservations({
+      releasedWindows,
+      sourceEvent: ev,
+      reasonText: "fue eliminada",
+      actorUserId: actorUserId || ev.userId || "",
+    });
+  }
   persist();
   render();
 }
@@ -8956,6 +11501,128 @@ function ensureHistoryStore() {
 function ensureReminderStore() {
   if (!state.reminders || typeof state.reminders !== "object") {
     state.reminders = {};
+  }
+}
+
+function ensureGlobalNotificationsStore() {
+  if (!Array.isArray(state.globalNotifications)) {
+    state.globalNotifications = [];
+  }
+}
+
+function normalizeReleasedWindowRecord(candidate) {
+  const row = candidate && typeof candidate === "object" ? candidate : {};
+  return {
+    date: String(row.date || "").trim(),
+    salon: String(row.salon || "").trim(),
+    startTime: String(row.startTime || "").trim(),
+    endTime: String(row.endTime || "").trim(),
+  };
+}
+
+function normalizeGlobalNotificationRecord(candidate) {
+  const row = candidate && typeof candidate === "object" ? candidate : {};
+  const createdAt = String(row.createdAt || new Date().toISOString()).trim();
+  const expiresAt = String(row.expiresAt || "").trim();
+  return {
+    id: String(row.id || uid()).trim(),
+    title: String(row.title || "Aviso del sistema").trim(),
+    notes: String(row.notes || "").trim(),
+    createdAt,
+    expiresAt,
+    eventId: String(row.eventId || "").trim(),
+    salon: String(row.salon || "").trim(),
+    date: String(row.date || "").trim(),
+    time: String(row.time || "").trim(),
+    releasedWindows: Array.isArray(row.releasedWindows)
+      ? row.releasedWindows.map(normalizeReleasedWindowRecord).filter((w) => w.date && w.salon && w.startTime && w.endTime)
+      : [],
+    dismissedByUserIds: Array.isArray(row.dismissedByUserIds)
+      ? row.dismissedByUserIds.map((x) => String(x || "").trim()).filter(Boolean)
+      : [],
+  };
+}
+
+function pruneExpiredGlobalNotifications() {
+  ensureGlobalNotificationsStore();
+  const nowMs = Date.now();
+  const before = state.globalNotifications.length;
+  state.globalNotifications = state.globalNotifications.filter((n) => {
+    const expiry = String(n?.expiresAt || "").trim();
+    if (!expiry) return true;
+    const dt = new Date(expiry);
+    if (Number.isNaN(dt.getTime())) return true;
+    return dt.getTime() > nowMs;
+  });
+  return state.globalNotifications.length !== before;
+}
+
+function isReleasedWindowOccupiedNow(windowRow) {
+  if (!windowRow?.date || !windowRow?.salon || !windowRow?.startTime || !windowRow?.endTime) return false;
+  for (const ev of state.events || []) {
+    if (!ev) continue;
+    if (!isHardBlockingStatus(String(ev.status || "").trim())) continue;
+    if (String(ev.date || "") !== String(windowRow.date || "")) continue;
+    if (String(ev.salon || "") !== String(windowRow.salon || "")) continue;
+    if (timesOverlap(String(ev.startTime || ""), String(ev.endTime || ""), String(windowRow.startTime || ""), String(windowRow.endTime || ""))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function pruneResolvedGlobalNotifications() {
+  ensureGlobalNotificationsStore();
+  const before = state.globalNotifications.length;
+  state.globalNotifications = state.globalNotifications.filter((n) => {
+    const windows = Array.isArray(n?.releasedWindows) ? n.releasedWindows : [];
+    if (!windows.length) return true;
+    const allTakenAgain = windows.every((w) => isReleasedWindowOccupiedNow(w));
+    return !allTakenAgain;
+  });
+  return state.globalNotifications.length !== before;
+}
+
+function isGlobalNotificationDismissedForSession(notification) {
+  const sid = String(authSession.userId || "").trim();
+  if (!sid) return false;
+  const dismissed = Array.isArray(notification?.dismissedByUserIds) ? notification.dismissedByUserIds : [];
+  return dismissed.includes(sid);
+}
+
+function dismissGlobalNotificationForSession(notificationId, { persistRemote = true } = {}) {
+  const id = String(notificationId || "").trim();
+  if (!id) return false;
+  ensureGlobalNotificationsStore();
+  const target = state.globalNotifications.find((n) => String(n?.id || "") === id);
+  if (!target) return false;
+
+  const sid = String(authSession.userId || "").trim();
+  if (!sid) {
+    state.globalNotifications = state.globalNotifications.filter((n) => String(n?.id || "") !== id);
+  } else {
+    if (!Array.isArray(target.dismissedByUserIds)) target.dismissedByUserIds = [];
+    if (!target.dismissedByUserIds.includes(sid)) target.dismissedByUserIds.push(sid);
+  }
+  if (persistRemote) persist();
+  return true;
+}
+
+function addGlobalNotification(payload) {
+  ensureGlobalNotificationsStore();
+  const now = new Date();
+  const createdAt = now.toISOString();
+  const expiresAt = new Date(now.getTime() + (72 * 60 * 60 * 1000)).toISOString();
+  const row = normalizeGlobalNotificationRecord({
+    ...payload,
+    createdAt,
+    expiresAt,
+    releasedWindows: Array.isArray(payload?.releasedWindows) ? payload.releasedWindows : [],
+    dismissedByUserIds: [],
+  });
+  state.globalNotifications.unshift(row);
+  if (state.globalNotifications.length > 200) {
+    state.globalNotifications = state.globalNotifications.slice(0, 200);
   }
 }
 
@@ -9280,6 +11947,27 @@ function collectTopbarReminderFeed() {
       });
     }
   }
+  pruneExpiredGlobalNotifications();
+  pruneResolvedGlobalNotifications();
+  for (const item of state.globalNotifications || []) {
+    if (isGlobalNotificationDismissedForSession(item)) continue;
+    const createdDt = new Date(String(item.createdAt || ""));
+    if (Number.isNaN(createdDt.getTime())) continue;
+    feed.push({
+      reservationKey: "",
+      eventId: String(item.eventId || ""),
+      globalNotificationId: String(item.id || ""),
+      eventName: String(item.title || "Aviso del sistema"),
+      salon: String(item.salon || ""),
+      date: String(item.date || toISODate(createdDt)),
+      time: String(item.time || toHHMM(createdDt)),
+      channel: "Sistema",
+      notes: String(item.notes || ""),
+      status: "today",
+      minutes: 0,
+      dt: createdDt,
+    });
+  }
   feed.sort((a, b) => a.dt.getTime() - b.dt.getTime());
   return feed;
 }
@@ -9313,6 +12001,9 @@ function renderTopbarReminderPanel(feed) {
     node.type = "button";
     node.className = `topbarReminderItem ${cls}`.trim();
     node.dataset.eventId = String(item.eventId || "");
+    if (item.globalNotificationId) {
+      node.dataset.globalNotificationId = String(item.globalNotificationId || "");
+    }
     node.innerHTML = `
       <div class="topbarReminderItemHead">
         <strong>${escapeHtml(item.eventName)}</strong>
@@ -9324,6 +12015,7 @@ function renderTopbarReminderPanel(feed) {
         <span>${escapeHtml(item.channel || "-")}</span>
       </div>
       ${item.notes ? `<div class="topbarReminderItemNotes">${escapeHtml(item.notes)}</div>` : ""}
+      ${item.globalNotificationId ? `<div class="topbarReminderItemMeta"><span></span><span data-dismiss-global-notification-id="${escapeHtml(String(item.globalNotificationId || ""))}" style="cursor:pointer;text-decoration:underline">Quitar</span></div>` : ""}
     `;
     el.topbarReminderList.appendChild(node);
   }
@@ -9337,9 +12029,12 @@ function refreshTopbarReminders() {
   el.btnTopbarReminders.classList.toggle("hasUrgent", urgentCount > 0);
   if (urgentCount > 0) {
     el.topbarReminderCount.hidden = false;
+    el.topbarReminderCount.style.display = "";
     el.topbarReminderCount.textContent = String(Math.min(99, urgentCount));
   } else {
     el.topbarReminderCount.hidden = true;
+    el.topbarReminderCount.style.display = "none";
+    el.topbarReminderCount.textContent = "0";
   }
   renderTopbarReminderPanel(feed);
 }
@@ -9957,6 +12652,144 @@ function findMaintenanceDayBlocks(draft, ignoreIds = null) {
   });
 }
 
+function isHardBlockingStatus(status) {
+  return status === STATUS.CONFIRMADO || status === STATUS.PRERESERVA;
+}
+
+function canBeAutoNotifiedForReleasedCapacity(status) {
+  return status === STATUS.LISTA || status === STATUS.PRIMERA || status === STATUS.SEGUIMIENTO;
+}
+
+function buildStatusChangeToast(prevStatus, nextStatus, fallback = "Estado actualizado.") {
+  const from = String(prevStatus || "").trim();
+  const to = String(nextStatus || "").trim();
+  if (from && to && from !== to) return `Estado actualizado: ${from} -> ${to}.`;
+  if (to) return `Estado guardado: ${to}.`;
+  return fallback;
+}
+
+function buildBlockingWindowsFromEvents(events) {
+  if (!Array.isArray(events) || !events.length) return [];
+  return events
+    .filter((e) => isHardBlockingStatus(String(e?.status || "").trim()))
+    .map((e) => ({
+      id: String(e.id || ""),
+      date: String(e.date || ""),
+      salon: String(e.salon || ""),
+      startTime: String(e.startTime || ""),
+      endTime: String(e.endTime || ""),
+    }))
+    .filter((w) => w.date && w.salon && w.startTime && w.endTime);
+}
+
+function computeReleasedWindows(previousBlockingWindows, nextBlockingWindows) {
+  const prev = Array.isArray(previousBlockingWindows) ? previousBlockingWindows : [];
+  const next = Array.isArray(nextBlockingWindows) ? nextBlockingWindows : [];
+  if (!prev.length) return [];
+  return prev.filter((oldW) => {
+    return !next.some((newW) => {
+      if (newW.date !== oldW.date) return false;
+      if (newW.salon !== oldW.salon) return false;
+      return timesOverlap(oldW.startTime, oldW.endTime, newW.startTime, newW.endTime);
+    });
+  });
+}
+
+function summarizeReleasedWindows(windows, maxItems = 3) {
+  const rows = (Array.isArray(windows) ? windows : [])
+    .filter((w) => w?.date && w?.salon && w?.startTime && w?.endTime)
+    .slice(0, maxItems)
+    .map((w) => `${w.date} ${w.salon} ${w.startTime}-${w.endTime}`);
+  if (!rows.length) return "";
+  const extra = (Array.isArray(windows) ? windows.length : 0) - rows.length;
+  return extra > 0 ? `${rows.join(", ")} (+${extra} bloque(s))` : rows.join(", ");
+}
+
+function createSystemNotificationReminder(ev, notes, createdByUserId = "") {
+  if (!ev || !notes) return;
+  const now = new Date(Date.now() + 60 * 60 * 1000); // +60 min para mantenerla visible en campana
+  addReminderForEvent(ev, {
+    date: toISODate(now),
+    time: toHHMM(now),
+    channel: "Sistema",
+    notes,
+    createdByUserId,
+  });
+}
+
+function notifyReleasedCapacityForWaitingReservations({
+  releasedWindows,
+  sourceEvent,
+  reasonText,
+  actorUserId = "",
+}) {
+  try {
+    const windows = (Array.isArray(releasedWindows) ? releasedWindows : [])
+      .filter((w) => w && typeof w === "object")
+      .map((w) => ({
+        date: String(w.date || "").trim(),
+        salon: String(w.salon || "").trim(),
+        startTime: String(w.startTime || "").trim(),
+        endTime: String(w.endTime || "").trim(),
+      }))
+      .filter((w) => w.date && w.salon && isValidClockTime(w.startTime) && isValidClockTime(w.endTime));
+    if (!windows.length) return 0;
+
+    const sourceId = String(sourceEvent?.id || "");
+    const sourceGroupId = String(sourceEvent?.groupId || "");
+    const releaseSummary = summarizeReleasedWindows(windows);
+    const sourceLabel = String(sourceEvent?.name || "una reserva");
+    const notes = `Se libero horario (${releaseSummary}) porque "${sourceLabel}" ${reasonText}. Ya puedes intentar mover tu reserva a Confirmado/Pre reserva.`;
+
+    addGlobalNotification({
+      title: "Horario disponible",
+      notes,
+      eventId: sourceId,
+      salon: String(windows[0]?.salon || sourceEvent?.salon || ""),
+      date: String(windows[0]?.date || sourceEvent?.date || ""),
+      time: String(windows[0]?.startTime || sourceEvent?.startTime || ""),
+      releasedWindows: windows,
+    });
+    toast("Aviso global enviado: se libero un horario.");
+
+    const notifiedByReservation = new Map();
+    for (const ev of state.events || []) {
+      if (!ev) continue;
+      if (String(ev.id || "") === sourceId) continue;
+      if (sourceGroupId && String(ev.groupId || "") === sourceGroupId) continue;
+      if (!canBeAutoNotifiedForReleasedCapacity(String(ev.status || "").trim())) continue;
+      if (!isValidClockTime(String(ev.startTime || "")) || !isValidClockTime(String(ev.endTime || ""))) continue;
+
+      const hasOverlap = windows.some((w) => {
+        if (String(ev.date || "") !== w.date) return false;
+        if (String(ev.salon || "") !== w.salon) return false;
+        return timesOverlap(String(ev.startTime || ""), String(ev.endTime || ""), w.startTime, w.endTime);
+      });
+      if (!hasOverlap) continue;
+
+      const key = String(reservationKeyFromEvent(ev) || "").trim();
+      if (!key || notifiedByReservation.has(key)) continue;
+      notifiedByReservation.set(key, ev);
+    }
+
+    for (const ev of notifiedByReservation.values()) {
+      createSystemNotificationReminder(ev, notes, actorUserId || sourceEvent?.userId || "");
+      appendHistoryByKey(
+        reservationKeyFromEvent(ev),
+        actorUserId || sourceEvent?.userId || "",
+        `Aviso automatico: horario liberado (${releaseSummary}) porque "${sourceLabel}" ${reasonText}.`
+      );
+      if (String(authSession.userId || "").trim() === String(ev.userId || "").trim()) {
+        toast(`Aviso: se libero horario para tu reserva (${ev.date} ${ev.salon}).`);
+      }
+    }
+    return notifiedByReservation.size;
+  } catch (err) {
+    console.error("Fallo al generar aviso de horario liberado:", err);
+    return 0;
+  }
+}
+
 function autoMarkLostEvents() {
   const now = new Date();
   let changed = false;
@@ -10033,7 +12866,7 @@ function normalizeState(candidate) {
     users: Array.isArray(candidate.users) ? candidate.users.map(normalizeUserRecord).filter((u) => u.id && u.name) : [],
     companies: Array.isArray(candidate.companies) ? candidate.companies : [],
     services: Array.isArray(candidate.services) ? candidate.services.map(normalizeServiceRecord) : [],
-    quickTemplates: Array.isArray(templateSource) ? templateSource.map(normalizeTemplateRecord).filter(Boolean) : [],
+    quickTemplates: ensureCorporateTemplateSeed(Array.isArray(templateSource) ? templateSource : []),
     disabledCompanies: Array.isArray(candidate.disabledCompanies) ? candidate.disabledCompanies.map((x) => String(x || "").trim()).filter(Boolean) : [],
     disabledServices: Array.isArray(candidate.disabledServices) ? candidate.disabledServices.map((x) => String(x || "").trim()).filter(Boolean) : [],
     disabledManagers: Array.isArray(candidate.disabledManagers) ? candidate.disabledManagers.map((x) => String(x || "").trim()).filter(Boolean) : [],
@@ -10041,19 +12874,27 @@ function normalizeState(candidate) {
     globalMonthlyGoals: Array.isArray(candidate.globalMonthlyGoals) ? candidate.globalMonthlyGoals : [],
     changeHistory: (candidate.changeHistory && typeof candidate.changeHistory === "object") ? candidate.changeHistory : {},
     reminders: (candidate.reminders && typeof candidate.reminders === "object") ? candidate.reminders : {},
+    checklistTemplateItems: Array.isArray(candidate.checklistTemplateItems) ? candidate.checklistTemplateItems : [],
+    checklistTemplateSections: Array.isArray(candidate.checklistTemplateSections) ? candidate.checklistTemplateSections : [],
+    menuMontajeSections: Array.isArray(candidate.menuMontajeSections) ? candidate.menuMontajeSections : [],
+    menuMontajeBebidas: Array.isArray(candidate.menuMontajeBebidas) ? candidate.menuMontajeBebidas : [],
+    eventChecklists: (candidate.eventChecklists && typeof candidate.eventChecklists === "object") ? candidate.eventChecklists : {},
+    globalNotifications: Array.isArray(candidate.globalNotifications)
+      ? candidate.globalNotifications.map(normalizeGlobalNotificationRecord)
+      : [],
   };
   normalized.companies = normalized.companies.map(normalizeCompanyRecord);
   return normalized;
 }
 
 function buildInitialState() {
-  const templateSeed = loadQuickTemplates();
+  const templateSeed = ensureCorporateTemplateSeed(loadQuickTemplates());
   return {
     salones: SALONES_DEFAULT.slice(),
     users: USERS_DEFAULT.slice(),
     companies: COMPANIES_DEFAULT.slice(),
     services: SERVICES_DEFAULT.slice(),
-    quickTemplates: Array.isArray(templateSeed) ? templateSeed : [],
+    quickTemplates: Array.isArray(templateSeed) ? templateSeed : ensureCorporateTemplateSeed([]),
     disabledCompanies: [],
     disabledServices: [],
     disabledManagers: [],
@@ -10061,6 +12902,12 @@ function buildInitialState() {
     globalMonthlyGoals: [],
     changeHistory: {},
     reminders: {},
+    checklistTemplateItems: [],
+    checklistTemplateSections: ["General"],
+    menuMontajeSections: ["General"],
+    menuMontajeBebidas: [],
+    eventChecklists: {},
+    globalNotifications: [],
     events: [],
   };
 }
@@ -10263,6 +13110,11 @@ function toISODate(d) {
   const m = pad2(x.getMonth() + 1);
   const da = pad2(x.getDate());
   return `${y}-${m}-${da}`;
+}
+
+function toHHMM(d) {
+  const x = new Date(d);
+  return `${pad2(x.getHours())}:${pad2(x.getMinutes())}`;
 }
 
 function pad2(n) { return String(n).padStart(2, "0"); }
@@ -10537,6 +13389,9 @@ function validateReservationRequiredFields() {
 
 function timesOverlap(aStart, aEnd, bStart, bEnd) {
   // overlap if start < otherEnd AND end > otherStart
+  if (!isValidClockTime(aStart) || !isValidClockTime(aEnd) || !isValidClockTime(bStart) || !isValidClockTime(bEnd)) {
+    return false;
+  }
   return compareTime(aStart, bEnd) < 0 && compareTime(aEnd, bStart) > 0;
 }
 
@@ -10545,8 +13400,8 @@ function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
 function toast(msg) {
   const text = String(msg || "").trim();
   if (window.Swal && typeof window.Swal.fire === "function") {
-    const successPattern = /\b(agregado|agregada|guardado|guardada|creado|creada|cargado|cargada|movido|movida|eliminado|eliminada|ajustada|ajustado|extendida|extendido|cambiado|cambiada|listo)\b/i;
-    const errorPattern = /\b(no se pudo|error|invalido|invalida|falta|faltan|completa|sin conexion|debe|obligatoria|obligatorio|espera)\b/i;
+    const successPattern = /\b(agregado|agregada|guardado|guardada|creado|creada|cargado|cargada|movido|movida|eliminado|eliminada|ajustada|ajustado|extendida|extendido|cambiado|cambiada|actualizado|actualizada|listo)\b/i;
+    const errorPattern = /\b(no se pudo|error|invalido|invalida|falta|faltan|completa|sin conexion|debe|obligatoria|obligatorio)\b/i;
     const icon = errorPattern.test(text) ? "error" : (successPattern.test(text) ? "success" : "info");
     window.Swal.fire({
       toast: true,

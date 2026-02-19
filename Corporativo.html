@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Contrato Corporativo - Jardines del Lago</title>
+
+  <style>
+    /* ===== Impresion ===== */
+    @page{
+      size: letter;
+      margin: 8mm 6mm 6mm 6mm;
+    }
+    @media print{
+      .no-print{ display:none !important; }
+
+      /* Header como parte del contenido (no fijo) */
+      .print-header{
+        position: static;
+        padding: 0.8mm 6mm 1.2mm;
+        background: #fff;
+        border-bottom: none;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        display: grid;
+        grid-template-columns: 78px 2px minmax(0, 1fr) 2px 128px;
+        align-items: center;
+        gap: 6px;
+      }
+      .print-frame{
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .print-frame-head{
+        display: table-header-group;
+      }
+      .print-frame-body{
+        display: table-row-group;
+      }
+      .print-frame,
+      .print-frame tr,
+      .print-frame th,
+      .print-frame > thead > tr > td,
+      .print-frame > tbody > tr > td{
+        border: none !important;
+      }
+      .print-frame > thead > tr > td,
+      .print-frame > tbody > tr > td{
+        padding: 0 !important;
+      }
+
+      /* Sin compensacion porque el header ya no es fijo */
+      .page{
+        padding-top: 0;
+        padding-left: 0;
+        padding-right: 0;
+        margin: 0;
+        max-width: none;
+      }
+      .doc-title{
+        margin-top: 0;
+        page-break-after: avoid;
+      }
+      .doc-title + p{
+        margin-top: 2mm;
+      }
+      .dh-logo img{ width: 1.5cm; }
+      .dh-divider{ height: 16px; width: 2px; }
+      .dh-center-title{ font-size: 7.2px; line-height: 1.05; }
+      .dh-center-sub{ font-size: 6.6px; line-height: 1.05; }
+      .dh-right-line{ font-size: 6.6px; line-height: 1.05; }
+      .dh-center{
+        transform: none;
+        align-self: end;
+        padding-top: 0.8mm;
+      }
+      .dh-right{
+        transform: none;
+        align-self: end;
+        padding-top: 0.8mm;
+      }
+    }
+
+    /* ===== Base ===== */
+    :root{
+      --text:#111;
+      --muted:#444;
+      --border:#000;
+      --teal:#0a7a7a;
+    }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:#fff;
+      line-height:1.25;
+      font-size: 11px;
+    }
+
+    /* Contenedor "hoja" */
+    .page{
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 14px 10px 24px;
+    }
+
+    /* Barra opcional (no sale en PDF) */
+    .toolbar{
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 10px;
+      z-index: 10;
+    }
+    .toolbar button{
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid #222;
+      background: #fff;
+      cursor: pointer;
+    }
+    .badge{
+      font-size: 10px;
+      padding: 2px 6px;
+      border: 1px solid #aaa;
+      border-radius: 999px;
+      margin-left: 6px;
+      color: var(--muted);
+    }
+
+    /* ===== Encabezado tipo JDL ===== */
+    .print-header{
+      display: grid;
+      grid-template-columns: 140px 3px minmax(0, 1fr) 3px 180px;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px 6px;
+      margin: 0 0 10px;
+      border-bottom: none;
+      background:#fff;
+    }
+
+    .dh-logo{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      min-width: 0;
+    }
+    .dh-logo img{
+      width: 1.5cm;
+      height: auto;
+      display:block;
+      object-fit: contain;
+    }
+
+    .dh-divider{
+      width: 3px;
+      height: 28px;
+      background: var(--teal);
+      justify-self: center;
+    }
+
+    .dh-center{
+      min-width: 0;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .dh-center-title{
+      font-size: 10px;
+      line-height: 1.15;
+      font-weight: 400;
+      color: #2c2c2c;
+      font-family: "Times New Roman", Georgia, serif;
+      letter-spacing: 0;
+      text-transform: none;
+      text-align: left;
+    }
+    .dh-center-sub{
+      font-size: 9px;
+      color: #2c2c2c;
+      text-align: left;
+      font-family: "Times New Roman", Georgia, serif;
+    }
+
+    .dh-right{
+      min-width: 0;
+      text-align: right;
+      line-height: 1.2;
+    }
+    .dh-right-line{
+      font-size: 9px;
+      color: #2c2c2c;
+      font-family: "Times New Roman", Georgia, serif;
+      white-space: nowrap;
+    }
+
+    /* Titulo del documento y No Doc */
+    .doc-title{
+      text-align:center;
+      margin: 10px 0 6px;
+    }
+    .title{
+      font-weight: 700;
+      letter-spacing: .3px;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .nodoc{
+      margin-top: 2px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* Texto */
+    p{ margin: 0 0 6px; }
+    .muted{ color: var(--muted); }
+
+    /* Secciones */
+    .section{ margin-top: 6px; }
+    .section-title{
+      font-weight:700;
+      text-transform: uppercase;
+      margin: 10px 0 4px;
+    }
+
+    /* Listas tipo "a. b. c." */
+    ol.alpha{
+      margin: 0 0 6px 18px;
+      padding: 0;
+      list-style-type: lower-alpha;
+    }
+    ol.alpha > li{ margin: 0 0 4px; }
+
+    /* Tabla */
+    table{
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 10px;
+      table-layout: fixed;
+    }
+    th, td{
+      border: 1px solid var(--border);
+      padding: 4px 5px;
+      vertical-align: top;
+    }
+    th{
+      font-weight: 700;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    /* Firma */
+    .sign-row{
+      display:flex;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 10px;
+      align-items: flex-end;
+    }
+    .sign-col{ flex:1; }
+    .sign-label{
+      font-weight:700;
+      text-align:center;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    .sign-line{
+      border-bottom: 1px solid #000;
+      height: 18px;
+    }
+    .sign-image{
+      display:block;
+      max-width: 180px;
+      max-height: 42px;
+      object-fit: contain;
+      margin: 0 auto 2px;
+    }
+    .sign-image[src=""],
+    .sign-image[src="{{VENDEDOR_FIRMA_URL}}"]{
+      display:none;
+    }
+    .sign-meta{
+      margin-top: 6px;
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.2;
+      color: #222;
+    }
+    .sign-meta-line{
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sign-foot{
+      margin-top: 6px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* "SI / NO" autorizacion */
+    .yn{
+      margin-top: 8px;
+      display:flex;
+      justify-content: center;
+      gap: 120px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* Campos editables */
+    .field{
+      padding: 1px 4px;
+      border-bottom: 1px dotted #999;
+      display: inline-block;
+      min-width: 60px;
+    }
+
+    @media screen and (max-width: 860px){
+      .print-header{
+        grid-template-columns: 1fr;
+        gap: 8px;
+        background: #fff;
+      }
+      .dh-divider{
+        display: none;
+      }
+      .dh-center-title{
+        text-align: center;
+        font-size: 24px;
+      }
+      .dh-center-sub{
+        text-align: center;
+      }
+      .dh-right{
+        text-align: center;
+      }
+      .dh-right-line{
+        white-space: normal;
+      }
+      .dh-logo{
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="toolbar no-print">
+    <button onclick="window.print()">Imprimir / Guardar PDF</button>
+    <span class="badge">Header repetible</span>
+    <span class="badge">Campos editables</span>
+  </div>
+
+  <table class="print-frame" role="presentation">
+    <thead class="print-frame-head">
+      <tr>
+        <td>
+          <!-- ===== HEADER (repetido por thead en impresion) ===== -->
+          <header class="print-header">
+            <div class="dh-logo">
+              <img src="Oficial_JDL_acua.png" alt="Jardines del Lago">
+            </div>
+
+            <div class="dh-divider"></div>
+
+            <div class="dh-center">
+              <div class="dh-center-title">Hotel y Centro de Convenciones Jardines del Lago</div>
+              <div class="dh-center-sub">Patricio Estanislao Ralon Ordonez</div>
+              <div class="dh-center-sub">Nit: 485430-6</div>
+            </div>
+
+            <div class="dh-divider"></div>
+
+            <div class="dh-right">
+              <div class="dh-right-line">www.jardinesdellago.com</div>
+              <div class="dh-right-line">+502 7762-6114 &amp; 7762-0606</div>
+              <div class="dh-right-line">Calle Monterrey, Panajachel, Solola</div>
+            </div>
+          </header>
+        </td>
+      </tr>
+    </thead>
+    <tbody class="print-frame-body">
+      <tr>
+        <td>
+          <main class="page">
+
+    <!-- ===== TITULO + NO DOC ===== -->
+    <div class="doc-title">
+      <div class="title">CONTRATO PRESTACION DE SERVICIOS HOTEL Y CENTRO DE CONVENCIONES JARDINES DEL LAGO</div>
+      <div class="nodoc">NO DOC. <span class="field" contenteditable="true">{{NO_DOC}}</span></div>
+    </div>
+
+    <p>
+      Hotel y Centro de Convenciones Jardines del Lago prestara los servicios mencionados en este contrato a
+      <span class="field" contenteditable="true">{{CLIENTE}}</span>.
+    </p>
+
+    <p><strong>Acatando ambas partes las siguientes clausulas:</strong></p>
+
+    <!-- 1 -->
+    <section class="section">
+      <div class="section-title">1. CONTRATACIONES EXTERNAS</div>
+      <ol class="alpha">
+        <li>Si el cliente contrata utilizacion de mobiliario y/o equipo en empresas ajenas al Hotel, debe notificar por escrito las caracteristicas de este, el dia y la hora en que se recibira dicho mobiliario y/o equipo. Hotel Jardines del Lago no se hace responsable por el almacenaje del mobiliario antes o despues de lo pactado, se ubicara el equipo en el espacio que el Hotel tenga disponible. El cliente sera el total responsable de dicho mobiliario frente a la empresa con quien contrata, por lo que debe recibirlo al momento de que este llegue.</li>
+        <li>Por politicas ambientales del Hotel, queda prohibida la quema de pirotecnicos en los eventos, salvo autorizaciones por gerencia. Dicha solicitud debe notificarse al hotel para proceder a la autorizacion, informando el encargado, cantidad y hora de quema de pirotecnicos.</li>
+        <li>Si el cliente contrata grupos, discotecas o cualquier otro servicio que necesite energia electrica debe solicitar al asesor de ventas una reunion con el encargado de mantenimiento del hotel para establecer las necesidades de conexion. Esto puede causar costos adicionales al evento.</li>
+        <li>Todo el equipo y materiales de los proveedores seran desinfectados previo a su ingreso a las instalaciones del hotel. El Hotel no se hace responsable por manchas o desperfectos que sufran los equipos debido a la aplicacion de productos de desinfeccion/sanitizacion. Si el proveedor no desea que el Hotel desinfecte, debe hacerlo el mismo a la vista de personal del Hotel.</li>
+        <li>Todos los proveedores deben identificarse en la recepcion del hotel, se les colocara un brazalete y podran ingresar unicamente las personas que se encuentren en el listado brindado por el/la coordinador/a del evento (nombre, DPI, telefono) y regirse al horario de ingreso/egreso establecido.</li>
+        <li>Todos los proveedores deben respetar normas y disposiciones de la empresa. De no cumplir, se solicitara al proveedor retirarse, quedando bajo responsabilidad del proveedor ante quien lo contrato. El Hotel no se hace responsable por trabajos no terminados/deficientes derivados del incumplimiento.</li>
+        <li>Cada proveedor debe brindar al hotel copia de sus protocolos. Adicionalmente, debe cumplir los protocolos de Salud y Seguridad Ocupacional y Bioseguridad del Hotel y asignar un responsable de verificacion/cumplimiento.</li>
+        <li>Cuando el cliente contrata un terreno/casa/chalet y el hotel brinda catering, el cliente debe asegurar requerimientos (energia, agua, sanitarios, parqueo, espacio de servicio). El Hotel no se hace responsable por danos a instalaciones realizados por invitados/cliente. Se requiere visita previa.</li>
+        <li>El Hotel no se hace responsable por danos que sufran equipos y trabajadores de proveedores derivados de cambios de energia, desastres naturales u otras actividades.</li>
+      </ol>
+    </section>
+
+    <!-- 2 -->
+    <section class="section">
+      <div class="section-title">2. ALIMENTOS Y BEBIDAS</div>
+      <ol class="alpha">
+        <li>El menu debe elegirse con 72 horas de anticipacion para eventos corporativos y 1 mes minimo para eventos sociales; de lo contrario sera a discrecion del chef.</li>
+        <li>El ingreso de alimentos y bebidas por parte del cliente esta prohibido salvo autorizacion por escrito; puede generar cargo adicional. Jardines del Lago no se responsabiliza por manipulacion previa o manejo del cliente.</li>
+        <li>Por seguridad e higiene, el Hotel no permite el egreso de comida sobrante. Si el cliente solicita extraccion, el hotel queda exonerado por consecuencias. El cliente debe brindar carta y aportar recipientes propios si se autoriza.</li>
+        <li>Alimentos en buffet no podran mantenerse por mas de 1 hora; luego se retiran. Si el Cliente decide mantenerlos mas tiempo, es su responsabilidad y el Hotel queda exonerado.</li>
+      </ol>
+    </section>
+
+    <!-- 3 -->
+    <section class="section">
+      <div class="section-title">3. MONTAJE, DECORACION Y DEMAS DEL EVENTO</div>
+      <ol class="alpha">
+        <li>Los salones/areas contratadas estaran disponibles al organizador/decorador 1 hora antes o segun disponibilidad. Requerir mas tiempo implica costo adicional y sujeto a disponibilidad.</li>
+        <li>Si requiere instalacion de equipo u otro montaje, debe presentarse maximo una hora antes del inicio y queda sujeto a disponibilidad y autorizaciones de gerencia.</li>
+        <li>El desmontaje de equipo/decoracion con ruidos intensos debe realizarse antes de las 23:00 si el evento termina a las 22:00; de lo contrario se realizara al dia siguiente a partir de las 7:00 (segun disponibilidad) o instruccion del capitan/asesor. Si no es posible, se desmonta al finalizar sin hacer ruido.</li>
+        <li>Si el evento corporativo requiere anuncios/poster/banner/mantas/publicidad, debe detallarse con anticipacion.</li>
+      </ol>
+    </section>
+
+    <!-- 4 -->
+    <section class="section">
+      <div class="section-title">4. HABITACIONES</div>
+      <ol class="alpha">
+        <li>Check out 12:00 horas y check in a partir de 15:00 horas.</li>
+        <li>Cualquier dano a habitaciones/instalaciones sera cargado al responsable y/o al evento si no se cubre el gasto.</li>
+        <li>No nos hacemos responsables por objetos perdidos u olvidados en habitaciones.</li>
+      </ol>
+    </section>
+
+    <!-- 5 -->
+    <section class="section">
+      <div class="section-title">5. CAMBIOS Y ADICIONALES</div>
+      <ol class="alpha">
+        <li>Si es necesario cambio de fecha para eventos sociales, se penalizara segun tiempos: &gt;1 ano 0%, 6-12 meses 10%, 3-6 meses 25%, 1-3 meses 50%, 0-31 dias 75% del monto total (incluye habitaciones y servicios). Si cambia de ano, hay reajuste de precios.</li>
+        <li>Incrementos en menos de 24 horas tendran cargo adicional de 10% sobre el excedente. Puede generar tiempo adicional de entrega.</li>
+        <li>Cobramos segun cantidad solicitada en contrato. Queda pendiente cancelar cargos adicionales durante/despues del evento.</li>
+        <li>No se aceptan disminuciones; unicamente aumentos.</li>
+        <li>El evento debe regirse al horario. Si requiere mas tiempo, solicitar expansion por autorizacion del asesor/capitan; puede haber cobros adicionales.</li>
+      </ol>
+    </section>
+
+    <!-- 6 -->
+    <section class="section">
+      <div class="section-title">6. CANCELACIONES</div>
+      <ol class="alpha">
+        <li>El Hotel no se hace responsable por eventos cancelados por fuerza mayor o desastres naturales.</li>
+        <li>No se realizan reembolsos de anticipos por cancelacion o disminucion, sin importar causas o tiempo.</li>
+        <li>Para garantizar reserva: anticipo 50% (todos los servicios). Liquidacion 100%: 5 dias antes (corporativos) y 1 mes antes (sociales). Si no cumple, el hotel puede cancelar y no garantiza espacios.</li>
+      </ol>
+    </section>
+
+    <!-- 7 -->
+    <section class="section">
+      <div class="section-title">7. FORMAS DE PAGO Y GARANTIAS</div>
+      <ol class="alpha">
+        <li>Cheques a nombre de Hotel y Centro de Convenciones Jardines del Lago. Si es rechazado, se cobrara Q250 adicionales.</li>
+        <li>Si el evento reserva habitaciones, la garantia es el evento; NO SHOW o faltas de pago se agregan al estado de cuenta final.</li>
+        <li>Periodo de 15 dias de credito (solo corporativos) mediante carta de compromiso dirigida al Hotel, sujeto a autorizacion.</li>
+        <li>Depositos/transferencias: enviar copia de boleta al correo de su asesor y a contabilidad@jardinesdellago.com. Se aplica cuando contabilidad valide el acreditamiento.</li>
+        <li>No existe convenio de creditos con entidades financieras; condiciones de tarjeta son responsabilidad Cliente-Banco.</li>
+      </ol>
+
+      <p><strong>Las cuentas autorizadas para realizar depositos y/o transferencias son:</strong></p>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 22%;">BANCO</th>
+            <th style="width: 18%;">MONEDA</th>
+            <th style="width: 26%;">NUMERO DE CUENTA</th>
+            <th style="width: 34%;">NOMBRE DE LA CUENTA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>BANRURAL</td>
+            <td rowspan="3" style="text-align:center; font-weight:700;">QUETZALES</td>
+            <td style="text-align:center;">3156022889</td>
+            <td rowspan="5" style="text-align:center;">
+              HOTEL Y CENTRO DE CONVENCIONES<br/>
+              JARDINES DEL LAGO (Monetarias)
+            </td>
+          </tr>
+          <tr>
+            <td>INDUSTRIAL</td>
+            <td style="text-align:center;">023-001919-0</td>
+          </tr>
+          <tr>
+            <td>G&amp;T</td>
+            <td style="text-align:center;">035-0003964-4</td>
+          </tr>
+          <tr>
+            <td>INDUSTRIAL</td>
+            <td rowspan="2" style="text-align:center; font-weight:700;">DOLARES</td>
+            <td style="text-align:center;">023-001900-0</td>
+          </tr>
+          <tr>
+            <td>G&amp;T</td>
+            <td style="text-align:center;">035-5806086-3</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 8 -->
+    <section class="section">
+      <div class="section-title">8. CIRCUNSTANCIAS EXCEPCIONALES, CLAUSULAS DE RESPONSABILIDAD Y SEGURIDAD</div>
+      <ol class="alpha">
+        <li>Debe establecerse una persona encargada del evento; cambios el dia del evento deben ser autorizados por dicha persona. Debe entregar listado de objetos entregados al hotel y se entregaran contra el mismo listado al finalizar.</li>
+        <li>Jardines del Lago no se hace responsable por danos/perjuicios en parqueo ni por objetos olvidados. En recepcion hay cajillas de seguridad.</li>
+        <li>No se realizan devoluciones por reclamos posteriores al evento.</li>
+        <li>El Hotel se reserva el derecho de admision.</li>
+        <li>Se prohibe ingreso de armas; si es necesario pueden usar cajillas. Si alguien porta armas se retirara de las instalaciones.</li>
+        <li>Decoracion/equipo/objetos ingresados deben retirarse al finalizar. El hotel no se hace responsable por perdidas/danos despues del evento; puede cobrarse almacenaje segun administracion.</li>
+        <li>El hotel puede concluir el evento si clientes/proveedores/invitados no acatan normas/politicas.</li>
+        <li>La musica debe estar a niveles permitidos; el hotel regula volumen. Incumplimiento puede causar desconexion/limitacion electrica.</li>
+      </ol>
+    </section>
+
+    <!-- 9 -->
+    <section class="section">
+      <div class="section-title">9.</div>
+      <p>
+        Al momento del evento, Hotel Jardines del Lago tomara fotografias y videos de la actividad, en donde posiblemente se retrate a los integrantes del evento,
+        las cuales podrian ser utilizadas con fines de mercadeo. El cliente autoriza al hotel a utilizar dicho material?
+      </p>
+
+      <div class="yn">
+        <div>SI ☐</div>
+        <div>NO ☐</div>
+      </div>
+
+      <p style="margin-top:10px;">
+        Estando plenamente conformes con todas y cada una de las clausulas, firmamos y sellamos el presente contrato de servicio en
+        <span class="field" contenteditable="true">{{LUGAR}}</span>,
+        <span class="field" contenteditable="true">{{DEPARTAMENTO}}</span>
+        a los <span class="field" contenteditable="true">{{DIA}}</span> dias del mes de
+        <span class="field" contenteditable="true">{{MES}}</span> de
+        <span class="field" contenteditable="true">{{ANIO}}</span>.
+      </p>
+
+      <div class="sign-row">
+        <div class="sign-col">
+          <div class="sign-label">(F)</div>
+          <img class="sign-image" src="{{VENDEDOR_FIRMA_URL}}" alt="Firma vendedor" />
+          <div class="sign-line"></div>
+          <div class="sign-meta">
+            <p class="sign-meta-line"><strong>{{VENDEDOR_NOMBRE}}</strong></p>
+            <p class="sign-meta-line">{{VENDEDOR_TELEFONO}}</p>
+            <p class="sign-meta-line">{{VENDEDOR_CORREO}}</p>
+          </div>
+        </div>
+        <div class="sign-col">
+          <div class="sign-label">&nbsp;</div>
+          <div class="sign-line"></div>
+          <div class="sign-meta">
+            <p class="sign-meta-line"><strong>{{CLIENTE_NOMBRE}}</strong></p>
+            <p class="sign-meta-line">{{CLIENTE_TELEFONO}}</p>
+            <p class="sign-meta-line">{{CLIENTE_CORREO}}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+          </main>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
