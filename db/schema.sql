@@ -202,6 +202,24 @@ CREATE TABLE IF NOT EXISTS recordatorios_evento (
   KEY idx_recordatorios_fecha_hora (fecha_recordatorio, hora_recordatorio)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS anticipos_evento (
+  id VARCHAR(100) NOT NULL,
+  id_evento VARCHAR(80) NOT NULL,
+  fecha_anticipo DATE NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0,
+  tipo_pago VARCHAR(40) NOT NULL DEFAULT 'Efectivo',
+  descripcion VARCHAR(255) NULL,
+  creado_en_iso VARCHAR(50) NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_anticipos_evento (id_evento, fecha_anticipo),
+  CONSTRAINT fk_anticipos_evento
+    FOREIGN KEY (id_evento) REFERENCES eventos(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS bitacora_migracion (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   origen VARCHAR(80) NOT NULL,

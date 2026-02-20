@@ -549,12 +549,20 @@
                   <label class="quoteDocRow"><span>Telefono:</span><input id="quotePhone" type="text" required /></label>
                   <label class="quoteDocRow">
                     <span>Forma de Pago:</span>
-                    <select id="quotePaymentType" required>
-                      <option value="Credito">Credito</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                      <option value="Mixto">Mixto</option>
-                      <option value="Efectivo">Efectivo</option>
-                    </select>
+                    <div class="field">
+                      <input id="quotePaymentType" type="text" required readonly placeholder="Sin formas de pago seleccionadas" />
+                      <div class="quotePayPicker">
+                        <select id="quotePaymentTypeSelect">
+                          <option value="Credito">Credito</option>
+                          <option value="Deposito">Deposito</option>
+                          <option value="Tarjeta">Tarjeta</option>
+                          <option value="Efectivo">Efectivo</option>
+                        </select>
+                        <button class="btn" type="button" id="btnQuotePaymentAdd">Agregar</button>
+                        <button class="btn" type="button" id="btnQuotePaymentClear">Limpiar</button>
+                      </div>
+                      <small class="hint">Se iran concatenando en el campo.</small>
+                    </div>
                   </label>
                   <label class="quoteDocRow"><span>NIT:</span><input id="quoteNIT" type="text" required /></label>
                   <label class="quoteDocRow"><span>No Personas:</span><input id="quotePeople" type="number" min="1" step="1" required /></label>
@@ -634,12 +642,77 @@
             <div></div>
             <div class="rightActions">
               <button class="btn" type="button" id="btnMenuMontaje">Menu &amp; Montaje</button>
+              <button class="btn" type="button" id="btnQuoteAdvances">Anticipos</button>
               <button class="btn" type="button" id="btnMenuMontajeSelectable">Menu &amp; Montaje (Listas)</button>
               <button class="btn" type="button" id="btnQuotePrintTemplate">Imprimir plantilla</button>
               <button class="btnPrimary" type="submit">Guardar cotizacion</button>
             </div>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="quoteAdvanceBackdrop" hidden>
+      <div class="modal quoteAdvanceModal" role="dialog" aria-modal="true" aria-labelledby="quoteAdvanceTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="quoteAdvanceTitle">Anticipos</div>
+            <div class="modalSubtitle">Registra pagos anticipados para restar saldo del evento</div>
+          </div>
+          <button class="iconBtn" id="btnQuoteAdvanceClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+        <div class="modalBody quoteAdvanceBody">
+          <div class="quoteAdvanceFormGrid">
+            <label class="field">
+              <span>Monto</span>
+              <input id="quoteAdvanceAmount" type="number" min="0" step="0.01" placeholder="Ej: 1500.00" required />
+            </label>
+            <label class="field">
+              <span>Forma de pago</span>
+              <select id="quoteAdvancePaymentType" required>
+                <option value="Credito">Credito</option>
+                <option value="Deposito">Deposito</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Tarjeta">Tarjeta</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Fecha</span>
+              <input id="quoteAdvanceDate" type="date" required />
+            </label>
+            <label class="field quoteAdvanceDescriptionField">
+              <span>Descripcion</span>
+              <input id="quoteAdvanceDescription" type="text" placeholder="Detalle del anticipo" required />
+            </label>
+            <div class="rightActions quoteAdvanceAddAction">
+              <button class="btnPrimary" id="btnQuoteAdvanceAdd" type="button">Agregar anticipo</button>
+            </div>
+          </div>
+          <div class="quoteAdvanceSummary">
+            <span>Total anticipos:</span>
+            <strong id="quoteAdvanceTotal">Q 0.00</strong>
+          </div>
+          <div class="quoteTableWrap quoteAdvanceTableWrap">
+            <table class="quoteTable">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Descripcion</th>
+                  <th>Monto</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="quoteAdvanceBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modalFooter">
+          <div></div>
+          <div class="rightActions">
+            <button class="btn" id="btnQuoteAdvanceDone" type="button">Listo</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -689,10 +762,7 @@
             <label class="field">
               <span>Descripcion menu</span>
               <div class="mmTextTools" data-mm-target="mmMenuDescription">
-                <button class="btn mmToolBtn" type="button" data-mm-snippet="menu_section">+ Seccion</button>
                 <button class="btn mmToolBtn" type="button" data-mm-snippet="separator">+ Separador</button>
-                <button class="btn mmToolBtn" type="button" data-mm-snippet="bullet">+ Item</button>
-                <button class="btn mmToolBtn" type="button" data-mm-snippet="line_break">+ Salto</button>
               </div>
               <textarea id="mmMenuDescription" rows="4" placeholder="Escribe detalle del menu"></textarea>
               <div class="mmCountRow"><span id="mmMenuDescCount">0 caracteres</span></div>
@@ -704,10 +774,7 @@
             <label class="field">
               <span>Descripcion montaje</span>
               <div class="mmTextTools" data-mm-target="mmMontajeDescription">
-                <button class="btn mmToolBtn" type="button" data-mm-snippet="montaje_section">+ Seccion</button>
                 <button class="btn mmToolBtn" type="button" data-mm-snippet="separator">+ Separador</button>
-                <button class="btn mmToolBtn" type="button" data-mm-snippet="bullet">+ Item</button>
-                <button class="btn mmToolBtn" type="button" data-mm-snippet="line_break">+ Salto</button>
               </div>
               <textarea id="mmMontajeDescription" rows="4" placeholder="Escribe detalle del montaje"></textarea>
               <div class="mmCountRow"><span id="mmMontajeDescCount">0 caracteres</span></div>

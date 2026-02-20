@@ -26,6 +26,7 @@ const REQUIRED_TABLES = [
   "items_cotizacion_version_evento",
   "historial_evento",
   "recordatorios_evento",
+  "anticipos_evento",
   "menu_platos_fuertes",
   "menu_preparaciones",
   "menu_salsas",
@@ -509,6 +510,84 @@ async function ensureQuoteVersionStructure() {
     }
     if (!versionColSet.has("total_neto")) {
       await conn.query("ALTER TABLE cotizacion_versiones_evento ADD COLUMN total_neto DECIMAL(12,2) NOT NULL DEFAULT 0");
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function ensureAdvancesStructure() {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const idMetaRows = await conn.query(
+      `SELECT column_type, character_set_name, collation_name
+       FROM information_schema.columns
+       WHERE table_schema = ? AND table_name = 'eventos' AND column_name = 'id'
+       LIMIT 1`,
+      [DB_NAME]
+    );
+    const idMeta = idMetaRows?.[0] || {};
+    const colType = String(idMeta.column_type || "varchar(80)").trim();
+    const charset = String(idMeta.character_set_name || "").trim();
+    const collation = String(idMeta.collation_name || "").trim();
+    const idEventoColumnSql = [
+      colType,
+      charset ? `CHARACTER SET ${charset}` : "",
+      collation ? `COLLATE ${collation}` : "",
+      "NOT NULL",
+    ].filter(Boolean).join(" ");
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS anticipos_evento (
+        id VARCHAR(100) NOT NULL,
+        id_evento ${idEventoColumnSql},
+        fecha_anticipo DATE NOT NULL,
+        monto DECIMAL(12,2) NOT NULL DEFAULT 0,
+        tipo_pago VARCHAR(40) NOT NULL DEFAULT 'Efectivo',
+        descripcion VARCHAR(255) NULL,
+        creado_en_iso VARCHAR(50) NULL,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_anticipos_evento (id_evento, fecha_anticipo)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    try {
+      await conn.query(`ALTER TABLE anticipos_evento MODIFY COLUMN id_evento ${idEventoColumnSql}`);
+    } catch (_) {
+      // Keep startup resilient even if existing data/definition blocks MODIFY.
+    }
+
+    const eventosTableRows = await conn.query(
+      `SELECT engine
+       FROM information_schema.tables
+       WHERE table_schema = ? AND table_name = 'eventos'
+       LIMIT 1`,
+      [DB_NAME]
+    );
+    const eventosEngine = String(eventosTableRows?.[0]?.engine || "").trim().toUpperCase();
+    const fkRows = await conn.query(
+      `SELECT constraint_name
+       FROM information_schema.table_constraints
+       WHERE table_schema = ? AND table_name = 'anticipos_evento' AND constraint_type = 'FOREIGN KEY'`,
+      [DB_NAME]
+    );
+    const fkSet = new Set(fkRows.map((r) => String(r.constraint_name || "").toLowerCase()));
+
+    if (eventosEngine === "INNODB" && !fkSet.has("fk_anticipos_evento")) {
+      try {
+        await conn.query(`
+          ALTER TABLE anticipos_evento
+          ADD CONSTRAINT fk_anticipos_evento
+            FOREIGN KEY (id_evento) REFERENCES eventos(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+        `);
+      } catch (fkError) {
+        console.warn("No se pudo agregar FK fk_anticipos_evento:", fkError?.message || fkError);
+      }
     }
   } finally {
     if (conn) conn.release();
@@ -2343,6 +2422,7 @@ async function start() {
     await ensureAppStateExtraStructure();
     await ensureServiceCatalogStructure();
     await ensureQuoteVersionStructure();
+    await ensureAdvancesStructure();
     await ensureMenuMontajeCatalogStructure();
     await ensureDocumentSequenceStructure();
     await ensureUsersExtendedStructure();

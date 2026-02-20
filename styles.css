@@ -1252,35 +1252,63 @@ input[type="file"]::-webkit-file-upload-button:active{
   min-width: 0;
   max-height: calc(92vh - 92px);
   overflow: auto;
+  padding-right: 2px;
 }
 #eventForm .eventMainRow{
-  grid-template-columns: minmax(260px, 0.95fr) minmax(420px, 1.45fr);
+  grid-template-columns: minmax(280px, 0.9fr) minmax(420px, 1.4fr);
   align-items: start;
 }
 #eventForm .eventDatesRow{
   display: grid;
-  grid-template-columns: 170px 170px;
+  grid-template-columns: minmax(170px, 220px) minmax(170px, 220px);
   gap: 12px;
 }
 #eventForm .eventActorRow{
-  grid-template-columns: minmax(280px, 1fr) 170px minmax(220px, 320px);
+  grid-template-columns: minmax(280px, 1fr) minmax(150px, 190px) minmax(220px, 320px);
   gap: 12px;
 }
 #eventForm .eventNotesRow{
   display: grid;
   grid-template-columns: 1fr;
 }
+#eventForm .eventMainRow,
+#eventForm .eventDatesRow,
+#eventForm .eventActorRow,
+#eventForm .eventNotesRow{
+  border: 1px solid rgba(148,163,184,0.24);
+  background: linear-gradient(180deg, rgba(15,23,42,0.56), rgba(2,6,23,0.42));
+  border-radius: 14px;
+  padding: 10px;
+}
+#eventForm .eventDatesRow{
+  align-items: end;
+}
+#eventForm .field > span{
+  font-size: 11px;
+  letter-spacing: .2px;
+  text-transform: uppercase;
+  color: rgba(191,219,254,0.9);
+  font-weight: 700;
+}
 #eventForm .quoteTableWrap{
-  max-height: 180px;
+  max-height: 190px;
+  border-radius: 10px;
+  border-color: rgba(148,163,184,0.24);
 }
 #eventForm .quoteTable{
   min-width: 0;
+}
+#eventForm .quoteTable th{
+  background: rgba(15,23,42,0.98);
 }
 #eventForm #slotsBody .quoteInput{
   min-width: 0;
 }
 #eventForm .userPick{
   flex-wrap: wrap;
+}
+#eventForm .userPick select{
+  min-width: 200px;
 }
 #eventForm #btnAddSlot,
 #eventForm #btnAddUser{
@@ -1297,11 +1325,61 @@ input[type="file"]::-webkit-file-upload-button:active{
 #eventForm #eventPax{
   max-width: 170px;
 }
+#eventForm #eventStatus{
+  font-weight: 800;
+}
+#eventForm textarea#eventNotes{
+  min-height: 94px;
+  line-height: 1.4;
+  resize: vertical;
+}
+#eventForm .conflictsBox{
+  border-color: rgba(251,113,133,0.45);
+  background: linear-gradient(180deg, rgba(159,18,57,0.22), rgba(127,29,29,0.12));
+}
+#eventForm .conflictsTitle{
+  color: rgba(254,205,211,0.98);
+  letter-spacing: .2px;
+}
+#eventForm .modalFooter{
+  margin-top: 2px;
+  padding-top: 12px;
+}
+#eventForm .leftActions{
+  gap: 6px;
+}
+#eventForm .leftActions .btn,
+#eventForm .leftActions .btnDanger{
+  padding: 9px 11px;
+  font-size: 12px;
+}
+#eventForm #btnSave{
+  min-width: 120px;
+  font-weight: 800;
+}
 @media (max-width: 980px){
   #eventForm .eventMainRow,
   #eventForm .eventDatesRow,
   #eventForm .eventActorRow{
     grid-template-columns: 1fr;
+  }
+  #eventForm .eventDatesRow{
+    grid-template-columns: 1fr;
+  }
+  #eventForm .leftActions{
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+  #eventForm .leftActions .btn,
+  #eventForm .leftActions .btnDanger{
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  #eventForm .rightActions{
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 .historyNotebook{
@@ -1755,6 +1833,28 @@ input[type="file"]::-webkit-file-upload-button:active{
   color: var(--text);
   font-weight: 600;
 }
+#quoteForm #quotePaymentType{
+  min-height: 34px;
+  font-weight: 700;
+}
+#quoteForm .quotePayPicker{
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+#quoteForm .quotePayPicker .btn{
+  min-height: 34px;
+  padding: 6px 10px;
+}
+@media (max-width: 760px){
+  #quoteForm .quotePayPicker{
+    grid-template-columns: 1fr 1fr;
+  }
+  #quoteForm .quotePayPicker select{
+    grid-column: 1 / -1;
+  }
+}
 #quoteForm .quoteDocInline{
   display: flex;
   gap: 6px;
@@ -1861,6 +1961,62 @@ input[type="file"]::-webkit-file-upload-button:active{
   margin-top: 2px;
   background: rgba(59,130,246,0.10);
   border-color: rgba(59,130,246,0.26);
+}
+.quoteAdvanceModal{
+  width: min(980px, 98vw);
+  max-height: 92vh;
+}
+.quoteAdvanceBody{
+  max-height: calc(92vh - 132px);
+  overflow: auto;
+  gap: 10px;
+}
+.quoteAdvanceFormGrid{
+  display: grid;
+  grid-template-columns: minmax(160px, 200px) minmax(160px, 200px) minmax(160px, 200px) 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+.quoteAdvanceDescriptionField{
+  min-width: 0;
+}
+.quoteAdvanceAddAction{
+  justify-content: flex-end;
+}
+.quoteAdvanceSummary{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  border: 1px solid rgba(59,130,246,0.28);
+  background: rgba(59,130,246,0.10);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.quoteAdvanceSummary strong{
+  font-size: 15px;
+  color: rgba(219,234,254,0.98);
+}
+.quoteAdvanceTableWrap{
+  max-height: 360px;
+}
+#quoteAdvanceBody td:nth-child(4){
+  text-align: right;
+  font-weight: 800;
+  white-space: nowrap;
+}
+#quoteAdvanceBody td:nth-child(5){
+  width: 48px;
+}
+@media (max-width: 940px){
+  .quoteAdvanceFormGrid{
+    grid-template-columns: 1fr 1fr;
+  }
+  .quoteAdvanceDescriptionField,
+  .quoteAdvanceAddAction{
+    grid-column: 1 / -1;
+  }
 }
 @media (max-width: 900px){
   #quoteBackdrop .modal{
@@ -2246,15 +2402,29 @@ input[type="file"]::-webkit-file-upload-button:active{
 .salesReportTableWrap{
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 12px;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   flex: 1 1 auto;
   min-height: 0;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96,165,250,0.88) rgba(15,23,42,0.68);
 }
 .salesReportTableWrap::-webkit-scrollbar{
-  width: 0;
-  height: 0;
+  width: 11px;
+  height: 11px;
+}
+.salesReportTableWrap::-webkit-scrollbar-track{
+  background: rgba(15,23,42,0.68);
+  border-radius: 999px;
+}
+.salesReportTableWrap::-webkit-scrollbar-thumb{
+  background: linear-gradient(90deg, rgba(56,189,248,0.9), rgba(37,99,235,0.9));
+  border-radius: 999px;
+  border: 2px solid rgba(15,23,42,0.75);
+}
+.salesReportTableWrap::-webkit-scrollbar-thumb:hover{
+  background: linear-gradient(90deg, rgba(125,211,252,0.96), rgba(59,130,246,0.96));
 }
 .salesReportTable{
   min-width: 3600px;
@@ -2465,15 +2635,29 @@ input[type="file"]::-webkit-file-upload-button:active{
 .occupancyTableWrap{
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 12px;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   flex: 1 1 auto;
   min-height: 0;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96,165,250,0.88) rgba(15,23,42,0.68);
 }
 .occupancyTableWrap::-webkit-scrollbar{
-  width: 0;
-  height: 0;
+  width: 11px;
+  height: 11px;
+}
+.occupancyTableWrap::-webkit-scrollbar-track{
+  background: rgba(15,23,42,0.68);
+  border-radius: 999px;
+}
+.occupancyTableWrap::-webkit-scrollbar-thumb{
+  background: linear-gradient(90deg, rgba(56,189,248,0.9), rgba(37,99,235,0.9));
+  border-radius: 999px;
+  border: 2px solid rgba(15,23,42,0.75);
+}
+.occupancyTableWrap::-webkit-scrollbar-thumb:hover{
+  background: linear-gradient(90deg, rgba(125,211,252,0.96), rgba(59,130,246,0.96));
 }
 .occupancyTable{
   min-width: 2200px;

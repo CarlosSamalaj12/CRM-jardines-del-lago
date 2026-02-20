@@ -119,6 +119,7 @@ let navMode = "week";
 let monthCursor = startOfMonth(new Date());
 let pendingCreateDates = null;
 let quoteDraft = null;
+let quoteAdvanceEditingId = "";
 let companyManagersDraft = [];
 let editingCompanyId = "";
 let editingServiceId = "";
@@ -378,6 +379,9 @@ const el = {
   quoteEndDate: document.getElementById("quoteEndDate"),
   quoteDueDate: document.getElementById("quoteDueDate"),
   quotePaymentType: document.getElementById("quotePaymentType"),
+  quotePaymentTypeSelect: document.getElementById("quotePaymentTypeSelect"),
+  btnQuotePaymentAdd: document.getElementById("btnQuotePaymentAdd"),
+  btnQuotePaymentClear: document.getElementById("btnQuotePaymentClear"),
   quoteServiceDate: document.getElementById("quoteServiceDate"),
   quoteServiceSearch: document.getElementById("quoteServiceSearch"),
   servicesList: document.getElementById("servicesList"),
@@ -391,8 +395,19 @@ const el = {
   quoteTotal: document.getElementById("quoteTotal"),
   quoteInternalNotes: document.getElementById("quoteInternalNotes"),
   btnMenuMontaje: document.getElementById("btnMenuMontaje"),
+  btnQuoteAdvances: document.getElementById("btnQuoteAdvances"),
   btnMenuMontajeSelectable: document.getElementById("btnMenuMontajeSelectable"),
   btnQuotePrintTemplate: document.getElementById("btnQuotePrintTemplate"),
+  quoteAdvanceBackdrop: document.getElementById("quoteAdvanceBackdrop"),
+  btnQuoteAdvanceClose: document.getElementById("btnQuoteAdvanceClose"),
+  btnQuoteAdvanceDone: document.getElementById("btnQuoteAdvanceDone"),
+  quoteAdvanceAmount: document.getElementById("quoteAdvanceAmount"),
+  quoteAdvancePaymentType: document.getElementById("quoteAdvancePaymentType"),
+  quoteAdvanceDate: document.getElementById("quoteAdvanceDate"),
+  quoteAdvanceDescription: document.getElementById("quoteAdvanceDescription"),
+  btnQuoteAdvanceAdd: document.getElementById("btnQuoteAdvanceAdd"),
+  quoteAdvanceBody: document.getElementById("quoteAdvanceBody"),
+  quoteAdvanceTotal: document.getElementById("quoteAdvanceTotal"),
 
   menuMontajeBackdrop: document.getElementById("menuMontajeBackdrop"),
   btnMenuMontajeClose: document.getElementById("btnMenuMontajeClose"),
@@ -4374,7 +4389,7 @@ function buildQuoteVersionComparable(quoteLike) {
     folio: String(q.folio || "").trim(),
     endDate: String(q.endDate || "").trim(),
     dueDate: String(q.dueDate || "").trim(),
-    paymentType: String(q.paymentType || "").trim(),
+    paymentType: quotePaymentTypesToStorage(q.paymentType),
     discountType: normalizeDiscountType(q.discountType),
     discountValue: Math.max(0, Number(q.discountValue || 0)),
     internalNotes: String(q.internalNotes || q.notes || "").trim(),
@@ -4590,12 +4605,14 @@ function applyQuoteSnapshotToDraft(snapshot) {
     version: keepCurrentVersion,
     versions: keepVersions,
   };
+  quoteDraft.paymentType = quotePaymentTypesToStorage(quoteDraft.paymentType || "Credito");
+  quoteDraft.advances = normalizeQuoteAdvancesForSnapshot(quoteDraft.advances);
   renderCompaniesSelect(quoteDraft.companyId);
   renderQuoteManagerSelect(quoteDraft.companyId, quoteDraft.managerId || null);
   renderQuoteTemplateSelect(quoteDraft.templateId || "");
   fillQuoteHeaderFields(true);
   el.quoteDueDate.value = quoteDraft.dueDate || "";
-  el.quotePaymentType.value = quoteDraft.paymentType || "Credito";
+  setQuotePaymentTypesOnForm(quoteDraft.paymentType || "Credito");
   el.quoteDocDate.value = quoteDraft.docDate || toISODate(new Date());
   renderQuoteServiceDateSelect();
   renderQuoteItems();
@@ -4737,6 +4754,16 @@ function getQuoteDateSalonCombos() {
   return combos;
 }
 
+function getCurrentQuoteHistoryContext() {
+  const eventId = String(el.quoteEventId?.value || "").trim();
+  if (!eventId) return null;
+  const ev = (state.events || []).find((x) => String(x.id || "") === eventId);
+  if (!ev) return null;
+  const key = reservationKeyFromEvent(ev);
+  if (!key) return null;
+  return { ev, key };
+}
+
 function syncQuoteDraftFromQuoteFormLoose() {
   if (!quoteDraft) return;
   quoteDraft.companyId = String(el.quoteCompany?.value || quoteDraft.companyId || "").trim();
@@ -4757,7 +4784,7 @@ function syncQuoteDraftFromQuoteFormLoose() {
   quoteDraft.folio = String(el.quoteFolio?.value || quoteDraft.folio || "").trim();
   quoteDraft.endDate = String(el.quoteEndDate?.value || quoteDraft.endDate || "").trim();
   quoteDraft.dueDate = String(el.quoteDueDate?.value || quoteDraft.dueDate || "").trim();
-  quoteDraft.paymentType = String(el.quotePaymentType?.value || quoteDraft.paymentType || "").trim();
+  quoteDraft.paymentType = quotePaymentTypesToStorage(getSelectedQuotePaymentTypesFromForm().length ? getSelectedQuotePaymentTypesFromForm() : quoteDraft.paymentType);
   quoteDraft.internalNotes = String(el.quoteInternalNotes?.value || quoteDraft.internalNotes || "").trim();
   quoteDraft.notes = quoteDraft.internalNotes;
 }
@@ -6582,6 +6609,9 @@ function fillQuoteHeaderFields(force = false) {
   apply(el.quoteEndDate, quoteDraft.endDate || meta?.endDate || "");
   apply(el.quoteFolio, quoteDraft.folio || "");
   apply(el.quoteInternalNotes, quoteDraft.internalNotes || quoteDraft.notes || "");
+  if (force || !getSelectedQuotePaymentTypesFromForm().length) {
+    setQuotePaymentTypesOnForm(quoteDraft.paymentType || "Credito");
+  }
 }
 
 function renderQuoteServiceDateSelect(selectedDate = null) {
@@ -7481,6 +7511,11 @@ function bindEvents() {
       openMenuMontajeModal();
     });
   }
+  if (el.btnQuoteAdvances) {
+    el.btnQuoteAdvances.addEventListener("click", () => {
+      openQuoteAdvanceModal();
+    });
+  }
   if (el.btnMenuMontajeSelectable) {
     el.btnMenuMontajeSelectable.addEventListener("click", () => {
       openMenuMontajeSelectableModal().catch(() => {
@@ -7492,6 +7527,42 @@ function bindEvents() {
     el.btnQuotePrintTemplate.addEventListener("click", async () => {
       await printSelectedQuoteTemplate();
     });
+  }
+  if (el.btnQuotePaymentAdd) {
+    el.btnQuotePaymentAdd.addEventListener("click", () => {
+      addQuotePaymentTypeFromPicker();
+    });
+  }
+  if (el.btnQuotePaymentClear) {
+    el.btnQuotePaymentClear.addEventListener("click", () => {
+      clearQuotePaymentTypesOnForm();
+    });
+  }
+  if (el.btnQuoteAdvanceClose) {
+    el.btnQuoteAdvanceClose.addEventListener("click", closeQuoteAdvanceModal);
+  }
+  if (el.btnQuoteAdvanceDone) {
+    el.btnQuoteAdvanceDone.addEventListener("click", closeQuoteAdvanceModal);
+  }
+  if (el.btnQuoteAdvanceAdd) {
+    el.btnQuoteAdvanceAdd.addEventListener("click", () => {
+      addQuoteAdvanceFromForm();
+    });
+  }
+  if (el.quoteAdvanceBody) {
+    el.quoteAdvanceBody.addEventListener("click", (e) => {
+      const editBtn = e.target.closest(".quoteAdvanceEditBtn");
+      if (editBtn) {
+        startEditQuoteAdvance(editBtn.dataset.advanceId);
+        return;
+      }
+      const btn = e.target.closest(".quoteAdvanceRemoveBtn");
+      if (!btn) return;
+      removeQuoteAdvanceById(btn.dataset.advanceId);
+    });
+  }
+  if (el.quoteAdvanceBackdrop) {
+    bindSafeBackdropClose(el.quoteAdvanceBackdrop, closeQuoteAdvanceModal);
   }
   if (el.btnMenuMontajeClose) {
     el.btnMenuMontajeClose.addEventListener("click", closeMenuMontajeModal);
@@ -8559,6 +8630,14 @@ function bindEvents() {
       companyManagersDraft.forEach((m) => enableManager(m.id));
     }
     persist();
+    const quoteCtx = getCurrentQuoteHistoryContext();
+    if (quoteCtx) {
+      appendHistoryByKey(
+        quoteCtx.key,
+        authSession.userId || quoteCtx.ev.userId || "",
+        editingId ? `Empresa actualizada en cotizacion: ${name}` : `Empresa creada y usada en cotizacion: ${name}`
+      );
+    }
     renderCompaniesSelect(company.id);
     closeCompanyModal();
     toast(editingId ? "Empresa actualizada." : "Empresa agregada.");
@@ -8721,11 +8800,19 @@ function bindEvents() {
 
 function openModalForCreate({ date, start, end, salon, rangeDates = null }) {
   const d = stripTime(date);
+  const startTime = isValidClockTime(start) ? start : "09:00";
+  const startMinuteFromGrid = Math.max(0, timeToMinutes(startTime) - HOUR_START * 60);
+  const fallbackEnd = minutesToTime(startMinuteFromGrid + 60);
+  const endTime = (isValidClockTime(end) && compareTime(end, startTime) > 0) ? end : fallbackEnd;
+  const selectedSalonValue = String(salon || "").trim();
+  const initialSalon = (selectedSalonValue && selectedSalonValue !== ALL_ROOMS_VALUE) ? selectedSalonValue : "";
   el.modalTitle.textContent = "Reservar salon";
   const totalDates = Array.isArray(rangeDates) && rangeDates.length ? rangeDates.length : 1;
-  el.modalSubtitle.textContent = totalDates > 1
-    ? `Nuevo evento (${totalDates} dias seleccionados)`
-    : "Nuevo evento";
+  const rangeLabel = totalDates > 1
+    ? `${toISODate(d)} a ${rangeDates[rangeDates.length - 1]}`
+    : toISODate(d);
+  const salonLabel = initialSalon || "Sin salon";
+  el.modalSubtitle.textContent = `${salonLabel} - ${rangeLabel} - ${startTime}-${endTime}`;
   pendingCreateDates = totalDates > 1 ? rangeDates.slice() : null;
 
   el.eventId.value = "";
@@ -8733,7 +8820,7 @@ function openModalForCreate({ date, start, end, salon, rangeDates = null }) {
   el.eventDate.value = toISODate(d);
   el.eventDateEnd.value = totalDates > 1 ? rangeDates[rangeDates.length - 1] : toISODate(d);
   el.slotsBody.innerHTML = "";
-  addSlotRow({ salon: "", startTime: "", endTime: "" });
+  addSlotRow({ salon: initialSalon, startTime, endTime });
   syncHiddenTimesFromFirstSlot();
   el.eventStatus.value = STATUS.PRIMERA; // default razonable
   const sessionUserId = String(authSession.userId || "").trim();
@@ -9023,6 +9110,8 @@ function openQuoteModal(eventId) {
   };
   quoteDraft.version = currentVersion;
   quoteDraft.versions = existingVersions;
+  quoteDraft.paymentType = quotePaymentTypesToStorage(quoteDraft.paymentType || "Credito");
+  quoteDraft.advances = normalizeQuoteAdvancesForSnapshot(quoteDraft.advances);
   if (!quoteDraft.managerId) {
     const cmp = (state.companies || []).find(c => c.id === quoteDraft.companyId);
     const byUserName = cmp?.managers?.find(m => m.name.toLowerCase() === String(user?.name || "").toLowerCase());
@@ -9041,7 +9130,7 @@ function openQuoteModal(eventId) {
   renderQuoteTemplateSelect(quoteDraft.templateId || "");
   fillQuoteHeaderFields(true);
   el.quoteDueDate.value = quoteDraft.dueDate || ev.date;
-  el.quotePaymentType.value = quoteDraft.paymentType || "Credito";
+  setQuotePaymentTypesOnForm(quoteDraft.paymentType || "Credito");
   el.quoteDocDate.value = quoteDraft.docDate || toISODate(new Date());
   if (el.quoteDiscountType) el.quoteDiscountType.value = normalizeDiscountType(quoteDraft.discountType);
   if (el.quoteDiscountValue) el.quoteDiscountValue.value = String(Math.max(0, Number(quoteDraft.discountValue || 0)));
@@ -9073,10 +9162,156 @@ function closeQuoteModal() {
   el.quoteBackdrop.hidden = true;
   el.quoteBackdrop.classList.remove("docFloatOpen");
   if (el.quoteDocFold) el.quoteDocFold.open = false;
+  closeQuoteAdvanceModal();
   closeMenuMontajeModal();
   closeMenuMontajeSelectableModal();
   closeServiceModal();
   quoteDraft = null;
+}
+
+function renderQuoteAdvancesModal() {
+  if (!el.quoteAdvanceBody || !el.quoteAdvanceTotal) return;
+  const advances = normalizeQuoteAdvancesForSnapshot(quoteDraft?.advances)
+    .slice()
+    .sort((a, b) => {
+      const d = String(a.date || "").localeCompare(String(b.date || ""));
+      if (d !== 0) return d;
+      return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
+    });
+  el.quoteAdvanceBody.innerHTML = "";
+  if (!advances.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="5">Sin anticipos registrados.</td>`;
+    el.quoteAdvanceBody.appendChild(tr);
+  } else {
+    for (const row of advances) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(row.date || "-")}</td>
+        <td>${escapeHtml(row.paymentType || "-")}</td>
+        <td>${escapeHtml(row.description || "-")}</td>
+        <td>Q ${Number(row.amount || 0).toFixed(2)}</td>
+        <td class="appointmentActions">
+          <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar">✎</button>
+          <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar">🗑</button>
+        </td>
+      `;
+      el.quoteAdvanceBody.appendChild(tr);
+    }
+  }
+  el.quoteAdvanceTotal.textContent = `Q ${getQuoteAdvanceTotal(quoteDraft).toFixed(2)}`;
+}
+
+function resetQuoteAdvanceForm() {
+  quoteAdvanceEditingId = "";
+  if (el.quoteAdvanceAmount) el.quoteAdvanceAmount.value = "";
+  if (el.quoteAdvancePaymentType) el.quoteAdvancePaymentType.value = "Efectivo";
+  if (el.quoteAdvanceDate) el.quoteAdvanceDate.value = quoteDraft?.docDate || toISODate(new Date());
+  if (el.quoteAdvanceDescription) el.quoteAdvanceDescription.value = "";
+  if (el.btnQuoteAdvanceAdd) el.btnQuoteAdvanceAdd.textContent = "Agregar anticipo";
+}
+
+function startEditQuoteAdvance(advanceId) {
+  if (!quoteDraft || !Array.isArray(quoteDraft.advances)) return;
+  const id = String(advanceId || "").trim();
+  if (!id) return;
+  const item = quoteDraft.advances.find((x) => String(x?.id || "") === id);
+  if (!item) return;
+  quoteAdvanceEditingId = id;
+  if (el.quoteAdvanceAmount) el.quoteAdvanceAmount.value = String(Number(item.amount || 0).toFixed(2));
+  if (el.quoteAdvancePaymentType) el.quoteAdvancePaymentType.value = normalizeAdvancePaymentType(item.paymentType);
+  if (el.quoteAdvanceDate) el.quoteAdvanceDate.value = String(item.date || "");
+  if (el.quoteAdvanceDescription) el.quoteAdvanceDescription.value = String(item.description || "");
+  if (el.btnQuoteAdvanceAdd) el.btnQuoteAdvanceAdd.textContent = "Guardar cambios";
+}
+
+function addQuoteAdvanceFromForm() {
+  if (!quoteDraft) return toast("Primero abre una cotizacion.");
+  const amountRaw = String(el.quoteAdvanceAmount?.value || "").trim();
+  const amount = Math.max(0, Number(amountRaw || 0));
+  const paymentType = normalizeAdvancePaymentType(el.quoteAdvancePaymentType?.value || "");
+  const date = String(el.quoteAdvanceDate?.value || "").trim();
+  const description = String(el.quoteAdvanceDescription?.value || "").trim();
+  if (!amountRaw || Number.isNaN(Number(amountRaw)) || amount <= 0) return toast("Anticipo: el monto es obligatorio y debe ser mayor a 0.");
+  if (!String(el.quoteAdvancePaymentType?.value || "").trim()) return toast("Anticipo: la forma de pago es obligatoria.");
+  if (!date) return toast("Anticipo: la fecha es obligatoria.");
+  if (!description) return toast("Anticipo: la descripcion es obligatoria.");
+  if (!Array.isArray(quoteDraft.advances)) quoteDraft.advances = [];
+  const ctx = getCurrentQuoteHistoryContext();
+  if (quoteAdvanceEditingId) {
+    const idx = quoteDraft.advances.findIndex((x) => String(x?.id || "") === quoteAdvanceEditingId);
+    if (idx >= 0) {
+      const prev = quoteDraft.advances[idx];
+      quoteDraft.advances[idx] = {
+        ...quoteDraft.advances[idx],
+        amount,
+        paymentType,
+        date,
+        description,
+      };
+      if (ctx) {
+        appendHistoryByKey(
+          ctx.key,
+          authSession.userId || ctx.ev.userId || "",
+          `Anticipo editado: ${String(prev?.date || "")} ${String(prev?.paymentType || "")} Q ${Number(prev?.amount || 0).toFixed(2)} -> ${date} ${paymentType} Q ${Number(amount || 0).toFixed(2)}`
+        );
+      }
+      toast("Anticipo actualizado.");
+    }
+  } else {
+    quoteDraft.advances.push({
+      id: uid(),
+      amount,
+      paymentType,
+      date,
+      description,
+      createdAt: new Date().toISOString(),
+    });
+    if (ctx) {
+      appendHistoryByKey(
+        ctx.key,
+        authSession.userId || ctx.ev.userId || "",
+        `Anticipo agregado: ${date} ${paymentType} Q ${Number(amount || 0).toFixed(2)}${description ? ` (${description})` : ""}`
+      );
+    }
+    toast("Anticipo agregado.");
+  }
+  resetQuoteAdvanceForm();
+  renderQuoteAdvancesModal();
+}
+
+function removeQuoteAdvanceById(advanceId) {
+  if (!quoteDraft || !Array.isArray(quoteDraft.advances)) return;
+  const id = String(advanceId || "").trim();
+  if (!id) return;
+  const removed = quoteDraft.advances.find((x) => String(x?.id || "") === id);
+  quoteDraft.advances = quoteDraft.advances.filter((x) => String(x?.id || "") !== id);
+  if (quoteAdvanceEditingId && quoteAdvanceEditingId === id) {
+    resetQuoteAdvanceForm();
+  }
+  renderQuoteAdvancesModal();
+  const ctx = getCurrentQuoteHistoryContext();
+  if (ctx && removed) {
+    appendHistoryByKey(
+      ctx.key,
+      authSession.userId || ctx.ev.userId || "",
+      `Anticipo eliminado: ${String(removed.date || "")} ${String(removed.paymentType || "")} Q ${Number(removed.amount || 0).toFixed(2)}${removed.description ? ` (${removed.description})` : ""}`
+    );
+  }
+  toast("Anticipo eliminado.");
+}
+
+function openQuoteAdvanceModal() {
+  if (!quoteDraft) return toast("Primero abre una cotizacion.");
+  if (!Array.isArray(quoteDraft.advances)) quoteDraft.advances = [];
+  resetQuoteAdvanceForm();
+  renderQuoteAdvancesModal();
+  if (el.quoteAdvanceBackdrop) el.quoteAdvanceBackdrop.hidden = false;
+}
+
+function closeQuoteAdvanceModal() {
+  resetQuoteAdvanceForm();
+  if (el.quoteAdvanceBackdrop) el.quoteAdvanceBackdrop.hidden = true;
 }
 
 function openAppointmentModal(eventId) {
@@ -9510,6 +9745,90 @@ function normalizeDiscountType(rawType) {
   return String(rawType || "").toUpperCase() === "PERCENT" ? "PERCENT" : "AMOUNT";
 }
 
+const QUOTE_PAYMENT_TYPES = ["Credito", "Deposito", "Efectivo", "Tarjeta"];
+
+function normalizeQuotePaymentTypes(rawValue) {
+  const values = Array.isArray(rawValue)
+    ? rawValue
+    : String(rawValue || "").replaceAll("|", ",").split(",");
+  const out = [];
+  for (const item of values) {
+    const raw = String(item || "").trim();
+    if (!raw) continue;
+    if (raw.toLowerCase() === "mixto") {
+      if (!out.includes("Credito")) out.push("Credito");
+      if (!out.includes("Efectivo")) out.push("Efectivo");
+      continue;
+    }
+    const found = QUOTE_PAYMENT_TYPES.find((x) => x.toLowerCase() === raw.toLowerCase());
+    if (!found) continue;
+    if (!out.includes(found)) out.push(found);
+  }
+  return out;
+}
+
+function quotePaymentTypesToStorage(rawValue) {
+  return normalizeQuotePaymentTypes(rawValue).join(", ");
+}
+
+function getSelectedQuotePaymentTypesFromForm() {
+  if (!el.quotePaymentType) return [];
+  return normalizeQuotePaymentTypes(el.quotePaymentType.value);
+}
+
+function setQuotePaymentTypesOnForm(rawValue) {
+  if (!el.quotePaymentType) return;
+  const values = normalizeQuotePaymentTypes(rawValue);
+  el.quotePaymentType.value = values.join(", ");
+}
+
+function addQuotePaymentTypeFromPicker() {
+  if (!el.quotePaymentTypeSelect || !el.quotePaymentType) return;
+  const picked = String(el.quotePaymentTypeSelect.value || "").trim();
+  if (!picked) return;
+  const current = normalizeQuotePaymentTypes(el.quotePaymentType.value);
+  if (!current.includes(picked)) current.push(picked);
+  el.quotePaymentType.value = current.join(", ");
+}
+
+function clearQuotePaymentTypesOnForm() {
+  if (!el.quotePaymentType) return;
+  el.quotePaymentType.value = "";
+}
+
+function normalizeAdvancePaymentType(rawType) {
+  const value = String(rawType || "").trim().toLowerCase();
+  if (value === "credito") return "Credito";
+  if (value === "deposito") return "Deposito";
+  if (value === "efectivo") return "Efectivo";
+  if (value === "tarjeta") return "Tarjeta";
+  return "Efectivo";
+}
+
+function normalizeQuoteAdvanceForSnapshot(rawAdvance, index = 0) {
+  const amountRaw = Number(rawAdvance?.amount || 0);
+  return {
+    id: String(rawAdvance?.id || `adv_${index + 1}`).trim() || `adv_${index + 1}`,
+    amount: Number.isFinite(amountRaw) ? Math.max(0, amountRaw) : 0,
+    paymentType: normalizeAdvancePaymentType(rawAdvance?.paymentType),
+    date: String(rawAdvance?.date || "").trim(),
+    description: String(rawAdvance?.description || "").trim(),
+    createdAt: String(rawAdvance?.createdAt || "").trim(),
+  };
+}
+
+function normalizeQuoteAdvancesForSnapshot(rawAdvances) {
+  const list = Array.isArray(rawAdvances) ? rawAdvances : [];
+  return list
+    .map((item, idx) => normalizeQuoteAdvanceForSnapshot(item, idx))
+    .filter((item) => item.amount >= 0);
+}
+
+function getQuoteAdvanceTotal(quoteLike) {
+  const advances = normalizeQuoteAdvancesForSnapshot(quoteLike?.advances);
+  return advances.reduce((acc, item) => acc + Number(item.amount || 0), 0);
+}
+
 function getQuoteTotals(quoteLike) {
   const q = quoteLike || {};
   const items = Array.isArray(q.items) ? q.items : [];
@@ -9589,6 +9908,14 @@ function addServiceToQuoteDraft(rawName) {
   quoteDraft.items.push(item);
   el.quoteServiceSearch.value = "";
   renderQuoteItems();
+  const ctx = getCurrentQuoteHistoryContext();
+  if (ctx) {
+    appendHistoryByKey(
+      ctx.key,
+      authSession.userId || ctx.ev.userId || "",
+      `Servicio agregado a cotizacion: ${String(item.name || "").trim() || "(sin nombre)"}`
+    );
+  }
 }
 
 function renderQuoteItems() {
@@ -9728,8 +10055,17 @@ async function handleQuoteItemsClick(e) {
     cancelText: "No",
   });
   if (!ok) return;
+  const removed = quoteDraft.items.find(x => x.rowId === rowId);
   quoteDraft.items = quoteDraft.items.filter(x => x.rowId !== rowId);
   renderQuoteItems();
+  const ctx = getCurrentQuoteHistoryContext();
+  if (ctx) {
+    appendHistoryByKey(
+      ctx.key,
+      authSession.userId || ctx.ev.userId || "",
+      `Servicio eliminado de cotizacion: ${String(removed?.name || "").trim() || "(sin nombre)"}`
+    );
+  }
   toast("Servicio eliminado de la cotizacion.");
 }
 
@@ -9759,7 +10095,7 @@ async function saveQuoteFromForm() {
   quoteDraft.folio = el.quoteFolio.value.trim();
   quoteDraft.endDate = el.quoteEndDate.value;
   quoteDraft.dueDate = el.quoteDueDate.value;
-  quoteDraft.paymentType = el.quotePaymentType.value;
+  quoteDraft.paymentType = quotePaymentTypesToStorage(getSelectedQuotePaymentTypesFromForm());
   quoteDraft.discountType = normalizeDiscountType(el.quoteDiscountType?.value || quoteDraft.discountType);
   quoteDraft.discountValue = Math.max(0, Number(el.quoteDiscountValue?.value || quoteDraft.discountValue || 0));
   quoteDraft.templateId = String(el.quoteTemplateSelect?.value || quoteDraft.templateId || "").trim();
@@ -9777,6 +10113,7 @@ async function saveQuoteFromForm() {
   if (!quoteDraft.managerId) return toast("Selecciona encargado del evento.");
   if (!quoteDraft.contact || !quoteDraft.email || !quoteDraft.billTo || !quoteDraft.address) return toast("Completa contacto, email, facturar a y direccion.");
   if (!quoteDraft.code || !quoteDraft.docDate || !quoteDraft.phone || !quoteDraft.nit) return toast("Completa codigo, fecha documento, telefono y NIT.");
+  if (!quoteDraft.paymentType) return toast("Selecciona al menos una forma de pago.");
   if (!quoteDraft.people || Number(quoteDraft.people) <= 0) return toast("Ingresa un numero valido de personas.");
   if (!quoteDraft.eventDate || !quoteDraft.endDate) return toast("Completa fecha evento y finalizacion.");
   if (!isValidEmail(quoteDraft.email)) return toast("Correo de cotizacion invalido.");
@@ -10366,7 +10703,8 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   }
 
   y -= 8;
-  const totalsPanelH = 86;
+  const hasDiscount = Number(totals.discountAmount || 0) > 0;
+  const totalsPanelH = hasDiscount ? 86 : 72;
   ensure(totalsPanelH + 10);
   const panelX = margin;
   const panelY = y;
@@ -10388,7 +10726,9 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const totalsValueRight = panelX + panelW - 12;
   const row1Y = panelY - 20;
   const row2Y = panelY - 34;
-  const row3Y = panelY - 56;
+  const separatorY = hasDiscount ? panelY - 42 : panelY - 28;
+  const totalBoxTopY = hasDiscount ? panelY - 64 : panelY - 50;
+  const row3Y = hasDiscount ? panelY - 56 : panelY - 42;
   const money = (n) => `Q ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const drawSummaryLine = (lineY, label, value, opts = {}) => {
     const labelFont = opts.bold ? fontBold : font;
@@ -10419,19 +10759,21 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     : `Descuento (Q ${discountValue.toFixed(2)})`;
 
   drawSummaryLine(row1Y, "Subtotal evento", money(totals.subtotal), { size: 8.2 });
-  drawSummaryLine(row2Y, discountLabel, money(totals.discountAmount), {
-    size: 8.2,
-    color: Number(totals.discountAmount || 0) > 0 ? window.PDFLib.rgb(0.62, 0.22, 0.08) : window.PDFLib.rgb(0.12, 0.24, 0.38),
-  });
+  if (hasDiscount) {
+    drawSummaryLine(row2Y, discountLabel, money(totals.discountAmount), {
+      size: 8.2,
+      color: window.PDFLib.rgb(0.62, 0.22, 0.08),
+    });
+  }
 
   page.drawLine({
-    start: { x: panelX + 10, y: panelY - 42 },
-    end: { x: panelX + panelW - 10, y: panelY - 42 },
+    start: { x: panelX + 10, y: separatorY },
+    end: { x: panelX + panelW - 10, y: separatorY },
     thickness: 0.8,
     color: window.PDFLib.rgb(0.78, 0.86, 0.95),
   });
 
-  drawRect(panelX + 10, panelY - 64, panelW - 20, 18, {
+  drawRect(panelX + 10, totalBoxTopY, panelW - 20, 18, {
     fill: window.PDFLib.rgb(0.16, 0.47, 0.79),
     border: window.PDFLib.rgb(0.08, 0.35, 0.62),
     borderWidth: 0.9,
@@ -10442,7 +10784,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     color: window.PDFLib.rgb(1, 1, 1),
   });
 
-  const wordsY = panelY - 78;
+  const wordsY = hasDiscount ? panelY - 78 : panelY - 64;
   page.drawText(`SON: ${grandTotalWords}`, {
     x: panelX + 12,
     y: wordsY,
@@ -10506,19 +10848,46 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     { label: "Hospedaje JDL", amount: Number(catBuckets?.hospedajeJdl?.amount || 0) },
     { label: "Hospedaje Terceros", amount: Number(catBuckets?.hospedajeTerceros?.amount || 0) },
   ];
+  const advanceRows = normalizeQuoteAdvancesForSnapshot(quote?.advances)
+    .slice()
+    .sort((a, b) => {
+      const d = String(a.date || "").localeCompare(String(b.date || ""));
+      if (d !== 0) return d;
+      return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
+    });
   const totalContratado = cargoRows.reduce((acc, r) => acc + Number(r.amount || 0), 0);
-  const totalAnticipos = 0;
+  const totalAnticipos = getQuoteAdvanceTotal(quote);
   const saldoPendiente = Math.max(0, totalContratado - totalAnticipos);
-  const showQ = (n) => (Number(n || 0) > 0 ? Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-");
+  const showMoney = (n) => (Number(n || 0) > 0 ? `Q ${Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-");
+  const formatAdvanceDatePdf = (iso) => {
+    const raw = String(iso || "").trim();
+    if (!raw) return "-";
+    const d = new Date(`${raw}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return raw;
+    return d.toLocaleDateString("es-GT", { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
 
   const summaryTitleH = 14;
-  const tableHeaderH2 = 13;
-  const rowH2 = 12;
-  const totalRowH2 = 12;
-  const spacerH2 = 5;
-  const anticipoHeaderH = 12;
-  const anticipoRowH = 12;
-  const summaryBodyH = tableHeaderH2 + cargoRows.length * rowH2 + totalRowH2 + spacerH2 + anticipoHeaderH + anticipoRowH + anticipoRowH;
+  const tableHeaderH2 = 14;
+  const rowH2 = 13;
+  const summaryRows = [
+    ...cargoRows.map((r) => ({ label: r.label, amount: r.amount, tone: "base", bold: false })),
+    { label: "TOTAL CONTRATADO", amount: totalContratado, tone: "em", bold: true },
+    ...(
+      advanceRows.length
+        ? advanceRows.map((r) => ({
+          label: `${formatAdvanceDatePdf(r.date)} - ${r.paymentType || "-"}${r.description ? ` - ${r.description}` : ""}`,
+          amount: Number(r.amount || 0),
+          tone: "advance",
+          bold: false,
+          size: 7.4,
+        }))
+        : [{ label: "ANTICIPOS: SIN REGISTROS", amount: 0, tone: "base", bold: false }]
+    ),
+    { label: "TOTAL ANTICIPOS", amount: totalAnticipos, tone: "em", bold: true },
+    { label: "SALDO", amount: saldoPendiente, tone: "final", bold: true },
+  ];
+  const summaryBodyH = tableHeaderH2 + summaryRows.length * rowH2;
   ensure(summaryTitleH + summaryBodyH + 8);
 
   drawRect(margin, y, contentW, summaryTitleH, {
@@ -10535,95 +10904,83 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   });
   y -= summaryTitleH;
 
-  const tX = margin + 70;
-  const tW = contentW - 140;
-  const descW = tW * 0.7;
-  const qW = 20;
-  const valW = tW - descW - qW;
+  const tX = margin + 22;
+  const tW = contentW - 44;
+  const descW = tW * 0.68;
+  const borderCol = window.PDFLib.rgb(0.68, 0.76, 0.86);
+  const fitSummaryText = (text, useFont, size, maxWidth) => {
+    const raw = String(text || "").trim();
+    if (!raw) return "";
+    if (useFont.widthOfTextAtSize(raw, size) <= maxWidth) return raw;
+    const ellipsis = "...";
+    let out = raw;
+    while (out.length > 1 && useFont.widthOfTextAtSize(`${out}${ellipsis}`, size) > maxWidth) {
+      out = out.slice(0, -1);
+    }
+    return `${out}${ellipsis}`;
+  };
   const drawSummaryGridRow = (yy, h, descText, valNumber, opts = {}) => {
+    const fill = opts.fill || window.PDFLib.rgb(1, 1, 1);
     drawRect(tX, yy, tW, h, {
-      fill: opts.fill || window.PDFLib.rgb(1, 1, 1),
-      border: window.PDFLib.rgb(0.2, 0.2, 0.2),
-      borderWidth: 0.8,
+      fill,
+      border: borderCol,
+      borderWidth: 0.7,
     });
-    page.drawLine({ start: { x: tX + descW, y: yy }, end: { x: tX + descW, y: yy - h }, thickness: 0.8, color: window.PDFLib.rgb(0.2, 0.2, 0.2) });
-    page.drawLine({ start: { x: tX + descW + qW, y: yy }, end: { x: tX + descW + qW, y: yy - h }, thickness: 0.8, color: window.PDFLib.rgb(0.2, 0.2, 0.2) });
-    page.drawText(String(descText || ""), {
-      x: tX + 3,
-      y: yy - h + 3.5,
-      size: 7.8,
-      font: opts.bold ? fontBold : font,
-      color: window.PDFLib.rgb(0.05, 0.05, 0.05),
+    page.drawLine({ start: { x: tX + descW, y: yy }, end: { x: tX + descW, y: yy - h }, thickness: 0.7, color: borderCol });
+    const rowFont = opts.bold ? fontBold : font;
+    const rowSize = opts.size || 8;
+    const safeDesc = fitSummaryText(String(descText || ""), rowFont, rowSize, descW - 14);
+    page.drawText(safeDesc, {
+      x: tX + 6,
+      y: yy - h + 3.8,
+      size: rowSize,
+      font: rowFont,
+      color: window.PDFLib.rgb(0.08, 0.18, 0.29),
     });
-    page.drawText("Q", {
-      x: tX + descW + 6,
-      y: yy - h + 3.5,
-      size: 7.8,
-      font: opts.bold ? fontBold : font,
-      color: window.PDFLib.rgb(0.05, 0.05, 0.05),
-    });
-    const valText = showQ(valNumber);
-    const valFont = opts.bold ? fontBold : font;
-    const valSize = 7.8;
+    const valText = showMoney(valNumber);
+    const valFont = rowFont;
+    const valSize = rowSize;
     const valWidth = valFont.widthOfTextAtSize(valText, valSize);
     page.drawText(valText, {
-      x: tX + tW - 4 - valWidth,
-      y: yy - h + 3.5,
+      x: tX + tW - 8 - valWidth,
+      y: yy - h + 3.8,
       size: valSize,
       font: valFont,
-      color: window.PDFLib.rgb(0.05, 0.05, 0.05),
+      color: window.PDFLib.rgb(0.06, 0.16, 0.27),
     });
   };
 
-  drawRect(tX, y, tW, tableHeaderH2, { fill: window.PDFLib.rgb(1, 1, 1), border: window.PDFLib.rgb(0.2, 0.2, 0.2), borderWidth: 0.8 });
-  page.drawLine({ start: { x: tX + descW, y }, end: { x: tX + descW, y: y - tableHeaderH2 }, thickness: 0.8, color: window.PDFLib.rgb(0.2, 0.2, 0.2) });
-  page.drawLine({ start: { x: tX + descW + qW, y }, end: { x: tX + descW + qW, y: y - tableHeaderH2 }, thickness: 0.8, color: window.PDFLib.rgb(0.2, 0.2, 0.2) });
+  drawRect(tX, y, tW, tableHeaderH2, { fill: window.PDFLib.rgb(0.93, 0.96, 1), border: borderCol, borderWidth: 0.7 });
+  page.drawLine({ start: { x: tX + descW, y }, end: { x: tX + descW, y: y - tableHeaderH2 }, thickness: 0.7, color: borderCol });
   page.drawText("DESCRIPCION", {
-    x: tX + (descW / 2) - (fontBold.widthOfTextAtSize("DESCRIPCION", 7.8) / 2),
+    x: tX + 6,
     y: y - 9,
-    size: 7.8,
+    size: 8,
     font: fontBold,
-    color: window.PDFLib.rgb(0.05, 0.05, 0.05),
+    color: window.PDFLib.rgb(0.1, 0.23, 0.36),
   });
   page.drawText("TOTAL", {
-    x: tX + descW + qW + (valW / 2) - (fontBold.widthOfTextAtSize("TOTAL", 7.8) / 2),
+    x: tX + tW - 8 - fontBold.widthOfTextAtSize("TOTAL", 8),
     y: y - 9,
-    size: 7.8,
+    size: 8,
     font: fontBold,
-    color: window.PDFLib.rgb(0.05, 0.05, 0.05),
+    color: window.PDFLib.rgb(0.1, 0.23, 0.36),
   });
   y -= tableHeaderH2;
 
-  for (const row of cargoRows) {
-    drawSummaryGridRow(y, rowH2, row.label, row.amount);
+  for (let i = 0; i < summaryRows.length; i++) {
+    const row = summaryRows[i];
+    const baseFill = i % 2 === 0 ? window.PDFLib.rgb(1, 1, 1) : window.PDFLib.rgb(0.985, 0.992, 1);
+    const fill = row.tone === "final"
+      ? window.PDFLib.rgb(0.87, 0.93, 1)
+      : row.tone === "em"
+        ? window.PDFLib.rgb(0.94, 0.97, 1)
+        : row.tone === "advance"
+          ? window.PDFLib.rgb(0.975, 0.985, 1)
+        : baseFill;
+    drawSummaryGridRow(y, rowH2, row.label, row.amount, { bold: row.bold, fill, size: row.size || 8 });
     y -= rowH2;
   }
-  drawSummaryGridRow(y, totalRowH2, "TOTAL CONTRATADO", totalContratado, { bold: true, fill: window.PDFLib.rgb(0.98, 0.98, 0.98) });
-  y -= totalRowH2;
-
-  y -= spacerH2;
-  drawRect(tX, y, tW, anticipoHeaderH, { fill: window.PDFLib.rgb(1, 1, 1), border: window.PDFLib.rgb(0.2, 0.2, 0.2), borderWidth: 0.8 });
-  page.drawLine({ start: { x: tX + descW, y }, end: { x: tX + descW, y: y - anticipoHeaderH }, thickness: 0.8, color: window.PDFLib.rgb(0.2, 0.2, 0.2) });
-  page.drawLine({ start: { x: tX + descW + qW, y }, end: { x: tX + descW + qW, y: y - anticipoHeaderH }, thickness: 0.8, color: window.PDFLib.rgb(0.2, 0.2, 0.2) });
-  page.drawText("ANTICIPOS", {
-    x: tX + (descW / 2) - (fontBold.widthOfTextAtSize("ANTICIPOS", 7.8) / 2),
-    y: y - 9,
-    size: 7.8,
-    font: fontBold,
-    color: window.PDFLib.rgb(0.05, 0.05, 0.05),
-  });
-  page.drawText("TOTAL", {
-    x: tX + descW + qW + (valW / 2) - (fontBold.widthOfTextAtSize("TOTAL", 7.8) / 2),
-    y: y - 9,
-    size: 7.8,
-    font: fontBold,
-    color: window.PDFLib.rgb(0.05, 0.05, 0.05),
-  });
-  y -= anticipoHeaderH;
-  drawSummaryGridRow(y, anticipoRowH, "TOTAL ANTICIPOS", totalAnticipos, { bold: true, fill: window.PDFLib.rgb(0.98, 0.98, 0.98) });
-  y -= anticipoRowH;
-  drawSummaryGridRow(y, anticipoRowH, "SALDO", saldoPendiente, { bold: true });
-  y -= anticipoRowH;
 
   if (quote?.internalNotes) {
     y -= 8;
@@ -10880,14 +11237,29 @@ async function openQuoteDocument(ev, quote) {
   const totalDoc = totalsDoc.total;
   const discountTypeDoc = totalsDoc.discountType;
   const discountValueDoc = totalsDoc.discountValue;
+  const showDiscountRowDoc = Number(discountDoc || 0) > 0;
+  const discountRowHtmlDoc = showDiscountRowDoc ? `
+        <tr>
+          <td colspan="2"></td>
+          <td class="sumLabel">DESCUENTO ${discountTypeDoc === "PERCENT" ? `(${discountValueDoc.toFixed(2)}%)` : `(Q ${discountValueDoc.toFixed(2)})`}</td>
+          <td class="sumValue">Q ${discountDoc.toFixed(2)}</td>
+        </tr>
+  ` : "";
   const cargoRowsDoc = [
     { label: "Alimentos y Bebidas", amount: Number(catBucketsDoc?.alimentosBebidas?.amount || 0) },
     { label: "Miscelaneos", amount: Number(catBucketsDoc?.miscelaneos?.amount || 0) },
     { label: "Hospedaje JDL", amount: Number(catBucketsDoc?.hospedajeJdl?.amount || 0) },
     { label: "Hospedaje Terceros", amount: Number(catBucketsDoc?.hospedajeTerceros?.amount || 0) },
   ];
+  const advanceRowsDoc = normalizeQuoteAdvancesForSnapshot(quote?.advances)
+    .slice()
+    .sort((a, b) => {
+      const d = String(a.date || "").localeCompare(String(b.date || ""));
+      if (d !== 0) return d;
+      return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
+    });
   const totalContratadoDoc = cargoRowsDoc.reduce((acc, r) => acc + Number(r.amount || 0), 0);
-  const totalAnticiposDoc = 0;
+  const totalAnticiposDoc = getQuoteAdvanceTotal(quote);
   const saldoDoc = Math.max(0, totalContratadoDoc - totalAnticiposDoc);
   const moneyQDoc = (n) => Number(n || 0) > 0
     ? Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -11015,25 +11387,62 @@ async function openQuoteDocument(ev, quote) {
     }
     .policyBox p{ margin:0 0 6px; }
     .policyBox p:last-child{ margin-bottom:0; }
+    .cargoSummaryWrap{
+      margin: 0 0 8px;
+      border: 1px solid #bed1e7;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #f4f9ff, #ffffff 28%);
+    }
     .cargoTable{
       width:100%;
-      border-collapse:collapse;
-      margin-top:0;
-      font-size:12px;
+      border-collapse:separate;
+      border-spacing:0;
+      font-size:12.5px;
     }
     .cargoTable th,.cargoTable td{
-      border:1px solid #2b2b2b;
-      padding:4px 6px;
+      border-bottom:1px solid #d8e3f1;
+      padding:8px 10px;
     }
     .cargoTable thead th{
-      background:#fff;
-      text-align:center;
-      color:#0f172a;
+      background:#edf5ff;
+      color:#173a5c;
       font-size:12px;
+      font-weight:800;
+      letter-spacing:.2px;
+      text-transform:uppercase;
     }
-    .cargoNum{ text-align:right; white-space:nowrap; font-weight:700; }
-    .cargoLabel{ font-weight:700; }
-    .cargoEm{ font-weight:800; background:#f6f7f9; }
+    .cargoTable thead th:first-child{
+      text-align:left;
+    }
+    .cargoTable thead th:last-child{
+      text-align:right;
+    }
+    .cargoTable tbody tr:last-child td{
+      border-bottom:none;
+    }
+    .cargoTable tbody tr:nth-child(odd):not(.cargoEm){
+      background:#fcfdff;
+    }
+    .cargoLabel{ font-weight:700; color:#0f2b45; }
+    .cargoAmount{
+      text-align:right;
+      white-space:nowrap;
+      font-weight:800;
+      color:#0f2f4d;
+      font-variant-numeric: tabular-nums;
+    }
+    .cargoEm{
+      font-weight:800;
+      background:#eaf2ff !important;
+    }
+    .cargoEm td{
+      border-bottom-color:#c7d9ef;
+    }
+    .cargoEmFinal{
+      background:#dceeff !important;
+    }
     .actions{ padding:12px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--line); background:#fbfdff; }
     .actions button{
       border:1px solid #b8cde8;
@@ -11092,11 +11501,7 @@ async function openQuoteDocument(ev, quote) {
           <td class="sumLabel">SUBTOTAL EVENTO</td>
           <td class="sumValue">Q ${subtotalDoc.toFixed(2)}</td>
         </tr>
-        <tr>
-          <td colspan="2"></td>
-          <td class="sumLabel">DESCUENTO ${discountTypeDoc === "PERCENT" ? `(${discountValueDoc.toFixed(2)}%)` : `(Q ${discountValueDoc.toFixed(2)})`}</td>
-          <td class="sumValue">Q ${discountDoc.toFixed(2)}</td>
-        </tr>
+        ${discountRowHtmlDoc}
         <tr class="sumTotal">
           <td colspan="2" class="sumWords">SON: ${escapeHtml(grandTotalWords)}</td>
           <td class="sumLabel">TOTAL EVENTO</td>
@@ -11115,43 +11520,47 @@ async function openQuoteDocument(ev, quote) {
     </div>
 
     <div class="policyTitle">RESUMEN DE CARGOS</div>
-    <table class="cargoTable">
-      <thead>
-        <tr>
-          <th style="width:68%">DESCRIPCION</th>
-          <th colspan="2">TOTAL</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${cargoRowsDoc.map((r) => `
+    <div class="cargoSummaryWrap">
+      <table class="cargoTable">
+        <thead>
           <tr>
-            <td>${escapeHtml(r.label)}</td>
-            <td style="width:28px;text-align:center">Q</td>
-            <td class="cargoNum">${escapeHtml(moneyQDoc(r.amount))}</td>
+            <th style="width:68%">Descripcion</th>
+            <th>Total</th>
           </tr>
-        `).join("")}
-        <tr class="cargoEm">
-          <td class="cargoLabel">TOTAL CONTRATADO</td>
-          <td style="text-align:center">Q</td>
-          <td class="cargoNum">${escapeHtml(moneyQDoc(totalContratadoDoc))}</td>
-        </tr>
-        <tr>
-          <td class="cargoLabel">ANTICIPOS</td>
-          <td style="text-align:center">Q</td>
-          <td class="cargoNum">-</td>
-        </tr>
-        <tr class="cargoEm">
-          <td class="cargoLabel">TOTAL ANTICIPOS</td>
-          <td style="text-align:center">Q</td>
-          <td class="cargoNum">${escapeHtml(moneyQDoc(totalAnticiposDoc))}</td>
-        </tr>
-        <tr class="cargoEm">
-          <td class="cargoLabel">SALDO</td>
-          <td style="text-align:center">Q</td>
-          <td class="cargoNum">${escapeHtml(moneyQDoc(saldoDoc))}</td>
-        </tr>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          ${cargoRowsDoc.map((r) => `
+            <tr>
+              <td class="cargoLabel">${escapeHtml(r.label)}</td>
+              <td class="cargoAmount">${Number(r.amount || 0) > 0 ? `Q ${escapeHtml(moneyQDoc(r.amount))}` : "-"}</td>
+            </tr>
+          `).join("")}
+          <tr class="cargoEm">
+            <td class="cargoLabel">Total contratado</td>
+            <td class="cargoAmount">${totalContratadoDoc > 0 ? `Q ${escapeHtml(moneyQDoc(totalContratadoDoc))}` : "-"}</td>
+          </tr>
+          ${advanceRowsDoc.length ? advanceRowsDoc.map((r) => `
+            <tr>
+              <td class="cargoLabel">${escapeHtml(`${formatDocDate(r.date)} - ${r.paymentType || "-"}${r.description ? ` - ${r.description}` : ""}`)}</td>
+              <td class="cargoAmount">${Number(r.amount || 0) > 0 ? `Q ${escapeHtml(moneyQDoc(r.amount))}` : "-"}</td>
+            </tr>
+          `).join("") : `
+            <tr>
+              <td class="cargoLabel">Anticipos: sin registros</td>
+              <td class="cargoAmount">-</td>
+            </tr>
+          `}
+          <tr class="cargoEm">
+            <td class="cargoLabel">Total anticipos</td>
+            <td class="cargoAmount">${totalAnticiposDoc > 0 ? `Q ${escapeHtml(moneyQDoc(totalAnticiposDoc))}` : "-"}</td>
+          </tr>
+          <tr class="cargoEm cargoEmFinal">
+            <td class="cargoLabel">Saldo</td>
+            <td class="cargoAmount">${saldoDoc > 0 ? `Q ${escapeHtml(moneyQDoc(saldoDoc))}` : "-"}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="notes"><b>Notas internas:</b>${escapeHtml(quote.internalNotes || quote.notes || "")}</div>
     <div class="actions">
