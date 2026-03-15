@@ -25,10 +25,11 @@ const CURRENT_ORIGIN_STATE_URL = (() => {
   return null;
 })();
 const API_STATE_CANDIDATES = Array.from(new Set([
-  "/api/state",
+  "http://192.168.10.2:3002/api/state",
+  "http://localhost:3002/api/state",
+  "http://127.0.0.1:3002/api/state",
   ...(CURRENT_ORIGIN_STATE_URL ? [CURRENT_ORIGIN_STATE_URL] : []),
-  "http://localhost:3000/api/state",
-  "http://127.0.0.1:3000/api/state",
+  "/api/state",
 ]));
 let activeApiStateUrl = API_STATE_CANDIDATES[0];
 
@@ -69,6 +70,46 @@ const STATUS_META = [
 ].map(x => ({ ...x, key: x.key === undefined ? STATUS.SEGUIMIENTO : x.key }));
 
 const AUTO_STATUSES = new Set([STATUS.PRIMERA, STATUS.SEGUIMIENTO, STATUS.PERDIDO]);
+const DASHBOARD_STATUS_ORDER = [
+  STATUS.PERDIDO,
+  STATUS.SEGUIMIENTO,
+  STATUS.PRIMERA,
+  STATUS.CANCELADO,
+  STATUS.CONFIRMADO,
+  STATUS.PRERESERVA,
+  STATUS.LISTA,
+];
+const DASHBOARD_EVENT_TYPES = ["Social", "Corporativo", "Individual"];
+const USER_ROLE = {
+  SELLER: "vendedor",
+  RECEPTIONIST: "recepcionista",
+  ADMIN: "admin",
+};
+const REPORTABLE_USER_ROLES = [USER_ROLE.SELLER, USER_ROLE.RECEPTIONIST];
+const USER_ROLE_LABELS = {
+  [USER_ROLE.SELLER]: "Vendedor",
+  [USER_ROLE.RECEPTIONIST]: "Recepcionista",
+  [USER_ROLE.ADMIN]: "Administrador",
+};
+const USER_ROLE_PLURAL_LABELS = {
+  [USER_ROLE.SELLER]: "Vendedores",
+  [USER_ROLE.RECEPTIONIST]: "Recepcionistas",
+  [USER_ROLE.ADMIN]: "Administradores",
+};
+function normalizeUserRole(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === USER_ROLE.RECEPTIONIST) return USER_ROLE.RECEPTIONIST;
+  if (raw === USER_ROLE.ADMIN) return USER_ROLE.ADMIN;
+  return USER_ROLE.SELLER;
+}
+function userRoleLabel(value) {
+  const role = normalizeUserRole(value);
+  return USER_ROLE_LABELS[role] || "Vendedor";
+}
+function userRolePluralLabel(value) {
+  const role = normalizeUserRole(value);
+  return USER_ROLE_PLURAL_LABELS[role] || "Vendedores";
+}
 function isAutoStatus(status) {
   return AUTO_STATUSES.has(String(status || "").trim());
 }
@@ -97,6 +138,13 @@ const SETTINGS_STORAGE_KEY = "crm_topbar_settings_v1";
 const QUICK_TEMPLATES_STORAGE_KEY = "crm_quick_templates_v1";
 const CORPORATE_TEMPLATE_ID = "tpl-corporativo";
 const CORPORATE_TEMPLATE_NAME = "Corporativo";
+const SERVIHOSP_TEMPLATE_ID = "tpl-servi-hosp";
+const SERVIHOSP_TEMPLATE_NAME = "Servi Hosp";
+const CONTRACT_CORP_TEMPLATE_ID = "tpl-contrato-corp";
+const CONTRACT_CORP_TEMPLATE_NAME = "Contrato Corporativo";
+const DEFAULT_TEMPLATE_HEADER_IMAGE = "./Encabezadojdl.png";
+const DEFAULT_TEMPLATE_FOOTER_IMAGE = "./piedepaginajdl.png";
+const SERVIHOSP_TEMPLATE_HEADER_IMAGE = "./ServiHosp_header.png";
 const TEMPLATE_SIGNATURE_MIN_W_PCT = 10;
 const TEMPLATE_SIGNATURE_MIN_H_PCT = 3;
 const TEMPLATE_SIGNATURE_MAX_W_PCT = 35;
@@ -123,6 +171,11 @@ let quoteAdvanceEditingId = "";
 let companyManagersDraft = [];
 let editingCompanyId = "";
 let editingServiceId = "";
+let editingServiceCategoryId = "";
+let editingServiceSubcategoryId = "";
+let globalGoalEditingKey = "";
+let editingSalonName = "";
+let moduleModalReturnScreen = "";
 let catalogoCategoriasServicio = [];
 let catalogoSubcategoriasServicio = [];
 let historyTargetEventId = null;
@@ -136,6 +189,9 @@ let userSignatureNormalizedDataUrl = "";
 let checklistTemplateDraft = [];
 let checklistTemplateEditingId = "";
 let checklistTemplateSectionsDraft = [];
+let checklistTemplatesDraft = [];
+let checklistTemplateCurrentId = "";
+let checklistTemplateSectionEditingId = "";
 let currentEventChecklistId = "";
 let eventChecklistDraft = null;
 const interaction = {
@@ -163,12 +219,21 @@ let menuMontajeSelectedVersion = 0;
 let menuMontajeSelectableSelectedKey = "";
 let menuMontajeSelectableSelectedVersion = 0;
 let menuMontajeSelectableSilentUpdate = false;
+let quoteItemsExpanded = false;
 let mmsShowAllGuarniciones = false;
 let mmsShowAllPostres = false;
+let mmsPrimaryMode = "menu";
 let mmsCurrentStage = "plato";
+let mmsPlatoQty = 1;
+let mmsSelectedPlatoItems = [];
+let mmsLineItemsDraft = [];
+let mmsActiveLineKey = "";
 let mmsSelectedSalsaIds = [];
 let mmsSelectedBebidaIds = [];
+let mmsGuarnicionQtyById = {};
 let mmsPostreQtyById = {};
+let mmsBebidaQtyById = {};
+let dashboardHoverTipEl = null;
 let menuMontajeSelectableCatalogCache = {
   proteins: [],
   preparationsByProtein: new Map(),
@@ -186,12 +251,22 @@ let menuCatalogManagerRows = [];
 let menuSuggestionDraggingRow = null;
 
 const el = {
+  appShell: document.getElementById("appShell"),
   loginScreen: document.getElementById("loginScreen"),
   loginForm: document.getElementById("loginForm"),
   loginUserSelect: document.getElementById("loginUserSelect"),
   loginPassword: document.getElementById("loginPassword"),
   loginAvatar: document.getElementById("loginAvatar"),
   loginError: document.getElementById("loginError"),
+  moduleHubScreen: document.getElementById("moduleHubScreen"),
+  reportsHubScreen: document.getElementById("reportsHubScreen"),
+  settingsScreen: document.getElementById("settingsScreen"),
+  btnOpenModules: document.getElementById("btnOpenModules"),
+  btnModuleCalendar: document.getElementById("btnModuleCalendar"),
+  btnModuleReports: document.getElementById("btnModuleReports"),
+  btnModuleSettings: document.getElementById("btnModuleSettings"),
+  btnBackFromReports: document.getElementById("btnBackFromReports"),
+  btnBackFromSettings: document.getElementById("btnBackFromSettings"),
   topbarWelcome: document.getElementById("topbarWelcome"),
   topbarUserAvatar: document.getElementById("topbarUserAvatar"),
   weekLabel: document.getElementById("weekLabel"),
@@ -227,6 +302,7 @@ const el = {
   btnReportSales: document.getElementById("btnReportSales"),
   btnReportOccupancy: document.getElementById("btnReportOccupancy"),
   btnReportDashboard: document.getElementById("btnReportDashboard"),
+  btnReportInstitution: document.getElementById("btnReportInstitution"),
   salesReportBackdrop: document.getElementById("salesReportBackdrop"),
   btnSalesReportClose: document.getElementById("btnSalesReportClose"),
   salesReportSearch: document.getElementById("salesReportSearch"),
@@ -243,28 +319,84 @@ const el = {
   btnOccupancyReportClose: document.getElementById("btnOccupancyReportClose"),
   occupancyReportSubtitle: document.getElementById("occupancyReportSubtitle"),
   occupancyReportWeek: document.getElementById("occupancyReportWeek"),
+  btnOccupancyReportPrevWeek: document.getElementById("btnOccupancyReportPrevWeek"),
+  btnOccupancyReportNextWeek: document.getElementById("btnOccupancyReportNextWeek"),
   btnOccupancyReportTodayWeek: document.getElementById("btnOccupancyReportTodayWeek"),
   btnOccupancyReportExportExcel: document.getElementById("btnOccupancyReportExportExcel"),
   occupancyReportSummary: document.getElementById("occupancyReportSummary"),
   occupancyDaysStrip: document.getElementById("occupancyDaysStrip"),
   occupancyDayDetail: document.getElementById("occupancyDayDetail"),
   occupancyReportBody: document.getElementById("occupancyReportBody"),
+  dashboardReportBackdrop: document.getElementById("dashboardReportBackdrop"),
+  btnDashboardReportClose: document.getElementById("btnDashboardReportClose"),
+  dashboardReportTitle: document.getElementById("dashboardReportTitle"),
+  dashboardReportSubtitle: document.getElementById("dashboardReportSubtitle"),
+  dashboardReportPeriod: document.getElementById("dashboardReportPeriod"),
+  dashboardReportMonth: document.getElementById("dashboardReportMonth"),
+  dashboardReportWeekField: document.getElementById("dashboardReportWeekField"),
+  dashboardReportWeek: document.getElementById("dashboardReportWeek"),
+  dashboardReportFrom: document.getElementById("dashboardReportFrom"),
+  dashboardReportTo: document.getElementById("dashboardReportTo"),
+  dashboardReportRole: document.getElementById("dashboardReportRole"),
+  dashboardReportScope: document.getElementById("dashboardReportScope"),
+  dashboardReportSeller: document.getElementById("dashboardReportSeller"),
+  btnDashboardReportCurrentMonth: document.getElementById("btnDashboardReportCurrentMonth"),
+  btnDashboardReportReset: document.getElementById("btnDashboardReportReset"),
+  dashboardGoalsGrid: document.getElementById("dashboardGoalsGrid"),
+  dashboardCompareTitle: document.getElementById("dashboardCompareTitle"),
+  dashboardCompareSubtitle: document.getElementById("dashboardCompareSubtitle"),
+  dashboardCompareChart: document.getElementById("dashboardCompareChart"),
+  dashboardBestTitle: document.getElementById("dashboardBestTitle"),
+  dashboardBestSubtitle: document.getElementById("dashboardBestSubtitle"),
+  dashboardBestMonthChart: document.getElementById("dashboardBestMonthChart"),
+  dashboardSellerList: document.getElementById("dashboardSellerList"),
+  institutionReportBackdrop: document.getElementById("institutionReportBackdrop"),
+  btnInstitutionReportClose: document.getElementById("btnInstitutionReportClose"),
+  institutionReportCompanySearch: document.getElementById("institutionReportCompanySearch"),
+  institutionReportCompany: document.getElementById("institutionReportCompany"),
+  institutionReportFrom: document.getElementById("institutionReportFrom"),
+  institutionReportTo: document.getElementById("institutionReportTo"),
+  btnInstitutionReportCurrentYear: document.getElementById("btnInstitutionReportCurrentYear"),
+  btnInstitutionReportReset: document.getElementById("btnInstitutionReportReset"),
+  institutionReportHeadline: document.getElementById("institutionReportHeadline"),
+  institutionReportSummary: document.getElementById("institutionReportSummary"),
+  institutionReportNav: document.getElementById("institutionReportNav"),
+  institutionReportContent: document.getElementById("institutionReportContent"),
+  institutionOverviewGrid: document.getElementById("institutionOverviewGrid"),
+  institutionReportChartsBody: document.getElementById("institutionReportChartsBody"),
+  institutionReportSalonBody: document.getElementById("institutionReportSalonBody"),
+  institutionReportDishBody: document.getElementById("institutionReportDishBody"),
+  institutionReportManagerBody: document.getElementById("institutionReportManagerBody"),
+  institutionReportTimelineBody: document.getElementById("institutionReportTimelineBody"),
+  institutionReportEventsBody: document.getElementById("institutionReportEventsBody"),
   checklistTemplateBackdrop: document.getElementById("checklistTemplateBackdrop"),
   btnChecklistTemplateClose: document.getElementById("btnChecklistTemplateClose"),
+  checklistTemplateSelect: document.getElementById("checklistTemplateSelect"),
+  checklistTemplateName: document.getElementById("checklistTemplateName"),
+  checklistTemplateActive: document.getElementById("checklistTemplateActive"),
   checklistTemplateInput: document.getElementById("checklistTemplateInput"),
   checklistTemplateSectionSelect: document.getElementById("checklistTemplateSectionSelect"),
+  checklistTemplateSectionEditSelect: document.getElementById("checklistTemplateSectionEditSelect"),
   checklistTemplateSectionInput: document.getElementById("checklistTemplateSectionInput"),
   btnChecklistTemplateAdd: document.getElementById("btnChecklistTemplateAdd"),
   btnChecklistTemplateAddSection: document.getElementById("btnChecklistTemplateAddSection"),
+  btnChecklistTemplateResetSection: document.getElementById("btnChecklistTemplateResetSection"),
+  btnChecklistTemplateNew: document.getElementById("btnChecklistTemplateNew"),
+  btnChecklistTemplateDisable: document.getElementById("btnChecklistTemplateDisable"),
+  checklistTemplateSectionsBody: document.getElementById("checklistTemplateSectionsBody"),
   checklistTemplateBody: document.getElementById("checklistTemplateBody"),
   eventChecklistBackdrop: document.getElementById("eventChecklistBackdrop"),
   btnEventChecklistClose: document.getElementById("btnEventChecklistClose"),
   btnEventChecklistDiscard: document.getElementById("btnEventChecklistDiscard"),
   btnEventChecklistSave: document.getElementById("btnEventChecklistSave"),
+  eventChecklistTemplateSelect: document.getElementById("eventChecklistTemplateSelect"),
   eventChecklistSubtitle: document.getElementById("eventChecklistSubtitle"),
   eventChecklistDate: document.getElementById("eventChecklistDate"),
   eventChecklistEventName: document.getElementById("eventChecklistEventName"),
   eventChecklistNotes: document.getElementById("eventChecklistNotes"),
+  eventChecklistProgressLabel: document.getElementById("eventChecklistProgressLabel"),
+  eventChecklistSatisfactionLabel: document.getElementById("eventChecklistSatisfactionLabel"),
+  eventChecklistProgressFill: document.getElementById("eventChecklistProgressFill"),
   eventChecklistBody: document.getElementById("eventChecklistBody"),
   legend: document.getElementById("legend"),
   timeCol: document.getElementById("timeCol"),
@@ -295,7 +427,6 @@ const el = {
   btnDelete: document.getElementById("btnDelete"),
   btnCancelEvent: document.getElementById("btnCancelEvent"),
   btnQuoteEvent: document.getElementById("btnQuoteEvent"),
-  btnMarkQuoted: document.getElementById("btnMarkQuoted"),
   btnSetMaintenance: document.getElementById("btnSetMaintenance"),
   btnToggleHistory: document.getElementById("btnToggleHistory"),
   btnToggleAppointments: document.getElementById("btnToggleAppointments"),
@@ -337,6 +468,7 @@ const el = {
   userSignatureMeta: document.getElementById("userSignatureMeta"),
   userSignatureWarn: document.getElementById("userSignatureWarn"),
   userAvatar: document.getElementById("userAvatar"),
+  userRole: document.getElementById("userRole"),
   userSalesTargetEnabled: document.getElementById("userSalesTargetEnabled"),
   userGoalMonth: document.getElementById("userGoalMonth"),
   userGoalAmount: document.getElementById("userGoalAmount"),
@@ -358,6 +490,12 @@ const el = {
   quoteVersionSelect: document.getElementById("quoteVersionSelect"),
   quoteTemplateSelect: document.getElementById("quoteTemplateSelect"),
   btnLoadQuoteVersion: document.getElementById("btnLoadQuoteVersion"),
+  quoteServiceTemplateSelect: document.getElementById("quoteServiceTemplateSelect"),
+  quoteServiceTemplateName: document.getElementById("quoteServiceTemplateName"),
+  btnQuoteServiceTemplateApply: document.getElementById("btnQuoteServiceTemplateApply"),
+  btnQuoteServiceTemplateSave: document.getElementById("btnQuoteServiceTemplateSave"),
+  btnQuoteServiceTemplateUpdate: document.getElementById("btnQuoteServiceTemplateUpdate"),
+  btnQuoteServiceTemplateDelete: document.getElementById("btnQuoteServiceTemplateDelete"),
   quoteCompanySearch: document.getElementById("quoteCompanySearch"),
   companiesList: document.getElementById("companiesList"),
   quoteCompany: document.getElementById("quoteCompany"),
@@ -387,6 +525,8 @@ const el = {
   servicesList: document.getElementById("servicesList"),
   serviceDescriptionsList: document.getElementById("serviceDescriptionsList"),
   btnAddServiceToQuote: document.getElementById("btnAddServiceToQuote"),
+  quoteItemsPanel: document.getElementById("quoteItemsPanel"),
+  btnToggleQuoteItemsExpand: document.getElementById("btnToggleQuoteItemsExpand"),
   quoteItemsBody: document.getElementById("quoteItemsBody"),
   quoteDiscountType: document.getElementById("quoteDiscountType"),
   quoteDiscountValue: document.getElementById("quoteDiscountValue"),
@@ -433,6 +573,9 @@ const el = {
   mmsDocNo: document.getElementById("mmsDocNo"),
   mmsProtein: document.getElementById("mmsProtein"),
   mmsPreparation: document.getElementById("mmsPreparation"),
+  mmsPrimaryTabs: document.getElementById("mmsPrimaryTabs"),
+  btnMmsPrimaryMenu: document.getElementById("btnMmsPrimaryMenu"),
+  btnMmsPrimaryMontaje: document.getElementById("btnMmsPrimaryMontaje"),
   mmsStageTabs: document.getElementById("mmsStageTabs"),
   btnMmsStagePlato: document.getElementById("btnMmsStagePlato"),
   btnMmsStagePrep: document.getElementById("btnMmsStagePrep"),
@@ -466,11 +609,13 @@ const el = {
   mmsPostresQuickSuggested: document.getElementById("mmsPostresQuickSuggested"),
   mmsPostresQuickGlobal: document.getElementById("mmsPostresQuickGlobal"),
   mmsComandaPreview: document.getElementById("mmsComandaPreview"),
+  mmsActivePlateHint: document.getElementById("mmsActivePlateHint"),
   mmsComandaPlato: document.getElementById("mmsComandaPlato"),
   mmsComandaSalsas: document.getElementById("mmsComandaSalsas"),
   mmsComandaGuarniciones: document.getElementById("mmsComandaGuarniciones"),
   mmsComandaPostres: document.getElementById("mmsComandaPostres"),
   mmsComandaBebidas: document.getElementById("mmsComandaBebidas"),
+  mmsComandaComentarios: document.getElementById("mmsComandaComentarios"),
   mmsComandaMontaje: document.getElementById("mmsComandaMontaje"),
   mmsPlatoDescripcion: document.getElementById("mmsPlatoDescripcion"),
   mmsComentariosAll: document.getElementById("mmsComentariosAll"),
@@ -504,6 +649,8 @@ const el = {
   companyBackdrop: document.getElementById("companyBackdrop"),
   companyTitle: document.getElementById("companyTitle"),
   companyForm: document.getElementById("companyForm"),
+  companyEditSelect: document.getElementById("companyEditSelect"),
+  companyActive: document.getElementById("companyActive"),
   companyName: document.getElementById("companyName"),
   companyOwner: document.getElementById("companyOwner"),
   companyEmail: document.getElementById("companyEmail"),
@@ -524,18 +671,62 @@ const el = {
   managersBody: document.getElementById("managersBody"),
   btnCompanyClose: document.getElementById("btnCompanyClose"),
   btnCompanyDiscard: document.getElementById("btnCompanyDiscard"),
+  btnCompanyDisable: document.getElementById("btnCompanyDisable"),
 
   serviceBackdrop: document.getElementById("serviceBackdrop"),
   serviceTitle: document.getElementById("serviceTitle"),
   serviceForm: document.getElementById("serviceForm"),
+  serviceEditSelect: document.getElementById("serviceEditSelect"),
+  serviceActive: document.getElementById("serviceActive"),
   serviceName: document.getElementById("serviceName"),
   serviceCategory: document.getElementById("serviceCategory"),
+  btnServiceCategoryManage: document.getElementById("btnServiceCategoryManage"),
   serviceSubcategory: document.getElementById("serviceSubcategory"),
+  btnServiceSubcategoryManage: document.getElementById("btnServiceSubcategoryManage"),
   servicePrice: document.getElementById("servicePrice"),
   serviceQuantityMode: document.getElementById("serviceQuantityMode"),
   serviceDescription: document.getElementById("serviceDescription"),
+  servicesManagerBody: document.getElementById("servicesManagerBody"),
   btnServiceClose: document.getElementById("btnServiceClose"),
   btnServiceDiscard: document.getElementById("btnServiceDiscard"),
+  btnServiceDisable: document.getElementById("btnServiceDisable"),
+  serviceCategoryBackdrop: document.getElementById("serviceCategoryBackdrop"),
+  btnServiceCategoryClose: document.getElementById("btnServiceCategoryClose"),
+  serviceCategoryEditSelect: document.getElementById("serviceCategoryEditSelect"),
+  serviceCategoryNameInput: document.getElementById("serviceCategoryNameInput"),
+  serviceCategoryBody: document.getElementById("serviceCategoryBody"),
+  btnServiceCategoryReset: document.getElementById("btnServiceCategoryReset"),
+  btnServiceCategorySave: document.getElementById("btnServiceCategorySave"),
+  serviceSubcategoryBackdrop: document.getElementById("serviceSubcategoryBackdrop"),
+  btnServiceSubcategoryClose: document.getElementById("btnServiceSubcategoryClose"),
+  serviceSubcategoryCategorySelect: document.getElementById("serviceSubcategoryCategorySelect"),
+  serviceSubcategoryEditSelect: document.getElementById("serviceSubcategoryEditSelect"),
+  serviceSubcategoryNameInput: document.getElementById("serviceSubcategoryNameInput"),
+  serviceSubcategoryBody: document.getElementById("serviceSubcategoryBody"),
+  btnServiceSubcategoryReset: document.getElementById("btnServiceSubcategoryReset"),
+  btnServiceSubcategorySave: document.getElementById("btnServiceSubcategorySave"),
+
+  globalGoalsBackdrop: document.getElementById("globalGoalsBackdrop"),
+  btnGlobalGoalsClose: document.getElementById("btnGlobalGoalsClose"),
+  globalGoalsEditSelect: document.getElementById("globalGoalsEditSelect"),
+  globalGoalActive: document.getElementById("globalGoalActive"),
+  globalGoalMonth: document.getElementById("globalGoalMonth"),
+  globalGoalRole: document.getElementById("globalGoalRole"),
+  globalGoalAmount: document.getElementById("globalGoalAmount"),
+  globalGoalsBody: document.getElementById("globalGoalsBody"),
+  btnGlobalGoalDisable: document.getElementById("btnGlobalGoalDisable"),
+  btnGlobalGoalReset: document.getElementById("btnGlobalGoalReset"),
+  btnGlobalGoalSave: document.getElementById("btnGlobalGoalSave"),
+
+  salonesBackdrop: document.getElementById("salonesBackdrop"),
+  btnSalonesClose: document.getElementById("btnSalonesClose"),
+  salonEditSelect: document.getElementById("salonEditSelect"),
+  salonActive: document.getElementById("salonActive"),
+  salonNameInput: document.getElementById("salonNameInput"),
+  salonesBody: document.getElementById("salonesBody"),
+  btnSalonDisable: document.getElementById("btnSalonDisable"),
+  btnSalonReset: document.getElementById("btnSalonReset"),
+  btnSalonSave: document.getElementById("btnSalonSave"),
 
   menuSuggestionsBackdrop: document.getElementById("menuSuggestionsBackdrop"),
   btnMenuSuggestionsClose: document.getElementById("btnMenuSuggestionsClose"),
@@ -691,7 +882,57 @@ function buildCorporateTemplateSeed() {
     footer: "",
     assets: {
       pagePdf: "",
-      headerImage: "./Oficial_JDL_acua.png",
+      headerImage: DEFAULT_TEMPLATE_HEADER_IMAGE,
+      footerImage: DEFAULT_TEMPLATE_FOOTER_IMAGE,
+    },
+    positionedFields: [],
+    signatureDefaults: {
+      w: TEMPLATE_SIGNATURE_FALLBACK_W_PCT,
+      h: TEMPLATE_SIGNATURE_FALLBACK_H_PCT,
+    },
+    roomRates: [],
+    formulas: [],
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  });
+}
+
+function buildServiHospTemplateSeed() {
+  const nowIso = new Date().toISOString();
+  return normalizeTemplateRecord({
+    id: SERVIHOSP_TEMPLATE_ID,
+    name: SERVIHOSP_TEMPLATE_NAME,
+    header: "",
+    body: "",
+    footer: "",
+    assets: {
+      pagePdf: "",
+      headerImage: SERVIHOSP_TEMPLATE_HEADER_IMAGE,
+      footerImage: "",
+    },
+    positionedFields: [],
+    signatureDefaults: {
+      w: TEMPLATE_SIGNATURE_FALLBACK_W_PCT,
+      h: TEMPLATE_SIGNATURE_FALLBACK_H_PCT,
+    },
+    roomRates: [],
+    formulas: [],
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  });
+}
+
+function buildContractCorpTemplateSeed() {
+  const nowIso = new Date().toISOString();
+  return normalizeTemplateRecord({
+    id: CONTRACT_CORP_TEMPLATE_ID,
+    name: CONTRACT_CORP_TEMPLATE_NAME,
+    header: "",
+    body: "",
+    footer: "",
+    assets: {
+      pagePdf: "",
+      headerImage: "",
       footerImage: "",
     },
     positionedFields: [],
@@ -710,7 +951,9 @@ function ensureCorporateTemplateSeed(listLike) {
   const list = Array.isArray(listLike)
     ? listLike.map(normalizeTemplateRecord).filter(Boolean)
     : [];
-  const seed = buildCorporateTemplateSeed();
+  const corporateSeed = buildCorporateTemplateSeed();
+  const serviHospSeed = buildServiHospTemplateSeed();
+  const contractSeed = buildContractCorpTemplateSeed();
   const byId = list.find((t) => String(t?.id || "").trim() === CORPORATE_TEMPLATE_ID) || null;
   const byName = list.find((t) => /corporativ/i.test(String(t?.name || ""))) || null;
   const rich = list.find((t) =>
@@ -718,22 +961,63 @@ function ensureCorporateTemplateSeed(listLike) {
     Array.isArray(t?.positionedFields) &&
     t.positionedFields.length > 0
   ) || null;
-  const base = byId || byName || rich || seed;
+  const serviHospById = list.find((t) => String(t?.id || "").trim() === SERVIHOSP_TEMPLATE_ID) || null;
+  const serviHospByName = list.find((t) => /servi\s*hosp/i.test(String(t?.name || ""))) || null;
+  const contractById = list.find((t) => String(t?.id || "").trim() === CONTRACT_CORP_TEMPLATE_ID) || null;
+  const contractByName = list.find((t) => /contrato\s+corporativ/i.test(String(t?.name || ""))) || null;
+  const base = byId || byName || rich || corporateSeed;
   const corporate = normalizeTemplateRecord({
-    ...seed,
+    ...corporateSeed,
     ...base,
     id: CORPORATE_TEMPLATE_ID,
     name: CORPORATE_TEMPLATE_NAME,
     assets: {
       pagePdf: String(base?.assets?.pagePdf || "").trim(),
-      headerImage: String(base?.assets?.headerImage || seed.assets.headerImage || "").trim(),
-      footerImage: String(base?.assets?.footerImage || "").trim(),
+      headerImage: String(base?.assets?.headerImage || corporateSeed.assets.headerImage || "").trim(),
+      footerImage: String(base?.assets?.footerImage || corporateSeed.assets.footerImage || "").trim(),
     },
   });
-  const out = [corporate];
+  const serviHosp = normalizeTemplateRecord({
+    ...serviHospSeed,
+    ...(serviHospById || serviHospByName || {}),
+    id: SERVIHOSP_TEMPLATE_ID,
+    name: SERVIHOSP_TEMPLATE_NAME,
+    assets: {
+      pagePdf: String(serviHospById?.assets?.pagePdf || serviHospByName?.assets?.pagePdf || "").trim(),
+      headerImage: String(
+        serviHospById?.assets?.headerImage
+        || serviHospByName?.assets?.headerImage
+        || serviHospSeed.assets.headerImage
+        || ""
+      ).trim(),
+      footerImage: String(
+        serviHospById?.assets?.footerImage
+        || serviHospByName?.assets?.footerImage
+        || serviHospSeed.assets.footerImage
+        || ""
+      ).trim(),
+    },
+  });
+  const contract = normalizeTemplateRecord({
+    ...contractSeed,
+    ...(contractById || contractByName || {}),
+    id: CONTRACT_CORP_TEMPLATE_ID,
+    name: CONTRACT_CORP_TEMPLATE_NAME,
+  });
+  const out = [corporate, serviHosp, contract];
   for (const t of list) {
     const id = String(t?.id || "").trim();
-    if (!id || id === String(base?.id || "").trim() || id === CORPORATE_TEMPLATE_ID) continue;
+    if (
+      !id ||
+      id === String(base?.id || "").trim() ||
+      id === String(serviHospById?.id || "").trim() ||
+      id === String(serviHospByName?.id || "").trim() ||
+      id === String(contractById?.id || "").trim() ||
+      id === String(contractByName?.id || "").trim() ||
+      id === CORPORATE_TEMPLATE_ID ||
+      id === SERVIHOSP_TEMPLATE_ID ||
+      id === CONTRACT_CORP_TEMPLATE_ID
+    ) continue;
     out.push(t);
   }
   return out.filter(Boolean);
@@ -805,12 +1089,22 @@ function buildTemplatePrintContextFromQuoteForm() {
   const clientContact = String(el.quoteContact?.value || quoteDraft?.contact || company?.owner || clientName).trim();
   const clientPhone = String(el.quotePhone?.value || quoteDraft?.phone || company?.phone || "").trim();
   const clientEmail = String(el.quoteEmail?.value || quoteDraft?.email || company?.email || "").trim();
+  const billTo = String(el.quoteBillTo?.value || quoteDraft?.billTo || company?.billTo || company?.businessName || clientName).trim();
+  const quoteAddress = String(el.quoteAddress?.value || quoteDraft?.address || company?.address || "").trim();
+  const eventType = String(el.quoteEventType?.value || quoteDraft?.eventType || "").trim();
+  const eventDate = String(el.quoteEventDate?.value || quoteDraft?.eventDate || ev?.date || "").trim();
+  const schedule = String(el.quoteSchedule?.value || quoteDraft?.schedule || `${ev?.startTime || ""} a ${ev?.endTime || ""}`.trim()).trim();
+  const people = String(el.quotePeople?.value || quoteDraft?.people || ev?.pax || "").trim();
+  const paymentType = String(el.quotePaymentType?.value || quoteDraft?.paymentType || "").trim();
+  const dueDate = String(el.quoteDueDate?.value || quoteDraft?.dueDate || "").trim();
+  const quoteNotes = String(el.quoteInternalNotes?.value || quoteDraft?.internalNotes || quoteDraft?.notes || "").trim();
   const venue = String(el.quoteVenue?.value || "").trim();
   const departmentRaw = String(el.quoteAddress?.value || company?.address || "").trim();
   const department = departmentRaw || "Solola";
   return {
     NO_DOC: String(el.quoteCode?.value || quoteDraft?.code || "").trim(),
     CLIENTE: clientName,
+    CLIENTE_EMPRESA: clientName,
     LUGAR: venue || "Panajachel",
     DEPARTAMENTO: department,
     DIA: String(safeDate.getDate()),
@@ -823,6 +1117,82 @@ function buildTemplatePrintContextFromQuoteForm() {
     CLIENTE_NOMBRE: clientContact,
     CLIENTE_TELEFONO: clientPhone,
     CLIENTE_CORREO: clientEmail,
+    CLIENTE_FACTURAR_A: billTo,
+    CLIENTE_DIRECCION: quoteAddress,
+    EVENTO_TIPO: eventType,
+    EVENTO_FECHA: eventDate,
+    EVENTO_HORARIO: schedule,
+    EVENTO_PAX: people,
+    PAGO_TIPO: paymentType,
+    PAGO_FECHA_MAXIMA: dueDate,
+    OBSERVACIONES: quoteNotes,
+  };
+}
+
+function buildTemplatePrintContextFromQuoteData(ev, quote, company, manager) {
+  const selectedDate = String(quote?.docDate || quote?.eventDate || ev?.date || toISODate(new Date())).trim();
+  const d = selectedDate ? new Date(`${selectedDate}T00:00:00`) : new Date();
+  const safeDate = Number.isNaN(d.getTime()) ? new Date() : d;
+  const monthName = safeDate.toLocaleDateString("es-GT", { month: "long" });
+  const sellerUser = normalizeUserRecord((state.users || []).find((u) => String(u.id || "") === String(ev?.userId || "")) || {});
+  const authUser = normalizeUserRecord(getAuthUserRecord() || {});
+  const vendorSignature = String(
+    sellerUser?.signatureDataUrl
+    || authSession.signatureDataUrl
+    || authUser?.signatureDataUrl
+    || ""
+  ).trim();
+  const vendorName = String(
+    sellerUser?.fullName
+    || sellerUser?.name
+    || authSession.fullName
+    || authUser?.fullName
+    || authUser?.name
+    || ""
+  ).trim();
+  const vendorPhone = String(sellerUser?.phone || authUser?.phone || "").trim();
+  const vendorEmail = String(sellerUser?.email || authUser?.email || "").trim();
+  const clientCompany = String(quote?.companyName || company?.name || "").trim();
+  const clientContact = String(quote?.contact || manager?.name || company?.owner || clientCompany).trim();
+  const clientPhone = String(quote?.phone || manager?.phone || company?.phone || "").trim();
+  const clientEmail = String(quote?.email || manager?.email || company?.email || "").trim();
+  const billTo = String(quote?.billTo || company?.billTo || company?.businessName || clientCompany).trim();
+  const quoteAddress = String(quote?.address || company?.address || "").trim();
+  const eventType = String(quote?.eventType || ev?.name || "").trim();
+  const eventDate = String(quote?.eventDate || ev?.date || "").trim();
+  const schedule = String(quote?.schedule || `${ev?.startTime || ""} a ${ev?.endTime || ""}`.trim()).trim();
+  const people = String(quote?.people || ev?.pax || "").trim();
+  const paymentType = String(quote?.paymentType || "").trim();
+  const dueDate = String(quote?.dueDate || "").trim();
+  const quoteNotes = String(quote?.internalNotes || quote?.notes || "").trim();
+  const venue = String(quote?.venue || ev?.salon || "").trim();
+  const departmentRaw = String(quote?.address || company?.address || "").trim();
+  const department = departmentRaw || "Solola";
+  return {
+    NO_DOC: String(quote?.code || "").trim(),
+    CLIENTE: clientCompany,
+    CLIENTE_EMPRESA: clientCompany,
+    LUGAR: venue || "Panajachel",
+    DEPARTAMENTO: department,
+    DIA: String(safeDate.getDate()),
+    MES: String(monthName || "").trim(),
+    ANIO: String(safeDate.getFullYear()),
+    VENDEDOR_FIRMA_URL: vendorSignature,
+    VENDEDOR_NOMBRE: vendorName,
+    VENDEDOR_TELEFONO: vendorPhone,
+    VENDEDOR_CORREO: vendorEmail,
+    CLIENTE_NOMBRE: clientContact,
+    CLIENTE_TELEFONO: clientPhone,
+    CLIENTE_CORREO: clientEmail,
+    CLIENTE_FACTURAR_A: billTo,
+    CLIENTE_DIRECCION: quoteAddress,
+    EVENTO_TIPO: eventType,
+    EVENTO_FECHA: eventDate,
+    EVENTO_HORARIO: schedule,
+    EVENTO_PAX: people,
+    PAGO_TIPO: paymentType,
+    PAGO_FECHA_MAXIMA: dueDate,
+    OBSERVACIONES: quoteNotes,
   };
 }
 
@@ -830,7 +1200,7 @@ function fillTemplateHtmlTokens(htmlText, contextMap) {
   let out = String(htmlText || "");
   const pairs = Object.entries(contextMap || {});
   for (const [key, rawValue] of pairs) {
-    const token = `{{${String(key)}}}`;
+    const token = "{{" + String(key) + "}}";
     const textValue = String(rawValue || "");
     const value = /_URL$/i.test(String(key)) ? textValue : escapeHtml(textValue);
     out = out.split(token).join(value);
@@ -838,18 +1208,54 @@ function fillTemplateHtmlTokens(htmlText, contextMap) {
   return out;
 }
 
+function getBuiltInQuoteTemplateMeta(templateId = "") {
+  const id = String(templateId || "").trim();
+  if (!id) return null;
+  if (id === CONTRACT_CORP_TEMPLATE_ID) {
+    return {
+      file: "./ContradoCorp.html",
+      label: "Contrato Corporativo",
+      attachToQuote: true,
+      headerImage: "",
+    };
+  }
+  if (id === SERVIHOSP_TEMPLATE_ID) {
+    return {
+      file: "./Contrato.html",
+      label: "Servi Hosp",
+      attachToQuote: true,
+      headerImage: SERVIHOSP_TEMPLATE_HEADER_IMAGE,
+    };
+  }
+  if (id === CORPORATE_TEMPLATE_ID) {
+    return {
+      file: "./Corporativo.html",
+      label: "Corporativo",
+      attachToQuote: false,
+      headerImage: DEFAULT_TEMPLATE_HEADER_IMAGE,
+    };
+  }
+  return null;
+}
+
+function applyBuiltInTemplateAssets(htmlText, meta) {
+  const out = String(htmlText || "");
+  if (!meta || !String(meta.headerImage || "").trim()) return out;
+  return out.replace(/Encabezadojdl\.png/g, String(meta.headerImage).trim());
+}
+
 async function printSelectedQuoteTemplate() {
   const selectedTemplateId = String(el.quoteTemplateSelect?.value || quoteDraft?.templateId || "").trim();
   if (!selectedTemplateId) return toast("Selecciona una plantilla.");
-  if (selectedTemplateId !== CORPORATE_TEMPLATE_ID) {
-    return toast("Esta opcion imprime la plantilla HTML Corporativo.");
-  }
+  const activeTemplateMeta = getBuiltInQuoteTemplateMeta(selectedTemplateId);
+  if (!activeTemplateMeta) return toast("La plantilla seleccionada no usa formato HTML imprimible.");
   const win = window.open("", "_blank");
   if (!win) return toast("Tu navegador bloqueo la ventana emergente.");
   try {
-    const res = await fetch("./Corporativo.html", { cache: "no-store" });
+    const res = await fetch(activeTemplateMeta.file, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     let html = await res.text();
+    html = applyBuiltInTemplateAssets(html, activeTemplateMeta);
     html = html.replace("<head>", `<head><base href="${escapeHtml(String(window.location.href || ""))}" />`);
     const ctx = buildTemplatePrintContextFromQuoteForm();
     html = fillTemplateHtmlTokens(html, ctx);
@@ -864,8 +1270,8 @@ async function printSelectedQuoteTemplate() {
     }, 700);
   } catch (err) {
     try { win.close(); } catch (_) { }
-    console.error("No se pudo imprimir plantilla Corporativo:", err?.message || err);
-    toast("No se pudo abrir la plantilla Corporativo.");
+    console.error(`No se pudo imprimir plantilla ${activeTemplateMeta.label}:`, err?.message || err);
+    toast(`No se pudo abrir la plantilla ${activeTemplateMeta.label}.`);
   }
 }
 
@@ -1045,7 +1451,7 @@ async function manageSalonesFromQuickMenu() {
 async function manageInstitutionsFromQuickMenu() {
   const action = await promptCrudAction("Empresas");
   if (!action) return;
-  if (action === "add") return openCompanyModal();
+  if (action === "add") return openCompanyModal("");
 
   const companies = (state.companies || []).slice().sort((a, b) =>
     String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base" })
@@ -1214,15 +1620,348 @@ async function manageManagersFromQuickMenu() {
   return disableManagerFlow();
 }
 
-function getGlobalMonthlyGoals() {
+function normalizeGlobalMonthlyGoalRecord(goal) {
+  return {
+    month: String(goal?.month || "").trim(),
+    role: normalizeUserRole(goal?.role || USER_ROLE.SELLER),
+    amount: Math.max(0, Number(goal?.amount || 0)),
+    active: goal?.active === false ? false : true,
+  };
+}
+
+function globalGoalCompositeKey(goalLike) {
+  const row = normalizeGlobalMonthlyGoalRecord(goalLike || {});
+  return `${row.month}|${row.role}`;
+}
+
+function getGlobalMonthlyGoals(options = {}) {
+  const includeInactive = options && options.includeInactive === true;
+  const role = options && options.role ? normalizeUserRole(options.role) : "";
   const rows = Array.isArray(state.globalMonthlyGoals) ? state.globalMonthlyGoals : [];
   return rows
-    .map((g) => ({
-      month: String(g?.month || "").trim(),
-      amount: Math.max(0, Number(g?.amount || 0)),
-    }))
+    .map(normalizeGlobalMonthlyGoalRecord)
     .filter((g) => /^\d{4}-\d{2}$/.test(g.month))
-    .sort((a, b) => a.month.localeCompare(b.month));
+    .filter((g) => !role || g.role === role)
+    .filter((g) => includeInactive || g.active !== false)
+    .sort((a, b) => a.month.localeCompare(b.month) || userRoleLabel(a.role).localeCompare(userRoleLabel(b.role), "es", { sensitivity: "base" }));
+}
+
+function formatMonthKeyLabel(monthKey) {
+  const raw = String(monthKey || "").trim();
+  if (!/^\d{4}-\d{2}$/.test(raw)) return raw;
+  const parsed = new Date(`${raw}-01T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return raw;
+  const label = fmtMonthYear(parsed);
+  return label ? `${label.charAt(0).toUpperCase()}${label.slice(1)}` : raw;
+}
+
+function buildGlobalGoalMonthOptions() {
+  const months = new Set();
+  const now = new Date();
+  const base = new Date(now.getFullYear() - 2, 0, 1);
+  for (let i = 0; i < 96; i++) {
+    const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    months.add(key);
+  }
+  for (const row of getGlobalMonthlyGoals({ includeInactive: true })) {
+    if (/^\d{4}-\d{2}$/.test(row.month)) months.add(row.month);
+  }
+  return Array.from(months).sort((a, b) => a.localeCompare(b));
+}
+
+function renderGlobalGoalMonthSelect(selectedMonth = "") {
+  if (!el.globalGoalMonth) return;
+  const keep = String(selectedMonth || "").trim();
+  const options = buildGlobalGoalMonthOptions();
+  el.globalGoalMonth.innerHTML = `<option value="">Selecciona un mes</option>`;
+  for (const monthKey of options) {
+    const opt = document.createElement("option");
+    opt.value = monthKey;
+    opt.textContent = formatMonthKeyLabel(monthKey);
+    el.globalGoalMonth.appendChild(opt);
+  }
+  el.globalGoalMonth.value = keep;
+}
+
+function renderGlobalGoalsEditSelect(selectedMonth = "") {
+  if (!el.globalGoalsEditSelect) return;
+  const keep = String(selectedMonth || "").trim();
+  const rows = getGlobalMonthlyGoals({ includeInactive: true });
+  el.globalGoalsEditSelect.innerHTML = `<option value="">Crear nueva meta</option>`;
+  for (const row of rows) {
+    const opt = document.createElement("option");
+    opt.value = globalGoalCompositeKey(row);
+    opt.textContent = `${formatMonthKeyLabel(row.month)} | ${userRoleLabel(row.role)}${row.active === false ? " (Inhabilitada)" : ""}`;
+    el.globalGoalsEditSelect.appendChild(opt);
+  }
+  el.globalGoalsEditSelect.value = keep;
+}
+
+function updateGlobalGoalModalControls(month = "") {
+  const key = String(month || "").trim();
+  const target = key ? getGlobalMonthlyGoals({ includeInactive: true }).find((g) => globalGoalCompositeKey(g) === key) : null;
+  if (el.globalGoalActive) el.globalGoalActive.checked = target ? target.active !== false : true;
+  if (el.btnGlobalGoalDisable) {
+    el.btnGlobalGoalDisable.disabled = !target;
+    el.btnGlobalGoalDisable.textContent = target && target.active === false ? "Reactivar" : "Inhabilitar";
+  }
+}
+
+function renderGlobalGoalsTable() {
+  if (!el.globalGoalsBody) return;
+  const rows = getGlobalMonthlyGoals({ includeInactive: true });
+  el.globalGoalsBody.innerHTML = "";
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="5">Sin metas globales registradas.</td>`;
+    el.globalGoalsBody.appendChild(tr);
+    return;
+  }
+  for (const row of rows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(formatMonthKeyLabel(row.month))}</td>
+      <td>${escapeHtml(userRoleLabel(row.role))}</td>
+      <td>${moneyGT(row.amount)}</td>
+      <td>${row.active === false ? "Inhabilitada" : "Activa"}</td>
+      <td class="appointmentActions">
+        <button class="apptIconBtn apptEdit" type="button" data-global-goal-edit="${escapeHtml(globalGoalCompositeKey(row))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn ${row.active === false ? "" : "apptDelete"}" type="button" data-global-goal-toggle="${escapeHtml(globalGoalCompositeKey(row))}" title="${row.active === false ? "Reactivar" : "Inhabilitar"}">${row.active === false ? "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â"}</button>
+      </td>
+    `;
+    el.globalGoalsBody.appendChild(tr);
+  }
+}
+
+function loadGlobalGoalInModal(month = "") {
+  const key = String(month || "").trim();
+  globalGoalEditingKey = key;
+  const target = key ? getGlobalMonthlyGoals({ includeInactive: true }).find((g) => globalGoalCompositeKey(g) === key) : null;
+  renderGlobalGoalsEditSelect(key);
+  renderGlobalGoalMonthSelect(target?.month || "");
+  if (el.globalGoalRole) el.globalGoalRole.value = target ? normalizeUserRole(target.role) : USER_ROLE.SELLER;
+  updateGlobalGoalModalControls(key);
+  if (el.globalGoalAmount) el.globalGoalAmount.value = target ? String(Number(target.amount || 0)) : "";
+}
+
+function openGlobalGoalsModal() {
+  if (!el.globalGoalsBackdrop) return;
+  renderGlobalGoalsTable();
+  loadGlobalGoalInModal("");
+  el.globalGoalsBackdrop.hidden = false;
+  setTimeout(() => {
+    try { el.globalGoalMonth?.focus(); } catch (_) { }
+  }, 0);
+}
+
+function closeGlobalGoalsModal() {
+  if (!el.globalGoalsBackdrop) return;
+  el.globalGoalsBackdrop.hidden = true;
+  globalGoalEditingKey = "";
+  if (el.globalGoalsEditSelect) el.globalGoalsEditSelect.value = "";
+  renderGlobalGoalMonthSelect("");
+  if (el.globalGoalRole) el.globalGoalRole.value = USER_ROLE.SELLER;
+  if (el.globalGoalAmount) el.globalGoalAmount.value = "";
+  if (el.globalGoalActive) el.globalGoalActive.checked = true;
+  if (el.btnGlobalGoalDisable) {
+    el.btnGlobalGoalDisable.disabled = true;
+    el.btnGlobalGoalDisable.textContent = "Inhabilitar";
+  }
+  restoreModuleScreenAfterModal();
+}
+
+function saveGlobalGoalFromModal() {
+  const month = String(el.globalGoalMonth?.value || "").trim();
+  const role = normalizeUserRole(el.globalGoalRole?.value || USER_ROLE.SELLER);
+  const amountRaw = String(el.globalGoalAmount?.value || "").trim();
+  const amount = Math.max(0, Number(amountRaw || 0));
+  if (!/^\d{4}-\d{2}$/.test(month)) return toast("Mes invalido. Usa formato AAAA-MM.");
+  if (!Number.isFinite(amount) || amount <= 0) return toast("Monto de meta invalido.");
+
+  const rows = getGlobalMonthlyGoals({ includeInactive: true });
+  const editingKey = String(globalGoalEditingKey || "").trim();
+  const nextKey = globalGoalCompositeKey({ month, role });
+  const duplicate = rows.find((g) => globalGoalCompositeKey(g) === nextKey && globalGoalCompositeKey(g) !== editingKey);
+  if (duplicate) return toast("Ya existe una meta para ese mes. Seleccionala para editar.");
+
+  const payload = normalizeGlobalMonthlyGoalRecord({
+    month,
+    role,
+    amount,
+    active: el.globalGoalActive?.checked !== false,
+  });
+
+  if (editingKey) {
+    let changed = false;
+    state.globalMonthlyGoals = rows.map((g) => {
+      if (globalGoalCompositeKey(g) !== editingKey) return g;
+      changed = true;
+      return payload;
+    });
+    if (!changed) state.globalMonthlyGoals.push(payload);
+  } else {
+    state.globalMonthlyGoals = rows.concat(payload);
+  }
+
+  state.globalMonthlyGoals = getGlobalMonthlyGoals({ includeInactive: true });
+  persist();
+  renderGlobalGoalsTable();
+  loadGlobalGoalInModal(nextKey);
+  toast(editingKey ? "Meta global actualizada." : "Meta global guardada.");
+}
+
+function toggleGlobalGoalActive(targetMonth = "") {
+  const month = String(targetMonth || globalGoalEditingKey || "").trim();
+  if (!month) return toast("Selecciona una meta global.");
+  let changed = false;
+  state.globalMonthlyGoals = getGlobalMonthlyGoals({ includeInactive: true }).map((g) => {
+    if (globalGoalCompositeKey(g) !== month) return g;
+    changed = true;
+    return { ...g, active: g.active === false ? true : false };
+  });
+  if (!changed) return toast("Meta global no encontrada.");
+  persist();
+  renderGlobalGoalsTable();
+  loadGlobalGoalInModal(month);
+  const current = getGlobalMonthlyGoals({ includeInactive: true }).find((g) => globalGoalCompositeKey(g) === month);
+  toast(current?.active === false ? "Meta global inhabilitada." : "Meta global reactivada.");
+}
+
+function renderSalonesEditSelect(selectedName = "") {
+  if (!el.salonEditSelect) return;
+  const keep = String(selectedName || "").trim();
+  const rows = (state.salones || [])
+    .slice()
+    .sort((a, b) => String(a || "").localeCompare(String(b || ""), "es", { sensitivity: "base" }));
+  el.salonEditSelect.innerHTML = `<option value="">Crear nuevo salon</option>`;
+  for (const name of rows) {
+    const value = String(name || "").trim();
+    if (!value) continue;
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = `${value}${isSalonDisabled(value) ? " (Inhabilitado)" : ""}`;
+    el.salonEditSelect.appendChild(opt);
+  }
+  el.salonEditSelect.value = keep;
+}
+
+function updateSalonModalControls(salonName = "") {
+  const name = String(salonName || "").trim();
+  if (el.salonActive) el.salonActive.checked = name ? !isSalonDisabled(name) : true;
+  if (el.btnSalonDisable) {
+    el.btnSalonDisable.disabled = !name;
+    el.btnSalonDisable.textContent = name && isSalonDisabled(name) ? "Reactivar" : "Inhabilitar";
+  }
+}
+
+function renderSalonesTable() {
+  if (!el.salonesBody) return;
+  const rows = (state.salones || [])
+    .slice()
+    .sort((a, b) => String(a || "").localeCompare(String(b || ""), "es", { sensitivity: "base" }));
+  el.salonesBody.innerHTML = "";
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="3">Sin salones registrados.</td>`;
+    el.salonesBody.appendChild(tr);
+    return;
+  }
+  for (const name of rows) {
+    const label = String(name || "").trim();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(label)}</td>
+      <td>${isSalonDisabled(label) ? "Inhabilitado" : "Activo"}</td>
+      <td class="appointmentActions">
+        <button class="apptIconBtn apptEdit" type="button" data-salon-edit="${escapeHtml(label)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn ${isSalonDisabled(label) ? "" : "apptDelete"}" type="button" data-salon-toggle="${escapeHtml(label)}" title="${isSalonDisabled(label) ? "Reactivar" : "Inhabilitar"}">${isSalonDisabled(label) ? "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â"}</button>
+      </td>
+    `;
+    el.salonesBody.appendChild(tr);
+  }
+}
+
+function loadSalonInModal(salonName = "") {
+  const name = String(salonName || "").trim();
+  editingSalonName = name;
+  renderSalonesEditSelect(name);
+  updateSalonModalControls(name);
+  if (el.salonNameInput) el.salonNameInput.value = name;
+}
+
+function openSalonesModal() {
+  if (!el.salonesBackdrop) return;
+  renderSalonesTable();
+  loadSalonInModal("");
+  el.salonesBackdrop.hidden = false;
+  setTimeout(() => {
+    try { el.salonNameInput?.focus(); } catch (_) { }
+  }, 0);
+}
+
+function closeSalonesModal() {
+  if (!el.salonesBackdrop) return;
+  el.salonesBackdrop.hidden = true;
+  editingSalonName = "";
+  if (el.salonEditSelect) el.salonEditSelect.value = "";
+  if (el.salonNameInput) el.salonNameInput.value = "";
+  if (el.salonActive) el.salonActive.checked = true;
+  if (el.btnSalonDisable) {
+    el.btnSalonDisable.disabled = true;
+    el.btnSalonDisable.textContent = "Inhabilitar";
+  }
+  restoreModuleScreenAfterModal();
+}
+
+function saveSalonFromModal() {
+  const nextName = String(el.salonNameInput?.value || "").trim();
+  if (!nextName) return toast("Nombre del salon es obligatorio.");
+  const currentName = String(editingSalonName || "").trim();
+  const exists = (state.salones || []).some((s) =>
+    String(s || "").trim().toLowerCase() === nextName.toLowerCase() && String(s || "").trim() !== currentName
+  );
+  if (exists) return toast("Ya existe un salon con ese nombre.");
+
+  if (currentName) {
+    state.salones = (state.salones || []).map((s) => (String(s || "").trim() === currentName ? nextName : s));
+    if (isSalonDisabled(currentName)) {
+      state.disabledSalones = Array.from(new Set([...(state.disabledSalones || []), nextName]));
+      enableSalon(currentName);
+    }
+  } else {
+    state.salones = Array.from(new Set([...(state.salones || []), nextName]));
+  }
+
+  if (el.salonActive?.checked === false) {
+    state.disabledSalones = Array.from(new Set([...(state.disabledSalones || []), nextName]));
+  } else {
+    enableSalon(nextName);
+  }
+
+  state.salones.sort((a, b) => String(a || "").localeCompare(String(b || ""), "es", { sensitivity: "base" }));
+  renderRoomSelects();
+  persist();
+  renderSalonesTable();
+  loadSalonInModal(currentName ? nextName : "");
+  if (!currentName) {
+    setTimeout(() => {
+      try { el.salonNameInput?.focus(); } catch (_) { }
+    }, 0);
+  }
+  toast(currentName ? "Salon actualizado." : "Salon agregado.");
+}
+
+function toggleSalonActive(targetSalon = "") {
+  const name = String(targetSalon || editingSalonName || "").trim();
+  if (!name) return toast("Selecciona un salon.");
+  if (isSalonDisabled(name)) enableSalon(name);
+  else state.disabledSalones = Array.from(new Set([...(state.disabledSalones || []), name]));
+  renderRoomSelects();
+  persist();
+  renderSalonesTable();
+  loadSalonInModal(name);
+  toast(isSalonDisabled(name) ? "Salon inhabilitado." : "Salon reactivado.");
 }
 
 async function manageGlobalGoalsFromQuickMenu() {
@@ -1245,16 +1984,23 @@ async function manageGlobalGoalsFromQuickMenu() {
       placeholder: "2026-03",
     });
     if (!month || !/^\d{4}-\d{2}$/.test(month)) return toast("Mes invalido. Usa formato AAAA-MM.");
+    const role = await promptSelectRequired({
+      title: "Rol para meta global",
+      label: "Selecciona rol",
+      options: REPORTABLE_USER_ROLES.map((item) => ({ value: item, label: userRoleLabel(item) })),
+    });
+    if (!role) return;
     const amountRaw = await promptTextRequired({
       title: "Monto meta global",
-      label: `Mes ${month}`,
+      label: `Mes ${month} | ${userRoleLabel(role)}`,
       placeholder: "Ej: 250000",
     });
     const amount = Math.max(0, Number(amountRaw || 0));
     if (!Number.isFinite(amount) || amount <= 0) return toast("Monto de meta invalido.");
-    const next = current.filter((g) => g.month !== month);
-    next.push({ month, amount });
-    next.sort((a, b) => a.month.localeCompare(b.month));
+    const nextKey = globalGoalCompositeKey({ month, role });
+    const next = current.filter((g) => globalGoalCompositeKey(g) !== nextKey);
+    next.push({ month, role, amount });
+    next.sort((a, b) => a.month.localeCompare(b.month) || userRoleLabel(a.role).localeCompare(userRoleLabel(b.role), "es", { sensitivity: "base" }));
     state.globalMonthlyGoals = next;
     persist();
     return toast("Meta global mensual guardada.");
@@ -1264,35 +2010,35 @@ async function manageGlobalGoalsFromQuickMenu() {
   const selectedMonth = await promptSelectRequired({
     title: action === "edit" ? "Editar meta global" : "Eliminar meta global",
     options: current.map((g) => ({
-      value: g.month,
-      label: `${g.month} - Q ${g.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: globalGoalCompositeKey(g),
+      label: `${g.month} | ${userRoleLabel(g.role)} - Q ${g.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     })),
   });
   if (!selectedMonth) return;
 
   if (action === "edit") {
-    const target = current.find((g) => g.month === selectedMonth);
+    const target = current.find((g) => globalGoalCompositeKey(g) === selectedMonth);
     if (!target) return;
     const amountRaw = await promptTextRequired({
       title: "Nuevo monto meta global",
-      label: `Mes ${selectedMonth}`,
+      label: `Mes ${target.month} | ${userRoleLabel(target.role)}`,
       placeholder: String(target.amount),
     });
     const amount = Math.max(0, Number(amountRaw || 0));
     if (!Number.isFinite(amount) || amount <= 0) return toast("Monto de meta invalido.");
-    state.globalMonthlyGoals = current.map((g) => (g.month === selectedMonth ? { month: selectedMonth, amount } : g));
+    state.globalMonthlyGoals = current.map((g) => (globalGoalCompositeKey(g) === selectedMonth ? { month: target.month, role: target.role, amount } : g));
     persist();
     return toast("Meta global actualizada.");
   }
 
   const ok = await modernConfirm({
     title: "Eliminar meta global",
-    message: `Esta seguro de eliminar la meta global del mes ${selectedMonth}?`,
+    message: `Esta seguro de eliminar la meta global seleccionada?`,
     confirmText: "Si, eliminar",
     cancelText: "No",
   });
   if (!ok) return;
-  state.globalMonthlyGoals = current.filter((g) => g.month !== selectedMonth);
+  state.globalMonthlyGoals = current.filter((g) => globalGoalCompositeKey(g) !== selectedMonth);
   persist();
   toast("Meta global eliminada.");
 }
@@ -1867,6 +2613,29 @@ function readImageFileAsDataUrl(file) {
   });
 }
 
+function readBlobAsDataUrl(blob) {
+  return new Promise((resolve) => {
+    if (!blob) return resolve("");
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function resolveTemplateImageAssetToDataUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (isImageDataUrl(raw)) return raw;
+  try {
+    const res = await fetch(raw, { cache: "no-store" });
+    if (!res.ok) return "";
+    const blob = await res.blob();
+    return await readBlobAsDataUrl(blob);
+  } catch (_) {
+    return "";
+  }
+}
 function isTemplateSignatureToken(token) {
   const t = String(token || "").toLowerCase().trim();
   return t === "{{cliente.firma}}" || t === "{{vendedor.firma}}" || t.includes(".firma");
@@ -2185,45 +2954,183 @@ function cycleChecklistStatus(status) {
   return normalizeChecklistStatus(next);
 }
 
+function normalizeChecklistSectionRecord(raw) {
+  const name = String(raw?.name || raw?.label || "").trim();
+  if (!name) return null;
+  return {
+    id: String(raw?.id || uid()).trim(),
+    name,
+    active: raw?.active !== false,
+  };
+}
+
 function ensureChecklistStores() {
   if (!Array.isArray(state.checklistTemplateItems)) state.checklistTemplateItems = [];
   if (!Array.isArray(state.checklistTemplateSections)) state.checklistTemplateSections = ["General"];
-  state.checklistTemplateSections = state.checklistTemplateSections
-    .map((s) => String(s || "").trim())
+  if (!Array.isArray(state.checklistTemplates)) {
+    const legacySections = state.checklistTemplateSections
+      .map((s) => String(s || "").trim())
+      .filter(Boolean);
+    const sectionMap = new Map();
+    const sections = Array.from(new Set(["General", ...legacySections])).map((name) => {
+      const rec = { id: uid(), name, active: true };
+      sectionMap.set(name.toLowerCase(), rec.id);
+      return rec;
+    });
+    const items = (state.checklistTemplateItems || [])
+      .map((raw) => {
+        const item = normalizeChecklistTemplateItem(raw);
+        if (!item) return null;
+        const sectionName = String(raw?.section || "General").trim() || "General";
+        item.sectionId = sectionMap.get(sectionName.toLowerCase()) || sections[0]?.id || "";
+        return item;
+      })
+      .filter(Boolean);
+    state.checklistTemplates = [{
+      id: "tpl_default",
+      name: "Checklist general",
+      active: true,
+      sections,
+      items,
+    }];
+  }
+  state.checklistTemplates = (state.checklistTemplates || [])
+    .map(normalizeChecklistTemplateRecord)
     .filter(Boolean);
-  if (!state.checklistTemplateSections.length) state.checklistTemplateSections = ["General"];
+  if (!state.checklistTemplates.length) {
+    state.checklistTemplates = [normalizeChecklistTemplateRecord({
+      id: "tpl_default",
+      name: "Checklist general",
+      active: true,
+      sections: [{ id: uid(), name: "General", active: true }],
+      items: [],
+    })];
+  }
+  syncLegacyChecklistStateFromTemplates();
   if (!state.eventChecklists || typeof state.eventChecklists !== "object") state.eventChecklists = {};
 }
 
 function normalizeChecklistTemplateItem(raw) {
   const label = String(raw?.label || raw?.name || "").trim();
   if (!label) return null;
-  const section = String(raw?.section || "General").trim() || "General";
   return {
     id: String(raw?.id || uid()).trim(),
     label,
-    section,
+    sectionId: String(raw?.sectionId || "").trim(),
     active: raw?.active !== false,
   };
 }
 
-function getChecklistSections() {
-  ensureChecklistStores();
-  const fromState = (state.checklistTemplateSections || []).map((s) => String(s || "").trim()).filter(Boolean);
-  const fromItems = (state.checklistTemplateItems || [])
-    .map((x) => String(x?.section || "").trim())
+function normalizeChecklistTemplateRecord(raw) {
+  const name = String(raw?.name || raw?.title || "").trim() || "Checklist";
+  let sections = Array.isArray(raw?.sections) ? raw.sections.map(normalizeChecklistSectionRecord).filter(Boolean) : [];
+  const sectionMap = new Map(sections.map((s) => [String(s.id || "").trim(), s]));
+  if (!sections.some((s) => String(s.name || "").trim().toLowerCase() === "general")) {
+    const general = normalizeChecklistSectionRecord({ name: "General" });
+    sections = [general, ...sections];
+    sectionMap.set(general.id, general);
+  }
+  const generalId = sections[0]?.id || uid();
+  const items = (Array.isArray(raw?.items) ? raw.items : [])
+    .map((item) => {
+      const normalized = normalizeChecklistTemplateItem(item);
+      if (!normalized) return null;
+      let sectionId = String(normalized.sectionId || "").trim();
+      if (!sectionId && item?.section) {
+        const sectionName = String(item.section || "").trim().toLowerCase();
+        const found = sections.find((s) => String(s.name || "").trim().toLowerCase() === sectionName);
+        sectionId = String(found?.id || "");
+      }
+      normalized.sectionId = sectionId && sectionMap.has(sectionId) ? sectionId : generalId;
+      return normalized;
+    })
     .filter(Boolean);
-  const merged = Array.from(new Set(["General", ...fromState, ...fromItems]));
-  state.checklistTemplateSections = merged;
-  return merged;
+  return {
+    id: String(raw?.id || uid()).trim(),
+    name,
+    active: raw?.active !== false,
+    sections,
+    items,
+  };
 }
 
-function getChecklistTemplateItems() {
-  ensureChecklistStores();
-  state.checklistTemplateItems = (state.checklistTemplateItems || [])
-    .map(normalizeChecklistTemplateItem)
+function syncLegacyChecklistStateFromTemplates() {
+  const templates = Array.isArray(state.checklistTemplates) ? state.checklistTemplates : [];
+  const fallback = templates.find((tpl) => tpl?.active !== false) || templates[0] || null;
+  const sections = Array.isArray(fallback?.sections) ? fallback.sections : [];
+  const items = Array.isArray(fallback?.items) ? fallback.items : [];
+  state.checklistTemplateSections = sections
+    .filter((s) => s?.active !== false)
+    .map((s) => String(s?.name || "").trim())
     .filter(Boolean);
-  return state.checklistTemplateItems.filter((x) => x.active !== false);
+  if (!state.checklistTemplateSections.length) state.checklistTemplateSections = ["General"];
+  state.checklistTemplateItems = items
+    .filter((x) => x?.active !== false)
+    .map((x) => {
+      const section = sections.find((s) => String(s?.id || "") === String(x?.sectionId || ""));
+      return {
+        id: String(x?.id || uid()).trim(),
+        label: String(x?.label || "").trim(),
+        section: String(section?.name || "General").trim() || "General",
+        active: x?.active !== false,
+      };
+    })
+    .filter((x) => x.label);
+}
+
+function getChecklistTemplates(options = {}) {
+  ensureChecklistStores();
+  const includeInactive = options && options.includeInactive === true;
+  return (state.checklistTemplates || [])
+    .map(normalizeChecklistTemplateRecord)
+    .filter((tpl) => includeInactive || tpl.active !== false);
+}
+
+function getChecklistTemplateById(templateId = "", includeInactive = true) {
+  const key = String(templateId || "").trim();
+  if (!key) return null;
+  return getChecklistTemplates({ includeInactive }).find((tpl) => String(tpl.id || "") === key) || null;
+}
+
+function getDefaultChecklistTemplate(includeInactive = false) {
+  const rows = getChecklistTemplates({ includeInactive: includeInactive === true });
+  if (!rows.length) return null;
+  return rows.find((tpl) => tpl.active !== false) || rows[0] || null;
+}
+
+function getChecklistSections(templateId = "") {
+  const template = getChecklistTemplateById(templateId, true) || getDefaultChecklistTemplate(true);
+  const rows = Array.isArray(template?.sections) ? template.sections : [];
+  return rows.filter((s) => s?.active !== false);
+}
+
+function getChecklistTemplateItems(templateId = "") {
+  const template = getChecklistTemplateById(templateId, true) || getDefaultChecklistTemplate(true);
+  const sections = Array.isArray(template?.sections) ? template.sections : [];
+  const activeSections = new Map(
+    sections
+      .filter((s) => s?.active !== false)
+      .map((s) => [String(s.id || ""), String(s.name || "General").trim() || "General"])
+  );
+  const items = Array.isArray(template?.items) ? template.items : [];
+  return items
+    .filter((x) => x?.active !== false)
+    .filter((x) => {
+      const sectionId = String(x?.sectionId || "").trim();
+      return !sectionId || activeSections.has(sectionId);
+    })
+    .map((x) => {
+      const sectionId = String(x?.sectionId || "").trim();
+      const section = activeSections.get(sectionId) || "General";
+      return {
+        id: String(x?.id || uid()).trim(),
+        label: String(x?.label || "").trim(),
+        sectionId: sectionId || "",
+        section,
+        active: x?.active !== false,
+      };
+    })
+    .filter((x) => x.label);
 }
 
 function normalizeEventChecklistRecord(raw, fallbackEventId = "") {
@@ -2231,6 +3138,8 @@ function normalizeEventChecklistRecord(raw, fallbackEventId = "") {
   const items = Array.isArray(raw?.items) ? raw.items : [];
   return {
     eventId,
+    templateKey: String(raw?.templateKey || raw?.templateId || "").trim(),
+    templateName: String(raw?.templateName || "").trim(),
     notes: String(raw?.notes || "").trim(),
     items: items.map((it) => ({
       id: String(it?.id || uid()).trim(),
@@ -2263,14 +3172,17 @@ function getEventChecklistMeta(eventId) {
   };
 }
 
-function buildEventChecklistDraft(eventId) {
+function buildEventChecklistDraft(eventId, preferredTemplateId = "") {
   ensureChecklistStores();
   const key = String(eventId || "").trim();
   const ev = (state.events || []).find((x) => String(x.id || "") === key);
   if (!ev) return null;
-  const templateItems = getChecklistTemplateItems();
   const savedRaw = state.eventChecklists?.[key] || null;
   const saved = savedRaw ? normalizeEventChecklistRecord(savedRaw, key) : null;
+  const chosenTemplate = getChecklistTemplateById(preferredTemplateId, true)
+    || getChecklistTemplateById(saved?.templateKey || "", true)
+    || getDefaultChecklistTemplate(true);
+  const templateItems = getChecklistTemplateItems(chosenTemplate?.id || "");
   const savedByTemplate = new Map();
   const savedByLabel = new Map();
   for (const it of saved?.items || []) {
@@ -2294,6 +3206,8 @@ function buildEventChecklistDraft(eventId) {
   });
   return {
     eventId: key,
+    templateKey: String(chosenTemplate?.id || "").trim(),
+    templateName: String(chosenTemplate?.name || "").trim(),
     eventName: String(ev.name || "").trim(),
     eventDate: String(ev.date || "").trim(),
     salon: String(ev.salon || "").trim(),
@@ -2304,10 +3218,59 @@ function buildEventChecklistDraft(eventId) {
   };
 }
 
+function setActiveModuleScreen(screen) {
+  const target = String(screen || "").trim();
+  if (el.moduleHubScreen) el.moduleHubScreen.hidden = target !== "hub";
+  if (el.reportsHubScreen) el.reportsHubScreen.hidden = target !== "reports";
+  if (el.settingsScreen) el.settingsScreen.hidden = target !== "settings";
+}
+
+function showModuleHub() {
+  setActiveModuleScreen("hub");
+}
+
+function showCalendarModule() {
+  setActiveModuleScreen("");
+}
+
+function showReportsHub() {
+  setActiveModuleScreen("reports");
+}
+
+function showSettingsHub() {
+  setQuickAddGroupOpen(true);
+  setSettingsPanelOpen(true);
+}
+
+function getActiveModuleScreenName() {
+  if (el.settingsScreen && !el.settingsScreen.hidden) return "settings";
+  if (el.reportsHubScreen && !el.reportsHubScreen.hidden) return "reports";
+  if (el.moduleHubScreen && !el.moduleHubScreen.hidden) return "hub";
+  return "";
+}
+
+function prepareModuleModalOpen(preferredScreen = "") {
+  const target = String(preferredScreen || "").trim() || getActiveModuleScreenName();
+  moduleModalReturnScreen = target;
+  if (target) {
+    setActiveModuleScreen("");
+  }
+}
+
+function restoreModuleScreenAfterModal() {
+  const target = String(moduleModalReturnScreen || "").trim();
+  if (!target) return;
+  setActiveModuleScreen(target);
+  moduleModalReturnScreen = "";
+}
+
 function setSettingsPanelOpen(open) {
-  if (!el.settingsPanel || !el.btnSettings) return;
-  el.settingsPanel.hidden = !open;
-  el.btnSettings.setAttribute("aria-expanded", open ? "true" : "false");
+  if (!el.settingsPanel) return;
+  if (el.settingsScreen) el.settingsScreen.hidden = !open;
+  if (el.btnSettings) el.btnSettings.setAttribute("aria-expanded", open ? "true" : "false");
+  if (open) {
+    setActiveModuleScreen("settings");
+  }
   if (open) {
     if (!el.settingsPanel.hasAttribute("tabindex")) {
       el.settingsPanel.setAttribute("tabindex", "-1");
@@ -2316,6 +3279,9 @@ function setSettingsPanelOpen(open) {
       try { el.settingsPanel.focus(); } catch (_) { }
     }, 0);
   } else {
+    if (getActiveModuleScreenName() === "settings") {
+      showCalendarModule();
+    }
     setQuickAddGroupOpen(false);
     setReportsGroupOpen(false);
   }
@@ -2346,14 +3312,31 @@ function normalizeBucketKey(value) {
     .trim();
 }
 
+function tokenizeLikeSearch(value) {
+  const normalized = normalizeBucketKey(value);
+  return normalized ? normalized.split(/\s+/).filter(Boolean) : [];
+}
+
+function matchesLikeSearch(haystack, query) {
+  const tokens = Array.isArray(query) ? query.filter(Boolean) : tokenizeLikeSearch(query);
+  if (!tokens.length) return true;
+  const normalizedHaystack = normalizeBucketKey(haystack);
+  if (!normalizedHaystack) return false;
+  return tokens.every((token) => normalizedHaystack.includes(token));
+}
+
 function matchesAliases(value, aliases = []) {
   const base = normalizeBucketKey(value);
   if (!base) return false;
   return aliases.some((a) => base.includes(normalizeBucketKey(a)));
 }
 
+function formatMoneyGTValue(v) {
+  return Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function moneyGT(v) {
-  return `Q ${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `Q ${formatMoneyGTValue(v)}`;
 }
 
 function getEventLastUpdatedLabel(ev) {
@@ -2462,8 +3445,8 @@ function getSalesReportFilteredRows() {
     if (search) {
       const blob = [
         r.refId, r.seller, r.eventType, r.salon, r.company, r.manager, r.status,
-      ].join(" ").toLowerCase();
-      if (!blob.includes(search)) return false;
+      ].join(" ");
+      if (!matchesLikeSearch(blob, search)) return false;
     }
     return true;
   }).sort((a, b) => {
@@ -2635,11 +3618,11 @@ function exportSalesReportToExcel() {
   <meta name="Generator" content="CRM Jardines" />
   <style>
     body{ font-family: Calibri, Arial, sans-serif; background:#eef3fb; margin:0; padding:16px; color:#0f172a; }
-    .card{ background:#fff; border:1px solid #c5d4ea; border-radius:10px; overflow:hidden; }
+    .card{ background:#ffffff; border:1px solid #c5d4ea; border-radius:10px; overflow:hidden; }
     .meta{ padding:10px 14px; border-top:1px solid #bfd3ee; border-bottom:1px solid #bfd3ee; background:#eaf3ff; font-size:12px; }
     .meta div{ margin:2px 0; }
     table{ width:100%; border-collapse:collapse; }
-    th,td{ border:1px solid #c7d5ea; padding:6px 7px; font-size:11px; white-space:nowrap; }
+    th,td{ border:1px solid #c7d5ea; padding:6px 7px; font-size:10.5px; white-space:nowrap; }
     thead th{ background:#0f3c67; color:#fff; font-weight:700; text-transform:uppercase; }
     .titleTable{ width:100%; border-collapse:collapse; }
     .titleCell{
@@ -2710,21 +3693,21 @@ function openSalesReportModal() {
 function closeSalesReportModal() {
   if (!el.salesReportBackdrop) return;
   el.salesReportBackdrop.hidden = true;
+  restoreModuleScreenAfterModal();
 }
 
 function weekInputFromDate(date) {
-  const d = stripTime(date);
-  const day = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - day + 3);
-  const year = d.getFullYear();
-  const firstThursday = new Date(year, 0, 4);
-  const firstDay = (firstThursday.getDay() + 6) % 7;
-  firstThursday.setDate(firstThursday.getDate() - firstDay + 3);
-  const week = 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000));
-  return `${year}-W${pad2(week)}`;
+  return toISODate(startOfWeek(date));
 }
 
 function mondayFromWeekInput(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return startOfWeek(new Date());
+  const dateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateMatch) {
+    const parsed = new Date(`${raw}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? startOfWeek(new Date()) : startOfWeek(parsed);
+  }
   const m = String(value || "").match(/^(\d{4})-W(\d{2})$/);
   if (!m) return startOfWeek(new Date());
   const year = Number(m[1]);
@@ -2741,6 +3724,27 @@ function getOccupancyWeekRange() {
   const monday = mondayFromWeekInput(el.occupancyReportWeek?.value || "");
   const sunday = addDays(monday, 6);
   return { monday, sunday };
+}
+
+function updateOccupancyReportWeekUi() {
+  const { monday, sunday } = getOccupancyWeekRange();
+  occupancySelectedDayIso = toISODate(monday);
+  if (el.occupancyReportWeek) {
+    el.occupancyReportWeek.value = weekInputFromDate(monday);
+  }
+  if (el.occupancyReportSubtitle) {
+    el.occupancyReportSubtitle.textContent = `Semana ${toISODate(monday)} a ${toISODate(sunday)} (Lunes a Domingo)`;
+  }
+  renderOccupancyReportTable();
+}
+
+function moveOccupancyReportWeek(deltaWeeks = 0) {
+  const { monday } = getOccupancyWeekRange();
+  const nextMonday = addDays(monday, Number(deltaWeeks || 0) * 7);
+  if (el.occupancyReportWeek) {
+    el.occupancyReportWeek.value = weekInputFromDate(nextMonday);
+  }
+  updateOccupancyReportWeekUi();
 }
 
 function getLatestQuoteSnapshotFromSeries(series) {
@@ -3071,20 +4075,65 @@ function renderOccupancyDayDetail(rows) {
         <span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.25))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.6))}">${escapeHtml(r.status)}</span>
         <strong>${escapeHtml(r.refId)}</strong>
       </div>
-      <div class="occupancyEventGrid">
-        <span><b>Evento:</b> ${escapeHtml(r.eventName || "-")}</span>
-        <span><b>Horario:</b> ${escapeHtml(r.startTime)} - ${escapeHtml(r.endTime)}</span>
-        <span><b>Salon:</b> ${escapeHtml(r.salon || "-")}</span>
-        <span><b>Institucion:</b> ${escapeHtml(r.company || "-")}</span>
-        <span><b>Encargado:</b> ${escapeHtml(r.manager || "-")}</span>
-        <span><b>Vendedor:</b> ${escapeHtml(r.seller || "-")}</span>
-        <span><b>PAX:</b> ${escapeHtml(String(r.pax || 0))}</span>
-        <span><b>Ult. cotizacion:</b> ${buildOccupancyQuoteActionHtml(r)}</span>
-        <span><b>Ult. informe:</b> ${buildOccupancyMenuMontajeActionHtml(r)}</span>
-        <span><b>Check List:</b> ${buildOccupancyChecklistActionHtml(r)}</span>
-        <span><b>Total evento:</b> ${escapeHtml(moneyGT(r.totalEvent || 0))}</span>
-        <span><b>Ingreso dia:</b> ${escapeHtml(moneyGT(r.incomePerDay || 0))}</span>
-        <span><b>Ingreso salon-dia:</b> ${escapeHtml(moneyGT(r.incomePerSalonDay || 0))}</span>
+      <div class="occupancyEventBody">
+        <div class="occupancyInfoGrid">
+          <div class="occupancyInfoItem occupancyInfoWide">
+            <small>Evento</small>
+            <strong title="${escapeHtml(r.eventName || "-")}">${escapeHtml(r.eventName || "-")}</strong>
+          </div>
+          <div class="occupancyInfoItem">
+            <small>Horario</small>
+            <strong>${escapeHtml(r.startTime)} - ${escapeHtml(r.endTime)}</strong>
+          </div>
+          <div class="occupancyInfoItem">
+            <small>Salon</small>
+            <strong>${escapeHtml(r.salon || "-")}</strong>
+          </div>
+          <div class="occupancyInfoItem">
+            <small>Institucion</small>
+            <strong title="${escapeHtml(r.company || "-")}">${escapeHtml(r.company || "-")}</strong>
+          </div>
+          <div class="occupancyInfoItem">
+            <small>Encargado</small>
+            <strong title="${escapeHtml(r.manager || "-")}">${escapeHtml(r.manager || "-")}</strong>
+          </div>
+          <div class="occupancyInfoItem">
+            <small>Vendedor</small>
+            <strong title="${escapeHtml(r.seller || "-")}">${escapeHtml(r.seller || "-")}</strong>
+          </div>
+          <div class="occupancyInfoItem">
+            <small>PAX</small>
+            <strong>${escapeHtml(String(r.pax || 0))}</strong>
+          </div>
+        </div>
+        <div class="occupancyMetricsGrid">
+          <div class="occupancyMetricItem">
+            <small>Total evento</small>
+            <strong>${escapeHtml(moneyGT(r.totalEvent || 0))}</strong>
+          </div>
+          <div class="occupancyMetricItem">
+            <small>Ingreso dia</small>
+            <strong>${escapeHtml(moneyGT(r.incomePerDay || 0))}</strong>
+          </div>
+          <div class="occupancyMetricItem">
+            <small>Ingreso salon-dia</small>
+            <strong>${escapeHtml(moneyGT(r.incomePerSalonDay || 0))}</strong>
+          </div>
+        </div>
+        <div class="occupancyActionGrid">
+          <div class="occupancyActionItem">
+            <small>Ult. cotizacion</small>
+            <div>${buildOccupancyQuoteActionHtml(r)}</div>
+          </div>
+          <div class="occupancyActionItem">
+            <small>Ult. informe</small>
+            <div>${buildOccupancyMenuMontajeActionHtml(r)}</div>
+          </div>
+          <div class="occupancyActionItem">
+            <small>Check List</small>
+            <div>${buildOccupancyChecklistActionHtml(r)}</div>
+          </div>
+        </div>
       </div>
     </article>
   `).join("");
@@ -3184,12 +4233,12 @@ function exportOccupancyReportToExcel() {
   <meta name="ProgId" content="Excel.Sheet" />
   <style>
     body{ font-family: Calibri, Arial, sans-serif; background:#eef3fb; margin:0; padding:16px; color:#0f172a; }
-    .card{ background:#fff; border:1px solid #c5d4ea; border-radius:10px; overflow:hidden; }
+    .card{ background:#ffffff; border:1px solid #c5d4ea; border-radius:10px; overflow:hidden; }
     .titleCell{ border:1px solid #c7d5ea; background:#d8e3f3; color:#000; font-weight:800; font-size:20px; padding:12px 14px; text-transform:uppercase; }
     .meta{ padding:10px 14px; border-top:1px solid #bfd3ee; border-bottom:1px solid #bfd3ee; background:#eaf3ff; font-size:12px; }
     .meta div{ margin:2px 0; }
     table{ width:100%; border-collapse:collapse; }
-    th,td{ border:1px solid #c7d5ea; padding:6px 7px; font-size:11px; white-space:nowrap; }
+    th,td{ border:1px solid #c7d5ea; padding:6px 7px; font-size:10.5px; white-space:nowrap; }
     thead th{ background:#0f3c67; color:#fff; font-weight:700; text-transform:uppercase; }
   </style>
 </head>
@@ -3235,38 +4284,1272 @@ function openOccupancyReportModal() {
   if (!String(el.occupancyReportWeek?.value || "").trim()) {
     setOccupancyCurrentWeek();
   }
-  const { monday, sunday } = getOccupancyWeekRange();
-  if (el.occupancyReportSubtitle) {
-    el.occupancyReportSubtitle.textContent = `Semana ${toISODate(monday)} a ${toISODate(sunday)} (Lunes a Domingo)`;
-  }
-  renderOccupancyReportTable();
+  updateOccupancyReportWeekUi();
   el.occupancyReportBackdrop.hidden = false;
 }
 
 function closeOccupancyReportModal() {
   if (!el.occupancyReportBackdrop) return;
   el.occupancyReportBackdrop.hidden = true;
+  restoreModuleScreenAfterModal();
+}
+
+function dashboardMonthKeyFromIso(iso) {
+  const raw = String(iso || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return "";
+  return raw.slice(0, 7);
+}
+
+function dashboardResolveMonthKey() {
+  const month = String(el.dashboardReportMonth?.value || "").trim();
+  if (/^\d{4}-\d{2}$/.test(month)) return month;
+  const from = String(el.dashboardReportFrom?.value || "").trim();
+  const fallback = dashboardMonthKeyFromIso(from);
+  return fallback || toISODate(new Date()).slice(0, 7);
+}
+
+function dashboardMonthBounds(monthKey) {
+  const m = String(monthKey || "").trim();
+  if (!/^\d{4}-\d{2}$/.test(m)) {
+    const now = new Date();
+    const start = startOfMonth(now);
+    const end = addDays(startOfMonth(addMonths(start, 1)), -1);
+    return { fromIso: toISODate(start), toIso: toISODate(end) };
+  }
+  const [y, mo] = m.split("-").map(Number);
+  const start = new Date(y, mo - 1, 1);
+  start.setHours(0, 0, 0, 0);
+  const end = addDays(startOfMonth(addMonths(start, 1)), -1);
+  return { fromIso: toISODate(start), toIso: toISODate(end) };
+}
+
+function setDashboardFiltersByMonth(monthKey) {
+  const { fromIso, toIso } = dashboardMonthBounds(monthKey);
+  if (el.dashboardReportMonth) el.dashboardReportMonth.value = String(monthKey || "").trim();
+  if (el.dashboardReportFrom) el.dashboardReportFrom.value = fromIso;
+  if (el.dashboardReportTo) el.dashboardReportTo.value = toIso;
+}
+
+function dashboardResolvePeriod() {
+  return String(el.dashboardReportPeriod?.value || "month").trim() === "week" ? "week" : "month";
+}
+
+function dashboardWeekBounds(weekIso) {
+  const monday = mondayFromWeekInput(weekIso || "");
+  const sunday = addDays(monday, 6);
+  return { fromIso: toISODate(monday), toIso: toISODate(sunday) };
+}
+
+function setDashboardFiltersByWeek(weekIso) {
+  const { fromIso, toIso } = dashboardWeekBounds(weekIso);
+  if (el.dashboardReportWeek) el.dashboardReportWeek.value = fromIso;
+  if (el.dashboardReportFrom) el.dashboardReportFrom.value = fromIso;
+  if (el.dashboardReportTo) el.dashboardReportTo.value = toIso;
+  if (el.dashboardReportMonth && /^\d{4}-\d{2}$/.test(fromIso.slice(0, 7))) {
+    el.dashboardReportMonth.value = fromIso.slice(0, 7);
+  }
+}
+
+function syncDashboardPeriodControls() {
+  const period = dashboardResolvePeriod();
+  const isWeek = period === "week";
+  if (el.dashboardReportWeekField) el.dashboardReportWeekField.hidden = !isWeek;
+  if (el.dashboardReportMonth) el.dashboardReportMonth.disabled = isWeek;
+  if (el.dashboardReportWeek) el.dashboardReportWeek.disabled = !isWeek;
+  if (el.btnDashboardReportCurrentMonth) {
+    el.btnDashboardReportCurrentMonth.textContent = isWeek ? "Semana actual" : "Mes actual";
+  }
+}
+
+function dashboardFormatRangeLabel(period, fromIso, toIso, monthKey) {
+  if (period === "week") return `Semana ${fromIso} a ${toIso}`;
+  return formatMonthKeyLabel(monthKey || dashboardMonthKeyFromIso(fromIso || ""));
+}
+
+function dashboardResolveRole() {
+  return normalizeUserRole(el.dashboardReportRole?.value || USER_ROLE.SELLER);
+}
+
+function dashboardGetActiveUsersByRole(role = dashboardResolveRole()) {
+  const targetRole = normalizeUserRole(role);
+  return (state.users || [])
+    .map(normalizeUserRecord)
+    .filter((u) => u.active !== false)
+    .filter((u) => REPORTABLE_USER_ROLES.includes(targetRole) ? normalizeUserRole(u.role) === targetRole : true)
+    .sort((a, b) => String(a.fullName || a.name || "").localeCompare(String(b.fullName || b.name || ""), "es", { sensitivity: "base" }));
+}
+
+function renderDashboardSellerFilterOptions() {
+  if (!el.dashboardReportSeller) return;
+  const previous = String(el.dashboardReportSeller.value || "").trim();
+  const role = dashboardResolveRole();
+  const roleLabel = userRoleLabel(role);
+  const sellers = dashboardGetActiveUsersByRole(role);
+  el.dashboardReportSeller.innerHTML = "";
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = `Selecciona ${roleLabel.toLowerCase()}`;
+  el.dashboardReportSeller.appendChild(empty);
+  for (const s of sellers) {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.fullName || s.name;
+    el.dashboardReportSeller.appendChild(opt);
+  }
+  if (previous && sellers.some((s) => String(s.id) === previous)) {
+    el.dashboardReportSeller.value = previous;
+  }
+}
+
+function dashboardResolveScopeUserId() {
+  const scope = String(el.dashboardReportScope?.value || "mine").trim();
+  const sessionUserId = String(authSession.userId || "").trim();
+  const authUser = normalizeUserRecord(getAuthUserRecord() || {});
+  const role = dashboardResolveRole();
+  const selectedSellerId = String(el.dashboardReportSeller?.value || "").trim();
+  if (scope === "mine" && sessionUserId && normalizeUserRole(authUser.role) === role) return sessionUserId;
+  if (scope === "seller" && selectedSellerId) return selectedSellerId;
+  return "";
+}
+
+function dashboardNormalizeEventType(value) {
+  const norm = normalizeBucketKey(value);
+  if (matchesAliases(norm, ["corporativo", "corporate", "empresa", "empresarial"])) return "Corporativo";
+  if (matchesAliases(norm, ["social", "boda", "xv", "xv anos", "cumple", "aniversario", "fiesta"])) return "Social";
+  return "Individual";
+}
+
+function dashboardNormalizeStatus(status) {
+  const raw = String(status || "").trim();
+  const norm = normalizeBucketKey(raw);
+  if (matchesAliases(norm, ["1er cotizacion", "1ra cotizacion", "primera cotizacion", "1er reserva", "primera reserva"])) {
+    return STATUS.PRIMERA;
+  }
+  return raw;
+}
+
+function buildDashboardReportRows(fromIso, toIso) {
+  const groups = new Map();
+  for (const ev of state.events || []) {
+    const key = reservationKeyFromEvent(ev);
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(ev);
+  }
+  const rows = [];
+  for (const [reservationKey, seriesRaw] of groups.entries()) {
+    const series = (seriesRaw || []).slice().sort((a, b) => {
+      const d = String(a.date || "").localeCompare(String(b.date || ""));
+      if (d !== 0) return d;
+      return String(a.startTime || "").localeCompare(String(b.startTime || ""));
+    });
+    if (!series.length) continue;
+    const intersects = series.some((ev) => {
+      const date = String(ev.date || "");
+      if (!date) return false;
+      if (fromIso && date < fromIso) return false;
+      if (toIso && date > toIso) return false;
+      return true;
+    });
+    if (!intersects) continue;
+    const head = series[0];
+    const quoteSnapshot = getLatestQuoteSnapshotFromSeries(series) || getLatestQuoteSnapshotForEvent(head) || head.quote || {};
+    const totals = getQuoteTotals(quoteSnapshot || {});
+    const eventTypeRaw = String(quoteSnapshot?.eventType || head.name || "").trim();
+    rows.push({
+      reservationKey: String(reservationKey),
+      userId: String(head.userId || "").trim(),
+      status: dashboardNormalizeStatus(head.status),
+      eventDate: String(head.date || "").trim(),
+      monthKey: dashboardMonthKeyFromIso(head.date),
+      salon: String(head.salon || "").trim(),
+      total: Math.max(0, Number(totals.total || 0)),
+      type: dashboardNormalizeEventType(eventTypeRaw),
+    });
+  }
+  return rows;
+}
+
+function isGoalStatus(status) {
+  const s = String(status || "").trim();
+  return s === STATUS.CONFIRMADO || s === STATUS.PRERESERVA;
+}
+
+function dashboardGoalCardState(progressPct) {
+  if (progressPct >= 100) return "over";
+  if (progressPct >= 80) return "near";
+  return "far";
+}
+
+function getDashboardHeroStatusMeta() {
+  return [
+    { key: STATUS.CONFIRMADO, label: "Confirmado", color: "#10c972" },
+    { key: STATUS.PRIMERA, label: "1era. Cotizacion", color: "#aa97df" },
+    { key: STATUS.SEGUIMIENTO, label: "Negociacion", color: "#ff6b3a" },
+    { key: STATUS.PERDIDO, label: "Perdido", color: "#7c5cff" },
+    { key: STATUS.LISTA, label: "Lista de Espera", color: "#f5c400" },
+    { key: STATUS.PRERESERVA, label: "Pre Reserva", color: "#d07db8" },
+    { key: STATUS.CANCELADO, label: "Cancelado", color: "#e42a48" },
+  ];
+}
+
+function buildDashboardHeroStatusSummary(rows) {
+  const meta = getDashboardHeroStatusMeta();
+  const counters = new Map(meta.map((item) => [item.key, 0]));
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const key = String(row?.status || "").trim();
+    if (!counters.has(key)) continue;
+    counters.set(key, Number(counters.get(key) || 0) + 1);
+  }
+  const total = Array.from(counters.values()).reduce((acc, n) => acc + Number(n || 0), 0);
+  const segments = meta.map((item) => {
+    const count = Number(counters.get(item.key) || 0);
+    const pct = total > 0 ? (count / total) * 100 : 0;
+    return {
+      ...item,
+      count,
+      pct,
+    };
+  });
+  const confirmed = Number(counters.get(STATUS.CONFIRMADO) || 0);
+  const confirmedPct = total > 0 ? (confirmed / total) * 100 : 0;
+  return { total, confirmed, confirmedPct, segments };
+}
+
+function ensureDashboardHoverTip() {
+  if (dashboardHoverTipEl && document.body.contains(dashboardHoverTipEl)) return dashboardHoverTipEl;
+  dashboardHoverTipEl = document.createElement("div");
+  dashboardHoverTipEl.className = "dashboardHoverTip";
+  dashboardHoverTipEl.hidden = true;
+  document.body.appendChild(dashboardHoverTipEl);
+  return dashboardHoverTipEl;
+}
+
+function showDashboardHoverTip(text, clientX, clientY) {
+  const message = String(text || "").trim();
+  if (!message) {
+    hideDashboardHoverTip();
+    return;
+  }
+  const tip = ensureDashboardHoverTip();
+  tip.textContent = message;
+  tip.hidden = false;
+  const pad = 14;
+  const width = tip.offsetWidth || 180;
+  const height = tip.offsetHeight || 44;
+  let left = Number(clientX || 0) + 16;
+  let top = Number(clientY || 0) + 16;
+  if (left + width + pad > window.innerWidth) left = Math.max(pad, Number(clientX || 0) - width - 16);
+  if (top + height + pad > window.innerHeight) top = Math.max(pad, Number(clientY || 0) - height - 16);
+  tip.style.left = `${Math.round(left)}px`;
+  tip.style.top = `${Math.round(top)}px`;
+}
+
+function hideDashboardHoverTip() {
+  if (!dashboardHoverTipEl) return;
+  dashboardHoverTipEl.hidden = true;
+}
+
+function handleDashboardHoverTooltip(event) {
+  const target = event.target instanceof Element ? event.target.closest("[data-dashboard-tooltip]") : null;
+  if (!target) {
+    hideDashboardHoverTip();
+    return;
+  }
+  showDashboardHoverTip(target.getAttribute("data-dashboard-tooltip") || "", event.clientX, event.clientY);
+}
+
+function renderDashboardGoals(globalMeta, personalMeta) {
+  if (!el.dashboardGoalsGrid) return;
+  const gp = Math.max(0, Number(globalMeta.progress || 0));
+  const pp = Math.max(0, Number(personalMeta.progress || 0));
+  const gState = dashboardGoalCardState(gp);
+  const pState = dashboardGoalCardState(pp);
+  const globalRemaining = Math.max(0, Number(globalMeta.remaining || 0));
+  const personalRemaining = Math.max(0, Number(personalMeta.remaining || 0));
+  const summary = globalMeta.statusSummary || { total: 0, segments: [] };
+  const heroPct = Math.max(0, Number(summary.confirmedPct || 0));
+  const visibleSegments = (summary.segments || []).filter((item) => Number(item.count || 0) > 0);
+  const segmentHtml = visibleSegments.length
+    ? visibleSegments.map((item) => `
+        <span class="dashboardHeroSegment" style="width:${Math.max(2, item.pct)}%;background:${escapeHtml(item.color)}" data-dashboard-tooltip="${escapeHtml(item.label)}: ${escapeHtml(String(item.count))} evento(s) | ${escapeHtml(item.pct.toFixed(1))}% del periodo"></span>
+      `).join("")
+    : `<span class="dashboardHeroSegment dashboardHeroSegmentEmpty"></span>`;
+  const legendHtml = (summary.segments || [])
+    .filter((item) => Number(item.count || 0) > 0)
+    .map((item) => `
+      <span class="dashboardHeroLegendItem" data-dashboard-tooltip="${escapeHtml(item.label)}: ${escapeHtml(String(item.count))} evento(s) | ${escapeHtml(item.pct.toFixed(1))}% del periodo">
+        <i style="background:${escapeHtml(item.color)}"></i>
+        <span>${escapeHtml(item.label)} ${escapeHtml(item.pct.toFixed(1))}%</span>
+      </span>
+    `).join("");
+  el.dashboardGoalsGrid.innerHTML = `
+    <article class="dashboardHeroCard dashboardGoalCard--${escapeHtml(gState)}">
+      <div class="dashboardHeroHead">
+        <div>
+          <small>EFICIENCIA EN ${escapeHtml(userRolePluralLabel(globalMeta.roleKey || USER_ROLE.SELLER).toUpperCase())} "CRM"</small>
+          <strong>${escapeHtml(globalMeta.periodLabel || formatMonthKeyLabel(globalMeta.monthKey || ""))}</strong>
+        </div>
+        <div class="dashboardHeroPct" data-dashboard-tooltip="${escapeHtml(String(summary.confirmed || 0))} confirmados de ${escapeHtml(String(summary.total || 0))} eventos del periodo">
+          <b>${escapeHtml(heroPct.toFixed(1))}%</b>
+          <span>Confirmado</span>
+        </div>
+      </div>
+      <div class="dashboardHeroBarWrap">
+        <div class="dashboardHeroBar">${segmentHtml}</div>
+      </div>
+      <div class="dashboardHeroLegend">
+        ${legendHtml || `<span class="dashboardEmpty">Sin estados para el periodo.</span>`}
+      </div>
+    </article>
+    <article class="dashboardGoalCard dashboardGoalCard--${escapeHtml(gState)}">
+      <small>Meta ${escapeHtml(globalMeta.roleLabel || "global")}</small>
+      <strong>${escapeHtml(moneyGT(globalMeta.goal || 0))}</strong>
+      <div class="dashboardGoalMeta">Avance ${escapeHtml(moneyGT(globalMeta.achieved || 0))} | ${escapeHtml(gp.toFixed(1))}%</div>
+      <div class="dashboardGoalProgress"><span style="width:${Math.min(gp, 100)}%"></span></div>
+    </article>
+    <article class="dashboardGoalCard dashboardGoalCard--${escapeHtml(gState)}">
+      <small>Pendiente del rol</small>
+      <strong>${escapeHtml(moneyGT(globalRemaining))}</strong>
+      <div class="dashboardGoalMeta">${globalRemaining <= 0 ? `Meta ${escapeHtml(globalMeta.roleLabel || "global")} superada` : "Ingreso pendiente para cumplir meta"}</div>
+      <div class="dashboardGoalProgress"><span style="width:${Math.min(gp, 100)}%"></span></div>
+    </article>
+    <article class="dashboardGoalCard dashboardGoalCard--${escapeHtml(pState)}">
+      <small>Meta personal (${escapeHtml(personalMeta.sellerLabel)})</small>
+      <strong>${escapeHtml(moneyGT(personalMeta.goal || 0))}</strong>
+      <div class="dashboardGoalMeta">Avance ${escapeHtml(moneyGT(personalMeta.achieved || 0))} | ${escapeHtml(pp.toFixed(1))}%</div>
+      <div class="dashboardGoalProgress"><span style="width:${Math.min(pp, 100)}%"></span></div>
+    </article>
+    <article class="dashboardGoalCard dashboardGoalCard--${escapeHtml(pState)}">
+      <small>Falta para meta personal</small>
+      <strong>${escapeHtml(moneyGT(personalRemaining))}</strong>
+      <div class="dashboardGoalMeta">${personalRemaining <= 0 ? "Meta personal superada" : "Ingreso pendiente para cumplir meta"}</div>
+      <div class="dashboardGoalProgress"><span style="width:${Math.min(pp, 100)}%"></span></div>
+    </article>
+  `;
+}
+
+function renderDashboardBars(container, series, highlightMax = false) {
+  if (!container) return;
+  if (!Array.isArray(series) || !series.length) {
+    container.innerHTML = `<div class="dashboardEmpty">Sin datos para esta grafica.</div>`;
+    return;
+  }
+  const max = Math.max(1, ...series.map((x) => Number(x.value || 0)));
+  const best = highlightMax ? Math.max(...series.map((x) => Number(x.value || 0))) : -1;
+  container.innerHTML = series.map((row) => {
+    const value = Math.max(0, Number(row.value || 0));
+    const pct = Math.min(100, (value / max) * 100);
+    const bestCls = highlightMax && value === best && best > 0 ? " best" : "";
+    return `
+      <div class="dashboardBarRow">
+        <div class="dashboardBarLabel">${escapeHtml(row.label || "-")}</div>
+        <div class="dashboardBarTrack"><div class="dashboardBarFill${bestCls}" style="width:${pct}%"></div></div>
+        <div class="dashboardBarValue">${escapeHtml(moneyGT(value))}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderDashboardSalonUsageChart(rows) {
+  if (!el.dashboardCompareChart) return;
+  const counts = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const label = String(row?.salon || "").trim() || "Sin salon";
+    counts.set(label, Number(counts.get(label) || 0) + 1);
+  }
+  const palette = ["#5b95f0", "#facc15", "#9b5de5", "#e92f55", "#10c972", "#67b7e1", "#ffb23d", "#11945a", "#8b5cf6", "#ec4899", "#ef4444", "#84cc16"];
+  const ordered = Array.from(counts.entries())
+    .map(([label, count], idx) => ({ label, count: Number(count || 0), color: palette[idx % palette.length] }))
+    .sort((a, b) => Number(b.count || 0) - Number(a.count || 0) || String(a.label || "").localeCompare(String(b.label || ""), "es", { sensitivity: "base" }));
+  const total = ordered.reduce((acc, item) => acc + Number(item.count || 0), 0);
+  if (!ordered.length || total <= 0) {
+    el.dashboardCompareChart.innerHTML = `<div class="dashboardEmpty">Sin salones con actividad para el periodo.</div>`;
+    return;
+  }
+  const slices = [];
+  let cursor = 0;
+  for (const item of ordered) {
+    const pct = (Number(item.count || 0) / total) * 100;
+    const next = cursor + pct;
+    slices.push(`${item.color} ${cursor.toFixed(2)}% ${next.toFixed(2)}%`);
+    item.pct = pct;
+    cursor = next;
+  }
+  const visibleLegend = ordered.slice(0, 6);
+  const hiddenCount = Math.max(0, ordered.length - visibleLegend.length);
+  const legend = visibleLegend.map((item) => `
+    <div class="dashboardPieLegendItem" data-dashboard-tooltip="${escapeHtml(item.label)}: ${escapeHtml(String(item.count))} evento(s) | ${escapeHtml(item.pct.toFixed(1))}% del periodo">
+      <i style="background:${escapeHtml(item.color)}"></i>
+      <span>${escapeHtml(item.label)}: ${escapeHtml(item.pct.toFixed(1))}%</span>
+    </div>
+  `).join("");
+  el.dashboardCompareChart.innerHTML = `
+    <div class="dashboardPieLayout">
+      <div class="dashboardPieChart" style="background:conic-gradient(${slices.join(", ")})"></div>
+      <div class="dashboardPieLegend">
+        ${legend}
+        ${hiddenCount ? `<div class="dashboardPieLegendMore">+${hiddenCount} area(s) mas</div>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function renderDashboardEventTypeChart(rows, selectedMonthKey) {
+  if (!el.dashboardBestMonthChart) return;
+  const year = Number(String(selectedMonthKey || "").slice(0, 4)) || new Date().getFullYear();
+  const months = Array.from({ length: 12 }, (_, idx) => {
+    const key = `${year}-${pad2(idx + 1)}`;
+    const monthRows = rows.filter((r) => r.monthKey === key);
+    const corp = rows
+      .filter((r) => {
+        if (r.monthKey !== key) return false;
+        const type = String(r.type || "").trim().toLowerCase();
+        return type === "corporativo" || type.includes("corpor");
+      })
+      .reduce((acc, r) => acc + Math.max(0, Number(r.total || 0)), 0);
+    const social = rows
+      .filter((r) => {
+        if (r.monthKey !== key) return false;
+        const type = String(r.type || "").trim().toLowerCase();
+        return type === "social" || type.includes("social");
+      })
+      .reduce((acc, r) => acc + Math.max(0, Number(r.total || 0)), 0);
+    return { label: String(idx + 1), corporativo: corp, social, totalEvents: monthRows.length };
+  });
+  const max = Math.max(1, ...months.flatMap((m) => [Number(m.corporativo || 0), Number(m.social || 0)]));
+  const bars = months.map((row) => {
+    const corpH = Math.max(0, (Number(row.corporativo || 0) / max) * 100);
+    const socialH = Math.max(0, (Number(row.social || 0) / max) * 100);
+    const hasCorp = Number(row.corporativo || 0) > 0;
+    const hasSocial = Number(row.social || 0) > 0;
+    const corpLabel = hasCorp ? `<span class="dashboardMonthBarValue">${escapeHtml(moneyGT(row.corporativo || 0))}</span>` : `<span class="dashboardMonthBarValue is-empty"></span>`;
+    const socialLabel = hasSocial ? `<span class="dashboardMonthBarValue">${escapeHtml(moneyGT(row.social || 0))}</span>` : `<span class="dashboardMonthBarValue is-empty"></span>`;
+    const corpHeight = hasCorp ? Math.max(14, corpH) : 6;
+    const socialHeight = hasSocial ? Math.max(14, socialH) : 6;
+    return `
+      <div class="dashboardMonthGroup">
+        <div class="dashboardMonthBars">
+          <span class="dashboardMonthBarCol" data-dashboard-tooltip="Corporativo ${escapeHtml(moneyGT(row.corporativo || 0))}">
+            ${corpLabel}
+            <span class="dashboardMonthBar corp${hasCorp ? "" : " is-empty"}" style="height:${corpHeight}%"></span>
+          </span>
+          <span class="dashboardMonthBarCol" data-dashboard-tooltip="Social ${escapeHtml(moneyGT(row.social || 0))}">
+            ${socialLabel}
+            <span class="dashboardMonthBar social${hasSocial ? "" : " is-empty"}" style="height:${socialHeight}%"></span>
+          </span>
+        </div>
+        <div class="dashboardMonthLabel" data-dashboard-tooltip="${escapeHtml(String(row.totalEvents || 0))} evento(s) en el mes ${escapeHtml(row.label)}">${escapeHtml(row.label)}</div>
+      </div>
+    `;
+  }).join("");
+  el.dashboardBestMonthChart.innerHTML = `
+    <div class="dashboardMonthChart">
+      <div class="dashboardMonthBarsGrid">${bars}</div>
+      <div class="dashboardMonthLegend">
+        <span class="dashboardPieLegendItem"><i style="background:#d4c23c"></i><span>Corporativo</span></span>
+        <span class="dashboardPieLegendItem"><i style="background:#4b4b52"></i><span>Social</span></span>
+      </div>
+    </div>
+  `;
+}
+
+function renderDashboardCharts(rows, selectedMonthKey) {
+  const scopeUserId = dashboardResolveScopeUserId();
+  const scopedRows = scopeUserId ? rows.filter((r) => String(r.userId) === scopeUserId) : rows.slice();
+  if (el.dashboardCompareTitle) el.dashboardCompareTitle.textContent = "Areas mas utilizadas";
+  if (el.dashboardCompareSubtitle) el.dashboardCompareSubtitle.textContent = "Distribucion de salones en el periodo";
+  if (el.dashboardBestTitle) el.dashboardBestTitle.textContent = "Ventas por tipo de evento";
+  if (el.dashboardBestSubtitle) el.dashboardBestSubtitle.textContent = "Corporativo vs Social por mes";
+  renderDashboardSalonUsageChart(scopedRows);
+  renderDashboardEventTypeChart(scopedRows, selectedMonthKey);
+}
+
+function renderDashboardSellerList(rows, periodLabel = "") {
+  if (!el.dashboardSellerList) return;
+  const scopeUserId = dashboardResolveScopeUserId();
+  const role = dashboardResolveRole();
+  const roleLabel = userRoleLabel(role);
+  const sellers = dashboardGetActiveUsersByRole(role).filter((u) => !scopeUserId || String(u.id) === scopeUserId);
+  if (!sellers.length) {
+    el.dashboardSellerList.innerHTML = `<div class="dashboardEmpty">No hay usuarios activos del rol ${escapeHtml(roleLabel.toLowerCase())} para mostrar.</div>`;
+    return;
+  }
+
+  const periodRows = Array.isArray(rows) ? rows : [];
+  const metrics = sellers
+    .map((seller) => {
+      const sellerRows = periodRows.filter((r) => String(r.userId || "") === String(seller.id || ""));
+      const confirmedRows = sellerRows.filter((r) => String(r.status || "") === STATUS.CONFIRMADO);
+      const totalEvents = sellerRows.length;
+      const confirmedEvents = confirmedRows.length;
+      const totalAmount = sellerRows.reduce((acc, r) => acc + Math.max(0, Number(r.total || 0)), 0);
+      const confirmedAmount = confirmedRows.reduce((acc, r) => acc + Math.max(0, Number(r.total || 0)), 0);
+      const averageTicket = totalEvents > 0 ? (totalAmount / totalEvents) : 0;
+      return {
+        id: String(seller.id || ""),
+        name: String(seller.fullName || seller.name || roleLabel),
+        avatar: String(seller.avatarDataUrl || "").trim() || avatarDataUri(seller.fullName || seller.name || roleLabel),
+        totalEvents,
+        confirmedEvents,
+        totalAmount,
+        confirmedAmount,
+        averageTicket,
+      };
+    })
+    .sort((a, b) => {
+      const amountDiff = Number(b.confirmedAmount || 0) - Number(a.confirmedAmount || 0);
+      if (amountDiff !== 0) return amountDiff;
+      const eventDiff = Number(b.confirmedEvents || 0) - Number(a.confirmedEvents || 0);
+      if (eventDiff !== 0) return eventDiff;
+      return String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base" });
+    });
+
+  const maxAmount = Math.max(1, ...metrics.map((item) => Number(item.confirmedAmount || 0)));
+  const cardsHtml = metrics.map((item) => {
+    const amount = Math.max(0, Number(item.confirmedAmount || 0));
+    const heightPct = amount > 0 ? Math.max(8, (amount / maxAmount) * 100) : 4;
+    const tooltip = `${item.name} | Eventos del periodo: ${item.totalEvents} | Confirmados: ${item.confirmedEvents} | Total cotizado: ${moneyGT(item.totalAmount)} | Total confirmado: ${moneyGT(item.confirmedAmount)} | Ticket promedio: ${moneyGT(item.averageTicket)}`;
+    return `
+      <article class="dashboardSellerPerfCard" data-dashboard-tooltip="${escapeHtml(tooltip)}">
+        <div class="dashboardSellerPerfValue">${escapeHtml(moneyGT(item.confirmedAmount))}</div>
+        <div class="dashboardSellerPerfBarArea">
+          <span class="dashboardSellerPerfBar${amount > 0 ? "" : " is-empty"}" style="height:${heightPct}%"></span>
+        </div>
+        <div class="dashboardSellerPerfAvatar"><img alt="Avatar ${escapeHtml(roleLabel.toLowerCase())}" src="${escapeHtml(item.avatar)}"></div>
+        <div class="dashboardSellerPerfName">${escapeHtml(item.name)}</div>
+        <div class="dashboardSellerPerfMeta">${escapeHtml(String(item.confirmedEvents))} confirmados de ${escapeHtml(String(item.totalEvents))} evento(s)</div>
+      </article>
+    `;
+  }).join("");
+
+  el.dashboardSellerList.innerHTML = `
+    <div class="dashboardSellerPerfWrap">
+      <div class="dashboardSellerPerfHead">
+        <strong>Eficiencia en confirmacion por ${escapeHtml(roleLabel.toLowerCase())}</strong>
+        <small>${escapeHtml(periodLabel)} | Barra = monto confirmado</small>
+      </div>
+      <div class="dashboardSellerPerfGrid">
+        ${cardsHtml || `<div class="dashboardEmpty">Sin datos para los filtros seleccionados.</div>`}
+      </div>
+      <div class="dashboardSellerPerfLegend">
+        <span class="dashboardPieLegendItem" data-dashboard-tooltip="Suma de eventos en estado Confirmado del periodo seleccionado.">
+          <i style="background:#10c972"></i>
+          <span>Monto confirmado del periodo</span>
+        </span>
+      </div>
+    </div>
+  `;
+}
+function renderDashboardReport() {
+  syncDashboardPeriodControls();
+  const period = dashboardResolvePeriod();
+  const monthKey = dashboardResolveMonthKey();
+  const fromIso = String(el.dashboardReportFrom?.value || "").trim();
+  const toIso = String(el.dashboardReportTo?.value || "").trim();
+  if (period === "week") {
+    const weekRaw = String(el.dashboardReportWeek?.value || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekRaw)) {
+      setDashboardFiltersByWeek(weekInputFromDate(new Date()));
+    } else {
+      setDashboardFiltersByWeek(weekRaw);
+    }
+  } else if (!/^\d{4}-\d{2}-\d{2}$/.test(fromIso) || !/^\d{4}-\d{2}-\d{2}$/.test(toIso) || fromIso > toIso) {
+    setDashboardFiltersByMonth(monthKey);
+  }
+  const safeFrom = String(el.dashboardReportFrom?.value || "").trim();
+  const safeTo = String(el.dashboardReportTo?.value || "").trim();
+  const safeMonthKey = dashboardMonthKeyFromIso(safeFrom) || monthKey;
+  const periodLabel = dashboardFormatRangeLabel(period, safeFrom, safeTo, safeMonthKey);
+  const role = dashboardResolveRole();
+  const roleLabel = userRoleLabel(role);
+  const authUser = normalizeUserRecord(getAuthUserRecord() || {});
+  if (String(el.dashboardReportScope?.value || "mine") === "mine" && normalizeUserRole(authUser.role) !== role) {
+    if (el.dashboardReportScope) el.dashboardReportScope.value = "all";
+  }
+  const rows = buildDashboardReportRows(safeFrom, safeTo).filter((r) => {
+    const user = normalizeUserRecord((state.users || []).find((u) => String(u.id || "") === String(r.userId || "")) || {});
+    return normalizeUserRole(user.role) === role;
+  });
+  const periodRows = rows.filter((r) => {
+    const date = String(r?.eventDate || "").trim();
+    if (!date) return false;
+    if (safeFrom && date < safeFrom) return false;
+    if (safeTo && date > safeTo) return false;
+    return true;
+  });
+  renderDashboardSellerFilterOptions();
+  const scope = String(el.dashboardReportScope?.value || "mine").trim();
+  if (el.dashboardReportSeller) el.dashboardReportSeller.disabled = scope !== "seller";
+  const globalGoal = (getGlobalMonthlyGoals({ role }).find((g) => String(g.month) === safeMonthKey)?.amount) || 0;
+  const globalAchieved = periodRows.filter((r) => isGoalStatus(r.status)).reduce((acc, r) => acc + Number(r.total || 0), 0);
+  const scopeUserId = dashboardResolveScopeUserId();
+  const focusedUser = (state.users || []).map(normalizeUserRecord).find((u) => String(u.id) === scopeUserId) || null;
+  const personalGoal = focusedUser
+    ? ((focusedUser.monthlyGoals || []).find((g) => String(g.month) === safeMonthKey)?.amount || 0)
+    : 0;
+  const personalAchieved = focusedUser
+    ? periodRows
+      .filter((r) => String(r.userId) === String(focusedUser.id) && isGoalStatus(r.status))
+      .reduce((acc, r) => acc + Number(r.total || 0), 0)
+    : 0;
+  renderDashboardGoals(
+    {
+      monthKey: safeMonthKey,
+      period,
+      periodLabel,
+      roleKey: role,
+      roleLabel,
+      statusSummary: buildDashboardHeroStatusSummary(periodRows),
+      goal: globalGoal,
+      achieved: globalAchieved,
+      remaining: Math.max(0, globalGoal - globalAchieved),
+      progress: globalGoal > 0 ? (globalAchieved / globalGoal) * 100 : 0,
+    },
+    {
+      sellerLabel: focusedUser ? (focusedUser.fullName || focusedUser.name || roleLabel) : `Selecciona ${roleLabel.toLowerCase()}`,
+      goal: personalGoal,
+      achieved: personalAchieved,
+      remaining: Math.max(0, personalGoal - personalAchieved),
+      progress: personalGoal > 0 ? (personalAchieved / personalGoal) * 100 : 0,
+    },
+  );
+  renderDashboardCharts(periodRows, safeMonthKey);
+  renderDashboardSellerList(periodRows, periodLabel);
+  if (el.dashboardReportTitle) el.dashboardReportTitle.textContent = `Reporte ${roleLabel}`;
+  if (el.dashboardReportSubtitle) {
+    const viewLabel = period === "week" ? "Vista semanal" : "Vista mensual";
+    el.dashboardReportSubtitle.textContent = `${viewLabel} de ${userRolePluralLabel(role).toLowerCase()}, metas y comparativos`;
+  }
+}
+
+function resetDashboardReportFilters() {
+  const currentMonth = toISODate(new Date()).slice(0, 7);
+  if (el.dashboardReportPeriod) el.dashboardReportPeriod.value = "month";
+  syncDashboardPeriodControls();
+  setDashboardFiltersByMonth(currentMonth);
+  if (el.dashboardReportWeek) {
+    el.dashboardReportWeek.value = weekInputFromDate(new Date());
+  }
+  const authUser = normalizeUserRecord(getAuthUserRecord() || {});
+  const sessionRole = REPORTABLE_USER_ROLES.includes(normalizeUserRole(authUser.role)) ? normalizeUserRole(authUser.role) : USER_ROLE.SELLER;
+  if (el.dashboardReportRole) {
+    el.dashboardReportRole.value = sessionRole;
+  }
+  if (el.dashboardReportScope) {
+    el.dashboardReportScope.value = String(authSession.userId || "").trim() ? "mine" : "all";
+  }
+  renderDashboardSellerFilterOptions();
+  if (el.dashboardReportSeller) {
+    const sessionUserId = String(authSession.userId || "").trim();
+    el.dashboardReportSeller.value = sessionUserId;
+  }
+}
+
+function openDashboardReportModal() {
+  if (!el.dashboardReportBackdrop) return;
+  resetDashboardReportFilters();
+  renderDashboardReport();
+  el.dashboardReportBackdrop.hidden = false;
+}
+
+function closeDashboardReportModal() {
+  if (!el.dashboardReportBackdrop) return;
+  el.dashboardReportBackdrop.hidden = true;
+  restoreModuleScreenAfterModal();
+}
+
+function getInstitutionReportDefaultRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  start.setHours(0, 0, 0, 0);
+  return {
+    fromIso: toISODate(start),
+    toIso: toISODate(now),
+  };
+}
+
+function setInstitutionReportDefaultRange() {
+  const { fromIso, toIso } = getInstitutionReportDefaultRange();
+  if (el.institutionReportFrom) el.institutionReportFrom.value = fromIso;
+  if (el.institutionReportTo) el.institutionReportTo.value = toIso;
+}
+
+function renderInstitutionReportCompanyOptions() {
+  if (!el.institutionReportCompany) return;
+  const previous = String(el.institutionReportCompany.value || "").trim();
+  const search = String(el.institutionReportCompanySearch?.value || "").trim();
+  const companies = (state.companies || [])
+    .filter((c) => {
+      if (!String(c?.id || "").trim() || isCompanyDisabled(c.id)) return false;
+      if (!search) return true;
+      const haystack = [
+        c?.name,
+        c?.owner,
+        c?.email,
+        c?.phone,
+        c?.billTo,
+        c?.businessName,
+      ].filter(Boolean).join(" ");
+      return matchesLikeSearch(haystack, search);
+    })
+    .slice()
+    .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity: "base" }));
+  el.institutionReportCompany.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = search ? "Selecciona una coincidencia" : "Selecciona institucion";
+  el.institutionReportCompany.appendChild(placeholder);
+  for (const company of companies) {
+    const opt = document.createElement("option");
+    opt.value = String(company.id || "").trim();
+    opt.textContent = String(company.name || "Institucion").trim();
+    el.institutionReportCompany.appendChild(opt);
+  }
+  if (previous && companies.some((c) => String(c.id) === previous)) {
+    el.institutionReportCompany.value = previous;
+  } else if (!previous && companies.length) {
+    el.institutionReportCompany.value = String(companies[0].id || "");
+  } else if (companies.length) {
+    el.institutionReportCompany.value = String(companies[0].id || "");
+  } else {
+    el.institutionReportCompany.value = "";
+  }
+}
+
+function normalizeInstitutionItemLabel(item) {
+  const primary = String(item?.name || "").trim();
+  const secondary = String(item?.description || "").trim();
+  return primary || secondary || "Servicio sin nombre";
+}
+
+function buildInstitutionMetricListHtml(rows, emptyText, formatter) {
+  const list = Array.isArray(rows) ? rows : [];
+  if (!list.length) {
+    return `<div class="dashboardEmpty">${escapeHtml(emptyText)}</div>`;
+  }
+  return list.map((row, idx) => formatter(row, idx)).join("");
+}
+
+function buildInstitutionMonthlyBarChartHtml(monthRows) {
+  const rows = (Array.isArray(monthRows) ? monthRows : [])
+    .slice()
+    .sort((a, b) => String(a?.monthKey || "").localeCompare(String(b?.monthKey || "")))
+    .slice(-8);
+  if (!rows.length) {
+    return `<div class="dashboardEmpty">Sin meses con actividad para graficar.</div>`;
+  }
+  const maxAmount = Math.max(1, ...rows.map((r) => Math.max(0, Number(r?.amount || 0))));
+  const bars = rows.map((row) => {
+    const amount = Math.max(0, Number(row?.amount || 0));
+    const count = Math.max(0, Number(row?.count || 0));
+    const pct = Math.max(8, Math.round((amount / maxAmount) * 100));
+    const label = String(row?.label || "-");
+    const compact = label.replace(/\s+de\s+/i, " ").trim();
+    const tip = `${label} | ${count} reserva(s) | ${moneyGT(amount)}`;
+    return `
+      <div class="institutionBarCol">
+        <div class="institutionBarValue">${escapeHtml(moneyGT(amount))}</div>
+        <div class="institutionBarTrack">
+          <div class="institutionBarFill" style="height:${pct}%;" tabindex="0">
+            <span class="institutionChartTip">${escapeHtml(tip)}</span>
+          </div>
+        </div>
+        <div class="institutionBarLabel">${escapeHtml(compact)}</div>
+      </div>
+    `;
+  }).join("");
+  return `<div class="institutionBarChart">${bars}</div>`;
+}
+
+function buildInstitutionStatusDonutHtml(data) {
+  const segments = [
+    { label: "Confirmados", value: Math.max(0, Number(data?.confirmed || 0)), color: "#22c55e" },
+    { label: "Pre reserva", value: Math.max(0, Number(data?.preReserved || 0)), color: "#38bdf8" },
+    { label: "Cancelados", value: Math.max(0, Number(data?.canceled || 0)), color: "#f97316" },
+    { label: "Perdidos", value: Math.max(0, Number(data?.lost || 0)), color: "#f43f5e" },
+  ].filter((x) => x.value > 0);
+  const total = segments.reduce((acc, x) => acc + x.value, 0);
+  if (!total) {
+    return `<div class="dashboardEmpty">Sin estados suficientes para graficar.</div>`;
+  }
+  let cursor = 0;
+  const stops = segments.map((seg) => {
+    const start = cursor;
+    const pct = (seg.value / total) * 100;
+    cursor += pct;
+    return `${seg.color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
+  }).join(", ");
+  const legend = segments.map((seg) => {
+    const pct = (seg.value / total) * 100;
+    const tip = `${seg.label}: ${seg.value} reserva(s) (${pct.toFixed(1)}%)`;
+    return `
+      <div class="institutionDonutLegendItem" tabindex="0">
+        <span class="institutionDonutDot" style="background:${seg.color}"></span>
+        <b>${escapeHtml(seg.label)}</b>
+        <span>${escapeHtml(String(seg.value))} (${escapeHtml(pct.toFixed(1))}%)</span>
+        <span class="institutionChartTip">${escapeHtml(tip)}</span>
+      </div>
+    `;
+  }).join("");
+  return `
+    <div class="institutionDonutWrap">
+      <div class="institutionDonut" style="background:conic-gradient(${stops});">
+        <div class="institutionDonutHole">
+          <small>Total</small>
+          <strong>${escapeHtml(String(total))}</strong>
+        </div>
+      </div>
+      <div class="institutionDonutLegend">${legend}</div>
+    </div>
+  `;
+}
+function buildInstitutionReportData(companyId, fromIso, toIso) {
+  const id = String(companyId || "").trim();
+  const company = (state.companies || []).find((c) => String(c?.id || "") === id) || null;
+  const empty = {
+    company,
+    reservations: 0,
+    eventRows: 0,
+    totalRevenue: 0,
+    totalPax: 0,
+    avgTicket: 0,
+    avgPax: 0,
+    confirmed: 0,
+    preReserved: 0,
+    canceled: 0,
+    lost: 0,
+    conversionPct: 0,
+    firstVisitIso: "",
+    latestVisitIso: "",
+    daysSinceLastVisit: null,
+    topSalonLabel: "",
+    topDishLabel: "",
+    topManagerLabel: "",
+    topMonthLabel: "",
+    topSellerLabel: "",
+    activeMonths: 0,
+    salonRows: [],
+    dishRows: [],
+    managerRows: [],
+    sellerRows: [],
+    monthRows: [],
+    eventRowsDetailed: [],
+  };
+  if (!company) return empty;
+
+  const grouped = new Map();
+  for (const ev of state.events || []) {
+    if (!quoteBelongsToCompany(ev?.quote, company)) continue;
+    const key = String(reservationKeyFromEvent(ev) || ev?.id || "").trim();
+    if (!key) continue;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(ev);
+  }
+
+  const salonCounter = new Map();
+  const dishCounter = new Map();
+  const managerCounter = new Map();
+  const sellerCounter = new Map();
+  const monthCounter = new Map();
+  const monthRevenueCounter = new Map();
+  const allDates = [];
+
+  for (const seriesRaw of grouped.values()) {
+    const series = (seriesRaw || []).slice().sort((a, b) => {
+      const dateCmp = String(a?.date || "").localeCompare(String(b?.date || ""));
+      if (dateCmp !== 0) return dateCmp;
+      return compareTime(String(a?.startTime || "00:00"), String(b?.startTime || "00:00"));
+    });
+    if (!series.length) continue;
+
+    for (const ev of series) {
+      const d = String(ev?.date || "").trim();
+      if (d) allDates.push(d);
+    }
+
+    const seriesInRange = series.filter((ev) => {
+      const date = String(ev?.date || "").trim();
+      if (!date) return false;
+      if (fromIso && date < fromIso) return false;
+      if (toIso && date > toIso) return false;
+      return true;
+    });
+    if (!seriesInRange.length) continue;
+
+    const firstInRange = seriesInRange[0];
+    const quoteHost = series.find((ev) => quoteBelongsToCompany(ev?.quote, company)) || firstInRange;
+    const latestSnapshot = getLatestQuoteSnapshotFromSeries(series) || getLatestQuoteSnapshotForEvent(quoteHost) || quoteHost?.quote || {};
+    const totals = getQuoteTotals(latestSnapshot || {});
+    const firstMonthKey = dashboardMonthKeyFromIso(firstInRange?.date || "");
+    const currentStatus = String(firstInRange?.status || "").trim();
+    const userName = getUserNameById(firstInRange?.userId || "");
+    const managerName = String(
+      latestSnapshot?.managerName
+      || latestSnapshot?.contact
+      || quoteHost?.quote?.managerName
+      || "Sin encargado"
+    ).trim();
+
+    empty.reservations += 1;
+    empty.totalRevenue += Math.max(0, Number(totals.total || 0));
+    if (currentStatus === STATUS.CONFIRMADO) empty.confirmed += 1;
+    if (currentStatus === STATUS.PRERESERVA) empty.preReserved += 1;
+    if (currentStatus === STATUS.CANCELADO) empty.canceled += 1;
+    if (currentStatus === STATUS.PERDIDO) empty.lost += 1;
+
+    managerCounter.set(managerName, Number(managerCounter.get(managerName) || 0) + 1);
+    sellerCounter.set(userName || "Sin vendedor", Number(sellerCounter.get(userName || "Sin vendedor") || 0) + 1);
+    if (firstMonthKey) {
+      monthCounter.set(firstMonthKey, Number(monthCounter.get(firstMonthKey) || 0) + 1);
+      monthRevenueCounter.set(firstMonthKey, Number(monthRevenueCounter.get(firstMonthKey) || 0) + Math.max(0, Number(totals.total || 0)));
+    }
+
+    const items = Array.isArray(latestSnapshot?.items) ? latestSnapshot.items : [];
+    for (const item of items) {
+      const label = normalizeInstitutionItemLabel(item);
+      const qty = Math.max(0, Number(item?.qty || 0));
+      const amount = qty * Math.max(0, Number(item?.price || 0));
+      const current = dishCounter.get(label) || { label, qty: 0, amount: 0 };
+      current.qty += qty;
+      current.amount += amount;
+      dishCounter.set(label, current);
+    }
+
+    for (const ev of seriesInRange) {
+      const date = String(ev?.date || "").trim();
+      const salon = String(ev?.salon || "").trim() || "Sin salon";
+      const pax = Math.max(0, Number(ev?.pax || latestSnapshot?.people || 0));
+      empty.eventRows += 1;
+      empty.totalPax += pax;
+      salonCounter.set(salon, Number(salonCounter.get(salon) || 0) + 1);
+      empty.eventRowsDetailed.push({
+        status: String(ev?.status || ""),
+        statusColor: statusColor(ev?.status),
+        reservationKey: String(latestSnapshot?.code || reservationKeyFromEvent(ev) || ev?.id || "-"),
+        eventDate: date,
+        eventName: String(ev?.name || "Reserva"),
+        salon,
+        managerName,
+        pax,
+        total: Math.max(0, Number(totals.total || 0)),
+      });
+    }
+  }
+
+  allDates.sort();
+  empty.firstVisitIso = allDates[0] || "";
+  empty.latestVisitIso = allDates[allDates.length - 1] || "";
+  if (empty.latestVisitIso) {
+    const latest = new Date(`${empty.latestVisitIso}T00:00:00`);
+    const today = stripTime(new Date());
+    if (!Number.isNaN(latest.getTime())) {
+      empty.daysSinceLastVisit = Math.max(0, Math.floor((today.getTime() - latest.getTime()) / (1000 * 60 * 60 * 24)));
+    }
+  }
+
+  empty.avgTicket = empty.reservations > 0 ? empty.totalRevenue / empty.reservations : 0;
+  empty.avgPax = empty.eventRows > 0 ? empty.totalPax / empty.eventRows : 0;
+  empty.conversionPct = empty.reservations > 0 ? ((empty.confirmed + empty.preReserved) / empty.reservations) * 100 : 0;
+  empty.activeMonths = monthCounter.size;
+
+  empty.salonRows = Array.from(salonCounter.entries())
+    .map(([label, count]) => ({ label, count: Number(count || 0) }))
+    .sort((a, b) => Number(b.count || 0) - Number(a.count || 0) || String(a.label || "").localeCompare(String(b.label || ""), "es", { sensitivity: "base" }));
+  empty.dishRows = Array.from(dishCounter.values())
+    .sort((a, b) => Number(b.qty || 0) - Number(a.qty || 0) || Number(b.amount || 0) - Number(a.amount || 0));
+  empty.managerRows = Array.from(managerCounter.entries())
+    .map(([label, count]) => ({ label, count: Number(count || 0) }))
+    .sort((a, b) => Number(b.count || 0) - Number(a.count || 0) || String(a.label || "").localeCompare(String(b.label || ""), "es", { sensitivity: "base" }));
+  empty.sellerRows = Array.from(sellerCounter.entries())
+    .map(([label, count]) => ({ label, count: Number(count || 0) }))
+    .sort((a, b) => Number(b.count || 0) - Number(a.count || 0) || String(a.label || "").localeCompare(String(b.label || ""), "es", { sensitivity: "base" }));
+  empty.monthRows = Array.from(monthCounter.entries())
+    .map(([monthKey, count]) => {
+      const [yy, mm] = String(monthKey || "").split("-").map(Number);
+      const d = Number.isFinite(yy) && Number.isFinite(mm) ? new Date(yy, mm - 1, 1) : null;
+      return {
+        monthKey,
+        label: d ? fmtMonthYear(d) : monthKey,
+        count: Number(count || 0),
+        amount: Math.max(0, Number(monthRevenueCounter.get(monthKey) || 0)),
+      };
+    })
+    .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0) || Number(b.count || 0) - Number(a.count || 0));
+  empty.eventRowsDetailed.sort((a, b) => {
+    const d = String(b.eventDate || "").localeCompare(String(a.eventDate || ""));
+    if (d !== 0) return d;
+    return String(a.eventName || "").localeCompare(String(b.eventName || ""), "es", { sensitivity: "base" });
+  });
+
+  empty.topSalonLabel = empty.salonRows[0]?.label || "";
+  empty.topDishLabel = empty.dishRows[0]?.label || "";
+  empty.topManagerLabel = empty.managerRows[0]?.label || "";
+  empty.topMonthLabel = empty.monthRows[0]?.label || "";
+  empty.topSellerLabel = empty.sellerRows[0]?.label || "";
+  return empty;
+}
+
+function renderInstitutionReport() {
+  const companyId = String(el.institutionReportCompany?.value || "").trim();
+  const fromIso = String(el.institutionReportFrom?.value || "").trim();
+  const toIso = String(el.institutionReportTo?.value || "").trim();
+  if (fromIso && toIso && fromIso > toIso) {
+    if (el.institutionReportTo) el.institutionReportTo.value = fromIso;
+  }
+  const safeFrom = String(el.institutionReportFrom?.value || "").trim();
+  const safeTo = String(el.institutionReportTo?.value || "").trim();
+  const data = buildInstitutionReportData(companyId, safeFrom, safeTo);
+
+  if (el.institutionReportHeadline) {
+    if (!data.company) {
+      el.institutionReportHeadline.innerHTML = `<div class="dashboardEmpty">Selecciona una institucion para ver su dashboard.</div>`;
+    } else {
+      const lastVisitText = data.latestVisitIso
+        ? `${data.latestVisitIso}${Number.isFinite(data.daysSinceLastVisit) ? ` | hace ${data.daysSinceLastVisit} dias` : ""}`
+        : "Sin visitas registradas";
+      const companyType = String(data.company.eventType || "").trim() || "Sin tipo definido";
+      el.institutionReportHeadline.innerHTML = `
+        <div class="institutionHeadlineTop">
+          <div>
+            <strong>${escapeHtml(String(data.company.name || "Institucion"))}</strong>
+            <small>${escapeHtml(companyType)} | ${escapeHtml(String(data.company.owner || data.company.email || "Sin contacto principal"))}</small>
+          </div>
+          <div class="institutionHeadlineMoney">${escapeHtml(moneyGT(data.totalRevenue || 0))}</div>
+        </div>
+        <div class="institutionHeadlineMeta">
+          <span class="pill">Ultima visita: ${escapeHtml(lastVisitText)}</span>
+          <span class="pill">Primera visita: ${escapeHtml(data.firstVisitIso || "-")}</span>
+          <span class="pill">Encargado top: ${escapeHtml(data.topManagerLabel || "-")}</span>
+          <span class="pill">Vendedor top: ${escapeHtml(data.topSellerLabel || "-")}</span>
+        </div>
+      `;
+    }
+  }
+
+  if (el.institutionReportSummary) {
+    if (!data.company) {
+      el.institutionReportSummary.innerHTML = "";
+    } else {
+      const cards = [
+        { label: "Eventos", value: String(data.eventRows || 0), meta: "Registros en el rango", target: "institutionSectionEvents" },
+        { label: "Reservas", value: String(data.reservations || 0), meta: "Reservas consolidadas", target: "institutionSectionOverview" },
+        { label: "PAX total", value: String(data.totalPax || 0), meta: `Promedio ${Math.round(data.avgPax || 0)}`, target: "institutionSectionOverview" },
+        { label: "Salon top", value: data.topSalonLabel || "-", meta: "Mas usado por frecuencia", target: "institutionSectionSalons" },
+        { label: "Platillo top", value: data.topDishLabel || "-", meta: "Mas pedido", target: "institutionSectionDishes" },
+        { label: "Mes mas fuerte", value: data.topMonthLabel || "-", meta: "Mayor monto del periodo", target: "institutionSectionTimeline" },
+        { label: "Encargado top", value: data.topManagerLabel || "-", meta: "Mas eventos generados", target: "institutionSectionManagers" },
+        { label: "Conversion", value: `${Math.round(data.conversionPct || 0)}%`, meta: "Confirmado + pre reserva", target: "institutionSectionOverview" },
+      ];
+      el.institutionReportSummary.innerHTML = cards.map((card) => `
+        <button class="dashboardGoalCard institutionSummaryCard" type="button" data-target-section="${escapeHtml(card.target)}">
+          <small>${escapeHtml(card.label)}</small>
+          <strong>${escapeHtml(card.value)}</strong>
+          <div class="dashboardGoalMeta">${escapeHtml(card.meta)}</div>
+        </button>
+      `).join("");
+    }
+  }
+
+  if (el.institutionOverviewGrid) {
+    if (!data.company) {
+      el.institutionOverviewGrid.innerHTML = `<div class="dashboardEmpty">Sin datos para mostrar.</div>`;
+    } else {
+      const overviewRows = [
+        { label: "Ingreso total", value: moneyGT(data.totalRevenue || 0) },
+        { label: "Ticket promedio", value: moneyGT(data.avgTicket || 0) },
+        { label: "Confirmados", value: String(data.confirmed || 0) },
+        { label: "Pre reserva", value: String(data.preReserved || 0) },
+        { label: "Cancelados", value: String(data.canceled || 0) },
+        { label: "Perdidos", value: String(data.lost || 0) },
+        { label: "Meses activos", value: String(data.activeMonths || 0) },
+        { label: "Dias desde ultima visita", value: Number.isFinite(data.daysSinceLastVisit) ? String(data.daysSinceLastVisit) : "-" },
+      ];
+      el.institutionOverviewGrid.innerHTML = overviewRows.map((row) => `
+        <div class="dashboardStatusChip institutionOverviewChip">
+          <b>${escapeHtml(row.label)}</b>
+          <span>${escapeHtml(row.value)}</span>
+        </div>
+      `).join("");
+    }
+  }
+
+  if (el.institutionReportChartsBody) {
+    if (!data.company) {
+      el.institutionReportChartsBody.innerHTML = `<div class="dashboardEmpty">Sin datos para graficas.</div>`;
+    } else {
+      el.institutionReportChartsBody.innerHTML = `
+        <article class="institutionChartCard">
+          <header>
+            <strong>Ingresos por mes</strong>
+            <small>Top 8 meses del rango (hover para detalle)</small>
+          </header>
+          ${buildInstitutionMonthlyBarChartHtml(data.monthRows)}
+        </article>
+        <article class="institutionChartCard">
+          <header>
+            <strong>Distribucion por estado</strong>
+            <small>Confirmado, pre reserva, cancelado y perdido</small>
+          </header>
+          ${buildInstitutionStatusDonutHtml(data)}
+        </article>
+      `;
+    }
+  }
+  if (el.institutionReportSalonBody) {
+    el.institutionReportSalonBody.innerHTML = buildInstitutionMetricListHtml(
+      data.salonRows.slice(0, 8),
+      "Sin uso de salones para el rango seleccionado.",
+      (row, idx) => `
+        <article class="institutionMetricCard">
+          <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
+          <span>${escapeHtml(String(row.count || 0))} uso(s)</span>
+        </article>
+      `
+    );
+  }
+
+  if (el.institutionReportDishBody) {
+    el.institutionReportDishBody.innerHTML = buildInstitutionMetricListHtml(
+      data.dishRows.slice(0, 10),
+      "Sin platillos o servicios cotizados para este rango.",
+      (row, idx) => `
+        <article class="institutionMetricCard">
+          <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
+          <span>${escapeHtml(String(row.qty || 0))} unidad(es) | ${escapeHtml(moneyGT(row.amount || 0))}</span>
+        </article>
+      `
+    );
+  }
+
+  if (el.institutionReportManagerBody) {
+    el.institutionReportManagerBody.innerHTML = buildInstitutionMetricListHtml(
+      data.managerRows.slice(0, 8),
+      "Sin encargados asociados en el rango.",
+      (row, idx) => `
+        <article class="institutionMetricCard">
+          <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
+          <span>${escapeHtml(String(row.count || 0))} reserva(s)</span>
+        </article>
+      `
+    );
+  }
+
+  if (el.institutionReportTimelineBody) {
+    if (!data.company) {
+      el.institutionReportTimelineBody.innerHTML = `<div class="dashboardEmpty">Sin datos de historial.</div>`;
+    } else {
+      const monthHtml = buildInstitutionMetricListHtml(
+        data.monthRows.slice(0, 6),
+        "No hay meses con actividad en el rango.",
+        (row, idx) => `
+          <article class="institutionMetricCard">
+            <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
+            <span>${escapeHtml(String(row.count || 0))} reserva(s) | ${escapeHtml(moneyGT(row.amount || 0))}</span>
+          </article>
+        `
+      );
+      const sellerHtml = buildInstitutionMetricListHtml(
+        data.sellerRows.slice(0, 4),
+        "Sin vendedores con actividad.",
+        (row, idx) => `
+          <article class="institutionMetricCard">
+            <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
+            <span>${escapeHtml(String(row.count || 0))} reserva(s)</span>
+          </article>
+        `
+      );
+      el.institutionReportTimelineBody.innerHTML = `
+        <div class="institutionTimelineCol">
+          <div class="institutionTimelineLabel">Meses mas fuertes</div>
+          ${monthHtml}
+        </div>
+        <div class="institutionTimelineCol">
+          <div class="institutionTimelineLabel">Vendedores con mas seguimiento</div>
+          ${sellerHtml}
+        </div>
+      `;
+    }
+  }
+
+  if (el.institutionReportEventsBody) {
+    el.institutionReportEventsBody.innerHTML = "";
+    if (!data.company || !data.eventRowsDetailed.length) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="9">Sin eventos para los filtros seleccionados.</td>`;
+      el.institutionReportEventsBody.appendChild(tr);
+    } else {
+      for (const row of data.eventRowsDetailed.slice(0, 120)) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><span class="salesStatusBadge" style="background:${hexToRgba(row.statusColor, 0.25)};border-color:${hexToRgba(row.statusColor, 0.6)}">${escapeHtml(row.status || "-")}</span></td>
+          <td>${escapeHtml(row.reservationKey || "-")}</td>
+          <td>${escapeHtml(row.eventDate || "-")}</td>
+          <td>${escapeHtml(row.eventName || "-")}</td>
+          <td>${escapeHtml(row.salon || "-")}</td>
+          <td>${escapeHtml(row.managerName || "-")}</td>
+          <td>${escapeHtml(String(row.pax || 0))}</td>
+          <td>${escapeHtml(moneyGT(row.total || 0))}</td>
+          <td>${escapeHtml(data.latestVisitIso || "-")}</td>
+        `;
+        el.institutionReportEventsBody.appendChild(tr);
+      }
+    }
+  }
+}
+
+function scrollInstitutionReportToSection(sectionId) {
+  const id = String(sectionId || "").trim();
+  if (!id) return;
+  const node = document.getElementById(id);
+  if (!node) return;
+  try {
+    node.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (_) {
+    node.scrollIntoView();
+  }
+}
+
+function resetInstitutionReportFilters() {
+  if (el.institutionReportCompanySearch) el.institutionReportCompanySearch.value = "";
+  renderInstitutionReportCompanyOptions();
+  setInstitutionReportDefaultRange();
+}
+
+function openInstitutionReportModal() {
+  if (!el.institutionReportBackdrop) return;
+  resetInstitutionReportFilters();
+  renderInstitutionReport();
+  el.institutionReportBackdrop.hidden = false;
+}
+
+function closeInstitutionReportModal() {
+  if (!el.institutionReportBackdrop) return;
+  el.institutionReportBackdrop.hidden = true;
+  restoreModuleScreenAfterModal();
 }
 
 function renderChecklistTemplateTable() {
   if (!el.checklistTemplateBody) return;
   checklistTemplateDraft = (checklistTemplateDraft || []).map(normalizeChecklistTemplateItem).filter(Boolean);
+  const sectionMap = new Map((checklistTemplateSectionsDraft || []).map((s) => [String(s.id || ""), s]));
   el.checklistTemplateBody.innerHTML = "";
   if (!checklistTemplateDraft.length) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="3">Sin puntos configurados.</td>`;
+    tr.innerHTML = `<td colspan="5">Sin puntos configurados.</td>`;
     el.checklistTemplateBody.appendChild(tr);
     return;
   }
   checklistTemplateDraft.forEach((item, idx) => {
+    const section = sectionMap.get(String(item.sectionId || ""));
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${idx + 1}</td>
-      <td>${escapeHtml(String(item.section || "General"))}</td>
+      <td>${escapeHtml(String(section?.name || "General"))}</td>
       <td>${escapeHtml(String(item.label || ""))}</td>
       <td>
-        <button class="btn" type="button" data-checklist-template-up="${escapeHtml(String(item.id || ""))}">↑</button>
-        <button class="btn" type="button" data-checklist-template-down="${escapeHtml(String(item.id || ""))}">↓</button>
+        <button class="btn" type="button" data-checklist-template-up="${escapeHtml(String(item.id || ""))}">Subir</button>
+        <button class="btn" type="button" data-checklist-template-down="${escapeHtml(String(item.id || ""))}">Bajar</button>
       </td>
       <td>
         <button class="btn" type="button" data-checklist-template-edit="${escapeHtml(String(item.id || ""))}">Editar</button>
@@ -3364,6 +5647,262 @@ function addChecklistTemplateItemFromInput() {
   toast(wasEditing ? "Punto actualizado." : "Punto agregado al check list.");
 }
 
+function getCurrentChecklistTemplateDraft() {
+  const currentId = String(checklistTemplateCurrentId || "").trim();
+  return (checklistTemplatesDraft || []).find((tpl) => String(tpl?.id || "") === currentId) || null;
+}
+
+function renderChecklistTemplateSelect(selected = "") {
+  if (!el.checklistTemplateSelect) return;
+  const keep = String(selected || "").trim();
+  el.checklistTemplateSelect.innerHTML = "";
+  for (const tpl of checklistTemplatesDraft || []) {
+    const opt = document.createElement("option");
+    opt.value = String(tpl?.id || "").trim();
+    if (!opt.value) continue;
+    opt.textContent = `${String(tpl?.name || "Checklist").trim()}${tpl?.active === false ? " (Inhabilitada)" : ""}`;
+    el.checklistTemplateSelect.appendChild(opt);
+  }
+  el.checklistTemplateSelect.value = keep;
+}
+
+function renderChecklistTemplateTable() {
+  if (!el.checklistTemplateBody) return;
+  checklistTemplateDraft = (checklistTemplateDraft || []).map(normalizeChecklistTemplateItem).filter(Boolean);
+  const sectionMap = new Map((checklistTemplateSectionsDraft || []).map((s) => [String(s.id || ""), s]));
+  el.checklistTemplateBody.innerHTML = "";
+  if (!checklistTemplateDraft.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="5">Sin puntos configurados.</td>`;
+    el.checklistTemplateBody.appendChild(tr);
+    return;
+  }
+  checklistTemplateDraft.forEach((item, idx) => {
+    const section = sectionMap.get(String(item.sectionId || ""));
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${escapeHtml(String(section?.name || "General"))}</td>
+      <td>${escapeHtml(String(item.label || ""))}</td>
+      <td>
+        <button class="btn" type="button" data-checklist-template-up="${escapeHtml(String(item.id || ""))}">Subir</button>
+        <button class="btn" type="button" data-checklist-template-down="${escapeHtml(String(item.id || ""))}">Bajar</button>
+      </td>
+      <td>
+        <button class="btn" type="button" data-checklist-template-edit="${escapeHtml(String(item.id || ""))}">Editar</button>
+        <button class="btnDanger" type="button" data-checklist-template-remove="${escapeHtml(String(item.id || ""))}">X</button>
+      </td>
+    `;
+    el.checklistTemplateBody.appendChild(tr);
+  });
+}
+
+function renderChecklistSectionSelect(selected = "") {
+  if (!el.checklistTemplateSectionSelect) return;
+  const sections = (checklistTemplateSectionsDraft || []).filter((s) => s?.active !== false);
+  el.checklistTemplateSectionSelect.innerHTML = "";
+  for (const s of sections) {
+    const opt = document.createElement("option");
+    opt.value = String(s?.id || "").trim();
+    opt.textContent = String(s?.name || "General").trim();
+    el.checklistTemplateSectionSelect.appendChild(opt);
+  }
+  const preferred = String(selected || "").trim();
+  if (preferred) el.checklistTemplateSectionSelect.value = preferred;
+  if (!el.checklistTemplateSectionSelect.value && el.checklistTemplateSectionSelect.options.length) {
+    el.checklistTemplateSectionSelect.value = el.checklistTemplateSectionSelect.options[0].value;
+  }
+}
+
+function renderChecklistSectionEditSelect(selected = "") {
+  if (!el.checklistTemplateSectionEditSelect) return;
+  const keep = String(selected || "").trim();
+  el.checklistTemplateSectionEditSelect.innerHTML = `<option value="">Nueva seccion</option>`;
+  for (const s of checklistTemplateSectionsDraft || []) {
+    const opt = document.createElement("option");
+    opt.value = String(s?.id || "").trim();
+    if (!opt.value) continue;
+    opt.textContent = `${String(s?.name || "Seccion").trim()}${s?.active === false ? " (Inhabilitada)" : ""}`;
+    el.checklistTemplateSectionEditSelect.appendChild(opt);
+  }
+  el.checklistTemplateSectionEditSelect.value = keep;
+}
+
+function renderChecklistSectionsTable() {
+  if (!el.checklistTemplateSectionsBody) return;
+  el.checklistTemplateSectionsBody.innerHTML = "";
+  if (!(checklistTemplateSectionsDraft || []).length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="3">Sin secciones configuradas.</td>`;
+    el.checklistTemplateSectionsBody.appendChild(tr);
+    return;
+  }
+  for (const row of checklistTemplateSectionsDraft || []) {
+    const rowId = String(row?.id || "").trim();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(String(row?.name || "Seccion"))}</td>
+      <td>${row?.active === false ? "Inhabilitada" : "Activa"}</td>
+      <td class="appointmentActions">
+        <button class="apptIconBtn apptEdit" type="button" data-checklist-section-edit="${escapeHtml(rowId)}" title="Editar" aria-label="Editar">&#9998;</button>
+        <button class="apptIconBtn ${row?.active === false ? "" : "apptDelete"}" type="button" data-checklist-section-toggle="${escapeHtml(rowId)}" title="${row?.active === false ? "Reactivar" : "Inhabilitar"}" aria-label="${row?.active === false ? "Reactivar" : "Inhabilitar"}">${row?.active === false ? "&#8635;" : "&#9940;"}</button>
+      </td>
+    `;
+    el.checklistTemplateSectionsBody.appendChild(tr);
+  }
+}
+
+function resetChecklistSectionEditor() {
+  checklistTemplateSectionEditingId = "";
+  if (el.checklistTemplateSectionInput) el.checklistTemplateSectionInput.value = "";
+  renderChecklistSectionEditSelect("");
+}
+
+function resetChecklistTemplateEditor() {
+  checklistTemplateEditingId = "";
+  if (el.btnChecklistTemplateAdd) el.btnChecklistTemplateAdd.textContent = "Agregar punto";
+  if (el.checklistTemplateInput) el.checklistTemplateInput.value = "";
+  renderChecklistSectionSelect("");
+}
+
+function loadChecklistTemplateEditor(templateId = "") {
+  const fallback = (checklistTemplatesDraft || [])[0] || null;
+  const target = (checklistTemplatesDraft || []).find((tpl) => String(tpl?.id || "") === String(templateId || "").trim()) || fallback;
+  if (!target) return;
+  checklistTemplateCurrentId = String(target.id || "").trim();
+  checklistTemplateSectionsDraft = Array.isArray(target.sections) ? deepClone(target.sections) : [];
+  checklistTemplateDraft = Array.isArray(target.items) ? deepClone(target.items) : [];
+  if (el.checklistTemplateName) el.checklistTemplateName.value = String(target.name || "");
+  if (el.checklistTemplateActive) el.checklistTemplateActive.checked = target.active !== false;
+  if (el.btnChecklistTemplateDisable) {
+    el.btnChecklistTemplateDisable.disabled = false;
+    el.btnChecklistTemplateDisable.textContent = target.active === false ? "Reactivar" : "Inhabilitar";
+  }
+  renderChecklistTemplateSelect(checklistTemplateCurrentId);
+  renderChecklistSectionSelect("");
+  renderChecklistSectionEditSelect("");
+  renderChecklistSectionsTable();
+  renderChecklistTemplateTable();
+  resetChecklistTemplateEditor();
+  resetChecklistSectionEditor();
+}
+
+function openChecklistTemplateModal() {
+  ensureChecklistStores();
+  checklistTemplatesDraft = getChecklistTemplates({ includeInactive: true }).map((tpl) => deepClone(tpl));
+  if (!checklistTemplatesDraft.length) {
+    checklistTemplatesDraft = [normalizeChecklistTemplateRecord({
+      name: "Checklist general",
+      active: true,
+      sections: [{ name: "General", active: true }],
+      items: [],
+    })];
+  }
+  loadChecklistTemplateEditor(checklistTemplatesDraft[0]?.id || "");
+  if (el.checklistTemplateBackdrop) el.checklistTemplateBackdrop.hidden = false;
+}
+
+function closeChecklistTemplateModal() {
+  if (checklistTemplatesDraft.length) {
+    saveChecklistTemplateDraft();
+  }
+  if (el.checklistTemplateBackdrop) el.checklistTemplateBackdrop.hidden = true;
+  checklistTemplatesDraft = [];
+  checklistTemplateCurrentId = "";
+  resetChecklistTemplateEditor();
+  resetChecklistSectionEditor();
+  restoreModuleScreenAfterModal();
+}
+
+function saveChecklistTemplateDraft() {
+  ensureChecklistStores();
+  const current = getCurrentChecklistTemplateDraft();
+  if (current) {
+    current.name = String(el.checklistTemplateName?.value || "").trim() || "Checklist";
+    current.active = el.checklistTemplateActive?.checked !== false;
+    current.sections = (checklistTemplateSectionsDraft || []).map(normalizeChecklistSectionRecord).filter(Boolean);
+    current.items = (checklistTemplateDraft || []).map(normalizeChecklistTemplateItem).filter(Boolean);
+  }
+  state.checklistTemplates = (checklistTemplatesDraft || []).map(normalizeChecklistTemplateRecord).filter(Boolean);
+  syncLegacyChecklistStateFromTemplates();
+  persist();
+}
+
+function addChecklistSectionFromInput() {
+  const name = String(el.checklistTemplateSectionInput?.value || "").trim();
+  if (!name) return toast("Escribe el nombre de la seccion.");
+  const exists = (checklistTemplateSectionsDraft || []).some((s) =>
+    String(s?.name || "").trim().toLowerCase() === name.toLowerCase()
+    && String(s?.id || "") !== String(checklistTemplateSectionEditingId || "")
+  );
+  if (exists) return toast("Esa seccion ya existe.");
+  const wasEditing = !!checklistTemplateSectionEditingId;
+  if (wasEditing) {
+    const idx = (checklistTemplateSectionsDraft || []).findIndex((s) => String(s?.id || "") === String(checklistTemplateSectionEditingId || ""));
+    if (idx >= 0) checklistTemplateSectionsDraft[idx] = { ...checklistTemplateSectionsDraft[idx], name };
+  } else {
+    checklistTemplateSectionsDraft.push({ id: uid(), name, active: true });
+  }
+  saveChecklistTemplateDraft();
+  renderChecklistSectionSelect("");
+  renderChecklistSectionEditSelect("");
+  renderChecklistSectionsTable();
+  renderChecklistTemplateTable();
+  if (el.checklistTemplateSectionInput) el.checklistTemplateSectionInput.focus();
+  resetChecklistSectionEditor();
+  toast(wasEditing ? "Seccion actualizada." : "Seccion agregada.");
+}
+
+function addChecklistTemplateItemFromInput() {
+  const label = String(el.checklistTemplateInput?.value || "").trim();
+  const sectionId = String(el.checklistTemplateSectionSelect?.value || "").trim();
+  if (!label) return toast("Escribe un punto para el check list.");
+  if (!sectionId) return toast("Selecciona una seccion.");
+  const wasEditing = !!checklistTemplateEditingId;
+  const exists = (checklistTemplateDraft || []).some((x) => {
+    const sameLabel = String(x?.label || "").trim().toLowerCase() === label.toLowerCase();
+    const sameId = String(x?.id || "") === String(checklistTemplateEditingId || "");
+    return sameLabel && !sameId;
+  });
+  if (exists) return toast("Ese punto ya existe en el check list.");
+  if (checklistTemplateEditingId) {
+    const idx = (checklistTemplateDraft || []).findIndex((x) => String(x?.id || "") === String(checklistTemplateEditingId));
+    if (idx >= 0) checklistTemplateDraft[idx] = { ...checklistTemplateDraft[idx], label, sectionId };
+  } else {
+    checklistTemplateDraft.push({ id: uid(), label, sectionId, active: true });
+  }
+  saveChecklistTemplateDraft();
+  renderChecklistTemplateTable();
+  resetChecklistTemplateEditor();
+  if (el.checklistTemplateInput) el.checklistTemplateInput.focus();
+  toast(wasEditing ? "Punto actualizado." : "Punto agregado al check list.");
+}
+
+function updateEventChecklistProgress() {
+  const items = Array.isArray(eventChecklistDraft?.items) ? eventChecklistDraft.items : [];
+  const total = items.length;
+  const answered = items.filter((it) => normalizeChecklistStatus(it?.status) !== "").length;
+  const okCount = items.filter((it) => normalizeChecklistStatus(it?.status) === "ok").length;
+  const progressPct = total > 0 ? Math.round((answered / total) * 100) : 0;
+  const satisfactionPct = total > 0 ? Math.round((okCount / total) * 100) : 0;
+  if (el.eventChecklistProgressLabel) {
+    el.eventChecklistProgressLabel.textContent = `Resultado general ${satisfactionPct}%`;
+  }
+  if (el.eventChecklistSatisfactionLabel) {
+    el.eventChecklistSatisfactionLabel.textContent = `Avance respondido ${progressPct}%`;
+  }
+  if (el.eventChecklistProgressFill) {
+    const safePct = Math.max(0, Math.min(100, satisfactionPct));
+    el.eventChecklistProgressFill.style.width = `${safePct}%`;
+    el.eventChecklistProgressFill.style.background =
+      safePct >= 85
+        ? "linear-gradient(90deg, #10b981, #34d399)"
+        : (safePct >= 60
+          ? "linear-gradient(90deg, #f59e0b, #fbbf24)"
+          : "linear-gradient(90deg, #ef4444, #f87171)");
+  }
+}
+
 function renderEventChecklistRows() {
   if (!el.eventChecklistBody) return;
   const items = Array.isArray(eventChecklistDraft?.items) ? eventChecklistDraft.items : [];
@@ -3407,6 +5946,22 @@ function renderEventChecklistRows() {
     `;
     el.eventChecklistBody.appendChild(tr);
   });
+  updateEventChecklistProgress();
+}
+
+function renderEventChecklistTemplateSelect(selected = "") {
+  if (!el.eventChecklistTemplateSelect) return;
+  const keep = String(selected || "").trim();
+  const rows = getChecklistTemplates({ includeInactive: true });
+  el.eventChecklistTemplateSelect.innerHTML = "";
+  for (const tpl of rows) {
+    const opt = document.createElement("option");
+    opt.value = String(tpl?.id || "").trim();
+    if (!opt.value) continue;
+    opt.textContent = `${String(tpl?.name || "Checklist").trim()}${tpl?.active === false ? " (Inhabilitada)" : ""}`;
+    el.eventChecklistTemplateSelect.appendChild(opt);
+  }
+  el.eventChecklistTemplateSelect.value = keep;
 }
 
 function openEventChecklistModal(eventId) {
@@ -3414,6 +5969,7 @@ function openEventChecklistModal(eventId) {
   if (!draft) return toast("No se pudo abrir el check list del evento.");
   currentEventChecklistId = String(eventId || "").trim();
   eventChecklistDraft = draft;
+  renderEventChecklistTemplateSelect(draft.templateKey || "");
   if (el.eventChecklistDate) el.eventChecklistDate.value = draft.eventDate || "";
   if (el.eventChecklistEventName) el.eventChecklistEventName.value = draft.eventName || "";
   if (el.eventChecklistSubtitle) {
@@ -3447,6 +6003,8 @@ function saveEventChecklistFromModal() {
   const completed = normalizedItems.length > 0 && normalizedItems.every((it) => ["ok", "x", "na"].includes(it.status));
   state.eventChecklists[currentEventChecklistId] = {
     eventId: currentEventChecklistId,
+    templateKey: String(eventChecklistDraft.templateKey || "").trim(),
+    templateName: String(eventChecklistDraft.templateName || "").trim(),
     notes,
     items: normalizedItems,
     updatedAt: nowIso,
@@ -3681,6 +6239,7 @@ try {
   renderCompaniesSelect();
   renderServicesList();
   render();
+  initModernDatePickers();
   runUpcomingReminderChecks();
   refreshTopbarReminders();
   setInterval(runUpcomingReminderChecks, 60 * 1000);
@@ -3970,6 +6529,7 @@ async function doLogin() {
   renderTopbarWelcome();
   refreshTopbarReminders();
   el.loginScreen.hidden = true;
+  showModuleHub();
   if (el.loginPassword) el.loginPassword.value = "";
   if (el.eventUser && authSession.userId) {
     syncEnhancedSelectValue(el.eventUser, authSession.userId);
@@ -4008,14 +6568,52 @@ function initModernTimePicker(input) {
   input.step = String(SNAP_MINUTES * 60);
 }
 
+function initModernDatePicker(input) {
+  if (!input) return;
+  if (typeof window.flatpickr === "function") {
+    if (input._flatpickr) input._flatpickr.destroy();
+    input.type = "text";
+    input.autocomplete = "off";
+    window.flatpickr(input, {
+      dateFormat: "Y-m-d",
+      allowInput: false,
+      clickOpens: true,
+      disableMobile: true,
+      locale: window.flatpickr?.l10ns?.es || "default",
+      monthSelectorType: "static",
+      nextArrow: "<span aria-hidden=\"true\">&rsaquo;</span>",
+      prevArrow: "<span aria-hidden=\"true\">&lsaquo;</span>",
+      onChange: () => {
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      },
+      onReady: (_, __, instance) => {
+        input.addEventListener("focus", () => instance.open());
+        input.addEventListener("click", () => instance.open());
+      },
+    });
+    return;
+  }
+  input.type = "date";
+}
+
+function initModernDatePickers() {
+  for (const input of Array.from(document.querySelectorAll('input[type="date"]'))) {
+    initModernDatePicker(input);
+  }
+}
+
 function addSlotRow(slot = null) {
   const row = document.createElement("tr");
   row.className = "slotRow";
   const salon = slot?.salon || "";
+  const paxValue = Number(slot?.slotPax ?? slot?.pax ?? 0);
+  const pax = paxValue > 0 ? String(Math.round(paxValue)) : "";
   const start = slot?.startTime || "";
   const end = slot?.endTime || "";
   row.innerHTML = `
     <td><select class="quoteInput slotRoom">${salonOptionsHtml(salon, true)}</select></td>
+    <td><input class="quoteInput slotPax" type="number" min="1" step="1" placeholder="PAX" value="${escapeHtml(pax)}" /></td>
     <td><input class="quoteInput slotStart" type="text" inputmode="numeric" placeholder="HH:mm" value="${escapeHtml(start)}" /></td>
     <td><input class="quoteInput slotEnd" type="text" inputmode="numeric" placeholder="HH:mm" value="${escapeHtml(end)}" /></td>
     <td><button type="button" class="btnDanger slotRemoveBtn">X</button></td>
@@ -4040,9 +6638,17 @@ function getSlotsFromForm() {
   const rows = Array.from(el.slotsBody.querySelectorAll(".slotRow"));
   return rows.map(row => ({
     salon: row.querySelector(".slotRoom")?.value || "",
+    slotPax: Math.max(0, Number(row.querySelector(".slotPax")?.value || 0)) || 0,
     startTime: row.querySelector(".slotStart")?.value || "",
     endTime: row.querySelector(".slotEnd")?.value || "",
   }));
+}
+
+function syncEventPaxFromSlots() {
+  if (!el.eventPax) return 0;
+  const total = getSlotsFromForm().reduce((acc, slot) => acc + Math.max(0, Number(slot?.slotPax || 0)), 0);
+  el.eventPax.value = total > 0 ? String(total) : "";
+  return total;
 }
 
 function syncHiddenTimesFromFirstSlot() {
@@ -4056,6 +6662,10 @@ function renderCompaniesSelect(selectedId = null) {
   const previousValue = String(el.quoteCompany.value || "").trim();
   el.quoteCompany.innerHTML = "";
   if (el.companiesList) el.companiesList.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Selecciona empresa";
+  el.quoteCompany.appendChild(placeholder);
   const disabledCompanies = new Set((state.disabledCompanies || []).map((x) => String(x)));
   const keepId = String(selectedId || "").trim();
   for (const c of state.companies || []) {
@@ -4066,10 +6676,7 @@ function renderCompaniesSelect(selectedId = null) {
     el.quoteCompany.appendChild(opt);
   }
   if (selectedId) el.quoteCompany.value = selectedId;
-  if (!el.quoteCompany.value && el.quoteCompany.options.length) {
-    el.quoteCompany.value = el.quoteCompany.options[0].value;
-  }
-  const finalCompanyId = String(el.quoteCompany.value || previousValue || "").trim();
+  const finalCompanyId = String(el.quoteCompany.value || (keepId ? "" : previousValue) || "").trim();
   enhanceSelectControl(el.quoteCompany, true);
   syncEnhancedSelectValue(el.quoteCompany, finalCompanyId);
   const selectedCompany = (state.companies || []).find(c => c.id === el.quoteCompany.value);
@@ -4128,29 +6735,36 @@ function renderServicesList() {
 }
 
 function findCompanyMatches(rawTerm) {
-  const term = String(rawTerm || "").trim().toLowerCase();
+  const term = String(rawTerm || "").trim();
   if (!term) return [];
   const disabledCompanies = new Set((state.disabledCompanies || []).map((x) => String(x)));
   const companies = (state.companies || []).filter((c) => !disabledCompanies.has(String(c.id)));
   return companies.filter((c) => {
-    const name = String(c.name || "").toLowerCase();
-    const businessName = String(c.businessName || "").toLowerCase();
-    const nit = String(c.nit || "").toLowerCase();
-    return name.includes(term) || businessName.includes(term) || nit.includes(term);
+    const haystack = [
+      c?.name,
+      c?.businessName,
+      c?.billTo,
+      c?.owner,
+      c?.email,
+      c?.phone,
+      c?.nit,
+    ].filter(Boolean).join(" ");
+    return matchesLikeSearch(haystack, term);
   });
 }
 
 function resolveCompanyFromSearch(rawTerm) {
-  const term = String(rawTerm || "").trim().toLowerCase();
+  const term = String(rawTerm || "").trim();
   if (!term) return null;
+  const normalizedTerm = normalizeBucketKey(term);
   const disabledCompanies = new Set((state.disabledCompanies || []).map((x) => String(x)));
   const companies = (state.companies || []).filter((c) => !disabledCompanies.has(String(c.id)));
-  const exactName = companies.find((c) => String(c.name || "").toLowerCase() === term);
+  const exactName = companies.find((c) => normalizeBucketKey(c?.name || "") === normalizedTerm);
   if (exactName) return exactName;
-  const exactBusiness = companies.find((c) => String(c.businessName || "").toLowerCase() === term);
+  const exactBusiness = companies.find((c) => normalizeBucketKey(c?.businessName || "") === normalizedTerm);
   if (exactBusiness) return exactBusiness;
   const matches = findCompanyMatches(term);
-  return matches.length === 1 ? matches[0] : null;
+  return matches[0] || null;
 }
 
 function applyQuoteCompanyDefaults() {
@@ -4175,32 +6789,37 @@ function selectCompanyInQuote(companyId) {
   renderQuoteManagerSelect(company.id, null);
   if (quoteDraft) quoteDraft.managerId = String(el.quoteManagerSelect.value || "").trim();
   applyQuoteCompanyDefaults();
-  fillQuoteHeaderFields(true);
+  fillQuoteHeaderFields(true, false);
 }
 
 function findServiceMatches(rawTerm) {
-  const term = String(rawTerm || "").trim().toLowerCase();
+  const term = String(rawTerm || "").trim();
   if (!term) return [];
   const disabledServices = new Set((state.disabledServices || []).map((x) => String(x)));
   const services = (state.services || []).filter((s) => !disabledServices.has(String(s.id)));
   return services.filter((s) => {
-    const name = String(s.name || "").toLowerCase();
-    const desc = String(s.description || "").toLowerCase();
-    return name.includes(term) || desc.includes(term);
+    const haystack = [
+      s?.name,
+      s?.description,
+      s?.category,
+      s?.subcategory,
+    ].filter(Boolean).join(" ");
+    return matchesLikeSearch(haystack, term);
   });
 }
 
 function resolveServiceFromSearch(rawTerm) {
-  const term = String(rawTerm || "").trim().toLowerCase();
+  const term = String(rawTerm || "").trim();
   if (!term) return null;
+  const normalizedTerm = normalizeBucketKey(term);
   const disabledServices = new Set((state.disabledServices || []).map((x) => String(x)));
   const services = (state.services || []).filter((s) => !disabledServices.has(String(s.id)));
-  const exactName = services.find((s) => String(s.name || "").toLowerCase() === term);
+  const exactName = services.find((s) => normalizeBucketKey(s?.name || "") === normalizedTerm);
   if (exactName) return exactName;
-  const exactDesc = services.find((s) => String(s.description || "").toLowerCase() === term);
+  const exactDesc = services.find((s) => normalizeBucketKey(s?.description || "") === normalizedTerm);
   if (exactDesc) return exactDesc;
   const matches = findServiceMatches(term);
-  return matches.length === 1 ? matches[0] : null;
+  return matches[0] || null;
 }
 
 function applyServiceToQuoteItem(item, service) {
@@ -4232,6 +6851,12 @@ function selectedOptionText(selectEl) {
   return String(selectEl.options[idx].textContent || "").trim();
 }
 
+function sanitizeCatalogOptionLabel(rawText) {
+  return String(rawText || "")
+    .replace(/\s*\(Inhabilitad[ao]\)\s*$/i, "")
+    .trim();
+}
+
 function renderCategoriasServicioSelect() {
   if (!el.serviceCategory) return;
   el.serviceCategory.innerHTML = "";
@@ -4242,7 +6867,9 @@ function renderCategoriasServicioSelect() {
   for (const c of catalogoCategoriasServicio) {
     const opt = document.createElement("option");
     opt.value = String(c.id);
-    opt.textContent = c.nombre;
+    const isActive = c?.activo !== false;
+    opt.textContent = `${c.nombre}${isActive ? "" : " (Inhabilitada)"}`;
+    opt.dataset.active = isActive ? "1" : "0";
     el.serviceCategory.appendChild(opt);
   }
 }
@@ -4255,54 +6882,415 @@ function renderSubcategoriasServicioSelect(categoriaId) {
   placeholder.textContent = "Seleccione subcategoria";
   el.serviceSubcategory.appendChild(placeholder);
   const catId = Number(categoriaId);
+  const categoryActiveMap = new Map(
+    catalogoCategoriasServicio.map((c) => [Number(c.id), c?.activo !== false])
+  );
   const list = Number.isFinite(catId)
     ? catalogoSubcategoriasServicio.filter((s) => Number(s.id_categoria) === catId)
     : [];
   for (const s of list) {
     const opt = document.createElement("option");
     opt.value = String(s.id);
-    opt.textContent = s.nombre;
+    const categoryActive = categoryActiveMap.get(Number(s.id_categoria)) !== false;
+    const subActive = s?.activo !== false;
+    const isActive = categoryActive && subActive;
+    opt.textContent = `${s.nombre}${isActive ? "" : " (Inhabilitada)"}`;
+    opt.dataset.active = isActive ? "1" : "0";
     el.serviceSubcategory.appendChild(opt);
   }
 }
 
-async function syncServiceCatalogFromDb() {
-  try {
-    const categoriasUrl = buildApiUrlFromStateUrl(activeApiStateUrl, "categorias-servicio");
-    const categoriasRes = await fetch(categoriasUrl, { cache: "no-store" });
-    if (categoriasRes.ok) {
-      const payloadCategorias = await categoriasRes.json();
-      const categorias = Array.isArray(payloadCategorias?.categorias) ? payloadCategorias.categorias : [];
-      catalogoCategoriasServicio = categorias
-        .map((c) => ({ id: Number(c.id), nombre: String(c.nombre || "").trim() }))
-        .filter((c) => Number.isFinite(c.id) && c.nombre);
-    }
-  } catch (_) { }
+async function syncServiceCatalogFromDb(allowRecovery = true) {
+  async function loadCatalogLists() {
+    try {
+      const categoriasUrl = buildApiUrlFromStateUrl(activeApiStateUrl, "categorias-servicio");
+      const categoriasRes = await fetch(categoriasUrl, { cache: "no-store" });
+      if (categoriasRes.ok) {
+        const payloadCategorias = await categoriasRes.json();
+        const categorias = Array.isArray(payloadCategorias?.categorias) ? payloadCategorias.categorias : [];
+        catalogoCategoriasServicio = categorias
+          .map((c) => ({ id: Number(c.id), nombre: String(c.nombre || "").trim(), activo: c?.activo !== false && Number(c?.activo) !== 0 }))
+          .filter((c) => Number.isFinite(c.id) && c.nombre);
+      }
+    } catch (_) { }
 
-  try {
-    const subcategoriasUrl = buildApiUrlFromStateUrl(activeApiStateUrl, "subcategorias-servicio");
-    const subcategoriasRes = await fetch(subcategoriasUrl, { cache: "no-store" });
-    if (subcategoriasRes.ok) {
-      const payloadSubcategorias = await subcategoriasRes.json();
-      const subcategorias = Array.isArray(payloadSubcategorias?.subcategorias) ? payloadSubcategorias.subcategorias : [];
-      catalogoSubcategoriasServicio = subcategorias
-        .map((s) => ({
-          id: Number(s.id),
-          id_categoria: Number(s.id_categoria),
-          nombre: String(s.nombre || "").trim(),
-        }))
-        .filter((s) => Number.isFinite(s.id) && Number.isFinite(s.id_categoria) && s.nombre);
-    }
-  } catch (_) { }
+    try {
+      const subcategoriasUrl = buildApiUrlFromStateUrl(activeApiStateUrl, "subcategorias-servicio");
+      const subcategoriasRes = await fetch(subcategoriasUrl, { cache: "no-store" });
+      if (subcategoriasRes.ok) {
+        const payloadSubcategorias = await subcategoriasRes.json();
+        const subcategorias = Array.isArray(payloadSubcategorias?.subcategorias) ? payloadSubcategorias.subcategorias : [];
+        catalogoSubcategoriasServicio = subcategorias
+          .map((s) => ({
+            id: Number(s.id),
+            id_categoria: Number(s.id_categoria),
+            nombre: String(s.nombre || "").trim(),
+            activo: s?.activo !== false && Number(s?.activo) !== 0,
+          }))
+          .filter((s) => Number.isFinite(s.id) && Number.isFinite(s.id_categoria) && s.nombre);
+      }
+    } catch (_) { }
+  }
 
+  await loadCatalogLists();
+  if (
+    allowRecovery
+    && catalogoCategoriasServicio.length === 0
+    && Array.isArray(state.services)
+    && state.services.length > 0
+  ) {
+    try {
+      const recoverUrl = buildApiUrlFromStateUrl(activeApiStateUrl, "service-catalog/recover");
+      const recoverRes = await fetch(recoverUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forceRelink: false }),
+      });
+      if (recoverRes.ok) {
+        await loadCatalogLists();
+      }
+    } catch (_) { }
+  }
+
+  syncServiceLabelsFromCatalogInState();
   renderCategoriasServicioSelect();
   renderSubcategoriasServicioSelect(Number(el.serviceCategory?.value || NaN));
+}
+
+function syncServiceLabelsFromCatalogInState() {
+  const services = Array.isArray(state.services) ? state.services : [];
+  if (!services.length) return;
+  const hasCatalogCategories = Array.isArray(catalogoCategoriasServicio) && catalogoCategoriasServicio.length > 0;
+  const hasCatalogSubcategories = Array.isArray(catalogoSubcategoriasServicio) && catalogoSubcategoriasServicio.length > 0;
+  if (!hasCatalogCategories && !hasCatalogSubcategories) return;
+
+  const categoryById = new Map(
+    (catalogoCategoriasServicio || []).map((c) => [Number(c.id), String(c.nombre || "").trim()])
+  );
+  const subcategoryById = new Map(
+    (catalogoSubcategoriasServicio || []).map((s) => [
+      Number(s.id),
+      {
+        nombre: String(s.nombre || "").trim(),
+        id_categoria: Number(s.id_categoria),
+      },
+    ])
+  );
+
+  let changed = false;
+  for (const rawService of services) {
+    if (!rawService || typeof rawService !== "object") continue;
+    const service = rawService;
+    const categoryId = Number(service.categoryId);
+    const subcategoryId = Number(service.subcategoryId);
+    const subInfo = Number.isFinite(subcategoryId) ? subcategoryById.get(subcategoryId) : null;
+
+    let nextCategoryId = Number.isFinite(categoryId) ? categoryId : null;
+    if ((!Number.isFinite(categoryId) || categoryId <= 0) && subInfo && Number.isFinite(subInfo.id_categoria)) {
+      nextCategoryId = Number(subInfo.id_categoria);
+    }
+
+    const hasNextCategory = Number.isFinite(nextCategoryId) && nextCategoryId > 0;
+    const mappedCategoryName = hasNextCategory ? String(categoryById.get(nextCategoryId) || "") : "";
+    const mappedSubcategoryName = subInfo ? String(subInfo.nombre || "") : "";
+    const nextCategoryName = mappedCategoryName || String(service.category || "").trim();
+    const nextSubcategoryName = mappedSubcategoryName || String(service.subcategory || "").trim();
+
+    if (nextCategoryId !== null && Number(service.categoryId) !== Number(nextCategoryId)) {
+      service.categoryId = nextCategoryId;
+      changed = true;
+    }
+    if (String(service.category || "") !== nextCategoryName) {
+      service.category = nextCategoryName;
+      changed = true;
+    }
+    if (String(service.subcategory || "") !== nextSubcategoryName) {
+      service.subcategory = nextSubcategoryName;
+      changed = true;
+    }
+  }
+
+  if (!changed) return;
+  renderServicesList();
+  try { renderServiceManagerTable(); } catch (_) { }
+  persist();
+}
+
+function renderServiceCategoryManagerSelect(keep = "") {
+  if (!el.serviceCategoryEditSelect) return;
+  const current = String(keep || "").trim();
+  el.serviceCategoryEditSelect.innerHTML = `<option value="">Crear nueva categoria</option>`;
+  for (const c of catalogoCategoriasServicio.slice().sort((a, b) => String(a?.nombre || "").localeCompare(String(b?.nombre || ""), "es", { sensitivity: "base" }))) {
+    const opt = document.createElement("option");
+    opt.value = String(c.id);
+    opt.textContent = `${c.nombre}${c?.activo === false ? " (Inhabilitada)" : ""}`;
+    el.serviceCategoryEditSelect.appendChild(opt);
+  }
+  el.serviceCategoryEditSelect.value = current;
+}
+
+function renderServiceCategoryManagerTable() {
+  if (!el.serviceCategoryBody) return;
+  el.serviceCategoryBody.innerHTML = "";
+  const rows = catalogoCategoriasServicio.slice().sort((a, b) => String(a?.nombre || "").localeCompare(String(b?.nombre || ""), "es", { sensitivity: "base" }));
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="3">Sin categorias registradas.</td>`;
+    el.serviceCategoryBody.appendChild(tr);
+    return;
+  }
+  for (const row of rows) {
+    const isActive = row?.activo !== false;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(String(row?.nombre || ""))}</td>
+      <td>${isActive ? "Activa" : "Inhabilitada"}</td>
+      <td class="tableActionsCell">
+        <button class="apptIconBtn apptEdit" type="button" data-service-category-edit="${escapeHtml(String(row?.id || ""))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-category-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â" : "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº"}</button>
+      </td>`;
+    el.serviceCategoryBody.appendChild(tr);
+  }
+}
+
+function loadServiceCategoryInManager(id = "") {
+  const textId = String(id || "").trim();
+  editingServiceCategoryId = textId;
+  renderServiceCategoryManagerSelect(textId);
+  const target = catalogoCategoriasServicio.find((c) => String(c?.id || "") === textId);
+  if (el.serviceCategoryNameInput) el.serviceCategoryNameInput.value = String(target?.nombre || "");
+}
+
+async function openServiceCategoryManagerModal() {
+  if (!el.serviceCategoryBackdrop) return;
+  await syncServiceCatalogFromDb();
+  renderServiceCategoryManagerTable();
+  loadServiceCategoryInManager("");
+  el.serviceCategoryBackdrop.hidden = false;
+  setTimeout(() => {
+    try { el.serviceCategoryNameInput?.focus(); } catch (_) { }
+  }, 0);
+}
+
+function closeServiceCategoryManagerModal() {
+  if (!el.serviceCategoryBackdrop) return;
+  el.serviceCategoryBackdrop.hidden = true;
+  editingServiceCategoryId = "";
+  if (el.serviceCategoryEditSelect) el.serviceCategoryEditSelect.value = "";
+  if (el.serviceCategoryNameInput) el.serviceCategoryNameInput.value = "";
+}
+
+async function saveServiceCategoryFromManagerModal() {
+  const name = String(el.serviceCategoryNameInput?.value || "").trim();
+  if (!name) return toast("Nombre de categoria es obligatorio.");
+  const editingId = String(
+    editingServiceCategoryId ||
+    el.serviceCategoryEditSelect?.value ||
+    ""
+  ).trim();
+  try {
+    const endpoint = editingId
+      ? buildApiUrlFromStateUrl(activeApiStateUrl, `categorias-servicio/${encodeURIComponent(editingId)}`)
+      : buildApiUrlFromStateUrl(activeApiStateUrl, "categorias-servicio");
+    const res = await fetch(endpoint, {
+      method: editingId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: name }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.message || "No se pudo guardar la categoria.");
+    const selectedId = String(payload?.categoria?.id || editingId || "").trim();
+    await syncServiceCatalogFromDb();
+    if (el.serviceCategory) el.serviceCategory.value = selectedId || el.serviceCategory.value || "";
+    renderSubcategoriasServicioSelect(Number(el.serviceCategory?.value || NaN));
+    renderServiceCategoryManagerTable();
+    loadServiceCategoryInManager("");
+    toast(editingId ? "Categoria actualizada." : "Categoria creada.");
+  } catch (error) {
+    toast(error?.message || "No se pudo guardar la categoria.");
+  }
+}
+
+function renderServiceSubcategoryCategorySelect(keep = "") {
+  if (!el.serviceSubcategoryCategorySelect) return;
+  const selected = String(keep || "").trim();
+  el.serviceSubcategoryCategorySelect.innerHTML = `<option value="">Selecciona categoria</option>`;
+  for (const c of catalogoCategoriasServicio.slice().sort((a, b) => String(a?.nombre || "").localeCompare(String(b?.nombre || ""), "es", { sensitivity: "base" }))) {
+    const opt = document.createElement("option");
+    opt.value = String(c.id);
+    opt.textContent = `${c.nombre}${c?.activo === false ? " (Inhabilitada)" : ""}`;
+    el.serviceSubcategoryCategorySelect.appendChild(opt);
+  }
+  el.serviceSubcategoryCategorySelect.value = selected;
+}
+
+function renderServiceSubcategoryManagerSelect(keep = "", categoryId = "") {
+  if (!el.serviceSubcategoryEditSelect) return;
+  const current = String(keep || "").trim();
+  const category = Number(categoryId);
+  el.serviceSubcategoryEditSelect.innerHTML = `<option value="">Crear nueva subcategoria</option>`;
+  const rows = catalogoSubcategoriasServicio
+    .filter((s) => !Number.isFinite(category) || category <= 0 || Number(s?.id_categoria) === category)
+    .sort((a, b) => String(a?.nombre || "").localeCompare(String(b?.nombre || ""), "es", { sensitivity: "base" }));
+  for (const s of rows) {
+    const opt = document.createElement("option");
+    opt.value = String(s.id);
+    opt.textContent = `${s.nombre}${s?.activo === false ? " (Inhabilitada)" : ""}`;
+    el.serviceSubcategoryEditSelect.appendChild(opt);
+  }
+  el.serviceSubcategoryEditSelect.value = current;
+}
+
+function renderServiceSubcategoryManagerTable(categoryFilter = "") {
+  if (!el.serviceSubcategoryBody) return;
+  const filterId = Number(categoryFilter);
+  const categoryById = new Map(catalogoCategoriasServicio.map((c) => [Number(c.id), String(c.nombre || "")]));
+  const rows = catalogoSubcategoriasServicio
+    .filter((s) => !Number.isFinite(filterId) || filterId <= 0 || Number(s?.id_categoria) === filterId)
+    .slice()
+    .sort((a, b) => String(a?.nombre || "").localeCompare(String(b?.nombre || ""), "es", { sensitivity: "base" }));
+  el.serviceSubcategoryBody.innerHTML = "";
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="4">Sin subcategorias registradas.</td>`;
+    el.serviceSubcategoryBody.appendChild(tr);
+    return;
+  }
+  for (const row of rows) {
+    const isActive = row?.activo !== false;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(String(row?.nombre || ""))}</td>
+      <td>${escapeHtml(String(categoryById.get(Number(row?.id_categoria)) || "-"))}</td>
+      <td>${isActive ? "Activa" : "Inhabilitada"}</td>
+      <td class="tableActionsCell">
+        <button class="apptIconBtn apptEdit" type="button" data-service-subcategory-edit="${escapeHtml(String(row?.id || ""))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-subcategory-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â" : "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº"}</button>
+      </td>`;
+    el.serviceSubcategoryBody.appendChild(tr);
+  }
+}
+
+function loadServiceSubcategoryInManager(id = "", defaultCategoryId = "") {
+  const textId = String(id || "").trim();
+  editingServiceSubcategoryId = textId;
+  const target = catalogoSubcategoriasServicio.find((s) => String(s?.id || "") === textId);
+  const categoryId = String(target?.id_categoria || defaultCategoryId || "").trim();
+  renderServiceSubcategoryCategorySelect(categoryId);
+  renderServiceSubcategoryManagerSelect(textId, categoryId);
+  renderServiceSubcategoryManagerTable(categoryId);
+  if (el.serviceSubcategoryNameInput) el.serviceSubcategoryNameInput.value = String(target?.nombre || "");
+}
+
+async function openServiceSubcategoryManagerModal() {
+  if (!el.serviceSubcategoryBackdrop) return;
+  await syncServiceCatalogFromDb();
+  const categoryFromService = String(el.serviceCategory?.value || "").trim();
+  loadServiceSubcategoryInManager("", categoryFromService);
+  el.serviceSubcategoryBackdrop.hidden = false;
+  setTimeout(() => {
+    try { el.serviceSubcategoryNameInput?.focus(); } catch (_) { }
+  }, 0);
+}
+
+function closeServiceSubcategoryManagerModal() {
+  if (!el.serviceSubcategoryBackdrop) return;
+  el.serviceSubcategoryBackdrop.hidden = true;
+  editingServiceSubcategoryId = "";
+  if (el.serviceSubcategoryCategorySelect) el.serviceSubcategoryCategorySelect.value = "";
+  if (el.serviceSubcategoryEditSelect) el.serviceSubcategoryEditSelect.value = "";
+  if (el.serviceSubcategoryNameInput) el.serviceSubcategoryNameInput.value = "";
+}
+
+async function saveServiceSubcategoryFromManagerModal() {
+  const categoryId = Number(el.serviceSubcategoryCategorySelect?.value || NaN);
+  const name = String(el.serviceSubcategoryNameInput?.value || "").trim();
+  if (!Number.isFinite(categoryId) || categoryId <= 0) return toast("Categoria es obligatoria.");
+  if (!name) return toast("Nombre de subcategoria es obligatorio.");
+  const editingId = String(
+    editingServiceSubcategoryId ||
+    el.serviceSubcategoryEditSelect?.value ||
+    ""
+  ).trim();
+  try {
+    const endpoint = editingId
+      ? buildApiUrlFromStateUrl(activeApiStateUrl, `subcategorias-servicio/${encodeURIComponent(editingId)}`)
+      : buildApiUrlFromStateUrl(activeApiStateUrl, "subcategorias-servicio");
+    const res = await fetch(endpoint, {
+      method: editingId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_categoria: categoryId, nombre: name }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.message || "No se pudo guardar la subcategoria.");
+    const subcategoryId = String(payload?.subcategoria?.id || editingId || "").trim();
+    await syncServiceCatalogFromDb();
+    if (el.serviceCategory) el.serviceCategory.value = String(categoryId);
+    renderSubcategoriasServicioSelect(categoryId);
+    if (el.serviceSubcategory) el.serviceSubcategory.value = subcategoryId;
+    loadServiceSubcategoryInManager("", String(categoryId));
+    toast(editingId ? "Subcategoria actualizada." : "Subcategoria creada.");
+  } catch (error) {
+    toast(error?.message || "No se pudo guardar la subcategoria.");
+  }
+}
+
+async function toggleServiceCategoryActiveFromManager(categoryId) {
+  const id = String(categoryId || "").trim();
+  if (!id) return;
+  const current = catalogoCategoriasServicio.find((c) => String(c?.id || "") === id);
+  if (!current) return;
+  const nextActive = current?.activo === false ? true : false;
+  try {
+    const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, `categorias-servicio/${encodeURIComponent(id)}/activo`);
+    const res = await fetch(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: nextActive ? 1 : 0 }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.message || "No se pudo cambiar el estado de categoria.");
+    await syncServiceCatalogFromDb();
+    renderServiceCategoryManagerTable();
+    loadServiceCategoryInManager(editingServiceCategoryId || "");
+    toast(nextActive ? "Categoria reactivada." : "Categoria inhabilitada.");
+  } catch (error) {
+    toast(error?.message || "No se pudo cambiar el estado de categoria.");
+  }
+}
+
+async function toggleServiceSubcategoryActiveFromManager(subcategoryId) {
+  const id = String(subcategoryId || "").trim();
+  if (!id) return;
+  const current = catalogoSubcategoriasServicio.find((s) => String(s?.id || "") === id);
+  if (!current) return;
+  const nextActive = current?.activo === false ? true : false;
+  try {
+    const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, `subcategorias-servicio/${encodeURIComponent(id)}/activo`);
+    const res = await fetch(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: nextActive ? 1 : 0 }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.detail || payload?.message || "No se pudo cambiar el estado de subcategoria.");
+    const selectedCategoryId = String(el.serviceSubcategoryCategorySelect?.value || "").trim();
+    await syncServiceCatalogFromDb();
+    loadServiceSubcategoryInManager("", selectedCategoryId);
+    toast(nextActive ? "Subcategoria reactivada." : "Subcategoria inhabilitada.");
+  } catch (error) {
+    toast(error?.message || "No se pudo cambiar el estado de subcategoria.");
+  }
 }
 
 function renderQuoteManagerSelect(companyId, selectedManagerId = null) {
   if (!el.quoteManagerSelect) return;
   const previousValue = String(el.quoteManagerSelect.value || "").trim();
   el.quoteManagerSelect.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Selecciona encargado";
+  el.quoteManagerSelect.appendChild(placeholder);
   const company = (state.companies || []).find(c => c.id === companyId);
   const disabledManagers = new Set((state.disabledManagers || []).map((x) => String(x)));
   const keepId = String(selectedManagerId || "").trim();
@@ -4315,9 +7303,6 @@ function renderQuoteManagerSelect(companyId, selectedManagerId = null) {
   }
   if (selectedManagerId && managers.some(m => m.id === selectedManagerId)) {
     el.quoteManagerSelect.value = selectedManagerId;
-  }
-  if (!el.quoteManagerSelect.value && el.quoteManagerSelect.options.length) {
-    el.quoteManagerSelect.value = el.quoteManagerSelect.options[0].value;
   }
   const managerId = String(el.quoteManagerSelect.value || selectedManagerId || previousValue || "").trim();
   enhanceSelectControl(el.quoteManagerSelect, true);
@@ -4452,6 +7437,7 @@ function buildUserComparable(userLike) {
   const u = normalizeUserRecord(userLike || {});
   return {
     name: String(u.fullName || u.name || "").trim(),
+    role: normalizeUserRole(u.role),
     username: String(u.username || "").trim(),
     email: String(u.email || "").trim(),
     phone: String(u.phone || "").trim(),
@@ -4577,6 +7563,7 @@ function renderQuoteTemplateSelect(selectedId = "") {
   el.quoteTemplateSelect.appendChild(none);
 
   const ordered = (quickTemplates || [])
+    .filter((t) => String(t?.id || "").trim() !== CORPORATE_TEMPLATE_ID)
     .slice()
     .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity: "base" }));
   for (const tpl of ordered) {
@@ -4585,8 +7572,8 @@ function renderQuoteTemplateSelect(selectedId = "") {
     opt.textContent = String(tpl.name || "Plantilla");
     el.quoteTemplateSelect.appendChild(opt);
   }
-  const fallbackId = ordered.some((x) => String(x.id) === CORPORATE_TEMPLATE_ID)
-    ? CORPORATE_TEMPLATE_ID
+  const fallbackId = ordered.some((x) => String(x.id) === CONTRACT_CORP_TEMPLATE_ID)
+    ? CONTRACT_CORP_TEMPLATE_ID
     : (ordered[0]?.id || "");
   const selected = selectedId && ordered.some((x) => x.id === selectedId)
     ? selectedId
@@ -4594,6 +7581,155 @@ function renderQuoteTemplateSelect(selectedId = "") {
   el.quoteTemplateSelect.value = selected || "";
 }
 
+function getQuoteServiceTemplatesFromState() {
+  return Array.isArray(state?.quoteServiceTemplates) ? state.quoteServiceTemplates : [];
+}
+
+function normalizeQuoteServiceTemplateItems(rawItems) {
+  const rangeDates = getQuoteRangeDates();
+  const fallbackDate = String(el.quoteServiceDate?.value || rangeDates[0] || "").trim();
+  return normalizeQuoteItemsForSnapshot(rawItems)
+    .map((item) => {
+      const next = { ...item, rowId: uid() };
+      const candidateDate = String(item?.serviceDate || "").trim();
+      next.serviceDate = rangeDates.length
+        ? (rangeDates.includes(candidateDate) ? candidateDate : fallbackDate)
+        : (candidateDate || fallbackDate);
+      if (String(next.quantityMode || "").toUpperCase() !== "PAX") {
+        next.qty = Math.max(1, Number(next.qty || 1));
+      }
+      return next;
+    })
+    .filter((item) => String(item.name || "").trim());
+}
+
+function normalizeQuoteServiceTemplateRecord(candidate, index = 0) {
+  const row = candidate && typeof candidate === "object" ? candidate : {};
+  const id = String(row.id || `qst_${index + 1}`).trim() || `qst_${index + 1}`;
+  return {
+    id,
+    name: String(row.name || "").trim() || `Plantilla ${index + 1}`,
+    items: normalizeQuoteItemsForSnapshot(row.items),
+    createdAt: String(row.createdAt || "").trim() || new Date().toISOString(),
+    updatedAt: String(row.updatedAt || "").trim() || new Date().toISOString(),
+  };
+}
+
+function normalizeQuoteServiceTemplatesCollection(rawTemplates) {
+  const list = Array.isArray(rawTemplates) ? rawTemplates : [];
+  const normalized = [];
+  const seenIds = new Set();
+  for (let i = 0; i < list.length; i++) {
+    const rec = normalizeQuoteServiceTemplateRecord(list[i], i);
+    if (!rec.id || seenIds.has(rec.id)) continue;
+    seenIds.add(rec.id);
+    normalized.push(rec);
+  }
+  normalized.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base" }));
+  return normalized;
+}
+
+function renderQuoteServiceTemplateSelect(selectedId = "") {
+  if (!el.quoteServiceTemplateSelect) return;
+  const templates = normalizeQuoteServiceTemplatesCollection(getQuoteServiceTemplatesFromState());
+  state.quoteServiceTemplates = templates;
+  el.quoteServiceTemplateSelect.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Selecciona plantilla";
+  el.quoteServiceTemplateSelect.appendChild(placeholder);
+  for (const tpl of templates) {
+    const opt = document.createElement("option");
+    opt.value = String(tpl.id || "");
+    opt.textContent = String(tpl.name || "Plantilla");
+    el.quoteServiceTemplateSelect.appendChild(opt);
+  }
+  const selected = templates.some((t) => String(t.id) === String(selectedId || "")) ? String(selectedId || "") : "";
+  el.quoteServiceTemplateSelect.value = selected;
+  if (el.quoteServiceTemplateName) {
+    const found = templates.find((t) => String(t.id) === selected);
+    el.quoteServiceTemplateName.value = found ? String(found.name || "") : "";
+  }
+}
+
+async function applyQuoteServiceTemplateToDraft(templateId) {
+  if (!quoteDraft) return;
+  const id = String(templateId || el.quoteServiceTemplateSelect?.value || "").trim();
+  if (!id) return toast("Selecciona una plantilla de servicios.");
+  const templates = normalizeQuoteServiceTemplatesCollection(getQuoteServiceTemplatesFromState());
+  state.quoteServiceTemplates = templates;
+  const target = templates.find((t) => String(t.id) === id);
+  if (!target) return toast("Plantilla no encontrada.");
+  if (Array.isArray(quoteDraft.items) && quoteDraft.items.length) {
+    const ok = await modernConfirm({
+      title: "Aplicar plantilla",
+      message: "Esto reemplazara los servicios actuales de la cotizacion. Deseas continuar?",
+      confirmText: "Si, aplicar",
+      cancelText: "No",
+    });
+    if (!ok) return;
+  }
+  quoteDraft.items = normalizeQuoteServiceTemplateItems(target.items);
+  if (el.quoteServiceTemplateName) el.quoteServiceTemplateName.value = String(target.name || "");
+  renderQuoteItems();
+  toast(`Plantilla aplicada: ${target.name}`);
+}
+
+function saveQuoteServiceTemplateFromDraft(updateExisting = false) {
+  if (!quoteDraft) return;
+  const name = String(el.quoteServiceTemplateName?.value || "").trim();
+  if (!name) return toast("Escribe el nombre de la plantilla.");
+  if (!Array.isArray(quoteDraft.items) || !quoteDraft.items.length) {
+    return toast("Agrega al menos un servicio para guardar la plantilla.");
+  }
+  const templates = normalizeQuoteServiceTemplatesCollection(getQuoteServiceTemplatesFromState());
+  const nowIso = new Date().toISOString();
+  const sanitizedItems = normalizeQuoteServiceTemplateItems(quoteDraft.items);
+  if (!sanitizedItems.length) return toast("La plantilla no tiene servicios validos para guardar.");
+
+  if (updateExisting) {
+    const selectedId = String(el.quoteServiceTemplateSelect?.value || "").trim();
+    if (!selectedId) return toast("Selecciona una plantilla para actualizar.");
+    const idx = templates.findIndex((t) => String(t.id) === selectedId);
+    if (idx < 0) return toast("Plantilla no encontrada para actualizar.");
+    templates[idx] = { ...templates[idx], name, items: sanitizedItems, updatedAt: nowIso };
+    state.quoteServiceTemplates = normalizeQuoteServiceTemplatesCollection(templates);
+    renderQuoteServiceTemplateSelect(selectedId);
+    persist();
+    toast("Plantilla de servicios actualizada.");
+    return;
+  }
+
+  const duplicate = templates.find((t) => String(t.name || "").trim().toLowerCase() === name.toLowerCase());
+  if (duplicate) return toast("Ya existe una plantilla con ese nombre. Usa Actualizar o cambia el nombre.");
+
+  const nextId = `qst_${uid()}`;
+  templates.push({ id: nextId, name, items: sanitizedItems, createdAt: nowIso, updatedAt: nowIso });
+  state.quoteServiceTemplates = normalizeQuoteServiceTemplatesCollection(templates);
+  renderQuoteServiceTemplateSelect(nextId);
+  persist();
+  toast("Plantilla de servicios guardada.");
+}
+
+async function deleteQuoteServiceTemplateSelected() {
+  const selectedId = String(el.quoteServiceTemplateSelect?.value || "").trim();
+  if (!selectedId) return toast("Selecciona una plantilla para eliminar.");
+  const templates = normalizeQuoteServiceTemplatesCollection(getQuoteServiceTemplatesFromState());
+  const target = templates.find((t) => String(t.id) === selectedId);
+  if (!target) return toast("Plantilla no encontrada.");
+  const ok = await modernConfirm({
+    title: "Eliminar plantilla",
+    message: `Esta seguro de eliminar la plantilla "${target.name}"?`,
+    confirmText: "Si, eliminar",
+    cancelText: "No",
+  });
+  if (!ok) return;
+  state.quoteServiceTemplates = templates.filter((t) => String(t.id) !== selectedId);
+  renderQuoteServiceTemplateSelect("");
+  if (el.quoteServiceTemplateName) el.quoteServiceTemplateName.value = "";
+  persist();
+  toast("Plantilla eliminada.");
+}
 function applyQuoteSnapshotToDraft(snapshot) {
   if (!quoteDraft || !snapshot) return;
   const keepVersions = normalizeQuoteVersionHistory(quoteDraft.versions);
@@ -4605,15 +7741,16 @@ function applyQuoteSnapshotToDraft(snapshot) {
     version: keepCurrentVersion,
     versions: keepVersions,
   };
-  quoteDraft.paymentType = quotePaymentTypesToStorage(quoteDraft.paymentType || "Credito");
+  quoteDraft.paymentType = quotePaymentTypesToStorage(quoteDraft.paymentType || "");
   quoteDraft.advances = normalizeQuoteAdvancesForSnapshot(quoteDraft.advances);
   renderCompaniesSelect(quoteDraft.companyId);
   renderQuoteManagerSelect(quoteDraft.companyId, quoteDraft.managerId || null);
   renderQuoteTemplateSelect(quoteDraft.templateId || "");
-  fillQuoteHeaderFields(true);
+  renderQuoteServiceTemplateSelect("");
+  fillQuoteHeaderFields(true, true);
   el.quoteDueDate.value = quoteDraft.dueDate || "";
-  setQuotePaymentTypesOnForm(quoteDraft.paymentType || "Credito");
-  el.quoteDocDate.value = quoteDraft.docDate || toISODate(new Date());
+  setQuotePaymentTypesOnForm(quoteDraft.paymentType || "");
+  el.quoteDocDate.value = quoteDraft.docDate || "";
   renderQuoteServiceDateSelect();
   renderQuoteItems();
   syncPaxQuantityItems();
@@ -4647,6 +7784,8 @@ function compactMenuMontajeEntries(entries) {
       menuQty: qtyNum === 0 && qtyRaw === "" ? "" : qtyNum,
       menuDescription: String(raw?.menuDescription || "").trim(),
       montajeDescription: String(raw?.montajeDescription || "").trim(),
+      menuSelection: raw?.menuSelection ? deepClone(raw.menuSelection) : null,
+      montajeSelection: raw?.montajeSelection ? deepClone(raw.montajeSelection) : null,
     });
   }
   return Array.from(byKey.values()).sort((a, b) => {
@@ -4667,6 +7806,8 @@ function inflateMenuMontajeEntries(entries) {
     menuQty: row.menuQty,
     menuDescription: row.menuDescription,
     montajeDescription: row.montajeDescription,
+    menuSelection: row.menuSelection ? deepClone(row.menuSelection) : null,
+    montajeSelection: row.montajeSelection ? deepClone(row.montajeSelection) : null,
     updatedAt: nowIso,
   }));
 }
@@ -4685,6 +7826,8 @@ function areMenuMontajeEntriesEqual(a, b) {
     if (String(x.menuQty || "") !== String(y.menuQty || "")) return false;
     if (String(x.menuDescription || "") !== String(y.menuDescription || "")) return false;
     if (String(x.montajeDescription || "") !== String(y.montajeDescription || "")) return false;
+    if (JSON.stringify(x.menuSelection || null) !== JSON.stringify(y.menuSelection || null)) return false;
+    if (JSON.stringify(x.montajeSelection || null) !== JSON.stringify(y.montajeSelection || null)) return false;
   }
   return true;
 }
@@ -4871,23 +8014,128 @@ function renderMenuMontajeRichText(rawText) {
   if (!value) return `<p class="mmReportText">-</p>`;
   const lines = String(rawText || "").split(/\r?\n/);
   const htmlParts = [];
-  let buffer = [];
-  const flush = () => {
-    if (!buffer.length) return;
-    const chunk = buffer.join("\n");
+  let paragraphBuffer = [];
+  let sectionTitle = "";
+  let sectionItems = [];
+  const flushParagraph = () => {
+    if (!paragraphBuffer.length) return;
+    const chunk = paragraphBuffer.join("\n");
     htmlParts.push(`<p class="mmReportText">${escapeHtml(chunk)}</p>`);
-    buffer = [];
+    paragraphBuffer = [];
+  };
+  const flushSection = () => {
+    if (!sectionTitle) return;
+    if (/^PLATO\s+\d+$/i.test(sectionTitle) && sectionItems.length) {
+      const compactSegments = sectionItems
+        .flatMap((item) => String(item || "").split(/\s+\|\s+/))
+        .map((item) => String(item || "").trim())
+        .filter(Boolean);
+      const rows = compactSegments.map((segment) => {
+        const match = segment.match(/^([^()]+?)\s*\((.*)\)$/);
+        if (match) {
+          return {
+            label: String(match[1] || "").trim().toUpperCase(),
+            value: String(match[2] || "").trim() || "-",
+          };
+        }
+        return { label: "DETALLE", value: segment };
+      });
+      htmlParts.push(`
+        <section class="mmReportSection">
+          <div class="mmReportSubtitle">${escapeHtml(sectionTitle)}</div>
+          <div class="mmReportGrid">
+            ${rows.map((row) => `
+              <div class="mmReportCell">
+                <span class="mmReportMiniLabel">${escapeHtml(row.label)}</span>
+                <span class="mmReportMiniValue">${escapeHtml(row.value)}</span>
+              </div>
+            `).join("")}
+          </div>
+        </section>
+      `);
+      sectionTitle = "";
+      sectionItems = [];
+      return;
+    }
+    if (/^MONTAJE$/i.test(sectionTitle) && sectionItems.length) {
+      const compactSegments = sectionItems
+        .flatMap((item) => String(item || "").split(/\s+\|\s+/))
+        .map((item) => String(item || "").trim())
+        .filter(Boolean);
+      const rows = compactSegments.map((segment) => {
+        const match = segment.match(/^([^()]+?)\s*\((.*)\)$/);
+        if (match) {
+          return {
+            label: String(match[1] || "").trim().toUpperCase(),
+            value: String(match[2] || "").trim() || "-",
+          };
+        }
+        const pair = segment.match(/^([^:]+):\s*(.*)$/);
+        if (pair) {
+          return {
+            label: String(pair[1] || "").trim().toUpperCase(),
+            value: String(pair[2] || "").trim() || "-",
+          };
+        }
+        return { label: "DETALLE", value: segment };
+      });
+      htmlParts.push(`
+        <section class="mmReportSection">
+          <div class="mmReportSubtitle">${escapeHtml(sectionTitle)}</div>
+          <div class="mmReportGrid">
+            ${rows.map((row) => `
+              <div class="mmReportCell">
+                <span class="mmReportMiniLabel">${escapeHtml(row.label)}</span>
+                <span class="mmReportMiniValue">${escapeHtml(row.value)}</span>
+              </div>
+            `).join("")}
+          </div>
+        </section>
+      `);
+      sectionTitle = "";
+      sectionItems = [];
+      return;
+    }
+    const textValue = sectionItems.length ? sectionItems.join(" | ") : "-";
+    const itemsHtml = `<p class="mmReportSectionLine">${escapeHtml(textValue)}</p>`;
+    htmlParts.push(`
+      <section class="mmReportSection">
+        <div class="mmReportSubtitle">${escapeHtml(sectionTitle)}</div>
+        ${itemsHtml}
+      </section>
+    `);
+    sectionTitle = "";
+    sectionItems = [];
   };
   for (const line of lines) {
     const normalized = String(line || "").trim();
     if (/^<hr\s*\/?>$/i.test(normalized) || /^[-_]{6,}$/.test(normalized) || /^\[\[HR\]\]$/i.test(normalized)) {
-      flush();
+      flushParagraph();
+      flushSection();
       htmlParts.push(`<hr class="mmReportHr" />`);
       continue;
     }
-    buffer.push(line);
+    const sectionMatch = normalized.match(/^\[(.+)\]$/);
+    if (sectionMatch) {
+      flushParagraph();
+      flushSection();
+      sectionTitle = String(sectionMatch[1] || "").trim();
+      continue;
+    }
+    if (!normalized) {
+      flushParagraph();
+      flushSection();
+      continue;
+    }
+    if (sectionTitle) {
+      const content = normalized.replace(/^-+\s*/, "");
+      if (content) sectionItems.push(content);
+      continue;
+    }
+    paragraphBuffer.push(line);
   }
-  flush();
+  flushParagraph();
+  flushSection();
   return htmlParts.join("") || `<p class="mmReportText">-</p>`;
 }
 
@@ -5093,7 +8341,6 @@ function buildMenuMontajeReportHtml(ev, quoteLike) {
     const blocks = rows.map((r) => `
       <div class="mmReportBlock">
         <h2 class="mmReportTitle">MENU - ${escapeHtml(String(r.salon || "").toUpperCase())} - ${escapeHtml(date)}</h2>
-        <p class="mmReportText">${escapeHtml(`${r.menuQty ? `${r.menuQty} ` : ""}${r.menuTitle || ""}`.trim() || "-")}</p>
         ${renderMenuMontajeRichText(String(r.menuDescription || ""))}
       </div>
       <div class="mmReportBlock">
@@ -5157,7 +8404,7 @@ function buildMenuMontajeReportHtml(ev, quoteLike) {
       border:1px solid var(--line);
       border-radius:12px;
       overflow:hidden;
-      background:#fff;
+      background:#ffffff;
       box-shadow:0 10px 28px rgba(15,23,42,0.12);
     }
     .mmReportHead{
@@ -5177,7 +8424,7 @@ function buildMenuMontajeReportHtml(ev, quoteLike) {
       background:var(--soft);
       border-top:1px solid #c9d8ee;
       border-bottom:1px solid #c9d8ee;
-      font-size:13px;
+      font-size:14px;
     }
     .mmReportBlock{
       padding:14px;
@@ -5195,9 +8442,78 @@ function buildMenuMontajeReportHtml(ev, quoteLike) {
     .mmReportText{
       margin:0;
       white-space:pre-wrap;
-      font-size:13px;
+      font-size:12.5px;
       line-height:1.35;
       color:var(--ink);
+    }
+    .mmReportSection{
+      margin-top:10px;
+    }
+    .mmReportSection:first-child{
+      margin-top:0;
+    }
+    .mmReportSubtitle{
+      margin:0 0 6px;
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:.45px;
+      color:#0a3f67;
+      text-transform:uppercase;
+      border-left:4px solid #0a5a92;
+      padding-left:8px;
+    }
+    .mmReportStack{
+      display:grid;
+      gap:6px;
+      margin-left:10px;
+    }
+    .mmReportGrid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(280px, 1fr));
+      gap:10px 16px;
+      margin-left:10px;
+    }
+    .mmReportRow{
+      display:grid;
+      grid-template-columns: 150px 1fr;
+      gap:10px;
+      align-items:start;
+      padding:4px 0;
+    }
+    .mmReportCell{
+      display:grid;
+      grid-template-columns: 150px 1fr;
+      gap:10px;
+      align-items:start;
+      padding:2px 0;
+    }
+    .mmReportMiniLabel{
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:7px;
+      background:#dbeafe;
+      color:#0b4f87;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.4px;
+      text-transform:uppercase;
+    }
+    .mmReportMiniValue{
+      font-size:12.5px;
+      line-height:1.45;
+      color:#0f172a;
+      padding-top:2px;
+    }
+    @media print {
+      .mmReportGrid{
+        grid-template-columns: repeat(2, minmax(260px, 1fr));
+      }
+    }
+    .mmReportSectionLine{
+      margin:0 0 8px 12px;
+      font-size:12.5px;
+      line-height:1.45;
+      color:#0f172a;
     }
     .mmReportHr{
       margin:10px 0;
@@ -5206,7 +8522,7 @@ function buildMenuMontajeReportHtml(ev, quoteLike) {
     }
     @page { size: auto; margin: 10mm; }
     @media print {
-      body{ background:#fff; }
+      body{ background:#ffffff; }
       .mmReportWrap{ padding:0; }
       article.mmReportCard{
         box-shadow:none;
@@ -5415,16 +8731,47 @@ function setMmsStage(stage) {
   const valid = new Set(["plato", "preparacion", "salsa", "guarnicion", "postre", "bebida", "montaje_tipo", "montaje_adicional"]);
   const next = valid.has(String(stage || "")) ? String(stage) : "plato";
   mmsCurrentStage = next;
+  mmsPrimaryMode = (next === "montaje_tipo" || next === "montaje_adicional") ? "montaje" : "menu";
   // Evita que un filtro previo deje vacia la siguiente etapa (ej. montaje).
   if (el.mmsStageFilter) el.mmsStageFilter.value = "";
+  renderMmsPrimaryTabs();
+  renderMmsStageTabs();
+  renderMmsStageOptions();
+}
+
+function getMmsStagesForPrimaryMode(mode) {
+  if (String(mode || "") === "montaje") return ["montaje_tipo", "montaje_adicional"];
+  return ["plato", "preparacion", "salsa", "guarnicion", "postre", "bebida"];
+}
+
+function renderMmsPrimaryTabs() {
+  const buttons = Array.from(el.mmsPrimaryTabs?.querySelectorAll("[data-mms-primary]") || []);
+  for (const btn of buttons) {
+    btn.classList.toggle("isActive", String(btn.dataset.mmsPrimary || "") === mmsPrimaryMode);
+  }
+}
+
+function setMmsPrimaryMode(mode) {
+  const nextMode = String(mode || "") === "montaje" ? "montaje" : "menu";
+  mmsPrimaryMode = nextMode;
+  const allowedStages = getMmsStagesForPrimaryMode(nextMode);
+  if (!allowedStages.includes(mmsCurrentStage)) {
+    mmsCurrentStage = allowedStages[0] || "plato";
+  }
+  if (el.mmsStageFilter) el.mmsStageFilter.value = "";
+  renderMmsPrimaryTabs();
   renderMmsStageTabs();
   renderMmsStageOptions();
 }
 
 function renderMmsStageTabs() {
   const buttons = Array.from(el.mmsStageTabs?.querySelectorAll("[data-mms-stage]") || []);
+  const allowedStages = new Set(getMmsStagesForPrimaryMode(mmsPrimaryMode));
   for (const btn of buttons) {
-    btn.classList.toggle("isActive", String(btn.dataset.mmsStage || "") === mmsCurrentStage);
+    const stage = String(btn.dataset.mmsStage || "");
+    const isVisible = allowedStages.has(stage);
+    btn.hidden = !isVisible;
+    btn.classList.toggle("isActive", isVisible && stage === mmsCurrentStage);
   }
 }
 
@@ -5469,9 +8816,14 @@ function renderMmsStageOptions() {
 
   if (mmsCurrentStage === "plato") {
     rows = menuMontajeSelectableCatalogCache.proteins || [];
+    selected = new Set((Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).map((item) => Number(item?.platoId || 0)).filter((n) => Number.isFinite(n) && n > 0));
   } else if (mmsCurrentStage === "preparacion") {
     const pid = Number(el.mmsProtein?.value || 0);
     rows = pid > 0 ? (menuMontajeSelectableCatalogCache.preparationsByProtein.get(pid) || []) : [];
+    selected = new Set((Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : [])
+      .filter((item) => Number(item?.platoId || 0) === pid)
+      .map((item) => Number(item?.preparacionId || 0))
+      .filter((n) => Number.isFinite(n) && n > 0));
   } else if (mmsCurrentStage === "salsa") {
     const all = menuMontajeSelectableCatalogCache.salsas || [];
     const suggestedSet = new Set(getMmsSuggestedSalsaIds().map((x) => Number(x)));
@@ -5481,7 +8833,8 @@ function renderMmsStageOptions() {
   } else if (mmsCurrentStage === "guarnicion") {
     const all = menuMontajeSelectableCatalogCache.guarniciones || [];
     const suggestedSet = new Set(listAllCheckboxIds(el.mmsGuarnicionesSuggested));
-    rows = mmsShowAllGuarniciones ? all : all.filter((x) => suggestedSet.has(Number(x.id || 0)));
+    const suggestedRows = all.filter((x) => suggestedSet.has(Number(x.id || 0)));
+    rows = mmsShowAllGuarniciones ? all : (suggestedRows.length ? suggestedRows : all);
     selected = selectedGuarnicionSet;
   } else if (mmsCurrentStage === "postre") {
     const all = menuMontajeSelectableCatalogCache.postres || [];
@@ -5510,15 +8863,59 @@ function renderMmsStageOptions() {
   renderMmsQuickButtonsGroup(el.mmsStageOptions, rows, selected, kind);
 }
 
-function handleMmsStageOptionClick(kind, id) {
+async function handleMmsStageOptionClick(kind, id) {
   if (kind === "plato") {
-    if (el.mmsProtein) el.mmsProtein.value = String(id || "");
-    refreshMmsByProteinPreparation({ preserveSelection: false }).catch(() => { });
+    const nextId = Number(id || 0);
+    if (!Number.isFinite(nextId) || nextId <= 0) return;
+    ensureMmsCatalogDefaults();
+    const plateName = namesFromIds(menuMontajeSelectableCatalogCache.proteins, [nextId])[0] || "Plato fuerte";
+    const qty = await requestMmsItemQty(plateName, 1, "platos fuertes");
+    if (qty === null) return;
+    mmsPlatoQty = qty;
+    if (el.mmsMenuQty) el.mmsMenuQty.value = String(qty);
+    if (el.mmsProtein) el.mmsProtein.value = String(nextId);
+    await refreshMmsByProteinPreparation({ preserveSelection: false }).catch(() => { });
+    const prepOptions = Array.from(el.mmsPreparation?.options || []).filter((opt) => String(opt.value || "").trim());
+    if (!prepOptions.length) {
+      commitCurrentMmsLineItem();
+      const item = upsertMmsPlatoItem({ platoId: nextId, preparacionId: null, qty });
+      mmsActiveLineKey = String(item?.key || "");
+      clearMmsActiveComplements();
+      renderMmsSelectionSummary();
+      renderMmsComandaPreview();
+      if (item) notifyMmsSelectionAdded("plato", item.key, plateName, qty);
+      refreshMmsDescriptionAuto();
+      setMmsStage("guarnicion");
+      modernGuideToast("Plato agregado. Ahora elige guarniciones.");
+      return;
+    }
+    setMmsStage("preparacion");
+    if (prepOptions.length === 1) {
+      await handleMmsStageOptionClick("preparacion", prepOptions[0].value);
+      return;
+    }
+    modernGuideToast("Selecciona la preparacion para agregar este plato fuerte.");
     return;
   }
   if (kind === "preparacion") {
-    if (el.mmsPreparation) el.mmsPreparation.value = String(id || "");
-    refreshMmsByProteinPreparation({ preserveSelection: true }).catch(() => { });
+    const prepId = Number(id || 0);
+    if (!Number.isFinite(prepId) || prepId <= 0) return;
+    if (el.mmsPreparation) el.mmsPreparation.value = String(prepId);
+    await refreshMmsByProteinPreparation({ preserveSelection: true }).catch(() => { });
+    const platoId = Number(el.mmsProtein?.value || 0);
+    if (!Number.isFinite(platoId) || platoId <= 0) return;
+    const label = [namesFromIds(menuMontajeSelectableCatalogCache.proteins, [platoId])[0] || "", String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim()].filter(Boolean).join(" - ") || "Plato fuerte";
+    const qty = Math.max(1, Math.floor(Number(mmsPlatoQty || 1)));
+    commitCurrentMmsLineItem();
+    const item = upsertMmsPlatoItem({ platoId, preparacionId: prepId, qty });
+    mmsActiveLineKey = String(item?.key || "");
+    clearMmsActiveComplements();
+    refreshMmsDescriptionAuto();
+    renderMmsSelectionSummary();
+    renderMmsComandaPreview();
+    if (item) notifyMmsSelectionAdded("plato", item.key, label, qty);
+    setMmsStage("guarnicion");
+    modernGuideToast("Plato fuerte agregado. Ahora puedes elegir guarniciones.");
     return;
   }
   if (kind === "salsa") {
@@ -5533,38 +8930,33 @@ function handleMmsStageOptionClick(kind, id) {
     return;
   }
   if (kind === "guarnicion") {
-    toggleMmsQuickItem("guarnicion", id);
+    await toggleMmsQuickItem("guarnicion", id);
     return;
   }
   if (kind === "postre") {
-    const n = Number(id || 0);
-    if (!Number.isFinite(n) || n <= 0) return;
-    const selected = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
-    if (!selected.has(n)) {
-      selected.add(n);
-      setMmsSelectionSets({
-        guarnicionIds: getMmsSelectedGuarnicionIds(),
-        postreIds: Array.from(selected.values()),
-        comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
-        adicionalIds: selectedIdsFromChecklist(el.mmsMontajeAdicionales),
-      });
-      mmsPostreQtyById[n] = 1;
-    } else {
-      mmsPostreQtyById[n] = Math.max(1, Math.floor(Number(mmsPostreQtyById[n] || 1)) + 1);
-    }
-    refreshMmsDescriptionAuto();
-    renderMmsStageOptions();
-    renderMmsComandaPreview();
+    await toggleMmsQuickItem("postre", id);
     return;
   }
   if (kind === "bebida") {
     const n = Number(id || 0);
     if (!Number.isFinite(n) || n <= 0) return;
     const set = new Set((Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((v) => Number.isFinite(v) && v > 0));
-    if (set.has(n)) set.delete(n);
-    else set.add(n);
+    if (set.has(n)) {
+      set.delete(n);
+      deleteMmsItemQty("bebida", n);
+    } else {
+      ensureMmsCatalogDefaults();
+      const label = namesFromIds(menuMontajeSelectableCatalogCache.bebidas, [n])[0] || "Bebida";
+      const qty = await requestMmsItemQty(label, getMmsItemQty("bebida", n), "bebidas");
+      if (qty === null) return;
+      set.add(n);
+      setMmsItemQty("bebida", n, qty);
+      notifyMmsSelectionAdded("bebida", n, label, qty);
+    }
     mmsSelectedBebidaIds = Array.from(set.values());
+    syncMmsBebidaQtyWithSelection();
     refreshMmsDescriptionAuto();
+    renderMmsSelectionSummary();
     renderMmsStageOptions();
     renderMmsComandaPreview();
     return;
@@ -5594,9 +8986,16 @@ function handleMmsStageOptionClick(kind, id) {
 }
 
 function cancelMmsCurrentStageSelection() {
-  if (mmsCurrentStage === "salsa") {
+  if (mmsCurrentStage === "plato") {
+    mmsSelectedPlatoItems = [];
+    mmsPlatoQty = 1;
+    syncMmsMenuQtyField();
+    if (el.mmsProtein) el.mmsProtein.value = "";
+    if (el.mmsPreparation) el.mmsPreparation.value = "";
+  } else if (mmsCurrentStage === "salsa") {
     mmsSelectedSalsaIds = [];
   } else if (mmsCurrentStage === "guarnicion") {
+    mmsGuarnicionQtyById = {};
     setMmsSelectionSets({
       guarnicionIds: [],
       postreIds: getMmsSelectedPostreIds(),
@@ -5612,6 +9011,7 @@ function cancelMmsCurrentStageSelection() {
     });
   } else if (mmsCurrentStage === "bebida") {
     mmsSelectedBebidaIds = [];
+    mmsBebidaQtyById = {};
   } else if (mmsCurrentStage === "montaje_tipo") {
     if (el.mmsMontajeTipo && el.mmsMontajeTipo.options.length) el.mmsMontajeTipo.value = el.mmsMontajeTipo.options[0].value;
   } else if (mmsCurrentStage === "montaje_adicional") {
@@ -5623,10 +9023,9 @@ function cancelMmsCurrentStageSelection() {
     });
   } else if (mmsCurrentStage === "preparacion") {
     if (el.mmsPreparation && el.mmsPreparation.options.length) el.mmsPreparation.value = el.mmsPreparation.options[0].value;
-  } else if (mmsCurrentStage === "plato") {
-    if (el.mmsProtein && el.mmsProtein.options.length) el.mmsProtein.value = el.mmsProtein.options[0].value;
   }
   refreshMmsDescriptionAuto();
+  renderMmsSelectionSummary();
   renderMmsStageOptions();
   renderMmsComandaPreview();
 }
@@ -5709,6 +9108,7 @@ function setMmsSelectionSets({ guarnicionIds = [], postreIds = [], comentarioIds
   setChecklistCheckedByIds(el.mmsPostresAll, postreSet);
   setChecklistCheckedByIds(el.mmsComentariosAll, comentarioSet);
   setChecklistCheckedByIds(el.mmsMontajeAdicionales, adicionalSet);
+  syncMmsGuarnicionQtyWithSelection();
   syncMmsPostreQtyWithSelection();
 }
 
@@ -5720,7 +9120,7 @@ function getMmsSelectedPostreIds() {
   return selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll);
 }
 
-function normalizeMmsPostreQtyMap(raw) {
+function normalizeMmsQtyMap(raw) {
   const out = {};
   if (!raw || typeof raw !== "object") return out;
   for (const [k, v] of Object.entries(raw)) {
@@ -5732,14 +9132,375 @@ function normalizeMmsPostreQtyMap(raw) {
   return out;
 }
 
-function syncMmsPostreQtyWithSelection() {
-  const selected = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
+function normalizeMmsPostreQtyMap(raw) {
+  return normalizeMmsQtyMap(raw);
+}
+
+function syncMmsQtyMapWithSelection(selectedIds, qtyMap) {
+  const selected = new Set((Array.isArray(selectedIds) ? selectedIds : []).map((x) => Number(x)));
   const next = {};
   for (const id of selected) {
-    const qty = Math.max(1, Math.floor(Number(mmsPostreQtyById[id] || 1)));
+    const qty = Math.max(1, Math.floor(Number(qtyMap?.[id] || 1)));
     next[id] = qty;
   }
-  mmsPostreQtyById = next;
+  return next;
+}
+
+function syncMmsPostreQtyWithSelection() {
+  mmsPostreQtyById = syncMmsQtyMapWithSelection(getMmsSelectedPostreIds(), mmsPostreQtyById);
+}
+
+function syncMmsGuarnicionQtyWithSelection() {
+  mmsGuarnicionQtyById = syncMmsQtyMapWithSelection(getMmsSelectedGuarnicionIds(), mmsGuarnicionQtyById);
+}
+
+function syncMmsBebidaQtyWithSelection() {
+  mmsBebidaQtyById = syncMmsQtyMapWithSelection(mmsSelectedBebidaIds, mmsBebidaQtyById);
+}
+
+function getMmsItemQty(kind, id) {
+  const itemId = Number(id || 0);
+  if (!Number.isFinite(itemId) || itemId <= 0) return 1;
+  if (kind === "guarnicion") return Math.max(1, Math.floor(Number(mmsGuarnicionQtyById[itemId] || 1)));
+  if (kind === "bebida") return Math.max(1, Math.floor(Number(mmsBebidaQtyById[itemId] || 1)));
+  return Math.max(1, Math.floor(Number(mmsPostreQtyById[itemId] || 1)));
+}
+
+function normalizeMmsPlatoItems(raw, fallback = null) {
+  const input = Array.isArray(raw) ? raw : [];
+  const out = input
+    .map((item) => ({
+      key: String(item?.key || `pl_${uid()}`),
+      platoId: Number(item?.platoId || 0),
+      preparacionId: Number(item?.preparacionId || 0) || null,
+      qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
+    }))
+    .filter((item) => Number.isFinite(item.platoId) && item.platoId > 0);
+  if (out.length) return out;
+  const legacyPlatoId = Number(fallback?.platoId || 0);
+  if (!Number.isFinite(legacyPlatoId) || legacyPlatoId <= 0) return [];
+  return [{
+    key: `pl_${uid()}`,
+    platoId: legacyPlatoId,
+    preparacionId: Number(fallback?.preparacionId || 0) || null,
+    qty: Math.max(1, Math.floor(Number(fallback?.platoQty || 1))),
+  }];
+}
+
+function normalizeMmsLineItems(raw, fallback = null) {
+  const list = Array.isArray(raw) ? raw : [];
+  const normalized = list
+    .map((item) => {
+      const platoId = Number(item?.platoId || 0);
+      if (!Number.isFinite(platoId) || platoId <= 0) return null;
+      return {
+        key: String(item?.key || `ln_${uid()}`),
+        platoId,
+        preparacionId: Number(item?.preparacionId || 0) || null,
+        qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
+        salsaIds: (Array.isArray(item?.salsaIds) ? item.salsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+        guarnicionIds: (Array.isArray(item?.guarnicionIds) ? item.guarnicionIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+        guarnicionQtys: normalizeMmsQtyMap(item?.guarnicionQtys),
+        postreIds: (Array.isArray(item?.postreIds) ? item.postreIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+        postreQtys: normalizeMmsQtyMap(item?.postreQtys),
+        bebidaIds: (Array.isArray(item?.bebidaIds) ? item.bebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+        bebidaQtys: normalizeMmsQtyMap(item?.bebidaQtys),
+        comentarioIds: (Array.isArray(item?.comentarioIds) ? item.comentarioIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+        comentarioLibre: String(item?.comentarioLibre || "").trim(),
+      };
+    })
+    .filter(Boolean);
+  if (normalized.length) return normalized;
+  const legacyPlatos = normalizeMmsPlatoItems(fallback?.platoItems, fallback);
+  if (!legacyPlatos.length) return [];
+  const salsaIds = (Array.isArray(fallback?.salsaIds) ? fallback.salsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  const guarnicionIds = (Array.isArray(fallback?.guarnicionIds) ? fallback.guarnicionIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  const guarnicionQtys = normalizeMmsQtyMap(fallback?.guarnicionQtys);
+  const postreIds = (Array.isArray(fallback?.postreIds) ? fallback.postreIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  const postreQtys = normalizeMmsQtyMap(fallback?.postreQtys);
+  const bebidaIds = (Array.isArray(fallback?.bebidaIds) ? fallback.bebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  const bebidaQtys = normalizeMmsQtyMap(fallback?.bebidaQtys);
+  const comentarioIds = (Array.isArray(fallback?.comentarioIds) ? fallback.comentarioIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  const comentarioLibre = String(fallback?.comentarioLibre || "").trim();
+  return legacyPlatos.map((plato) => ({
+    key: String(plato.key || `ln_${uid()}`),
+    platoId: Number(plato.platoId || 0),
+    preparacionId: Number(plato.preparacionId || 0) || null,
+    qty: Math.max(1, Math.floor(Number(plato.qty || 1))),
+    salsaIds: [...salsaIds],
+    guarnicionIds: [...guarnicionIds],
+    guarnicionQtys: { ...guarnicionQtys },
+    postreIds: [...postreIds],
+    postreQtys: { ...postreQtys },
+    bebidaIds: [...bebidaIds],
+    bebidaQtys: { ...bebidaQtys },
+    comentarioIds: [...comentarioIds],
+    comentarioLibre,
+  }));
+}
+
+function getMmsPlatoItemLabel(item) {
+  ensureMmsCatalogDefaults();
+  const platoId = Number(item?.platoId || 0);
+  const prepId = Number(item?.preparacionId || 0);
+  const platoName = getMmsPlatoBaseName(item);
+  const prepName = getMmsPreparationName(item);
+  return [platoName, prepName].filter(Boolean).join(" - ") || "Plato fuerte";
+}
+
+function getMmsPlatoBaseName(item) {
+  ensureMmsCatalogDefaults();
+  const platoId = Number(item?.platoId || 0);
+  return namesFromIds(menuMontajeSelectableCatalogCache.proteins, [platoId])[0] || "";
+}
+
+function getMmsPreparationName(item) {
+  ensureMmsCatalogDefaults();
+  const platoId = Number(item?.platoId || 0);
+  const prepId = Number(item?.preparacionId || 0);
+  const prepList = platoId > 0 ? (menuMontajeSelectableCatalogCache.preparationsByProtein.get(platoId) || []) : [];
+  return namesFromIds(prepList, prepId > 0 ? [prepId] : [])[0] || "";
+}
+
+function getMmsTotalPlatoQty() {
+  return (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : [])
+    .reduce((sum, item) => sum + Math.max(1, Math.floor(Number(item?.qty || 1))), 0);
+}
+
+function syncMmsMenuQtyField() {
+  if (!el.mmsMenuQty) return;
+  const total = getMmsTotalPlatoQty();
+  el.mmsMenuQty.value = total > 0 ? String(total) : "";
+}
+
+function upsertMmsPlatoItem({ platoId, preparacionId = null, qty = 1 } = {}) {
+  const pid = Number(platoId || 0);
+  const prep = Number(preparacionId || 0) || null;
+  const safeQty = Math.max(1, Math.floor(Number(qty || 1)));
+  if (!Number.isFinite(pid) || pid <= 0) return null;
+  const list = Array.isArray(mmsSelectedPlatoItems) ? [...mmsSelectedPlatoItems] : [];
+  const idx = list.findIndex((item) => Number(item?.platoId || 0) === pid && Number(item?.preparacionId || 0) === Number(prep || 0));
+  if (idx >= 0) {
+    list[idx] = { ...list[idx], qty: safeQty };
+  } else {
+    list.push({ key: `pl_${uid()}`, platoId: pid, preparacionId: prep, qty: safeQty });
+  }
+  mmsSelectedPlatoItems = list;
+  mmsPlatoQty = safeQty;
+  syncMmsMenuQtyField();
+  return idx >= 0 ? list[idx] : list[list.length - 1];
+}
+
+function removeMmsPlatoItemByKey(key) {
+  const targetKey = String(key || "").trim();
+  if (!targetKey) return;
+  mmsLineItemsDraft = (Array.isArray(mmsLineItemsDraft) ? mmsLineItemsDraft : [])
+    .filter((item) => String(item?.key || "") !== targetKey);
+  mmsSelectedPlatoItems = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : [])
+    .filter((item) => String(item?.key || "") !== targetKey);
+  const nextActive = mmsSelectedPlatoItems[mmsSelectedPlatoItems.length - 1] || null;
+  mmsActiveLineKey = String(nextActive?.key || "");
+  mmsPlatoQty = Math.max(1, Math.floor(Number(nextActive?.qty || 1)));
+  syncMmsMenuQtyField();
+  if (nextActive) {
+    loadMmsLineItemIntoEditor(nextActive.key);
+  } else {
+    clearMmsActiveComplements();
+  }
+}
+
+function updateMmsPlatoItemQtyByKey(key, nextQty) {
+  const targetKey = String(key || "").trim();
+  const safeQty = Math.max(1, Math.floor(Number(nextQty || 1)));
+  if (!targetKey) return false;
+  let changed = false;
+  mmsSelectedPlatoItems = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).map((item) => {
+    if (String(item?.key || "") !== targetKey) return item;
+    changed = true;
+    return { ...item, qty: safeQty };
+  });
+  if (changed) {
+    mmsPlatoQty = safeQty;
+    syncMmsMenuQtyField();
+  }
+  return changed;
+}
+
+function clearMmsActiveComplements({ keepComment = false } = {}) {
+  mmsSelectedSalsaIds = [];
+  mmsSelectedBebidaIds = [];
+  mmsGuarnicionQtyById = {};
+  mmsPostreQtyById = {};
+  mmsBebidaQtyById = {};
+  setMmsSelectionSets({ guarnicionIds: [], postreIds: [], comentarioIds: [] });
+  if (!keepComment) {
+    if (el.mmsComentarioLibre) el.mmsComentarioLibre.value = "";
+    if (el.mmsPlatoDescripcion) el.mmsPlatoDescripcion.value = "";
+  }
+}
+
+function buildCurrentMmsLineItemSnapshot() {
+  const activeKey = String(mmsActiveLineKey || "").trim();
+  if (!activeKey) return null;
+  const plate = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).find((item) => String(item?.key || "") === activeKey);
+  if (!plate) return null;
+  return {
+    key: activeKey,
+    platoId: Number(plate.platoId || 0) || null,
+    preparacionId: Number(plate.preparacionId || 0) || null,
+    qty: Math.max(1, Math.floor(Number(plate.qty || 1))),
+    salsaIds: (Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+    guarnicionIds: getMmsSelectedGuarnicionIds(),
+    guarnicionQtys: {},
+    postreIds: getMmsSelectedPostreIds(),
+    postreQtys: normalizeMmsPostreQtyMap(mmsPostreQtyById),
+    bebidaIds: (Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+    bebidaQtys: normalizeMmsQtyMap(mmsBebidaQtyById),
+    comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
+    comentarioLibre: String(el.mmsComentarioLibre?.value || "").trim(),
+  };
+}
+
+function commitCurrentMmsLineItem() {
+  const snapshot = buildCurrentMmsLineItemSnapshot();
+  if (!snapshot || !snapshot.platoId) return;
+  const list = Array.isArray(mmsLineItemsDraft) ? [...mmsLineItemsDraft] : [];
+  const idx = list.findIndex((item) => String(item?.key || "") === String(snapshot.key || ""));
+  if (idx >= 0) list[idx] = snapshot;
+  else list.push(snapshot);
+  mmsLineItemsDraft = list;
+}
+
+function getCombinedMmsLineItems() {
+  const list = Array.isArray(mmsLineItemsDraft) ? deepClone(mmsLineItemsDraft) : [];
+  const snapshot = buildCurrentMmsLineItemSnapshot();
+  if (!snapshot || !snapshot.platoId) return list;
+  const idx = list.findIndex((item) => String(item?.key || "") === String(snapshot.key || ""));
+  if (idx >= 0) list[idx] = snapshot;
+  else list.push(snapshot);
+  return list;
+}
+
+function loadMmsLineItemIntoEditor(key) {
+  const targetKey = String(key || "").trim();
+  if (!targetKey) {
+    mmsActiveLineKey = "";
+    clearMmsActiveComplements();
+    refreshMmsDescriptionAuto();
+    renderMmsStageOptions();
+    renderMmsComandaPreview();
+    return;
+  }
+  const line = getCombinedMmsLineItems().find((item) => String(item?.key || "") === targetKey);
+  const plate = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).find((item) => String(item?.key || "") === targetKey);
+  if (!line || !plate) return;
+  mmsActiveLineKey = targetKey;
+  mmsPlatoQty = Math.max(1, Math.floor(Number(plate.qty || 1)));
+  if (el.mmsMenuQty) el.mmsMenuQty.value = String(mmsPlatoQty);
+  if (el.mmsProtein) el.mmsProtein.value = String(plate.platoId || "");
+  refreshMmsByProteinPreparation({ preserveSelection: false }).catch(() => { });
+  mmsSelectedSalsaIds = (Array.isArray(line.salsaIds) ? line.salsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  mmsSelectedBebidaIds = (Array.isArray(line.bebidaIds) ? line.bebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  mmsGuarnicionQtyById = {};
+  mmsPostreQtyById = normalizeMmsQtyMap(line.postreQtys);
+  mmsBebidaQtyById = normalizeMmsQtyMap(line.bebidaQtys);
+  setMmsSelectionSets({
+    guarnicionIds: Array.isArray(line.guarnicionIds) ? line.guarnicionIds : [],
+    postreIds: Array.isArray(line.postreIds) ? line.postreIds : [],
+    comentarioIds: Array.isArray(line.comentarioIds) ? line.comentarioIds : [],
+  });
+  if (el.mmsComentarioLibre) el.mmsComentarioLibre.value = String(line.comentarioLibre || "");
+  if (el.mmsPlatoDescripcion) el.mmsPlatoDescripcion.value = String(line.comentarioLibre || "");
+  syncMmsBebidaQtyWithSelection();
+  refreshMmsDescriptionAuto();
+  renderMmsStageOptions();
+  renderMmsComandaPreview();
+}
+
+function setMmsItemQty(kind, id, qty) {
+  const itemId = Number(id || 0);
+  const safeQty = Math.max(1, Math.floor(Number(qty || 1)));
+  if (!Number.isFinite(itemId) || itemId <= 0) return;
+  if (kind === "guarnicion") {
+    mmsGuarnicionQtyById[itemId] = safeQty;
+  } else if (kind === "bebida") {
+    mmsBebidaQtyById[itemId] = safeQty;
+  } else if (kind === "postre") {
+    mmsPostreQtyById[itemId] = safeQty;
+  }
+}
+
+function deleteMmsItemQty(kind, id) {
+  const itemId = Number(id || 0);
+  if (!Number.isFinite(itemId) || itemId <= 0) return;
+  if (kind === "guarnicion") delete mmsGuarnicionQtyById[itemId];
+  else if (kind === "bebida") delete mmsBebidaQtyById[itemId];
+  else if (kind === "postre") delete mmsPostreQtyById[itemId];
+}
+
+async function requestMmsItemQty(label, currentQty = 1, kindLabel = "producto") {
+  const safeCurrent = Math.max(1, Math.floor(Number(currentQty || 1)));
+  const itemLabel = String(label || "producto").trim() || "producto";
+  if (window.Swal && typeof window.Swal.fire === "function") {
+    const result = await window.Swal.fire({
+      title: `Cantidad de ${kindLabel}`,
+      html: `<div style="font-size:12.5px;opacity:.92">Selecciona la cantidad para <b>${escapeHtml(itemLabel)}</b>.</div>`,
+      input: "number",
+      inputValue: String(safeCurrent),
+      inputAttributes: {
+        min: "1",
+        step: "1",
+        autocapitalize: "off",
+        autocorrect: "off",
+      },
+      showCancelButton: true,
+      confirmButtonText: "Agregar",
+      cancelButtonText: "Cancelar",
+      background: "#0b1a32",
+      color: "#f8fafc",
+      confirmButtonColor: "#0f766e",
+      cancelButtonColor: "#334155",
+      inputValidator: (value) => {
+        const qty = Math.floor(Number(value || 0));
+        if (!Number.isFinite(qty) || qty <= 0) return "Ingresa una cantidad valida mayor a 0.";
+        return null;
+      },
+    });
+    if (!result?.isConfirmed) return null;
+    return Math.max(1, Math.floor(Number(result.value || 1)));
+  }
+  const raw = window.prompt(`Cantidad para "${itemLabel}":`, String(safeCurrent));
+  if (raw === null) return null;
+  const qty = Math.floor(Number(raw));
+  if (!Number.isFinite(qty) || qty <= 0) {
+    toast("Ingresa una cantidad valida mayor a 0.");
+    return null;
+  }
+  return qty;
+}
+
+function flashMmsComandaTag(kind, id) {
+  const container = el.mmsComandaPreview;
+  if (!container) return;
+  const tag = container.querySelector(`[data-mms-tag-kind="${String(kind || "").trim()}"][data-mms-tag-id="${String(id || "").trim()}"]`);
+  if (!tag) return;
+  tag.classList.remove("isFresh");
+  void tag.offsetWidth;
+  tag.classList.add("isFresh");
+}
+
+function notifyMmsSelectionAdded(kind, id, label, qty) {
+  const kindMap = {
+    plato: "Plato fuerte",
+    guarnicion: "Guarnicion",
+    postre: "Postre",
+    bebida: "Bebida",
+  };
+  const kindLabel = kindMap[String(kind || "").trim()] || "Producto";
+  const safeQty = Math.max(1, Math.floor(Number(qty || 1)));
+  const suffix = kind === "guarnicion" || kind === "salsa" ? "." : ` x${safeQty}.`;
+  toast(`${kindLabel} agregado: ${String(label || "").trim() || "Producto"}${suffix}`);
+  requestAnimationFrame(() => flashMmsComandaTag(kind, id));
 }
 
 function renderMmsQuickButtonsGroup(container, rows, selectedSet, kind) {
@@ -5800,19 +9561,36 @@ function renderMmsQuickSelectors() {
   if (el.mmsPostresQuickGlobal) el.mmsPostresQuickGlobal.hidden = !mmsShowAllPostres;
 }
 
-function toggleMmsQuickItem(kind, id) {
+async function toggleMmsQuickItem(kind, id) {
   const itemId = Number(id || 0);
   if (!Number.isFinite(itemId) || itemId <= 0) return;
+  ensureMmsCatalogDefaults();
+  const cache = menuMontajeSelectableCatalogCache;
   const guarniciones = new Set(getMmsSelectedGuarnicionIds().map((x) => Number(x)));
   const postres = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
   const comentarios = new Set(selectedIdsFromChecklist(el.mmsComentariosAll).map((x) => Number(x)));
   const adicionales = new Set(selectedIdsFromChecklist(el.mmsMontajeAdicionales).map((x) => Number(x)));
   if (kind === "guarnicion") {
-    if (guarniciones.has(itemId)) guarniciones.delete(itemId);
-    else guarniciones.add(itemId);
+    if (guarniciones.has(itemId)) {
+      guarniciones.delete(itemId);
+      deleteMmsItemQty("guarnicion", itemId);
+    } else {
+      guarniciones.add(itemId);
+      const label = namesFromIds(cache.guarniciones, [itemId])[0] || "Guarnicion";
+      notifyMmsSelectionAdded("guarnicion", itemId, label, 1);
+    }
   } else if (kind === "postre") {
-    if (postres.has(itemId)) postres.delete(itemId);
-    else postres.add(itemId);
+    if (postres.has(itemId)) {
+      postres.delete(itemId);
+      deleteMmsItemQty("postre", itemId);
+    } else {
+      const label = namesFromIds(cache.postres, [itemId])[0] || "Postre";
+      const qty = await requestMmsItemQty(label, getMmsItemQty("postre", itemId), "postres");
+      if (qty === null) return;
+      postres.add(itemId);
+      setMmsItemQty("postre", itemId, qty);
+      notifyMmsSelectionAdded("postre", itemId, label, qty);
+    }
   }
   setMmsSelectionSets({
     guarnicionIds: Array.from(guarniciones.values()),
@@ -5821,30 +9599,58 @@ function toggleMmsQuickItem(kind, id) {
     adicionalIds: Array.from(adicionales.values()),
   });
   refreshMmsDescriptionAuto();
+  renderMmsSelectionSummary();
   renderMmsQuickSelectors();
   renderMmsComandaPreview();
 }
 
-function renderMmsComandaTag(container, label, removeKind, removeId) {
+function renderMmsComandaTag(container, label, removeKind, removeId, { qty = null, allowQty = false } = {}) {
   if (!container) return;
   const tag = document.createElement("span");
   tag.className = "mmsComandaTag";
-  tag.innerHTML = `${escapeHtml(label)} <button type="button" data-mms-remove-kind="${escapeHtml(removeKind)}" data-mms-remove-id="${escapeHtml(String(removeId))}" title="Quitar">x</button>`;
+  tag.dataset.mmsTagKind = String(removeKind || "");
+  tag.dataset.mmsTagId = String(removeId || "");
+  const qtyHtml = allowQty && Number.isFinite(Number(qty))
+    ? ` x${Math.max(1, Math.floor(Number(qty)))} <button type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="dec" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Disminuir">-</button><button type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="inc" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Aumentar">+</button>`
+    : "";
+  tag.innerHTML = `${escapeHtml(label)}${qtyHtml} <button type="button" data-mms-remove-kind="${escapeHtml(removeKind)}" data-mms-remove-id="${escapeHtml(String(removeId))}" title="Quitar">x</button>`;
   container.appendChild(tag);
+  return tag;
 }
 
 function renderMmsComandaPreview() {
   ensureMmsCatalogDefaults();
   const cache = menuMontajeSelectableCatalogCache;
+  if (el.mmsActivePlateHint) {
+    const activeItem = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).find((item) => String(item?.key || "") === String(mmsActiveLineKey || ""));
+    if (!activeItem) {
+      el.mmsActivePlateHint.textContent = "Toca un plato para editarlo.";
+    } else {
+      const index = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).findIndex((item) => String(item?.key || "") === String(mmsActiveLineKey || ""));
+      const plateNo = index >= 0 ? index + 1 : 1;
+      el.mmsActivePlateHint.textContent = `Editando Plato ${plateNo}: ${getMmsPlatoItemLabel(activeItem)}. Toca otro plato para cambiar.`;
+    }
+  }
   if (el.mmsComandaPlato) {
     el.mmsComandaPlato.innerHTML = "";
-    const plato = String(el.mmsProtein?.selectedOptions?.[0]?.textContent || "").trim().split(" [")[0];
-    const prep = String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim();
-    const label = [plato, prep].filter(Boolean).join(" - ") || "(sin plato fuerte)";
-    const plain = document.createElement("span");
-    plain.className = "mmsComandaTag";
-    plain.textContent = label;
-    el.mmsComandaPlato.appendChild(plain);
+    const items = Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : [];
+    if (!items.length) {
+      const plain = document.createElement("span");
+      plain.className = "mmsComandaTag";
+      plain.textContent = "(sin plato fuerte)";
+      el.mmsComandaPlato.appendChild(plain);
+    } else {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const label = `Plato ${i + 1} | Cant ${Math.max(1, Math.floor(Number(item?.qty || 1)))} | ${getMmsPlatoItemLabel(item)}`;
+        const tag = renderMmsComandaTag(el.mmsComandaPlato, label, "plato", item.key, {
+          qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
+          allowQty: false,
+        });
+        tag?.classList.add("isPlateSelector");
+        if (String(item?.key || "") === String(mmsActiveLineKey || "")) tag?.classList.add("isActiveLine");
+      }
+    }
   }
 
   if (el.mmsComandaGuarniciones) {
@@ -5857,7 +9663,9 @@ function renderMmsComandaPreview() {
       empty.textContent = "Sin guarniciones";
       el.mmsComandaGuarniciones.appendChild(empty);
     } else {
-      for (let i = 0; i < names.length; i++) renderMmsComandaTag(el.mmsComandaGuarniciones, names[i], "guarnicion", ids[i]);
+      for (let i = 0; i < names.length; i++) {
+        renderMmsComandaTag(el.mmsComandaGuarniciones, names[i], "guarnicion", ids[i]);
+      }
     }
   }
 
@@ -5888,11 +9696,10 @@ function renderMmsComandaPreview() {
       for (const id of ids) {
         const name = String(map.get(Number(id)) || "").trim();
         if (!name) continue;
-        const qty = Math.max(1, Math.floor(Number(mmsPostreQtyById[id] || 1)));
-        const tag = document.createElement("span");
-        tag.className = "mmsComandaTag";
-        tag.innerHTML = `${escapeHtml(name)} x${qty} <button type="button" data-mms-qty-kind="postre" data-mms-qty-action="dec" data-mms-qty-id="${escapeHtml(String(id))}" title="Disminuir">-</button><button type="button" data-mms-remove-kind="postre" data-mms-remove-id="${escapeHtml(String(id))}" title="Quitar">x</button>`;
-        el.mmsComandaPostres.appendChild(tag);
+        renderMmsComandaTag(el.mmsComandaPostres, name, "postre", id, {
+          qty: getMmsItemQty("postre", id),
+          allowQty: true,
+        });
       }
     }
   }
@@ -5907,7 +9714,32 @@ function renderMmsComandaPreview() {
       empty.textContent = "Sin bebidas";
       el.mmsComandaBebidas.appendChild(empty);
     } else {
-      for (let i = 0; i < names.length; i++) renderMmsComandaTag(el.mmsComandaBebidas, names[i], "bebida", ids[i]);
+      for (let i = 0; i < names.length; i++) {
+        renderMmsComandaTag(el.mmsComandaBebidas, names[i], "bebida", ids[i], {
+          qty: getMmsItemQty("bebida", ids[i]),
+          allowQty: true,
+        });
+      }
+    }
+  }
+  if (el.mmsComandaComentarios) {
+    el.mmsComandaComentarios.innerHTML = "";
+    const commentIds = selectedIdsFromChecklist(el.mmsComentariosAll);
+    const commentNames = namesFromIds(cache.comentarios, commentIds);
+    const commentFree = String(el.mmsComentarioLibre?.value || "").trim();
+    const allComments = [...commentNames, ...(commentFree ? [commentFree] : [])];
+    if (!allComments.length) {
+      const empty = document.createElement("span");
+      empty.className = "muted";
+      empty.textContent = "Sin comentarios";
+      el.mmsComandaComentarios.appendChild(empty);
+    } else {
+      for (let i = 0; i < allComments.length; i++) {
+        const tag = document.createElement("span");
+        tag.className = "mmsComandaTag";
+        tag.textContent = allComments[i];
+        el.mmsComandaComentarios.appendChild(tag);
+      }
     }
   }
   if (el.mmsComandaMontaje) {
@@ -5938,19 +9770,33 @@ function renderMmsComandaPreview() {
 }
 
 function removeMmsComandaItem(kind, id) {
+  if (kind === "plato") {
+    removeMmsPlatoItemByKey(id);
+    refreshMmsDescriptionAuto();
+    renderMmsSelectionSummary();
+    renderMmsStageOptions();
+    renderMmsComandaPreview();
+    return;
+  }
   const itemId = Number(id || 0);
   if (!Number.isFinite(itemId) || itemId <= 0) return;
   const guarniciones = new Set(getMmsSelectedGuarnicionIds().map((x) => Number(x)));
   const postres = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
   const salsas = new Set((Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)));
   const bebidas = new Set((Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
-  if (kind === "guarnicion") guarniciones.delete(itemId);
+  if (kind === "guarnicion") {
+    guarniciones.delete(itemId);
+    deleteMmsItemQty("guarnicion", itemId);
+  }
   if (kind === "postre") {
     postres.delete(itemId);
-    delete mmsPostreQtyById[itemId];
+    deleteMmsItemQty("postre", itemId);
   }
   if (kind === "salsa") salsas.delete(itemId);
-  if (kind === "bebida") bebidas.delete(Number(id || 0));
+  if (kind === "bebida") {
+    bebidas.delete(Number(id || 0));
+    deleteMmsItemQty("bebida", itemId);
+  }
   setMmsSelectionSets({
     guarnicionIds: Array.from(guarniciones.values()),
     postreIds: Array.from(postres.values()),
@@ -5959,7 +9805,9 @@ function removeMmsComandaItem(kind, id) {
   });
   mmsSelectedSalsaIds = Array.from(salsas.values()).filter((x) => Number.isFinite(x) && x > 0);
   mmsSelectedBebidaIds = Array.from(bebidas.values()).filter((n) => Number.isFinite(n) && n > 0);
+  syncMmsBebidaQtyWithSelection();
   refreshMmsDescriptionAuto();
+  renderMmsSelectionSummary();
   renderMmsQuickSelectors();
   renderMmsStageOptions();
   renderMmsComandaPreview();
@@ -5968,16 +9816,26 @@ function removeMmsComandaItem(kind, id) {
 function renderMmsSelectionSummary() {
   ensureMmsCatalogDefaults();
   const cache = menuMontajeSelectableCatalogCache;
-  const proteinName = String(el.mmsProtein?.selectedOptions?.[0]?.textContent || "").trim();
-  const prepName = String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim();
-  const guarniciones = namesFromIds(cache.guarniciones, selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll));
-  const postres = namesFromIds(cache.postres, selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll));
+  const platoItems = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : [])
+    .map((item) => `${getMmsPlatoItemLabel(item)} x${Math.max(1, Math.floor(Number(item?.qty || 1)))}`);
+  const guarnicionIds = selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll);
+  const postreIds = selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll);
+  const guarniciones = guarnicionIds.map((id) => {
+    const name = namesFromIds(cache.guarniciones, [id])[0] || "";
+    return name ? `${name} x${getMmsItemQty("guarnicion", id)}` : "";
+  }).filter(Boolean);
+  const postres = postreIds.map((id) => {
+    const name = namesFromIds(cache.postres, [id])[0] || "";
+    return name ? `${name} x${getMmsItemQty("postre", id)}` : "";
+  }).filter(Boolean);
   const comentarios = namesFromIds(cache.comentarios, selectedIdsFromChecklist(el.mmsComentariosAll));
   const comentarioLibre = String(el.mmsComentarioLibre?.value || "").trim();
   const montajeTipo = String(el.mmsMontajeTipo?.selectedOptions?.[0]?.textContent || "").trim();
   const montajeAdicionales = namesFromIds(cache.montajeAdicionales, selectedIdsFromChecklist(el.mmsMontajeAdicionales));
 
-  if (el.mmsSummaryMenu) el.mmsSummaryMenu.value = [proteinName, prepName].filter(Boolean).join(" | ") || "(sin seleccionar)";
+  if (el.mmsSummaryMenu) {
+    el.mmsSummaryMenu.value = platoItems.length ? platoItems.join(", ") : "(sin seleccionar)";
+  }
   if (el.mmsSummaryGuarniciones) el.mmsSummaryGuarniciones.value = guarniciones.length ? guarniciones.join(", ") : "(sin seleccionar)";
   if (el.mmsSummaryPostres) el.mmsSummaryPostres.value = postres.length ? postres.join(", ") : "(sin seleccionar)";
   if (el.mmsSummaryComentarios) {
@@ -6035,10 +9893,19 @@ function useMmsSuggestedSelections() {
 }
 
 function clearMmsMenuSelections() {
+  mmsLineItemsDraft = [];
+  mmsActiveLineKey = "";
+  mmsSelectedPlatoItems = [];
+  mmsPlatoQty = 1;
+  syncMmsMenuQtyField();
+  if (el.mmsProtein) el.mmsProtein.value = "";
+  if (el.mmsPreparation) el.mmsPreparation.value = "";
   setMmsSelectionSets({ guarnicionIds: [], postreIds: [], comentarioIds: [] });
   mmsSelectedSalsaIds = [];
   mmsSelectedBebidaIds = [];
+  mmsGuarnicionQtyById = {};
   mmsPostreQtyById = {};
+  mmsBebidaQtyById = {};
   if (el.mmsComentarioLibre) el.mmsComentarioLibre.value = "";
   if (el.mmsPlatoDescripcion) el.mmsPlatoDescripcion.value = "";
   refreshMmsDescriptionAuto();
@@ -6166,54 +10033,48 @@ function renderMmsProteinOptions() {
 function buildMmsMenuDescriptionFromForm() {
   ensureMmsCatalogDefaults();
   const cache = menuMontajeSelectableCatalogCache;
-  const sectionName = String(el.mmsMenuSection?.value || "General").trim() || "General";
-  const proteinName = String(el.mmsProtein?.selectedOptions?.[0]?.textContent || "").trim();
-  const prepName = String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim();
-  const salsaNames = namesFromIds(cache.salsas, mmsSelectedSalsaIds);
-  const guarnicionIds = selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll);
-  const postreIds = selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll);
-  const comentarioIds = selectedIdsFromChecklist(el.mmsComentariosAll);
-  const guarniciones = namesFromIds(cache.guarniciones, guarnicionIds);
-  const postres = namesFromIds(cache.postres, postreIds);
-  const comentarios = namesFromIds(cache.comentarios, comentarioIds);
-  const bebidas = namesFromIds(cache.bebidas, Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []);
-  const comentarioLibre = String(el.mmsComentarioLibre?.value || "").trim();
+  const lineItems = getCombinedMmsLineItems();
+  const mapNames = (rows, ids) => namesFromIds(rows, ids);
+  const mapItemsWithQtyFromMap = (rows, ids, qtyMap) => ids.map((itemId) => {
+    const name = namesFromIds(rows, [itemId])[0] || "";
+    const qty = Math.max(1, Math.floor(Number(qtyMap?.[itemId] || 1)));
+    return name ? `${name} x${qty}` : "";
+  }).filter(Boolean);
   const lines = [];
-  lines.push(`[SECCION: ${sectionName.toUpperCase()}]`);
-  lines.push("");
-  if (proteinName || prepName) {
-    lines.push("[PLATO FUERTE]");
-    lines.push(`- ${[proteinName, prepName].filter(Boolean).join(" - ") || "-"}`);
-    lines.push("");
+  if (!lineItems.length) {
+    lines.push("[PLATOS FUERTES]");
+    lines.push("- Por definir");
+    return lines.join("\n").trim();
   }
-  lines.push("[GUARNICIONES]");
-  if (guarniciones.length) for (const g of guarniciones) lines.push(`- ${g}`);
-  else lines.push("- Por definir");
-  lines.push("");
-  lines.push("[SALSAS / ADEREZOS]");
-  if (salsaNames.length) for (const s of salsaNames) lines.push(`- ${s}`);
-  else lines.push("- Por definir");
-  lines.push("");
-  lines.push("[POSTRES]");
-  if (postres.length) {
-    for (const pId of postreIds) {
-      const pName = namesFromIds(cache.postres, [pId])[0] || "";
-      if (!pName) continue;
-      const qty = Math.max(1, Math.floor(Number(mmsPostreQtyById[pId] || 1)));
-      lines.push(`- ${pName}${qty > 1 ? ` x${qty}` : ""}`);
+  lineItems.forEach((line, index) => {
+    if (index > 0) lines.push("");
+    lines.push(`[PLATO ${index + 1}]`);
+    const platoFuerte = getMmsPlatoBaseName(line) || "Por definir";
+    const preparacion = getMmsPreparationName(line) || "Por definir";
+    const salsaNames = mapNames(cache.salsas, line.salsaIds || []);
+    const guarniciones = mapNames(cache.guarniciones, line.guarnicionIds || []);
+    const postres = mapItemsWithQtyFromMap(cache.postres, line.postreIds || [], line.postreQtys);
+    const bebidas = mapItemsWithQtyFromMap(cache.bebidas, line.bebidaIds || [], line.bebidaQtys);
+    const compactParts = [
+      `PLATO FUERTE (Cant ${Math.max(1, Math.floor(Number(line?.qty || 1)))} - ${platoFuerte})`,
+      `PREPARACION (${preparacion})`,
+      `SALSAS (${salsaNames.length ? salsaNames.join(", ") : "Por definir"})`,
+      `GUARNICIONES (${guarniciones.length ? guarniciones.join(", ") : "Por definir"})`,
+      `POSTRES (${postres.length ? postres.join(", ") : "Por definir"})`,
+      `BEBIDAS (${bebidas.length ? bebidas.join(", ") : "Por definir"})`,
+    ];
+    const comentarios = mapNames(cache.comentarios, line.comentarioIds || []);
+    const comentarioLibre = String(line.comentarioLibre || "").trim();
+    if (comentarios.length || comentarioLibre) {
+      const commentParts = [...comentarios];
+      if (comentarioLibre) commentParts.push(comentarioLibre);
+      compactParts.push(`COMENTARIOS (${commentParts.join(", ")})`);
     }
-  }
-  else lines.push("- Por definir");
-  if (bebidas.length) {
-    lines.push("");
-    lines.push("[BEBIDAS]");
-    for (const b of bebidas) lines.push(`- ${b}`);
-  }
-  if (comentarios.length || comentarioLibre) {
-    lines.push("");
-    lines.push("[COMENTARIOS ADICIONALES]");
-    for (const c of comentarios) lines.push(`- ${c}`);
-    if (comentarioLibre) lines.push(`- ${comentarioLibre}`);
+    lines.push(`- ${compactParts.join(" | ")}`);
+  });
+  if (!lines.length) {
+    lines.push("[PLATOS FUERTES]");
+    lines.push("- Por definir");
   }
   return lines.join("\n").trim();
 }
@@ -6229,13 +10090,7 @@ function buildMmsMontajeDescriptionFromForm() {
   const manual = String(el.mmsMontajeDescription?.value || "").trim();
   const lines = [];
   lines.push("[MONTAJE]");
-  lines.push(`- Tipo: ${tipoName || "Por definir"}`);
-  lines.push("- Adicionales:");
-  if (adicionales.length) {
-    for (const a of adicionales) lines.push(`  - ${a}`);
-  } else {
-    lines.push("  - Ninguno");
-  }
+  lines.push(`- TIPO (${tipoName || "Por definir"}) | ADICIONALES (${adicionales.length ? adicionales.join(", ") : "Ninguno"})`);
   if (manual) {
     lines.push("");
     lines.push("[DETALLE]");
@@ -6245,20 +10100,13 @@ function buildMmsMontajeDescriptionFromForm() {
 }
 
 function maybeAutofillMmsTitle() {
-  const current = String(el.mmsMenuTitle?.value || "").trim();
-  if (current) return;
-  const proteinName = String(el.mmsProtein?.selectedOptions?.[0]?.textContent || "").trim().split(" [")[0];
-  const prepName = String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim();
-  const label = [prepName, proteinName].filter(Boolean).join(" - ");
-  if (label && el.mmsMenuTitle) el.mmsMenuTitle.value = label;
+  return;
 }
 
 function refreshMmsDescriptionAuto() {
   if (menuMontajeSelectableSilentUpdate) return;
   const autoMenu = buildMmsMenuDescriptionFromForm();
-  if (el.mmsMenuDescription && !String(el.mmsMenuDescription.value || "").trim()) {
-    el.mmsMenuDescription.value = autoMenu;
-  }
+  if (el.mmsMenuDescription) el.mmsMenuDescription.value = autoMenu;
   if (el.mmsMontajeDescription && !String(el.mmsMontajeDescription.value || "").trim()) {
     el.mmsMontajeDescription.value = buildMmsMontajeDescriptionFromForm();
   }
@@ -6325,41 +10173,67 @@ async function loadMmsFormByKey(key) {
 
   menuMontajeSelectableSilentUpdate = true;
   if (el.mmsMenuTitle) el.mmsMenuTitle.value = String(found?.menuTitle || "");
-  if (el.mmsMenuQty) el.mmsMenuQty.value = found?.menuQty === null || found?.menuQty === undefined || found?.menuQty === "" ? "" : String(found.menuQty);
+  mmsPlatoQty = Math.max(1, Math.floor(Number(menuSelection?.platoQty || found?.menuQty || 1)));
+  if (el.mmsMenuQty) el.mmsMenuQty.value = String(mmsPlatoQty);
   if (el.mmsComentarioLibre) el.mmsComentarioLibre.value = String(menuSelection?.comentarioLibre || "");
   if (el.mmsPlatoDescripcion) el.mmsPlatoDescripcion.value = String(menuSelection?.comentarioLibre || "");
   if (el.mmsMenuDescription) el.mmsMenuDescription.value = String(found?.menuDescription || "");
   if (el.mmsMontajeDescription) el.mmsMontajeDescription.value = String(found?.montajeDescription || "");
   menuMontajeSelectableSilentUpdate = false;
 
-  const pid = Number(menuSelection?.platoId || 0);
+  const lineItems = normalizeMmsLineItems(menuSelection?.lineItems, menuSelection);
+  mmsLineItemsDraft = deepClone(lineItems);
+  mmsSelectedPlatoItems = lineItems.length
+    ? lineItems.map((item) => ({
+      key: String(item.key || `pl_${uid()}`),
+      platoId: Number(item.platoId || 0),
+      preparacionId: Number(item.preparacionId || 0) || null,
+      qty: Math.max(1, Math.floor(Number(item.qty || 1))),
+    }))
+    : normalizeMmsPlatoItems(menuSelection?.platoItems, menuSelection);
+  syncMmsMenuQtyField();
+
+  const firstPlato = mmsSelectedPlatoItems[0] || null;
+  const pid = Number(firstPlato?.platoId || menuSelection?.platoId || 0);
   if (pid > 0 && el.mmsProtein && Array.from(el.mmsProtein.options).some((o) => Number(o.value || 0) === pid)) {
     el.mmsProtein.value = String(pid);
   }
   await refreshMmsByProteinPreparation({ preserveSelection: false });
 
-  const prepId = Number(menuSelection?.preparacionId || 0);
+  const prepId = Number(firstPlato?.preparacionId || menuSelection?.preparacionId || 0);
   if (prepId > 0 && el.mmsPreparation && Array.from(el.mmsPreparation.options).some((o) => Number(o.value || 0) === prepId)) {
     el.mmsPreparation.value = String(prepId);
     await refreshMmsByProteinPreparation({ preserveSelection: true });
   }
-  mmsSelectedSalsaIds = (Array.isArray(menuSelection?.salsaIds) ? menuSelection.salsaIds : [])
-    .map((x) => Number(x))
-    .filter((n) => Number.isFinite(n) && n > 0);
-  mmsSelectedBebidaIds = (Array.isArray(menuSelection?.bebidaIds) ? menuSelection.bebidaIds : [])
-    .map((x) => Number(x))
-    .filter((n) => Number.isFinite(n) && n > 0);
-  mmsPostreQtyById = normalizeMmsPostreQtyMap(menuSelection?.postreQtys);
+  const activeLine = lineItems[lineItems.length - 1] || null;
+  mmsActiveLineKey = String(activeLine?.key || "");
+  const mergedSalsaIds = Array.isArray(activeLine?.salsaIds) ? activeLine.salsaIds : (Array.isArray(menuSelection?.salsaIds) ? menuSelection.salsaIds : []);
+  const mergedBebidaIds = Array.isArray(activeLine?.bebidaIds) ? activeLine.bebidaIds : (Array.isArray(menuSelection?.bebidaIds) ? menuSelection.bebidaIds : []);
+  const mergedGuarnicionIds = Array.isArray(activeLine?.guarnicionIds) ? activeLine.guarnicionIds : (Array.isArray(menuSelection?.guarnicionIds) ? menuSelection.guarnicionIds : []);
+  const mergedPostreIds = Array.isArray(activeLine?.postreIds) ? activeLine.postreIds : (Array.isArray(menuSelection?.postreIds) ? menuSelection.postreIds : []);
+  const mergedComentarioIds = Array.isArray(activeLine?.comentarioIds) ? activeLine.comentarioIds : (Array.isArray(menuSelection?.comentarioIds) ? menuSelection.comentarioIds : []);
+  const mergedPostreQtys = activeLine ? normalizeMmsQtyMap(activeLine.postreQtys) : normalizeMmsPostreQtyMap(menuSelection?.postreQtys);
+  const mergedBebidaQtys = activeLine ? normalizeMmsQtyMap(activeLine.bebidaQtys) : normalizeMmsQtyMap(menuSelection?.bebidaQtys);
+  const mergedComentarioLibre = activeLine ? String(activeLine.comentarioLibre || "").trim() : String(menuSelection?.comentarioLibre || "").trim();
+  mmsSelectedSalsaIds = mergedSalsaIds.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  mmsSelectedBebidaIds = mergedBebidaIds.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  mmsGuarnicionQtyById = {};
+  mmsPostreQtyById = mergedPostreQtys;
+  mmsBebidaQtyById = mergedBebidaQtys;
+  if (el.mmsComentarioLibre) el.mmsComentarioLibre.value = mergedComentarioLibre;
+  if (el.mmsPlatoDescripcion) el.mmsPlatoDescripcion.value = mergedComentarioLibre;
 
-  const guarnicionSet = new Set((Array.isArray(menuSelection?.guarnicionIds) ? menuSelection.guarnicionIds : []).map((x) => Number(x)));
-  const postreSet = new Set((Array.isArray(menuSelection?.postreIds) ? menuSelection.postreIds : []).map((x) => Number(x)));
-  const comentarioSet = new Set((Array.isArray(menuSelection?.comentarioIds) ? menuSelection.comentarioIds : []).map((x) => Number(x)));
+  const guarnicionSet = new Set(mergedGuarnicionIds.map((x) => Number(x)));
+  const postreSet = new Set(mergedPostreIds.map((x) => Number(x)));
+  const comentarioSet = new Set(mergedComentarioIds.map((x) => Number(x)));
   const adicionalSet = new Set((Array.isArray(montajeSelection?.adicionalIds) ? montajeSelection.adicionalIds : []).map((x) => Number(x)));
   setChecklistCheckedByIds(el.mmsGuarnicionesSuggested, guarnicionSet);
   setChecklistCheckedByIds(el.mmsGuarnicionesAll, guarnicionSet);
   setChecklistCheckedByIds(el.mmsPostresSuggested, postreSet);
   setChecklistCheckedByIds(el.mmsPostresAll, postreSet);
+  syncMmsGuarnicionQtyWithSelection();
   syncMmsPostreQtyWithSelection();
+  syncMmsBebidaQtyWithSelection();
   setChecklistCheckedByIds(el.mmsComentariosAll, comentarioSet);
   setChecklistCheckedByIds(el.mmsMontajeAdicionales, adicionalSet);
 
@@ -6368,6 +10242,7 @@ async function loadMmsFormByKey(key) {
     el.mmsMontajeTipo.value = String(montajeTipoId);
   }
   if (el.mmsDocNo) el.mmsDocNo.value = String(quoteDraft.code || "").trim() || "(sin codigo)";
+  refreshMmsDescriptionAuto();
   renderMmsQuickSelectors();
   renderMmsStageOptions();
   renderMmsSelectionSummary();
@@ -6386,11 +10261,18 @@ async function loadMmsVersion(versionNumber) {
 async function openMenuMontajeSelectableModal() {
   if (!quoteDraft) return toast("Primero abre una cotizacion.");
   await ensureMenuMontajeSelectableCatalogLoaded(false);
+  mmsPrimaryMode = "menu";
   mmsShowAllGuarniciones = false;
   mmsShowAllPostres = false;
+  mmsLineItemsDraft = [];
+  mmsActiveLineKey = "";
+  mmsSelectedPlatoItems = [];
+  mmsPlatoQty = 1;
   mmsSelectedSalsaIds = [];
   mmsSelectedBebidaIds = [];
+  mmsGuarnicionQtyById = {};
   mmsPostreQtyById = {};
+  mmsBebidaQtyById = {};
   mmsCurrentStage = "plato";
   if (el.mmsStageFilter) el.mmsStageFilter.value = "";
   if (el.btnMmsToggleGuarnicionesGlobal) el.btnMmsToggleGuarnicionesGlobal.textContent = "Mas guarniciones";
@@ -6404,6 +10286,7 @@ async function openMenuMontajeSelectableModal() {
   renderMmsDateSalonSelect();
   renderMmsEntriesTable();
   await loadMmsFormByKey(menuMontajeSelectableSelectedKey);
+  renderMmsPrimaryTabs();
   renderMmsStageTabs();
   renderMmsStageOptions();
   renderMmsSelectionSummary();
@@ -6412,17 +10295,52 @@ async function openMenuMontajeSelectableModal() {
 }
 
 function buildMmsSelectionPayload() {
+  const lineItems = getCombinedMmsLineItems();
+  const firstPlato = lineItems[0] || null;
+  const salsaIds = Array.from(new Set(lineItems.flatMap((item) => item.salsaIds || [])));
+  const guarnicionIds = Array.from(new Set(lineItems.flatMap((item) => item.guarnicionIds || [])));
+  const guarnicionQtys = {};
+  const postreIds = Array.from(new Set(lineItems.flatMap((item) => item.postreIds || [])));
+  const postreQtys = lineItems.reduce((acc, item) => Object.assign(acc, normalizeMmsQtyMap(item.postreQtys)), {});
+  const bebidaIds = Array.from(new Set(lineItems.flatMap((item) => item.bebidaIds || [])));
+  const bebidaQtys = lineItems.reduce((acc, item) => Object.assign(acc, normalizeMmsQtyMap(item.bebidaQtys)), {});
+  const comentarioIds = Array.from(new Set(lineItems.flatMap((item) => item.comentarioIds || [])));
+  const comentarioLibre = lineItems.map((item) => String(item.comentarioLibre || "").trim()).find(Boolean) || "";
   return {
     section: String(el.mmsMenuSection?.value || "General").trim() || "General",
-    platoId: Number(el.mmsProtein?.value || 0) || null,
-    preparacionId: Number(el.mmsPreparation?.value || 0) || null,
-    salsaIds: (Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
-    guarnicionIds: selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll),
-    postreIds: selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll),
-    postreQtys: normalizeMmsPostreQtyMap(mmsPostreQtyById),
-    bebidaIds: (Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
-    comentarioIds: selectedIdsFromChecklist(el.mmsComentariosAll),
-    comentarioLibre: String(el.mmsComentarioLibre?.value || "").trim(),
+    platoId: Number(firstPlato?.platoId || 0) || null,
+    platoQty: Math.max(1, Math.floor(Number(firstPlato?.qty || 1))),
+    preparacionId: Number(firstPlato?.preparacionId || 0) || null,
+    platoItems: lineItems.map((item) => ({
+      key: String(item?.key || `pl_${uid()}`),
+      platoId: Number(item?.platoId || 0) || null,
+      preparacionId: Number(item?.preparacionId || 0) || null,
+      qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
+    })).filter((item) => item.platoId),
+    lineItems: lineItems.map((item) => ({
+      key: String(item?.key || `ln_${uid()}`),
+      platoId: Number(item?.platoId || 0) || null,
+      preparacionId: Number(item?.preparacionId || 0) || null,
+      qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
+      salsaIds: (Array.isArray(item?.salsaIds) ? item.salsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+      guarnicionIds: (Array.isArray(item?.guarnicionIds) ? item.guarnicionIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+      guarnicionQtys: {},
+      postreIds: (Array.isArray(item?.postreIds) ? item.postreIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+      postreQtys: normalizeMmsQtyMap(item?.postreQtys),
+      bebidaIds: (Array.isArray(item?.bebidaIds) ? item.bebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+      bebidaQtys: normalizeMmsQtyMap(item?.bebidaQtys),
+      comentarioIds: (Array.isArray(item?.comentarioIds) ? item.comentarioIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
+      comentarioLibre: String(item?.comentarioLibre || "").trim(),
+    })).filter((item) => item.platoId),
+    salsaIds,
+    guarnicionIds,
+    guarnicionQtys,
+    postreIds,
+    postreQtys,
+    bebidaIds,
+    bebidaQtys,
+    comentarioIds,
+    comentarioLibre,
   };
 }
 
@@ -6439,10 +10357,11 @@ async function saveMenuMontajeSelectableFromModal({ updateCurrentVersion = false
   if (!key || !key.includes("|")) return toast("Selecciona fecha y salon.");
   const [date, salon] = key.split("|");
   const menuTitle = String(el.mmsMenuTitle?.value || "").trim();
-  const menuQtyRaw = String(el.mmsMenuQty?.value || "").trim();
-  const menuQty = menuQtyRaw ? Math.max(0, Number(menuQtyRaw)) : "";
-  const menuDescription = String(el.mmsMenuDescription?.value || "").trim() || buildMmsMenuDescriptionFromForm();
+  const menuQty = getMmsTotalPlatoQty();
+  const menuDescription = buildMmsMenuDescriptionFromForm();
   const montajeDescription = String(el.mmsMontajeDescription?.value || "").trim() || buildMmsMontajeDescriptionFromForm();
+  syncMmsMenuQtyField();
+  if (el.mmsMenuDescription) el.mmsMenuDescription.value = menuDescription;
   if (!menuTitle && !menuDescription && !montajeDescription) {
     return toast("Agrega al menos menu o montaje para guardar.");
   }
@@ -6453,7 +10372,7 @@ async function saveMenuMontajeSelectableFromModal({ updateCurrentVersion = false
     date,
     salon,
     menuTitle,
-    menuQty: menuQty === "" ? "" : Number.isFinite(menuQty) ? Math.floor(menuQty) : "",
+    menuQty,
     menuDescription,
     montajeDescription,
     menuSelection: buildMmsSelectionPayload(),
@@ -6581,7 +10500,7 @@ function getQuoteEventMeta(eventId) {
   return { ev, startDate, endDate };
 }
 
-function fillQuoteHeaderFields(force = false) {
+function fillQuoteHeaderFields(force = false, allowContextFallback = true) {
   if (!quoteDraft) return;
   const company = (state.companies || []).find(c => c.id === el.quoteCompany.value);
   const manager = company?.managers?.find(m => m.id === el.quoteManagerSelect.value);
@@ -6593,24 +10512,24 @@ function fillQuoteHeaderFields(force = false) {
     }
   };
 
-  apply(el.quoteContact, quoteDraft.contact || manager?.name || company?.owner || "");
-  apply(el.quoteEmail, quoteDraft.email || manager?.email || company?.email || "");
-  apply(el.quoteBillTo, quoteDraft.billTo || company?.billTo || company?.businessName || company?.name || "");
-  apply(el.quoteAddress, quoteDraft.address || company?.address || "");
-  apply(el.quoteEventType, quoteDraft.eventType || company?.eventType || "");
-  apply(el.quoteVenue, quoteDraft.venue || meta?.ev?.salon || "");
-  apply(el.quoteSchedule, quoteDraft.schedule || `${meta?.ev?.startTime || ""} a ${meta?.ev?.endTime || ""}`.trim());
+  apply(el.quoteContact, quoteDraft.contact || (allowContextFallback ? (manager?.name || company?.owner || "") : ""));
+  apply(el.quoteEmail, quoteDraft.email || (allowContextFallback ? (manager?.email || company?.email || "") : ""));
+  apply(el.quoteBillTo, quoteDraft.billTo || (allowContextFallback ? (company?.billTo || company?.businessName || company?.name || "") : ""));
+  apply(el.quoteAddress, quoteDraft.address || (allowContextFallback ? (company?.address || "") : ""));
+  apply(el.quoteEventType, quoteDraft.eventType || (allowContextFallback ? (company?.eventType || "") : ""));
+  apply(el.quoteVenue, quoteDraft.venue || (allowContextFallback ? (meta?.ev?.salon || "") : ""));
+  apply(el.quoteSchedule, quoteDraft.schedule || (allowContextFallback ? `${meta?.ev?.startTime || ""} a ${meta?.ev?.endTime || ""}`.trim() : ""));
   apply(el.quoteCode, quoteDraft.code || "");
-  apply(el.quoteDocDate, quoteDraft.docDate || toISODate(new Date()));
-  apply(el.quotePhone, quoteDraft.phone || manager?.phone || company?.phone || "");
-  apply(el.quoteNIT, quoteDraft.nit || company?.nit || "");
+  apply(el.quoteDocDate, quoteDraft.docDate || (allowContextFallback ? toISODate(new Date()) : ""));
+  apply(el.quotePhone, quoteDraft.phone || (allowContextFallback ? (manager?.phone || company?.phone || "") : ""));
+  apply(el.quoteNIT, quoteDraft.nit || (allowContextFallback ? (company?.nit || "") : ""));
   apply(el.quotePeople, quoteDraft.people || "");
-  apply(el.quoteEventDate, quoteDraft.eventDate || meta?.startDate || "");
-  apply(el.quoteEndDate, quoteDraft.endDate || meta?.endDate || "");
+  apply(el.quoteEventDate, quoteDraft.eventDate || (allowContextFallback ? (meta?.startDate || "") : ""));
+  apply(el.quoteEndDate, quoteDraft.endDate || (allowContextFallback ? (meta?.endDate || "") : ""));
   apply(el.quoteFolio, quoteDraft.folio || "");
   apply(el.quoteInternalNotes, quoteDraft.internalNotes || quoteDraft.notes || "");
   if (force || !getSelectedQuotePaymentTypesFromForm().length) {
-    setQuotePaymentTypesOnForm(quoteDraft.paymentType || "Credito");
+    setQuotePaymentTypesOnForm(quoteDraft.paymentType || "");
   }
 }
 
@@ -6686,7 +10605,6 @@ function placeEvent(ev, layout = null) {
   card.style.setProperty("--status-color", c);
 
   const user = state.users.find(u => u.id === ev.userId) || { name: "-" };
-  const avatar = String(user.avatarDataUrl || "").trim() || avatarDataUri(user.name);
   const series = getEventSeries(ev).slice().sort((a, b) => a.date.localeCompare(b.date));
   const seriesTotal = series.length;
   const seriesIndex = Math.max(0, series.findIndex(x => x.id === ev.id));
@@ -6706,6 +10624,27 @@ function placeEvent(ev, layout = null) {
   const paxNumber = Number(ev.pax || 0);
   const paxLabel = paxNumber > 0 ? `PAX ${Math.round(paxNumber)}` : "";
   const latestQuoteTotalLabel = getEventLatestQuoteTotalLabel(ev);
+  const detailRows = [
+    { label: "Horario", value: `${ev.startTime}-${ev.endTime}` },
+    { label: "Salon", value: ev.salon || "-" },
+    { label: "Vendedor", value: user.name || "-" },
+  ];
+  if (institutionName) detailRows.push({ label: "Cliente", value: institutionName, optional: true });
+  if (paxLabel) detailRows.push({ label: "PAX", value: paxLabel.replace(/^PAX\s+/i, ""), optional: true });
+  if (latestQuoteTotalLabel) detailRows.push({ label: "Cot.", value: latestQuoteTotalLabel, optional: true });
+  const detailRowsHtml = detailRows
+    .map((row) => `
+      <div class="eventFact${row.optional ? " optional" : ""}">
+        <span class="eventFactLabel">${escapeHtml(row.label)}</span>
+        <span class="eventFactValue" title="${escapeHtml(String(row.value || "-"))}">${escapeHtml(String(row.value || "-"))}</span>
+      </div>
+    `)
+    .join("");
+  const secondaryBadges = [
+    seriesTotal > 1 ? `<span class="eventMiniBadge seriesPill">Reserva ${seriesIndex + 1}/${seriesTotal}</span>` : "",
+    followUpLabel ? `<span class="eventMiniBadge followupPill">${escapeHtml(followUpLabel)}</span>` : "",
+    reminderLabel ? `<span class="eventMiniBadge ${reminderClass}">${escapeHtml(reminderLabel)}</span>` : "",
+  ].filter(Boolean).join("");
 
   card.innerHTML = `
     <div class="eventStatusChip">
@@ -6714,20 +10653,10 @@ function placeEvent(ev, layout = null) {
       <small>${escapeHtml(statusShort)}</small>
     </div>
     <div class="eventInner">
-      <div class="avatar"><img alt="" src="${avatar}" style="width:100%;height:100%;display:block"/></div>
       <div class="eventMeta">
         <div class="eventTitle" title="${escapeHtml(ev.name)}">${escapeHtml(ev.name)}</div>
-        <div class="eventSub">
-          <span class="pill">${escapeHtml(ev.startTime)}-${escapeHtml(ev.endTime)}</span>
-          <span class="pill">${escapeHtml(ev.salon || "")}</span>
-          <span class="pill">${escapeHtml(user.name)}</span>
-          ${institutionName ? `<span class="pill" title="${escapeHtml(institutionName)}">${escapeHtml(institutionName)}</span>` : ""}
-          ${paxLabel ? `<span class="pill">${escapeHtml(paxLabel)}</span>` : ""}
-          ${latestQuoteTotalLabel ? `<span class="pill">${escapeHtml(latestQuoteTotalLabel)}</span>` : ""}
-          ${seriesTotal > 1 ? `<span class="pill seriesPill">Reserva ${seriesIndex + 1}/${seriesTotal}</span>` : ""}
-          ${followUpLabel ? `<span class="pill followupPill">${escapeHtml(followUpLabel)}</span>` : ""}
-          ${reminderLabel ? `<span class="pill ${reminderClass}">${escapeHtml(reminderLabel)}</span>` : ""}
-        </div>
+        <div class="eventFacts">${detailRowsHtml}</div>
+        ${secondaryBadges ? `<div class="eventSub eventSubBadges">${secondaryBadges}</div>` : ""}
       </div>
     </div>
     ${canStretch ? `<div class="eventStretch" title="Estirar dias"></div>` : ""}
@@ -6994,10 +10923,10 @@ function buildEventFinderRows() {
 
 function renderEventFinderResults(rawTerm = "") {
   if (!el.eventFinderBody) return;
-  const term = String(rawTerm || "").trim().toLowerCase();
+  const term = String(rawTerm || "").trim();
   const allRows = buildEventFinderRows();
   const rows = term
-    ? allRows.filter((r) => r.searchBlob.includes(term)).slice(0, 150)
+    ? allRows.filter((r) => matchesLikeSearch(r.searchBlob, term)).slice(0, 150)
     : allRows.slice(0, 120);
   el.eventFinderBody.innerHTML = "";
   if (!rows.length) {
@@ -7069,6 +10998,38 @@ function bindEvents() {
   if (el.loginPassword) {
     el.loginPassword.addEventListener("input", () => setLoginError(""));
   }
+  if (el.btnOpenModules) {
+    el.btnOpenModules.addEventListener("click", () => {
+      showModuleHub();
+    });
+  }
+  if (el.btnModuleCalendar) {
+    el.btnModuleCalendar.addEventListener("click", () => {
+      showCalendarModule();
+      render();
+    });
+  }
+  if (el.btnModuleReports) {
+    el.btnModuleReports.addEventListener("click", () => {
+      showReportsHub();
+    });
+  }
+  if (el.btnModuleSettings) {
+    el.btnModuleSettings.addEventListener("click", () => {
+      showSettingsHub();
+    });
+  }
+  if (el.btnBackFromReports) {
+    el.btnBackFromReports.addEventListener("click", () => {
+      showModuleHub();
+    });
+  }
+  if (el.btnBackFromSettings) {
+    el.btnBackFromSettings.addEventListener("click", () => {
+      if (el.settingsScreen) el.settingsScreen.hidden = true;
+      showModuleHub();
+    });
+  }
 
   el.btnPrev.addEventListener("click", shiftViewBackward);
   el.btnNext.addEventListener("click", shiftViewForward);
@@ -7106,19 +11067,20 @@ function bindEvents() {
     render();
   });
 
-  if (el.btnSettings && el.settingsPanel && el.settingsMenu) {
-    el.btnSettings.addEventListener("click", (e) => {
-      e.stopPropagation();
-      setSettingsPanelOpen(el.settingsPanel.hidden);
-    });
-    el.settingsMenu.addEventListener("focusout", () => {
-      setTimeout(() => {
-        if (!el.settingsMenu.contains(document.activeElement)) {
-          closeSettingsPanel();
-        }
-      }, 0);
-    });
-
+  if (el.settingsPanel) {
+    if (el.btnSettings && el.settingsMenu) {
+      el.btnSettings.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setSettingsPanelOpen(el.settingsPanel.hidden);
+      });
+      el.settingsMenu.addEventListener("focusout", () => {
+        setTimeout(() => {
+          if (!el.settingsMenu.contains(document.activeElement)) {
+            closeSettingsPanel();
+          }
+        }, 0);
+      });
+    }
     if (el.btnToggleQuickAdd) {
       el.btnToggleQuickAdd.addEventListener("click", () => {
         const willOpen = el.quickAddGroup ? el.quickAddGroup.hidden : false;
@@ -7157,49 +11119,59 @@ function bindEvents() {
     }
 
     if (el.btnQuickAddInstitution) {
-      el.btnQuickAddInstitution.addEventListener("click", async () => {
+      el.btnQuickAddInstitution.addEventListener("click", () => {
+        prepareModuleModalOpen("settings");
         closeSettingsPanel();
-        await manageInstitutionsFromQuickMenu();
+        openCompanyModal("");
       });
     }
 
     if (el.btnQuickAddManager) {
-      el.btnQuickAddManager.addEventListener("click", async () => {
+      el.btnQuickAddManager.addEventListener("click", () => {
+        prepareModuleModalOpen("settings");
         closeSettingsPanel();
-        await manageManagersFromQuickMenu();
+        openCompanyModal("");
+        setTimeout(() => {
+          try { el.managerName?.focus(); } catch (_) { }
+        }, 0);
       });
     }
 
     if (el.btnQuickAddUser) {
       el.btnQuickAddUser.addEventListener("click", () => {
+        prepareModuleModalOpen("settings");
         closeSettingsPanel();
         openUserModal();
       });
     }
 
     if (el.btnQuickAddService) {
-      el.btnQuickAddService.addEventListener("click", async () => {
+      el.btnQuickAddService.addEventListener("click", () => {
+        prepareModuleModalOpen("settings");
         closeSettingsPanel();
-        await manageServicesFromQuickMenu();
+        openServiceModal();
       });
     }
 
     if (el.btnQuickAddSalon) {
-      el.btnQuickAddSalon.addEventListener("click", async () => {
+      el.btnQuickAddSalon.addEventListener("click", () => {
+        prepareModuleModalOpen("settings");
         closeSettingsPanel();
-        await manageSalonesFromQuickMenu();
+        openSalonesModal();
       });
     }
 
     if (el.btnQuickAddGlobalGoal) {
-      el.btnQuickAddGlobalGoal.addEventListener("click", async () => {
+      el.btnQuickAddGlobalGoal.addEventListener("click", () => {
+        prepareModuleModalOpen("settings");
         closeSettingsPanel();
-        await manageGlobalGoalsFromQuickMenu();
+        openGlobalGoalsModal();
       });
     }
 
     if (el.btnQuickAddChecklist) {
       el.btnQuickAddChecklist.addEventListener("click", () => {
+        prepareModuleModalOpen("settings");
         closeSettingsPanel();
         openChecklistTemplateModal();
       });
@@ -7207,20 +11179,26 @@ function bindEvents() {
 
     if (el.btnReportSales) {
       el.btnReportSales.addEventListener("click", () => {
-        closeSettingsPanel();
+        prepareModuleModalOpen("reports");
         openSalesReportModal();
       });
     }
     if (el.btnReportOccupancy) {
       el.btnReportOccupancy.addEventListener("click", () => {
-        closeSettingsPanel();
+        prepareModuleModalOpen("reports");
         openOccupancyReportModal();
       });
     }
     if (el.btnReportDashboard) {
       el.btnReportDashboard.addEventListener("click", () => {
-        closeSettingsPanel();
-        toast("Reporte Dashboard: pendiente de construir.");
+        prepareModuleModalOpen("reports");
+        openDashboardReportModal();
+      });
+    }
+    if (el.btnReportInstitution) {
+      el.btnReportInstitution.addEventListener("click", () => {
+        prepareModuleModalOpen("reports");
+        openInstitutionReportModal();
       });
     }
   }
@@ -7304,13 +11282,15 @@ function bindEvents() {
     el[id].addEventListener("input", () => validateReservationRequiredFields());
   });
   el.btnAddSlot.addEventListener("click", () => {
-    addSlotRow({ salon: "", startTime: "", endTime: "" });
+    addSlotRow({ salon: "", slotPax: 0, startTime: "", endTime: "" });
     syncHiddenTimesFromFirstSlot();
+    syncEventPaxFromSlots();
     updateRulesAndConflictsUI();
   });
   const onSlotChange = (e) => {
-    if (!e.target.closest(".slotStart, .slotEnd, .slotRoom")) return;
+    if (!e.target.closest(".slotStart, .slotEnd, .slotRoom, .slotPax")) return;
     syncHiddenTimesFromFirstSlot();
+    syncEventPaxFromSlots();
     updateRulesAndConflictsUI();
     validateReservationRequiredFields();
   };
@@ -7331,7 +11311,9 @@ function bindEvents() {
     if (!ok) return;
     btn.closest(".slotRow")?.remove();
     syncHiddenTimesFromFirstSlot();
+    syncEventPaxFromSlots();
     updateRulesAndConflictsUI();
+    validateReservationRequiredFields();
   });
   el.eventDate.addEventListener("change", () => {
     if (!el.eventId.value && Array.isArray(pendingCreateDates) && pendingCreateDates.length > 1) {
@@ -7385,19 +11367,6 @@ function bindEvents() {
     toast(buildStatusChangeToast(previousStatus, ev.status, "Evento cancelado."));
   });
 
-  el.btnMarkQuoted.addEventListener("click", () => {
-    const id = el.eventId.value;
-    if (!id) return;
-    const ev = state.events.find(x => x.id === id);
-    if (!ev) return;
-    const previousStatus = ev.status;
-    ev.status = STATUS.SEGUIMIENTO;
-    appendHistoryByKey(reservationKeyFromEvent(ev), ev.userId, "Estado cambiado a Seguimiento.");
-    persist();
-    render();
-    openModalForEdit(id);
-    toast(buildStatusChangeToast(previousStatus, ev.status, "Movido a Seguimiento."));
-  });
   if (el.btnSetMaintenance) {
     el.btnSetMaintenance.addEventListener("click", async () => {
       const id = String(el.eventId?.value || "").trim();
@@ -7423,6 +11392,16 @@ function bindEvents() {
         if (validation.firstInvalidEl && typeof validation.firstInvalidEl.focus === "function") {
           validation.firstInvalidEl.focus();
         }
+        return;
+      }
+
+      const maintenanceBlocks = findMaintenanceBlockingReservationsFromForm();
+      if (maintenanceBlocks.length) {
+        await modernAlert({
+          icon: "warning",
+          title: "Mantenimiento bloqueado",
+          text: "No puedes poner en Mantenimiento: ya hay una reserva Confirmada o Pre reserva en ese horario.",
+        });
         return;
       }
 
@@ -7660,6 +11639,13 @@ function bindEvents() {
       setMmsStage(String(btn.dataset.mmsStage || "plato"));
     });
   }
+  if (el.mmsPrimaryTabs) {
+    el.mmsPrimaryTabs.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mms-primary]");
+      if (!btn) return;
+      setMmsPrimaryMode(String(btn.dataset.mmsPrimary || "menu"));
+    });
+  }
   if (el.btnMmsStageMoreOptions) {
     el.btnMmsStageMoreOptions.addEventListener("click", () => {
       if (mmsCurrentStage === "salsa" || mmsCurrentStage === "guarnicion") {
@@ -7688,10 +11674,10 @@ function bindEvents() {
     });
   }
   if (el.mmsStageOptions) {
-    el.mmsStageOptions.addEventListener("click", (e) => {
+    el.mmsStageOptions.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-mms-quick-kind]");
       if (!btn) return;
-      handleMmsStageOptionClick(btn.dataset.mmsQuickKind, btn.dataset.mmsQuickId);
+      await handleMmsStageOptionClick(btn.dataset.mmsQuickKind, btn.dataset.mmsQuickId);
     });
   }
   if (el.btnMmsAddBebida) {
@@ -7735,51 +11721,79 @@ function bindEvents() {
     });
   }
   if (el.mmsGuarnicionesQuickSuggested) {
-    el.mmsGuarnicionesQuickSuggested.addEventListener("click", (e) => {
+    el.mmsGuarnicionesQuickSuggested.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-mms-quick-kind='guarnicion']");
       if (!btn) return;
-      toggleMmsQuickItem("guarnicion", btn.dataset.mmsQuickId);
+      await toggleMmsQuickItem("guarnicion", btn.dataset.mmsQuickId);
     });
   }
   if (el.mmsGuarnicionesQuickGlobal) {
-    el.mmsGuarnicionesQuickGlobal.addEventListener("click", (e) => {
+    el.mmsGuarnicionesQuickGlobal.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-mms-quick-kind='guarnicion']");
       if (!btn) return;
-      toggleMmsQuickItem("guarnicion", btn.dataset.mmsQuickId);
+      await toggleMmsQuickItem("guarnicion", btn.dataset.mmsQuickId);
     });
   }
   if (el.mmsPostresQuickSuggested) {
-    el.mmsPostresQuickSuggested.addEventListener("click", (e) => {
+    el.mmsPostresQuickSuggested.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-mms-quick-kind='postre']");
       if (!btn) return;
-      toggleMmsQuickItem("postre", btn.dataset.mmsQuickId);
+      await toggleMmsQuickItem("postre", btn.dataset.mmsQuickId);
     });
   }
   if (el.mmsPostresQuickGlobal) {
-    el.mmsPostresQuickGlobal.addEventListener("click", (e) => {
+    el.mmsPostresQuickGlobal.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-mms-quick-kind='postre']");
       if (!btn) return;
-      toggleMmsQuickItem("postre", btn.dataset.mmsQuickId);
+      await toggleMmsQuickItem("postre", btn.dataset.mmsQuickId);
     });
   }
   if (el.mmsComandaPreview) {
     el.mmsComandaPreview.addEventListener("click", (e) => {
+      const plateTag = e.target.closest(".mmsComandaTag[data-mms-tag-kind='plato']");
+      if (plateTag && !e.target.closest("button")) {
+        loadMmsLineItemIntoEditor(String(plateTag.dataset.mmsTagId || ""));
+        return;
+      }
       const qtyBtn = e.target.closest("[data-mms-qty-kind]");
       if (qtyBtn) {
         const kind = String(qtyBtn.dataset.mmsQtyKind || "");
         const action = String(qtyBtn.dataset.mmsQtyAction || "");
-        const id = Number(qtyBtn.dataset.mmsQtyId || 0);
-        if (kind === "postre" && Number.isFinite(id) && id > 0) {
-          const current = Math.max(1, Math.floor(Number(mmsPostreQtyById[id] || 1)));
+        const idRaw = String(qtyBtn.dataset.mmsQtyId || "").trim();
+        const id = Number(idRaw || 0);
+        if (kind === "plato" && idRaw) {
+          const target = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).find((item) => String(item?.key || "") === idRaw);
+          if (target) {
+            const current = Math.max(1, Math.floor(Number(target.qty || 1)));
+            if (action === "dec") {
+              if (current <= 1) {
+                removeMmsComandaItem("plato", idRaw);
+                return;
+              }
+              updateMmsPlatoItemQtyByKey(idRaw, current - 1);
+            } else if (action === "inc") {
+              updateMmsPlatoItemQtyByKey(idRaw, current + 1);
+            }
+            refreshMmsDescriptionAuto();
+            renderMmsSelectionSummary();
+            renderMmsComandaPreview();
+            return;
+          }
+        }
+        if ((kind === "guarnicion" || kind === "postre" || kind === "bebida") && Number.isFinite(id) && id > 0) {
+          const current = getMmsItemQty(kind, id);
           if (action === "dec") {
             if (current <= 1) {
-              removeMmsComandaItem("postre", id);
+              removeMmsComandaItem(kind, id);
               return;
             }
-            mmsPostreQtyById[id] = current - 1;
-            refreshMmsDescriptionAuto();
-            renderMmsComandaPreview();
+            setMmsItemQty(kind, id, current - 1);
+          } else if (action === "inc") {
+            setMmsItemQty(kind, id, current + 1);
           }
+          refreshMmsDescriptionAuto();
+          renderMmsSelectionSummary();
+          renderMmsComandaPreview();
         }
         return;
       }
@@ -7888,7 +11902,7 @@ function bindEvents() {
   }
   if (el.mmsMenuQty) {
     el.mmsMenuQty.addEventListener("input", () => {
-      renderMmsSelectionSummary();
+      syncMmsMenuQtyField();
     });
   }
   if (el.mmsMenuDescription) {
@@ -7903,19 +11917,62 @@ function bindEvents() {
   }
   const bindMirror = (left, right) => {
     if (!left || !right) return;
-    left.addEventListener("change", (e) => {
+    const resolveKind = () => {
+      if (
+        (left === el.mmsGuarnicionesSuggested && right === el.mmsGuarnicionesAll)
+        || (left === el.mmsGuarnicionesAll && right === el.mmsGuarnicionesSuggested)
+      ) return "guarnicion";
+      if (
+        (left === el.mmsPostresSuggested && right === el.mmsPostresAll)
+        || (left === el.mmsPostresAll && right === el.mmsPostresSuggested)
+      ) return "postre";
+      return "";
+    };
+    const syncQtyFromChecklist = async (origin, mirror, check) => {
+      const kind = resolveKind();
+    if (!kind) return true;
+    const id = Number(check?.value || 0);
+    if (!Number.isFinite(id) || id <= 0) return true;
+    if (check.checked) {
+      const label = String(check.closest("label")?.textContent || check.dataset.label || "Producto").trim();
+      if (kind === "guarnicion") {
+        notifyMmsSelectionAdded(kind, id, label, 1);
+      } else {
+        const qty = await requestMmsItemQty(label, getMmsItemQty(kind, id), "postres");
+        if (qty === null) {
+          check.checked = false;
+          syncMirrorChecklistValue(origin, mirror, check);
+          return false;
+        }
+        setMmsItemQty(kind, id, qty);
+        notifyMmsSelectionAdded(kind, id, label, qty);
+      }
+    } else {
+      deleteMmsItemQty(kind, id);
+    }
+      if (kind === "guarnicion") syncMmsGuarnicionQtyWithSelection();
+      else syncMmsPostreQtyWithSelection();
+      return true;
+    };
+    left.addEventListener("change", async (e) => {
       const check = e.target.closest("input[type='checkbox']");
       if (!check) return;
       syncMirrorChecklistValue(left, right, check);
+      if (!(await syncQtyFromChecklist(left, right, check))) return;
       refreshMmsDescriptionAuto();
+      renderMmsSelectionSummary();
       renderMmsQuickSelectors();
+      renderMmsComandaPreview();
     });
-    right.addEventListener("change", (e) => {
+    right.addEventListener("change", async (e) => {
       const check = e.target.closest("input[type='checkbox']");
       if (!check) return;
       syncMirrorChecklistValue(right, left, check);
+      if (!(await syncQtyFromChecklist(right, left, check))) return;
       refreshMmsDescriptionAuto();
+      renderMmsSelectionSummary();
       renderMmsQuickSelectors();
+      renderMmsComandaPreview();
     });
   };
   bindMirror(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll);
@@ -8052,6 +12109,7 @@ function bindEvents() {
     const username = String(el.userUsername?.value || "").trim();
     const email = String(el.userEmail?.value || "").trim();
     const phone = String(el.userPhone?.value || "").trim();
+    const role = normalizeUserRole(el.userRole?.value || USER_ROLE.SELLER);
     const password = String(el.userPassword?.value || "").trim();
     const signatureFile = el.userSignature?.files?.[0] || null;
     const avatarFile = el.userAvatar?.files?.[0] || null;
@@ -8111,6 +12169,7 @@ function bindEvents() {
       ...previous,
       name: fullName,
       fullName,
+      role,
       username,
       email,
         phone,
@@ -8137,6 +12196,7 @@ function bindEvents() {
         id: uid(),
         name: fullName,
         fullName,
+        role,
         username,
         email,
         phone,
@@ -8161,15 +12221,123 @@ function bindEvents() {
   if (el.btnQuoteDiscard) el.btnQuoteDiscard.addEventListener("click", closeQuoteModal);
   bindSafeBackdropClose(el.quoteBackdrop, closeQuoteModal);
 
-  el.btnAddCompany.addEventListener("click", openCompanyModal);
+  el.btnAddCompany.addEventListener("click", () => openCompanyModal(""));
   if (el.btnOpenServiceCreate) el.btnOpenServiceCreate.addEventListener("click", openServiceModal);
+  if (el.companyEditSelect) {
+    el.companyEditSelect.addEventListener("change", () => {
+      loadCompanyInModal(el.companyEditSelect.value || "");
+    });
+  }
+  if (el.btnCompanyDisable) {
+    el.btnCompanyDisable.addEventListener("click", () => {
+      const id = String(editingCompanyId || "").trim();
+      if (!id) return toast("Selecciona una empresa para cambiar su estado.");
+      if (isCompanyDisabled(id)) enableCompany(id);
+      else state.disabledCompanies = Array.from(new Set([...(state.disabledCompanies || []), id]));
+      persist();
+      renderCompaniesSelect(id);
+      loadCompanyInModal(id);
+      toast(isCompanyDisabled(id) ? "Empresa inhabilitada." : "Empresa reactivada.");
+    });
+  }
   el.btnCompanyClose.addEventListener("click", closeCompanyModal);
   if (el.btnCompanyDiscard) el.btnCompanyDiscard.addEventListener("click", closeCompanyModal);
   bindSafeBackdropClose(el.companyBackdrop, closeCompanyModal);
+  if (el.serviceEditSelect) {
+    el.serviceEditSelect.addEventListener("change", () => {
+      openServiceModal(el.serviceEditSelect.value || "");
+    });
+  }
+  if (el.btnServiceDisable) {
+    el.btnServiceDisable.addEventListener("click", () => {
+      const id = String(editingServiceId || "").trim();
+      if (!id) return toast("Selecciona un servicio para cambiar su estado.");
+      if (isServiceDisabled(id)) enableService(id);
+      else state.disabledServices = Array.from(new Set([...(state.disabledServices || []), id]));
+      persist();
+      renderServicesList();
+      openServiceModal(id);
+      toast(isServiceDisabled(id) ? "Servicio inhabilitado." : "Servicio reactivado.");
+    });
+  }
   if (el.btnServiceClose) el.btnServiceClose.addEventListener("click", closeServiceModal);
   if (el.btnServiceDiscard) el.btnServiceDiscard.addEventListener("click", closeServiceModal);
   if (el.serviceBackdrop) {
     bindSafeBackdropClose(el.serviceBackdrop, closeServiceModal);
+  }
+  if (el.btnGlobalGoalsClose) el.btnGlobalGoalsClose.addEventListener("click", closeGlobalGoalsModal);
+  if (el.btnGlobalGoalReset) {
+    el.btnGlobalGoalReset.addEventListener("click", () => {
+      loadGlobalGoalInModal("");
+    });
+  }
+  if (el.btnGlobalGoalSave) {
+    el.btnGlobalGoalSave.addEventListener("click", () => {
+      saveGlobalGoalFromModal();
+    });
+  }
+  if (el.btnGlobalGoalDisable) {
+    el.btnGlobalGoalDisable.addEventListener("click", () => {
+      toggleGlobalGoalActive();
+    });
+  }
+  if (el.globalGoalsEditSelect) {
+    el.globalGoalsEditSelect.addEventListener("change", () => {
+      loadGlobalGoalInModal(el.globalGoalsEditSelect.value || "");
+    });
+  }
+  if (el.globalGoalsBody) {
+    el.globalGoalsBody.addEventListener("click", (e) => {
+      const editBtn = e.target.closest("[data-global-goal-edit]");
+      if (editBtn) {
+        loadGlobalGoalInModal(editBtn.dataset.globalGoalEdit || "");
+        return;
+      }
+      const toggleBtn = e.target.closest("[data-global-goal-toggle]");
+      if (toggleBtn) {
+        toggleGlobalGoalActive(toggleBtn.dataset.globalGoalToggle || "");
+      }
+    });
+  }
+  if (el.globalGoalsBackdrop) {
+    bindSafeBackdropClose(el.globalGoalsBackdrop, closeGlobalGoalsModal);
+  }
+  if (el.btnSalonesClose) el.btnSalonesClose.addEventListener("click", closeSalonesModal);
+  if (el.btnSalonReset) {
+    el.btnSalonReset.addEventListener("click", () => {
+      loadSalonInModal("");
+    });
+  }
+  if (el.btnSalonSave) {
+    el.btnSalonSave.addEventListener("click", () => {
+      saveSalonFromModal();
+    });
+  }
+  if (el.btnSalonDisable) {
+    el.btnSalonDisable.addEventListener("click", () => {
+      toggleSalonActive();
+    });
+  }
+  if (el.salonEditSelect) {
+    el.salonEditSelect.addEventListener("change", () => {
+      loadSalonInModal(el.salonEditSelect.value || "");
+    });
+  }
+  if (el.salonesBody) {
+    el.salonesBody.addEventListener("click", (e) => {
+      const editBtn = e.target.closest("[data-salon-edit]");
+      if (editBtn) {
+        loadSalonInModal(editBtn.dataset.salonEdit || "");
+        return;
+      }
+      const toggleBtn = e.target.closest("[data-salon-toggle]");
+      if (toggleBtn) {
+        toggleSalonActive(toggleBtn.dataset.salonToggle || "");
+      }
+    });
+  }
+  if (el.salonesBackdrop) {
+    bindSafeBackdropClose(el.salonesBackdrop, closeSalonesModal);
   }
   if (el.menuSuggestionsBackdrop) {
     bindSafeBackdropClose(el.menuSuggestionsBackdrop, closeMenuSuggestionsModal);
@@ -8330,6 +12498,99 @@ function bindEvents() {
       renderSubcategoriasServicioSelect(Number(el.serviceCategory.value));
     });
   }
+  if (el.btnServiceCategoryManage) {
+    el.btnServiceCategoryManage.addEventListener("click", () => {
+      openServiceCategoryManagerModal();
+    });
+  }
+  if (el.btnServiceSubcategoryManage) {
+    el.btnServiceSubcategoryManage.addEventListener("click", () => {
+      openServiceSubcategoryManagerModal();
+    });
+  }
+  if (el.btnServiceCategoryClose) el.btnServiceCategoryClose.addEventListener("click", closeServiceCategoryManagerModal);
+  if (el.btnServiceCategoryReset) {
+    el.btnServiceCategoryReset.addEventListener("click", () => {
+      loadServiceCategoryInManager("");
+    });
+  }
+  if (el.btnServiceCategorySave) {
+    el.btnServiceCategorySave.addEventListener("click", () => {
+      saveServiceCategoryFromManagerModal();
+    });
+  }
+  if (el.serviceCategoryEditSelect) {
+    el.serviceCategoryEditSelect.addEventListener("change", () => {
+      loadServiceCategoryInManager(el.serviceCategoryEditSelect.value || "");
+    });
+  }
+  if (el.serviceCategoryBody) {
+    el.serviceCategoryBody.addEventListener("click", (e) => {
+      const editBtn = e.target.closest("[data-service-category-edit]");
+      if (editBtn) {
+        loadServiceCategoryInManager(editBtn.dataset.serviceCategoryEdit || "");
+        return;
+      }
+      const toggleBtn = e.target.closest("[data-service-category-toggle]");
+      if (toggleBtn) {
+        toggleServiceCategoryActiveFromManager(toggleBtn.dataset.serviceCategoryToggle || "");
+      }
+    });
+  }
+  if (el.btnServiceSubcategoryClose) el.btnServiceSubcategoryClose.addEventListener("click", closeServiceSubcategoryManagerModal);
+  if (el.btnServiceSubcategoryReset) {
+    el.btnServiceSubcategoryReset.addEventListener("click", () => {
+      const categoryId = String(el.serviceSubcategoryCategorySelect?.value || "").trim();
+      loadServiceSubcategoryInManager("", categoryId);
+    });
+  }
+  if (el.btnServiceSubcategorySave) {
+    el.btnServiceSubcategorySave.addEventListener("click", () => {
+      saveServiceSubcategoryFromManagerModal();
+    });
+  }
+  if (el.serviceSubcategoryCategorySelect) {
+    el.serviceSubcategoryCategorySelect.addEventListener("change", () => {
+      const categoryId = String(el.serviceSubcategoryCategorySelect.value || "").trim();
+      renderServiceSubcategoryManagerSelect("", categoryId);
+      renderServiceSubcategoryManagerTable(categoryId);
+      editingServiceSubcategoryId = "";
+      if (el.serviceSubcategoryNameInput) el.serviceSubcategoryNameInput.value = "";
+    });
+  }
+  if (el.serviceSubcategoryEditSelect) {
+    el.serviceSubcategoryEditSelect.addEventListener("change", () => {
+      const id = String(el.serviceSubcategoryEditSelect.value || "").trim();
+      const categoryId = String(el.serviceSubcategoryCategorySelect?.value || "").trim();
+      loadServiceSubcategoryInManager(id, categoryId);
+    });
+  }
+  if (el.serviceSubcategoryBody) {
+    el.serviceSubcategoryBody.addEventListener("click", (e) => {
+      const editBtn = e.target.closest("[data-service-subcategory-edit]");
+      if (editBtn) {
+        loadServiceSubcategoryInManager(editBtn.dataset.serviceSubcategoryEdit || "");
+        return;
+      }
+      const toggleBtn = e.target.closest("[data-service-subcategory-toggle]");
+      if (toggleBtn) {
+        toggleServiceSubcategoryActiveFromManager(toggleBtn.dataset.serviceSubcategoryToggle || "");
+      }
+    });
+  }
+  if (el.serviceCategoryBackdrop) {
+    bindSafeBackdropClose(el.serviceCategoryBackdrop, closeServiceCategoryManagerModal);
+  }
+  if (el.serviceSubcategoryBackdrop) {
+    bindSafeBackdropClose(el.serviceSubcategoryBackdrop, closeServiceSubcategoryManagerModal);
+  }
+  if (el.servicesManagerBody) {
+    el.servicesManagerBody.addEventListener("click", (e) => {
+      const editBtn = e.target.closest("[data-service-row-edit]");
+      if (!editBtn) return;
+      openServiceModal(editBtn.dataset.serviceRowEdit || "");
+    });
+  }
 
   if (el.btnAppointmentClose) el.btnAppointmentClose.addEventListener("click", closeAppointmentModal);
   if (el.btnSalesReportClose) el.btnSalesReportClose.addEventListener("click", closeSalesReportModal);
@@ -8375,28 +12636,143 @@ function bindEvents() {
   }
   if (el.occupancyReportWeek) {
     el.occupancyReportWeek.addEventListener("change", () => {
-      const { monday, sunday } = getOccupancyWeekRange();
-      occupancySelectedDayIso = toISODate(monday);
-      if (el.occupancyReportSubtitle) {
-        el.occupancyReportSubtitle.textContent = `Semana ${toISODate(monday)} a ${toISODate(sunday)} (Lunes a Domingo)`;
-      }
-      renderOccupancyReportTable();
+      updateOccupancyReportWeekUi();
+    });
+  }
+  if (el.btnOccupancyReportPrevWeek) {
+    el.btnOccupancyReportPrevWeek.addEventListener("click", () => {
+      moveOccupancyReportWeek(-1);
+    });
+  }
+  if (el.btnOccupancyReportNextWeek) {
+    el.btnOccupancyReportNextWeek.addEventListener("click", () => {
+      moveOccupancyReportWeek(1);
     });
   }
   if (el.btnOccupancyReportTodayWeek) {
     el.btnOccupancyReportTodayWeek.addEventListener("click", () => {
       setOccupancyCurrentWeek();
-      const { monday, sunday } = getOccupancyWeekRange();
-      occupancySelectedDayIso = toISODate(monday);
-      if (el.occupancyReportSubtitle) {
-        el.occupancyReportSubtitle.textContent = `Semana ${toISODate(monday)} a ${toISODate(sunday)} (Lunes a Domingo)`;
-      }
-      renderOccupancyReportTable();
+      updateOccupancyReportWeekUi();
     });
   }
   if (el.btnOccupancyReportExportExcel) {
     el.btnOccupancyReportExportExcel.addEventListener("click", () => {
       exportOccupancyReportToExcel();
+    });
+  }
+  if (el.btnDashboardReportClose) el.btnDashboardReportClose.addEventListener("click", closeDashboardReportModal);
+  if (el.dashboardReportBackdrop) {
+    bindSafeBackdropClose(el.dashboardReportBackdrop, closeDashboardReportModal);
+    el.dashboardReportBackdrop.addEventListener("mousemove", handleDashboardHoverTooltip);
+    el.dashboardReportBackdrop.addEventListener("mouseleave", hideDashboardHoverTip);
+    el.dashboardReportBackdrop.addEventListener("scroll", hideDashboardHoverTip, true);
+  }
+  if (el.dashboardReportPeriod) {
+    el.dashboardReportPeriod.addEventListener("change", () => {
+      syncDashboardPeriodControls();
+      if (dashboardResolvePeriod() === "week") {
+        const weekIso = String(el.dashboardReportWeek?.value || "").trim() || weekInputFromDate(new Date());
+        setDashboardFiltersByWeek(weekIso);
+      } else {
+        const month = String(el.dashboardReportMonth?.value || "").trim() || toISODate(new Date()).slice(0, 7);
+        if (/^\d{4}-\d{2}$/.test(month)) setDashboardFiltersByMonth(month);
+      }
+      renderDashboardReport();
+    });
+  }
+  if (el.dashboardReportMonth) {
+    el.dashboardReportMonth.addEventListener("change", () => {
+      const month = String(el.dashboardReportMonth.value || "").trim();
+      if (/^\d{4}-\d{2}$/.test(month)) setDashboardFiltersByMonth(month);
+      renderDashboardReport();
+    });
+  }
+  if (el.dashboardReportWeek) {
+    el.dashboardReportWeek.addEventListener("change", () => {
+      const weekIso = String(el.dashboardReportWeek.value || "").trim();
+      setDashboardFiltersByWeek(weekIso);
+      renderDashboardReport();
+    });
+  }
+  [
+    el.dashboardReportFrom,
+    el.dashboardReportTo,
+    el.dashboardReportRole,
+    el.dashboardReportScope,
+    el.dashboardReportSeller,
+  ].forEach((node) => {
+    if (!node) return;
+    node.addEventListener("change", () => {
+      renderDashboardReport();
+    });
+  });
+  if (el.btnDashboardReportCurrentMonth) {
+    el.btnDashboardReportCurrentMonth.addEventListener("click", () => {
+      if (dashboardResolvePeriod() === "week") {
+        const weekIso = weekInputFromDate(new Date());
+        setDashboardFiltersByWeek(weekIso);
+      } else {
+        const month = toISODate(new Date()).slice(0, 7);
+        setDashboardFiltersByMonth(month);
+      }
+      renderDashboardReport();
+    });
+  }  if (el.btnDashboardReportReset) {
+    el.btnDashboardReportReset.addEventListener("click", () => {
+      resetDashboardReportFilters();
+      renderDashboardReport();
+    });
+  }
+  if (el.btnInstitutionReportClose) el.btnInstitutionReportClose.addEventListener("click", closeInstitutionReportModal);
+  if (el.institutionReportBackdrop) {
+    bindSafeBackdropClose(el.institutionReportBackdrop, closeInstitutionReportModal);
+  }
+  [
+    el.institutionReportCompany,
+    el.institutionReportFrom,
+    el.institutionReportTo,
+  ].forEach((node) => {
+    if (!node) return;
+    node.addEventListener("change", () => {
+      renderInstitutionReport();
+    });
+  });
+  if (el.institutionReportCompanySearch) {
+    el.institutionReportCompanySearch.addEventListener("input", () => {
+      renderInstitutionReportCompanyOptions();
+      renderInstitutionReport();
+    });
+    el.institutionReportCompanySearch.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      renderInstitutionReportCompanyOptions();
+      renderInstitutionReport();
+    });
+  }
+  if (el.btnInstitutionReportCurrentYear) {
+    el.btnInstitutionReportCurrentYear.addEventListener("click", () => {
+      setInstitutionReportDefaultRange();
+      renderInstitutionReport();
+    });
+  }
+  if (el.btnInstitutionReportReset) {
+    el.btnInstitutionReportReset.addEventListener("click", () => {
+      resetInstitutionReportFilters();
+      renderInstitutionReport();
+    });
+  }
+  if (el.institutionReportSummary) {
+    el.institutionReportSummary.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-target-section]");
+      if (!btn) return;
+      scrollInstitutionReportToSection(btn.dataset.targetSection);
+    });
+  }
+  if (el.institutionReportNav) {
+    el.institutionReportNav.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-target-section]");
+      if (!btn) return;
+      scrollInstitutionReportToSection(btn.dataset.targetSection);
     });
   }
   if (el.occupancyReportBody) {
@@ -8435,6 +12811,51 @@ function bindEvents() {
   }
   if (el.btnChecklistTemplateClose) el.btnChecklistTemplateClose.addEventListener("click", closeChecklistTemplateModal);
   if (el.checklistTemplateBackdrop) bindSafeBackdropClose(el.checklistTemplateBackdrop, closeChecklistTemplateModal);
+  if (el.checklistTemplateSelect) {
+    el.checklistTemplateSelect.addEventListener("change", () => {
+      saveChecklistTemplateDraft();
+      loadChecklistTemplateEditor(el.checklistTemplateSelect.value || "");
+    });
+  }
+  if (el.checklistTemplateName) {
+    el.checklistTemplateName.addEventListener("change", () => {
+      saveChecklistTemplateDraft();
+      renderChecklistTemplateSelect(checklistTemplateCurrentId);
+    });
+  }
+  if (el.checklistTemplateActive) {
+    el.checklistTemplateActive.addEventListener("change", () => {
+      saveChecklistTemplateDraft();
+      renderChecklistTemplateSelect(checklistTemplateCurrentId);
+      if (el.btnChecklistTemplateDisable) {
+        el.btnChecklistTemplateDisable.textContent = el.checklistTemplateActive.checked ? "Inhabilitar" : "Reactivar";
+      }
+    });
+  }
+  if (el.btnChecklistTemplateNew) {
+    el.btnChecklistTemplateNew.addEventListener("click", () => {
+      saveChecklistTemplateDraft();
+      const next = normalizeChecklistTemplateRecord({
+        name: "Nueva plantilla",
+        active: true,
+        sections: [{ name: "General", active: true }],
+        items: [],
+      });
+      checklistTemplatesDraft.push(next);
+      loadChecklistTemplateEditor(next.id);
+      if (el.checklistTemplateName) el.checklistTemplateName.focus();
+    });
+  }
+  if (el.btnChecklistTemplateDisable) {
+    el.btnChecklistTemplateDisable.addEventListener("click", () => {
+      const current = getCurrentChecklistTemplateDraft();
+      if (!current) return toast("Selecciona una plantilla.");
+      current.active = current.active === false ? true : false;
+      saveChecklistTemplateDraft();
+      loadChecklistTemplateEditor(current.id);
+      toast(current.active === false ? "Plantilla inhabilitada." : "Plantilla reactivada.");
+    });
+  }
   if (el.btnChecklistTemplateAdd) {
     el.btnChecklistTemplateAdd.addEventListener("click", () => {
       addChecklistTemplateItemFromInput();
@@ -8443,6 +12864,19 @@ function bindEvents() {
   if (el.btnChecklistTemplateAddSection) {
     el.btnChecklistTemplateAddSection.addEventListener("click", () => {
       addChecklistSectionFromInput();
+    });
+  }
+  if (el.btnChecklistTemplateResetSection) {
+    el.btnChecklistTemplateResetSection.addEventListener("click", () => {
+      resetChecklistSectionEditor();
+    });
+  }
+  if (el.checklistTemplateSectionEditSelect) {
+    el.checklistTemplateSectionEditSelect.addEventListener("change", () => {
+      const id = String(el.checklistTemplateSectionEditSelect.value || "").trim();
+      checklistTemplateSectionEditingId = id;
+      const target = (checklistTemplateSectionsDraft || []).find((s) => String(s?.id || "") === id);
+      if (el.checklistTemplateSectionInput) el.checklistTemplateSectionInput.value = String(target?.name || "");
     });
   }
   if (el.checklistTemplateSectionInput) {
@@ -8471,7 +12905,7 @@ function bindEvents() {
           el.checklistTemplateInput.value = String(row.label || "");
           el.checklistTemplateInput.focus();
         }
-        renderChecklistSectionSelect(String(row.section || "General"));
+        renderChecklistSectionSelect(String(row.sectionId || ""));
         if (el.btnChecklistTemplateAdd) el.btnChecklistTemplateAdd.textContent = "Guardar cambio";
         return;
       }
@@ -8511,9 +12945,51 @@ function bindEvents() {
       toast("Punto eliminado.");
     });
   }
+  if (el.checklistTemplateSectionsBody) {
+    el.checklistTemplateSectionsBody.addEventListener("click", (e) => {
+      const editBtn = e.target.closest("[data-checklist-section-edit]");
+      if (editBtn) {
+        const id = String(editBtn.dataset.checklistSectionEdit || "").trim();
+        checklistTemplateSectionEditingId = id;
+        const row = (checklistTemplateSectionsDraft || []).find((s) => String(s?.id || "") === id);
+        if (el.checklistTemplateSectionInput) {
+          el.checklistTemplateSectionInput.value = String(row?.name || "");
+          el.checklistTemplateSectionInput.focus();
+        }
+        renderChecklistSectionEditSelect(id);
+        return;
+      }
+      const toggleBtn = e.target.closest("[data-checklist-section-toggle]");
+      if (!toggleBtn) return;
+      const id = String(toggleBtn.dataset.checklistSectionToggle || "").trim();
+      const idx = (checklistTemplateSectionsDraft || []).findIndex((s) => String(s?.id || "") === id);
+      if (idx < 0) return;
+      checklistTemplateSectionsDraft[idx] = {
+        ...checklistTemplateSectionsDraft[idx],
+        active: checklistTemplateSectionsDraft[idx].active === false ? true : false,
+      };
+      saveChecklistTemplateDraft();
+      renderChecklistSectionSelect("");
+      renderChecklistSectionEditSelect("");
+      renderChecklistSectionsTable();
+      renderChecklistTemplateTable();
+      toast(checklistTemplateSectionsDraft[idx].active === false ? "Seccion inhabilitada." : "Seccion reactivada.");
+    });
+  }
   if (el.btnEventChecklistClose) el.btnEventChecklistClose.addEventListener("click", closeEventChecklistModal);
   if (el.btnEventChecklistDiscard) el.btnEventChecklistDiscard.addEventListener("click", closeEventChecklistModal);
   if (el.eventChecklistBackdrop) bindSafeBackdropClose(el.eventChecklistBackdrop, closeEventChecklistModal);
+  if (el.eventChecklistTemplateSelect) {
+    el.eventChecklistTemplateSelect.addEventListener("change", () => {
+      if (!currentEventChecklistId) return;
+      const notes = String(el.eventChecklistNotes?.value || "").trim();
+      const nextDraft = buildEventChecklistDraft(currentEventChecklistId, el.eventChecklistTemplateSelect.value || "");
+      if (!nextDraft) return;
+      nextDraft.notes = notes;
+      eventChecklistDraft = nextDraft;
+      renderEventChecklistRows();
+    });
+  }
   if (el.btnEventChecklistSave) {
     el.btnEventChecklistSave.addEventListener("click", () => {
       saveEventChecklistFromModal();
@@ -8597,6 +13073,10 @@ function bindEvents() {
     if (!companyManagersDraft.length) {
       return toast("Agrega al menos un encargado para la empresa.");
     }
+    const invalidManager = companyManagersDraft.find((m) => !isValidEmail(m?.email));
+    if (invalidManager) {
+      return toast(`Correo invalido en encargado: ${String(invalidManager.name || "sin nombre")}.`);
+    }
     const editingId = String(editingCompanyId || "").trim();
     const company = normalizeCompanyRecord({
       id: editingId || uid(),
@@ -8615,7 +13095,8 @@ function bindEvents() {
     if (editingId) {
       const idx = (state.companies || []).findIndex((c) => String(c.id || "") === editingId);
       if (idx >= 0) {
-        if (areCompaniesEquivalent(state.companies[idx], company)) {
+        const statusChanged = !!el.companyActive && el.companyActive.checked !== !isCompanyDisabled(editingId);
+        if (areCompaniesEquivalent(state.companies[idx], company) && !statusChanged) {
           return toast("Sin cambios detectados en empresa.");
         }
         state.companies[idx] = company;
@@ -8626,8 +13107,12 @@ function bindEvents() {
       companyManagersDraft.forEach((m) => enableManager(m.id));
     } else {
       state.companies.push(company);
-      enableCompany(company.id);
       companyManagersDraft.forEach((m) => enableManager(m.id));
+    }
+    if (el.companyActive?.checked === false) {
+      state.disabledCompanies = Array.from(new Set([...(state.disabledCompanies || []), company.id]));
+    } else {
+      enableCompany(company.id);
     }
     persist();
     const quoteCtx = getCurrentQuoteHistoryContext();
@@ -8652,6 +13137,11 @@ function bindEvents() {
       addServiceToQuoteDraft(el.quoteServiceSearch.value);
     }
   });
+  if (el.btnToggleQuoteItemsExpand) {
+    el.btnToggleQuoteItemsExpand.addEventListener("click", () => {
+      setQuoteItemsExpanded(!quoteItemsExpanded);
+    });
+  }
   el.quoteCompany.addEventListener("change", () => {
     selectCompanyInQuote(el.quoteCompany.value);
   });
@@ -8681,12 +13171,42 @@ function bindEvents() {
   el.quoteManagerSelect.addEventListener("change", () => {
     if (quoteDraft) quoteDraft.managerId = el.quoteManagerSelect.value;
     applyQuoteCompanyDefaults();
-    fillQuoteHeaderFields(true);
+    fillQuoteHeaderFields(true, false);
   });
   if (el.quoteTemplateSelect) {
     el.quoteTemplateSelect.addEventListener("change", () => {
       if (!quoteDraft) return;
       quoteDraft.templateId = String(el.quoteTemplateSelect.value || "").trim();
+    });
+  }
+  if (el.quoteServiceTemplateSelect) {
+    el.quoteServiceTemplateSelect.addEventListener("change", () => {
+      const selectedId = String(el.quoteServiceTemplateSelect.value || "").trim();
+      const templates = normalizeQuoteServiceTemplatesCollection(getQuoteServiceTemplatesFromState());
+      const found = templates.find((t) => String(t.id) === selectedId);
+      if (el.quoteServiceTemplateName) {
+        el.quoteServiceTemplateName.value = found ? String(found.name || "") : "";
+      }
+    });
+  }
+  if (el.btnQuoteServiceTemplateApply) {
+    el.btnQuoteServiceTemplateApply.addEventListener("click", async () => {
+      await applyQuoteServiceTemplateToDraft(el.quoteServiceTemplateSelect?.value || "");
+    });
+  }
+  if (el.btnQuoteServiceTemplateSave) {
+    el.btnQuoteServiceTemplateSave.addEventListener("click", () => {
+      saveQuoteServiceTemplateFromDraft(false);
+    });
+  }
+  if (el.btnQuoteServiceTemplateUpdate) {
+    el.btnQuoteServiceTemplateUpdate.addEventListener("click", () => {
+      saveQuoteServiceTemplateFromDraft(true);
+    });
+  }
+  if (el.btnQuoteServiceTemplateDelete) {
+    el.btnQuoteServiceTemplateDelete.addEventListener("click", async () => {
+      await deleteQuoteServiceTemplateSelected();
     });
   }
   if (el.btnLoadQuoteVersion) {
@@ -8750,9 +13270,10 @@ function bindEvents() {
     toast("Encargado eliminado del borrador.");
   });
 
-  el.quoteForm.addEventListener("submit", (e) => {
+  el.quoteForm.noValidate = true;
+  el.quoteForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    saveQuoteFromForm();
+    await saveQuoteFromForm();
   });
 
   el.quoteItemsBody.addEventListener("input", handleQuoteItemsInput);
@@ -8774,6 +13295,8 @@ function bindEvents() {
       if (!el.userBackdrop.hidden) closeUserModal();
       else if (el.salesReportBackdrop && !el.salesReportBackdrop.hidden) closeSalesReportModal();
       else if (el.occupancyReportBackdrop && !el.occupancyReportBackdrop.hidden) closeOccupancyReportModal();
+      else if (el.dashboardReportBackdrop && !el.dashboardReportBackdrop.hidden) closeDashboardReportModal();
+      else if (el.institutionReportBackdrop && !el.institutionReportBackdrop.hidden) closeInstitutionReportModal();
       else if (!el.appointmentBackdrop.hidden) closeAppointmentModal();
       else if (el.menuMontajeBackdrop && !el.menuMontajeBackdrop.hidden) closeMenuMontajeModal();
       else if (el.menuMontajeSelectableBackdrop && !el.menuMontajeSelectableBackdrop.hidden) closeMenuMontajeSelectableModal();
@@ -8781,6 +13304,7 @@ function bindEvents() {
       else if (el.menuCatalogBackdrop && !el.menuCatalogBackdrop.hidden) closeMenuCatalogManagerModal();
       else if (!el.serviceBackdrop.hidden) closeServiceModal();
       else if (!el.companyBackdrop.hidden) closeCompanyModal();
+      else if (!el.quoteBackdrop.hidden && quoteItemsExpanded) setQuoteItemsExpanded(false);
       else if (!el.quoteBackdrop.hidden) closeQuoteModal();
       else if (!el.modalBackdrop.hidden) closeModal();
     }
@@ -8820,20 +13344,19 @@ function openModalForCreate({ date, start, end, salon, rangeDates = null }) {
   el.eventDate.value = toISODate(d);
   el.eventDateEnd.value = totalDates > 1 ? rangeDates[rangeDates.length - 1] : toISODate(d);
   el.slotsBody.innerHTML = "";
-  addSlotRow({ salon: initialSalon, startTime, endTime });
+  addSlotRow({ salon: initialSalon, slotPax: 0, startTime, endTime });
   syncHiddenTimesFromFirstSlot();
   el.eventStatus.value = STATUS.PRIMERA; // default razonable
   const sessionUserId = String(authSession.userId || "").trim();
   const sessionAvailable = (state.users || []).some((u) => String(u.id) === sessionUserId && u.active !== false);
   el.eventUser.value = sessionAvailable ? sessionUserId : (state.users[0]?.id || "");
-  el.eventPax.value = "";
+  syncEventPaxFromSlots();
   el.eventNotes.value = "";
 
   el.btnDelete.hidden = true;
   el.btnCancelEvent.hidden = true;
   el.btnQuoteEvent.hidden = true;
   el.btnQuoteEvent.textContent = "Cotizar evento";
-  el.btnMarkQuoted.hidden = true;
   if (el.btnSetMaintenance) el.btnSetMaintenance.textContent = "Poner en mantenimiento";
   historyTargetEventId = null;
   if (el.btnToggleHistory) el.btnToggleHistory.hidden = true;
@@ -8878,19 +13401,18 @@ async function openModalForEdit(id) {
   if (slots.length) {
     for (const slot of slots) addSlotRow(slot);
   } else {
-    addSlotRow({ salon: ev.salon, startTime: ev.startTime, endTime: ev.endTime });
+    addSlotRow({ salon: ev.salon, slotPax: ev.slotPax ?? ev.pax ?? 0, startTime: ev.startTime, endTime: ev.endTime });
   }
   syncHiddenTimesFromFirstSlot();
   el.eventStatus.value = ev.status;
   el.eventUser.value = ev.userId;
-  el.eventPax.value = Number(ev.pax || 0) > 0 ? String(ev.pax) : "";
+  syncEventPaxFromSlots();
   el.eventNotes.value = ev.notes || "";
 
   el.btnDelete.hidden = true;
   el.btnCancelEvent.hidden = (ev.status === STATUS.CANCELADO);
   el.btnQuoteEvent.hidden = false;
   el.btnQuoteEvent.textContent = ev.quote ? "Editar cotizacion" : "Cotizar evento";
-  el.btnMarkQuoted.hidden = !(ev.status === STATUS.PRIMERA);
   if (el.btnSetMaintenance) {
     el.btnSetMaintenance.textContent = ev.status === STATUS.MANTENIMIENTO
       ? "Liberar mantenimiento"
@@ -8915,6 +13437,21 @@ function showModal() {
   // focus
   setTimeout(() => el.eventName.focus(), 0);
 }
+
+function setQuoteItemsExpanded(expanded) {
+  quoteItemsExpanded = !!expanded;
+  if (el.quoteItemsPanel) {
+    el.quoteItemsPanel.classList.toggle("isExpanded", quoteItemsExpanded);
+  }
+  if (el.quoteForm) {
+    el.quoteForm.classList.toggle("quoteItemsExpanded", quoteItemsExpanded);
+  }
+  if (el.btnToggleQuoteItemsExpand) {
+    el.btnToggleQuoteItemsExpand.textContent = quoteItemsExpanded ? "Reducir" : "Expandir";
+    el.btnToggleQuoteItemsExpand.setAttribute("aria-expanded", quoteItemsExpanded ? "true" : "false");
+  }
+}
+
 function closeModal() {
   el.modalBackdrop.hidden = true;
   el.conflictsBox.hidden = true;
@@ -9011,6 +13548,9 @@ function setUserModalMode(mode = "create", targetUser = null) {
   if (el.userSalesTargetEnabled) {
     el.userSalesTargetEnabled.checked = isEdit ? targetUser.salesTargetEnabled === true : false;
   }
+  if (el.userRole) {
+    el.userRole.value = isEdit ? normalizeUserRole(targetUser.role) : USER_ROLE.SELLER;
+  }
 }
 
 function loadUserInModal(userId) {
@@ -9022,6 +13562,7 @@ function loadUserInModal(userId) {
   if (el.userUsername) el.userUsername.value = target.username || "";
   if (el.userEmail) el.userEmail.value = target.email || "";
   if (el.userPhone) el.userPhone.value = target.phone || "";
+  if (el.userRole) el.userRole.value = normalizeUserRole(target.role);
   if (el.userPassword) el.userPassword.value = "";
   if (el.userSignature) el.userSignature.value = "";
   renderUserSignaturePreview(target.signatureDataUrl || "");
@@ -9040,6 +13581,7 @@ function resetUserModalForm() {
   if (el.userUsername) el.userUsername.value = "";
   if (el.userEmail) el.userEmail.value = "";
   if (el.userPhone) el.userPhone.value = "";
+  if (el.userRole) el.userRole.value = USER_ROLE.SELLER;
   if (el.userPassword) el.userPassword.value = "";
   if (el.userSignature) el.userSignature.value = "";
   renderUserSignaturePreview("");
@@ -9065,9 +13607,10 @@ function openUserModal(userId = "") {
 function closeUserModal() {
   el.userBackdrop.hidden = true;
   resetUserModalForm();
+  restoreModuleScreenAfterModal();
 }
 
-function openQuoteModal(eventId) {
+async function openQuoteModal(eventId) {
   const ev = state.events.find(x => x.id === eventId);
   if (!ev) return;
   const series = getEventSeries(ev).sort((a, b) => a.date.localeCompare(b.date));
@@ -9082,37 +13625,41 @@ function openQuoteModal(eventId) {
     : (existingQuote ? (existingVersions.length + 1) : 1);
 
   quoteDraft = existingQuote || {
-    companyId: state.companies?.[0]?.id || "",
-    managerId: state.companies?.[0]?.managers?.[0]?.id || "",
-    dueDate: ev.date,
-    docDate: toISODate(new Date()),
-    paymentType: "Credito",
+    companyId: "",
+    managerId: "",
+    dueDate: "",
+    docDate: "",
+    paymentType: "",
     code: "",
     contact: "",
     email: "",
     billTo: "",
     address: "",
     eventType: "",
-    venue: ev.salon,
-    schedule: `${ev.startTime} a ${ev.endTime}`,
+    venue: "",
+    schedule: "",
     phone: "",
     nit: "",
     people: ev.pax ? String(ev.pax) : "",
-    eventDate: firstDate,
+    eventDate: "",
     folio: "",
-    endDate: lastDate,
+    endDate: "",
     internalNotes: "",
     discountType: "AMOUNT",
     discountValue: 0,
     items: [],
     notes: "",
-    templateId: CORPORATE_TEMPLATE_ID,
+    templateId: CONTRACT_CORP_TEMPLATE_ID,
   };
   quoteDraft.version = currentVersion;
   quoteDraft.versions = existingVersions;
-  quoteDraft.paymentType = quotePaymentTypesToStorage(quoteDraft.paymentType || "Credito");
+  if (!String(quoteDraft.code || "").trim()) {
+    const code = await requestServerQuoteCode();
+    quoteDraft.code = code || buildQuoteCode();
+  }
+  quoteDraft.paymentType = quotePaymentTypesToStorage(quoteDraft.paymentType || "");
   quoteDraft.advances = normalizeQuoteAdvancesForSnapshot(quoteDraft.advances);
-  if (!quoteDraft.managerId) {
+  if (quoteDraft.companyId && !quoteDraft.managerId) {
     const cmp = (state.companies || []).find(c => c.id === quoteDraft.companyId);
     const byUserName = cmp?.managers?.find(m => m.name.toLowerCase() === String(user?.name || "").toLowerCase());
     quoteDraft.managerId = byUserName?.id || cmp?.managers?.[0]?.id || "";
@@ -9128,10 +13675,12 @@ function openQuoteModal(eventId) {
   renderCompaniesSelect(quoteDraft.companyId);
   renderQuoteManagerSelect(quoteDraft.companyId, quoteDraft.managerId || null);
   renderQuoteTemplateSelect(quoteDraft.templateId || "");
-  fillQuoteHeaderFields(true);
-  el.quoteDueDate.value = quoteDraft.dueDate || ev.date;
-  setQuotePaymentTypesOnForm(quoteDraft.paymentType || "Credito");
-  el.quoteDocDate.value = quoteDraft.docDate || toISODate(new Date());
+  renderQuoteServiceTemplateSelect("");
+  if (el.quoteServiceTemplateName) el.quoteServiceTemplateName.value = "";
+  fillQuoteHeaderFields(true, !!existingQuote);
+  el.quoteDueDate.value = quoteDraft.dueDate || "";
+  setQuotePaymentTypesOnForm(quoteDraft.paymentType || "");
+  el.quoteDocDate.value = quoteDraft.docDate || "";
   if (el.quoteDiscountType) el.quoteDiscountType.value = normalizeDiscountType(quoteDraft.discountType);
   if (el.quoteDiscountValue) el.quoteDiscountValue.value = String(Math.max(0, Number(quoteDraft.discountValue || 0)));
   renderQuoteServiceDateSelect();
@@ -9139,19 +13688,9 @@ function openQuoteModal(eventId) {
   renderQuoteItems();
   syncPaxQuantityItems();
   renderQuoteVersionControls();
+  setQuoteItemsExpanded(false);
 
   el.quoteBackdrop.hidden = false;
-  if (!existingQuote && !String(quoteDraft.code || "").trim()) {
-    requestServerQuoteCode().then((serverCode) => {
-      if (!quoteDraft) return;
-      if (String(quoteDraft.code || "").trim()) return;
-      const nextCode = String(serverCode || "").trim() || buildQuoteCode();
-      quoteDraft.code = nextCode;
-      if (el.quoteCode && !String(el.quoteCode.value || "").trim()) {
-        el.quoteCode.value = nextCode;
-      }
-    });
-  }
   if (!String(quoteDraft.templateId || "").trim()) {
     quoteDraft.templateId = CORPORATE_TEMPLATE_ID;
   }
@@ -9159,6 +13698,7 @@ function openQuoteModal(eventId) {
 }
 
 function closeQuoteModal() {
+  setQuoteItemsExpanded(false);
   el.quoteBackdrop.hidden = true;
   el.quoteBackdrop.classList.remove("docFloatOpen");
   if (el.quoteDocFold) el.quoteDocFold.open = false;
@@ -9190,16 +13730,16 @@ function renderQuoteAdvancesModal() {
         <td>${escapeHtml(row.date || "-")}</td>
         <td>${escapeHtml(row.paymentType || "-")}</td>
         <td>${escapeHtml(row.description || "-")}</td>
-        <td>Q ${Number(row.amount || 0).toFixed(2)}</td>
+        <td>${moneyGT(row.amount || 0)}</td>
         <td class="appointmentActions">
-          <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar">✎</button>
-          <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar">🗑</button>
+          <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
+          <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œ</button>
         </td>
       `;
       el.quoteAdvanceBody.appendChild(tr);
     }
   }
-  el.quoteAdvanceTotal.textContent = `Q ${getQuoteAdvanceTotal(quoteDraft).toFixed(2)}`;
+  el.quoteAdvanceTotal.textContent = moneyGT(getQuoteAdvanceTotal(quoteDraft));
 }
 
 function resetQuoteAdvanceForm() {
@@ -9253,7 +13793,7 @@ function addQuoteAdvanceFromForm() {
         appendHistoryByKey(
           ctx.key,
           authSession.userId || ctx.ev.userId || "",
-          `Anticipo editado: ${String(prev?.date || "")} ${String(prev?.paymentType || "")} Q ${Number(prev?.amount || 0).toFixed(2)} -> ${date} ${paymentType} Q ${Number(amount || 0).toFixed(2)}`
+          `Anticipo editado: ${String(prev?.date || "")} ${String(prev?.paymentType || "")} ${moneyGT(prev?.amount || 0)} -> ${date} ${paymentType} ${moneyGT(amount || 0)}`
         );
       }
       toast("Anticipo actualizado.");
@@ -9271,7 +13811,7 @@ function addQuoteAdvanceFromForm() {
       appendHistoryByKey(
         ctx.key,
         authSession.userId || ctx.ev.userId || "",
-        `Anticipo agregado: ${date} ${paymentType} Q ${Number(amount || 0).toFixed(2)}${description ? ` (${description})` : ""}`
+        `Anticipo agregado: ${date} ${paymentType} ${moneyGT(amount || 0)}${description ? ` (${description})` : ""}`
       );
     }
     toast("Anticipo agregado.");
@@ -9295,7 +13835,7 @@ function removeQuoteAdvanceById(advanceId) {
     appendHistoryByKey(
       ctx.key,
       authSession.userId || ctx.ev.userId || "",
-      `Anticipo eliminado: ${String(removed.date || "")} ${String(removed.paymentType || "")} Q ${Number(removed.amount || 0).toFixed(2)}${removed.description ? ` (${removed.description})` : ""}`
+      `Anticipo eliminado: ${String(removed.date || "")} ${String(removed.paymentType || "")} ${moneyGT(removed.amount || 0)}${removed.description ? ` (${removed.description})` : ""}`
     );
   }
   toast("Anticipo eliminado.");
@@ -9537,49 +14077,14 @@ function renderCompanyRecord(company) {
   }
 }
 
-function openCompanyModal(companyId = "") {
-  editingCompanyId = String(companyId || "").trim();
-  const target = editingCompanyId
-    ? (state.companies || []).find((c) => String(c.id) === editingCompanyId)
-    : null;
-  companyManagersDraft = target ? deepClone(target.managers || []) : [];
-  renderCompanyManagersDraft();
-  if (target) {
-    if (el.companyTitle) el.companyTitle.textContent = "Editar empresa";
-    el.companyName.value = String(target.name || "");
-    el.companyOwner.value = String(target.owner || "");
-    el.companyEmail.value = String(target.email || "");
-    el.companyNIT.value = String(target.nit || "");
-    el.companyBusinessName.value = String(target.billTo || target.businessName || target.name || "");
-    el.companyEventType.value = String(target.eventType || "Social");
-    el.companyAddress.value = String(target.address || "");
-    el.companyPhone.value = String(target.phone || "");
-    el.companyNotes.value = String(target.notes || "");
-    renderCompanyRecord(target);
-  } else {
-    if (el.companyTitle) el.companyTitle.textContent = "Nueva empresa";
-    el.companyName.value = "";
-    el.companyOwner.value = "";
-    el.companyEmail.value = "";
-    el.companyNIT.value = "";
-    el.companyBusinessName.value = "";
-    el.companyEventType.value = "Social";
-    el.companyAddress.value = "";
-    el.companyPhone.value = "";
-    el.companyNotes.value = "";
-    renderCompanyRecord(null);
-  }
-  el.managerName.value = "";
-  el.managerPhone.value = "";
-  el.managerEmail.value = "";
-  el.managerAddress.value = "";
-  el.companyBackdrop.hidden = false;
-  setTimeout(() => el.companyName.focus(), 0);
-}
-
-function closeCompanyModal() {
-  el.companyBackdrop.hidden = true;
+function resetCompanyModalState() {
   editingCompanyId = "";
+  if (el.companyEditSelect) el.companyEditSelect.value = "";
+  if (el.companyActive) el.companyActive.checked = true;
+  if (el.btnCompanyDisable) {
+    el.btnCompanyDisable.disabled = true;
+    el.btnCompanyDisable.textContent = "Inhabilitar";
+  }
   if (el.companyTitle) el.companyTitle.textContent = "Nueva empresa";
   companyManagersDraft = [];
   el.companyName.value = "";
@@ -9587,7 +14092,7 @@ function closeCompanyModal() {
   el.companyEmail.value = "";
   el.companyNIT.value = "";
   el.companyBusinessName.value = "";
-  el.companyEventType.value = "Social";
+  el.companyEventType.value = "";
   el.companyAddress.value = "";
   el.companyPhone.value = "";
   el.companyNotes.value = "";
@@ -9599,17 +14104,156 @@ function closeCompanyModal() {
   renderCompanyManagersDraft();
 }
 
+function renderCompanyEditSelect(selectedId = "") {
+  if (!el.companyEditSelect) return;
+  const keep = String(selectedId || "").trim();
+  const rows = (state.companies || [])
+    .slice()
+    .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity: "base" }));
+  el.companyEditSelect.innerHTML = `<option value="">Crear nueva empresa</option>`;
+  for (const company of rows) {
+    const opt = document.createElement("option");
+    opt.value = String(company?.id || "").trim();
+    if (!opt.value) continue;
+    opt.textContent = `${String(company?.name || "Empresa").trim()}${isCompanyDisabled(opt.value) ? " (Inhabilitada)" : ""}`;
+    el.companyEditSelect.appendChild(opt);
+  }
+  el.companyEditSelect.value = keep;
+}
+
+function updateCompanyModalStateControls(companyId = "") {
+  const id = String(companyId || "").trim();
+  const isEdit = !!id;
+  if (el.companyActive) {
+    el.companyActive.checked = isEdit ? !isCompanyDisabled(id) : true;
+  }
+  if (el.btnCompanyDisable) {
+    el.btnCompanyDisable.disabled = !isEdit;
+    el.btnCompanyDisable.textContent = isEdit && isCompanyDisabled(id) ? "Reactivar" : "Inhabilitar";
+  }
+}
+
+function loadCompanyInModal(companyId = "") {
+  const id = String(companyId || "").trim();
+  editingCompanyId = id;
+  const target = id
+    ? (state.companies || []).find((c) => String(c.id) === id)
+    : null;
+  companyManagersDraft = target ? deepClone(target.managers || []) : [];
+  renderCompanyManagersDraft();
+  renderCompanyEditSelect(id);
+  updateCompanyModalStateControls(id);
+  if (target) {
+    if (el.companyTitle) el.companyTitle.textContent = "Editar empresa";
+    el.companyName.value = String(target.name || "");
+    el.companyOwner.value = String(target.owner || "");
+    el.companyEmail.value = String(target.email || "");
+    el.companyNIT.value = String(target.nit || "");
+    el.companyBusinessName.value = String(target.billTo || target.businessName || target.name || "");
+    el.companyEventType.value = String(target.eventType || "");
+    el.companyAddress.value = String(target.address || "");
+    el.companyPhone.value = String(target.phone || "");
+    el.companyNotes.value = String(target.notes || "");
+    renderCompanyRecord(target);
+  } else {
+    if (el.companyTitle) el.companyTitle.textContent = "Nueva empresa";
+    el.companyName.value = "";
+    el.companyOwner.value = "";
+    el.companyEmail.value = "";
+    el.companyNIT.value = "";
+    el.companyBusinessName.value = "";
+    el.companyEventType.value = "";
+    el.companyAddress.value = "";
+    el.companyPhone.value = "";
+    el.companyNotes.value = "";
+    renderCompanyRecord(null);
+  }
+  el.managerName.value = "";
+  el.managerPhone.value = "";
+  el.managerEmail.value = "";
+  el.managerAddress.value = "";
+}
+
+function openCompanyModal(companyId = "") {
+  const rawId = (companyId && typeof companyId === "object" && "type" in companyId)
+    ? ""
+    : companyId;
+  resetCompanyModalState();
+  loadCompanyInModal(String(rawId || "").trim());
+  el.companyBackdrop.hidden = false;
+  setTimeout(() => el.companyName.focus(), 0);
+}
+
+function closeCompanyModal() {
+  el.companyBackdrop.hidden = true;
+  resetCompanyModalState();
+  restoreModuleScreenAfterModal();
+}
+
+function renderServiceManagerTable() {
+  if (!el.servicesManagerBody) return;
+  const rows = (state.services || [])
+    .slice()
+    .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity: "base" }));
+  el.servicesManagerBody.innerHTML = "";
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="6">Sin servicios registrados.</td>`;
+    el.servicesManagerBody.appendChild(tr);
+    return;
+  }
+  for (const s of rows) {
+    const serviceId = String(s?.id || "").trim();
+    const disabled = serviceId ? isServiceDisabled(serviceId) : false;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(String(s?.name || ""))}</td>
+      <td>${escapeHtml(String(s?.category || "-"))}</td>
+      <td>${escapeHtml(String(s?.subcategory || "-"))}</td>
+      <td>${escapeHtml(Number(s?.price || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</td>
+      <td>${disabled ? "Inhabilitado" : "Activo"}</td>
+      <td class="tableActionsCell">
+        <button class="apptIconBtn apptEdit" type="button" data-service-row-edit="${escapeHtml(serviceId)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
+      </td>`;
+    el.servicesManagerBody.appendChild(tr);
+  }
+}
+
 function openServiceModal(serviceId = "") {
   if (!el.serviceBackdrop) return;
-  editingServiceId = String(serviceId || "").trim();
-  const target = editingServiceId
-    ? (state.services || []).find((s) => String(s.id) === editingServiceId)
-    : null;
   if (!catalogoCategoriasServicio.length) {
     syncServiceCatalogFromDb().catch(() => { });
   }
+  const serviceIdText = String(serviceId || "").trim();
+  editingServiceId = "";
+  if (el.serviceEditSelect) {
+    const rows = (state.services || [])
+      .slice()
+      .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity: "base" }));
+    el.serviceEditSelect.innerHTML = `<option value="">Crear nuevo servicio</option>`;
+    for (const service of rows) {
+      const opt = document.createElement("option");
+      opt.value = String(service?.id || "").trim();
+      if (!opt.value) continue;
+      opt.textContent = `${String(service?.name || "Servicio").trim()}${isServiceDisabled(opt.value) ? " (Inhabilitado)" : ""}`;
+      el.serviceEditSelect.appendChild(opt);
+    }
+    el.serviceEditSelect.value = serviceIdText;
+  }
+  renderServiceManagerTable();
   renderCategoriasServicioSelect();
   el.serviceBackdrop.hidden = false;
+  const target = serviceIdText
+    ? (state.services || []).find((s) => String(s.id) === serviceIdText)
+    : null;
+  editingServiceId = serviceIdText;
+  if (el.serviceActive) {
+    el.serviceActive.checked = serviceIdText ? !isServiceDisabled(serviceIdText) : true;
+  }
+  if (el.btnServiceDisable) {
+    el.btnServiceDisable.disabled = !serviceIdText;
+    el.btnServiceDisable.textContent = serviceIdText && isServiceDisabled(serviceIdText) ? "Reactivar" : "Inhabilitar";
+  }
   if (target) {
     if (el.serviceTitle) el.serviceTitle.textContent = "Editar servicio";
     el.serviceName.value = String(target.name || "").trim();
@@ -9636,8 +14280,16 @@ function closeServiceModal() {
   if (!el.serviceBackdrop) return;
   el.serviceBackdrop.hidden = true;
   editingServiceId = "";
+  if (el.serviceEditSelect) el.serviceEditSelect.value = "";
+  if (el.serviceActive) el.serviceActive.checked = true;
+  if (el.btnServiceDisable) {
+    el.btnServiceDisable.disabled = true;
+    el.btnServiceDisable.textContent = "Inhabilitar";
+  }
   if (el.serviceTitle) el.serviceTitle.textContent = "Nuevo servicio";
   if (el.serviceForm) el.serviceForm.reset();
+  if (el.servicesManagerBody) el.servicesManagerBody.innerHTML = "";
+  restoreModuleScreenAfterModal();
 }
 
 function saveServiceFromForm() {
@@ -9646,8 +14298,8 @@ function saveServiceFromForm() {
   const subcategoryIdRaw = String(el.serviceSubcategory.value || "").trim();
   const categoryId = Number(categoryIdRaw);
   const subcategoryId = Number(subcategoryIdRaw);
-  const category = selectedOptionText(el.serviceCategory);
-  const subcategory = selectedOptionText(el.serviceSubcategory);
+  const category = sanitizeCatalogOptionLabel(selectedOptionText(el.serviceCategory));
+  const subcategory = sanitizeCatalogOptionLabel(selectedOptionText(el.serviceSubcategory));
   const price = Math.max(0, Number(el.servicePrice.value || 0));
   const quantityMode = String(el.serviceQuantityMode.value || "MANUAL").trim().toUpperCase() === "PAX" ? "PAX" : "MANUAL";
   const description = String(el.serviceDescription.value || "").trim();
@@ -9656,6 +14308,13 @@ function saveServiceFromForm() {
   if (!Number.isFinite(categoryId) || categoryId <= 0) return toast("Categoria es obligatoria.");
   if (!Number.isFinite(subcategoryId) || subcategoryId <= 0) return toast("Subcategoria es obligatoria.");
   if (!Number.isFinite(price) || price < 0) return toast("Precio base invalido.");
+
+  const selectedCategory = catalogoCategoriasServicio.find((c) => Number(c?.id) === categoryId);
+  if (selectedCategory?.activo === false) return toast("La categoria esta inhabilitada. Reactivala para usarla.");
+  const selectedSubcategory = catalogoSubcategoriasServicio.find((s) => Number(s?.id) === subcategoryId);
+  if (!selectedSubcategory || selectedSubcategory?.activo === false || Number(selectedSubcategory?.id_categoria) !== categoryId) {
+    return toast("La subcategoria esta inhabilitada o no corresponde a la categoria.");
+  }
 
   const editingId = String(editingServiceId || "").trim();
   const exists = (state.services || []).some(
@@ -9676,21 +14335,56 @@ function saveServiceFromForm() {
   if (editingId) {
     const idx = (state.services || []).findIndex((s) => String(s.id || "") === editingId);
     if (idx >= 0) {
-      if (areServicesEquivalent(state.services[idx], payload)) {
+      const statusChanged = !!el.serviceActive && el.serviceActive.checked !== !isServiceDisabled(editingId);
+      if (areServicesEquivalent(state.services[idx], payload) && !statusChanged) {
         return toast("Sin cambios detectados en servicio.");
       }
       state.services[idx] = payload;
     }
-    enableService(editingId);
   } else {
     state.services.push(payload);
-    enableService(payload.id);
   }
 
+  if (el.serviceActive?.checked === false) {
+    state.disabledServices = Array.from(new Set([...(state.disabledServices || []), payload.id]));
+  } else {
+    enableService(payload.id);
+  }
   persist();
   renderServicesList();
-  closeServiceModal();
-  if (el.quoteServiceSearch) el.quoteServiceSearch.value = name;
+  renderServiceManagerTable();
+  editingServiceId = "";
+  if (el.serviceTitle) el.serviceTitle.textContent = "Nuevo servicio";
+  if (el.serviceEditSelect) {
+    const rows = (state.services || [])
+      .slice()
+      .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity: "base" }));
+    el.serviceEditSelect.innerHTML = `<option value="">Crear nuevo servicio</option>`;
+    for (const service of rows) {
+      const opt = document.createElement("option");
+      opt.value = String(service?.id || "").trim();
+      if (!opt.value) continue;
+      opt.textContent = `${String(service?.name || "Servicio").trim()}${isServiceDisabled(opt.value) ? " (Inhabilitado)" : ""}`;
+      el.serviceEditSelect.appendChild(opt);
+    }
+    el.serviceEditSelect.value = "";
+  }
+  if (el.serviceActive) el.serviceActive.checked = true;
+  if (el.btnServiceDisable) {
+    el.btnServiceDisable.disabled = true;
+    el.btnServiceDisable.textContent = "Inhabilitar";
+  }
+  if (el.serviceName) el.serviceName.value = "";
+  if (el.serviceCategory) el.serviceCategory.value = "";
+  renderSubcategoriasServicioSelect(Number.NaN);
+  if (el.serviceSubcategory) el.serviceSubcategory.value = "";
+  if (el.servicePrice) el.servicePrice.value = "";
+  if (el.serviceQuantityMode) el.serviceQuantityMode.value = "MANUAL";
+  if (el.serviceDescription) el.serviceDescription.value = "";
+  if (el.quoteServiceSearch) el.quoteServiceSearch.value = "";
+  setTimeout(() => {
+    try { el.serviceName?.focus(); } catch (_) { }
+  }, 0);
   toast(editingId ? "Servicio actualizado." : "Servicio creado.");
 }
 
@@ -9955,19 +14649,35 @@ function renderQuoteItems() {
       tr.dataset.rowId = item.rowId;
       const subtotal = Number(item.qty || 0) * Number(item.price || 0);
       const isPaxMode = String(item.quantityMode || "").toUpperCase() === "PAX";
+      const qtyValue = Number(item.qty || 0);
+      const priceValue = Number(item.price || 0);
+      const qtyInputHtml = `<div class="quoteSpinInput${isPaxMode ? " isDisabled" : ""}">
+          <input class="quoteInput" data-field="qty" type="number" min="0" step="1" value="${qtyValue}" ${isPaxMode ? "readonly disabled" : ""} title="${isPaxMode ? "Cantidad automatica por pax" : ""}" />
+          <div class="quoteSpinBtns">
+            <button type="button" class="quoteSpinBtn quoteSpinUp" data-spin-field="qty" data-spin-dir="up" ${isPaxMode ? "disabled" : ""} aria-label="Subir cantidad">+</button>
+            <button type="button" class="quoteSpinBtn quoteSpinDown" data-spin-field="qty" data-spin-dir="down" ${isPaxMode ? "disabled" : ""} aria-label="Bajar cantidad">-</button>
+          </div>
+        </div>`;
+      const priceInputHtml = `<div class="quoteSpinInput${isPaxMode ? " isDisabled" : ""}">
+          <input class="quoteInput" data-field="price" type="number" min="0" step="0.01" value="${priceValue}" ${isPaxMode ? "readonly disabled" : ""} title="${isPaxMode ? "Precio calculado por pax" : ""}" />
+          <div class="quoteSpinBtns">
+            <button type="button" class="quoteSpinBtn quoteSpinUp" data-spin-field="price" data-spin-dir="up" ${isPaxMode ? "disabled" : ""} aria-label="Subir precio">+</button>
+            <button type="button" class="quoteSpinBtn quoteSpinDown" data-spin-field="price" data-spin-dir="down" ${isPaxMode ? "disabled" : ""} aria-label="Bajar precio">-</button>
+          </div>
+        </div>`;
       tr.innerHTML = `
         <td>
           <select class="quoteInput" data-field="serviceDate">
             ${availableDates.map(d => `<option value="${escapeHtml(d)}"${d === item.serviceDate ? " selected" : ""}>${escapeHtml(d)}</option>`).join("")}
           </select>
         </td>
-        <td><input class="quoteInput" data-field="qty" type="number" min="0" step="1" value="${Number(item.qty || 0)}" ${isPaxMode ? "readonly disabled" : ""} title="${isPaxMode ? "Cantidad automatica por pax" : ""}" /></td>
+        <td>${qtyInputHtml}</td>
         <td>
           <input class="quoteInput" data-field="name" list="servicesList" value="${escapeHtml(item.name || "")}" placeholder="Buscar servicio..." />
           <input class="quoteInput" data-field="description" list="serviceDescriptionsList" value="${escapeHtml(item.description || "")}" placeholder="Descripcion del servicio" style="margin-top:6px;" />
         </td>
-        <td><input class="quoteInput" data-field="price" type="number" min="0" step="0.01" value="${Number(item.price || 0)}" ${isPaxMode ? "readonly disabled" : ""} title="${isPaxMode ? "Precio calculado por pax" : ""}" /></td>
-        <td class="quoteMoney">Q ${subtotal.toFixed(2)}</td>
+        <td>${priceInputHtml}</td>
+        <td class="quoteMoney">${moneyGT(subtotal)}</td>
         <td><button type="button" class="btnDanger quoteRemoveBtn">X</button></td>
       `;
       el.quoteItemsBody.appendChild(tr);
@@ -9978,16 +14688,16 @@ function renderQuoteItems() {
     subtotalRow.className = "quoteSubtotalRow";
     subtotalRow.innerHTML = `
       <td colspan="4">Subtotal ${escapeHtml(dateKey)}</td>
-      <td class="quoteMoney">Q ${subtotalDay.toFixed(2)}</td>
+      <td class="quoteMoney">${moneyGT(subtotalDay)}</td>
       <td></td>
     `;
     el.quoteItemsBody.appendChild(subtotalRow);
   }
 
   const totals = getQuoteTotals(quoteDraft);
-  if (el.quoteSubtotal) el.quoteSubtotal.textContent = `Q ${totals.subtotal.toFixed(2)}`;
-  if (el.quoteDiscountAmount) el.quoteDiscountAmount.textContent = `Q ${totals.discountAmount.toFixed(2)}`;
-  el.quoteTotal.textContent = `Q ${totals.total.toFixed(2)}`;
+  if (el.quoteSubtotal) el.quoteSubtotal.textContent = moneyGT(totals.subtotal);
+  if (el.quoteDiscountAmount) el.quoteDiscountAmount.textContent = moneyGT(totals.discountAmount);
+  el.quoteTotal.textContent = moneyGT(totals.total);
   syncQuoteServiceDateRequired();
 }
 
@@ -10043,6 +14753,26 @@ function handleQuoteItemsInput(e) {
 }
 
 async function handleQuoteItemsClick(e) {
+  const spinBtn = e.target.closest(".quoteSpinBtn");
+  if (spinBtn && quoteDraft) {
+    const row = spinBtn.closest("tr");
+    const rowId = row?.dataset.rowId;
+    if (!rowId) return;
+    const item = quoteDraft.items.find((x) => x.rowId === rowId);
+    if (!item) return;
+    const field = String(spinBtn.dataset.spinField || "").trim();
+    const dir = String(spinBtn.dataset.spinDir || "").trim();
+    const delta = dir === "down" ? -1 : 1;
+    if (field === "qty" && String(item.quantityMode || "").toUpperCase() !== "PAX") {
+      item.qty = Math.max(0, Number(item.qty || 0) + delta);
+      renderQuoteItems();
+    } else if (field === "price" && String(item.quantityMode || "").toUpperCase() !== "PAX") {
+      const next = Math.max(0, Number(item.price || 0) + (delta * 1));
+      item.price = Math.round(next * 100) / 100;
+      renderQuoteItems();
+    }
+    return;
+  }
   const btn = e.target.closest(".quoteRemoveBtn");
   if (!btn || !quoteDraft) return;
   const row = btn.closest("tr");
@@ -10069,6 +14799,24 @@ async function handleQuoteItemsClick(e) {
   toast("Servicio eliminado de la cotizacion.");
 }
 
+function focusQuoteValidationTarget(node, message, opts = {}) {
+  const openDoc = opts?.openDoc !== false;
+  const expandItems = opts?.expandItems === true;
+  if (openDoc && el.quoteDocFold) el.quoteDocFold.open = true;
+  if (expandItems) setQuoteItemsExpanded(true);
+  toast(String(message || "Completa los datos de la cotizacion."));
+  if (!node) return false;
+  setTimeout(() => {
+    try {
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+      node.focus();
+      if (typeof node.select === "function" && /^(INPUT|TEXTAREA)$/i.test(String(node.tagName || ""))) {
+        node.select();
+      }
+    } catch (_) { }
+  }, 40);
+  return false;
+}
 async function saveQuoteFromForm() {
   if (!quoteDraft) return;
   const eventId = el.quoteEventId.value;
@@ -10101,24 +14849,27 @@ async function saveQuoteFromForm() {
   quoteDraft.templateId = String(el.quoteTemplateSelect?.value || quoteDraft.templateId || "").trim();
   quoteDraft.internalNotes = el.quoteInternalNotes.value.trim();
   quoteDraft.notes = quoteDraft.internalNotes;
-  if (!quoteDraft.code) {
-    const serverCode = await requestServerQuoteCode();
-    if (serverCode) {
-      quoteDraft.code = serverCode;
-      if (el.quoteCode) el.quoteCode.value = serverCode;
-    }
-  }
 
-  if (!quoteDraft.companyId) return toast("Selecciona una empresa.");
-  if (!quoteDraft.managerId) return toast("Selecciona encargado del evento.");
-  if (!quoteDraft.contact || !quoteDraft.email || !quoteDraft.billTo || !quoteDraft.address) return toast("Completa contacto, email, facturar a y direccion.");
-  if (!quoteDraft.code || !quoteDraft.docDate || !quoteDraft.phone || !quoteDraft.nit) return toast("Completa codigo, fecha documento, telefono y NIT.");
-  if (!quoteDraft.paymentType) return toast("Selecciona al menos una forma de pago.");
-  if (!quoteDraft.people || Number(quoteDraft.people) <= 0) return toast("Ingresa un numero valido de personas.");
-  if (!quoteDraft.eventDate || !quoteDraft.endDate) return toast("Completa fecha evento y finalizacion.");
-  if (!isValidEmail(quoteDraft.email)) return toast("Correo de cotizacion invalido.");
-  if (!quoteDraft.dueDate) return toast("Falta fecha maxima de pago.");
-  if (!quoteDraft.items.length) return toast("Agrega al menos un servicio.");
+  if (!quoteDraft.companyId) return focusQuoteValidationTarget(el.quoteCompanySearch, "Selecciona la institucion en Datos de cotizacion.");
+  if (!quoteDraft.managerId) return focusQuoteValidationTarget(el.quoteManagerSelect, "Selecciona Encargado Evento en Datos de cotizacion.");
+  if (!quoteDraft.contact) return focusQuoteValidationTarget(el.quoteContact, "Completa Contacto en Datos de cotizacion.");
+  if (!quoteDraft.email) return focusQuoteValidationTarget(el.quoteEmail, "Completa Email en Datos de cotizacion.");
+  if (!isValidEmail(quoteDraft.email)) return focusQuoteValidationTarget(el.quoteEmail, "El Email de cotizacion no es valido.");
+  if (!quoteDraft.billTo) return focusQuoteValidationTarget(el.quoteBillTo, "Completa Facturar A en Datos de cotizacion.");
+  if (!quoteDraft.address) return focusQuoteValidationTarget(el.quoteAddress, "Completa Direccion en Datos de cotizacion.");
+  if (!quoteDraft.eventType) return focusQuoteValidationTarget(el.quoteEventType, "Completa Tipo Evento en Datos de cotizacion.");
+  if (!quoteDraft.venue) return focusQuoteValidationTarget(el.quoteVenue, "Completa Salon o Jardin en Datos de cotizacion.");
+  if (!quoteDraft.schedule) return focusQuoteValidationTarget(el.quoteSchedule, "Completa Horario y Evento en Datos de cotizacion.");
+  if (!quoteDraft.code) return focusQuoteValidationTarget(el.quoteCode, "Completa Codigo en Datos de cotizacion.");
+  if (!quoteDraft.docDate) return focusQuoteValidationTarget(el.quoteDocDate, "Completa Fecha Documento en Datos de cotizacion.");
+  if (!quoteDraft.phone) return focusQuoteValidationTarget(el.quotePhone, "Completa Telefono en Datos de cotizacion.");
+  if (!quoteDraft.nit) return focusQuoteValidationTarget(el.quoteNIT, "Completa NIT en Datos de cotizacion.");
+  if (!quoteDraft.paymentType) return focusQuoteValidationTarget(el.quotePaymentTypeSelect || el.quotePaymentType, "Agrega al menos una Forma de Pago en Datos de cotizacion.");
+  if (!quoteDraft.people || Number(quoteDraft.people) <= 0) return focusQuoteValidationTarget(el.quotePeople, "Ingresa un numero valido en No Personas.");
+  if (!quoteDraft.eventDate) return focusQuoteValidationTarget(el.quoteEventDate, "Completa Fecha evento en Datos de cotizacion.");
+  if (!quoteDraft.endDate) return focusQuoteValidationTarget(el.quoteEndDate, "Completa Fecha Finalizacion en Datos de cotizacion.");
+  if (!quoteDraft.dueDate) return focusQuoteValidationTarget(el.quoteDueDate, "Completa Fecha Maxima Pago en Datos de cotizacion.");
+  if (!quoteDraft.items.length) return focusQuoteValidationTarget(el.quoteServiceSearch, "Agrega al menos un servicio en el bloque Agregar servicio.", { openDoc: false, expandItems: true });
 
   const company = (state.companies || []).find(c => c.id === quoteDraft.companyId);
   const manager = company?.managers?.find(m => m.id === quoteDraft.managerId);
@@ -10178,10 +14929,10 @@ async function saveQuoteFromForm() {
     reservationKey,
     ev.userId,
     unchangedQuote
-      ? `Cotizacion verificada sin cambios (V${savedQuote.version}). Total Q ${totalQuote.toFixed(2)}.`
+      ? `Cotizacion verificada sin cambios (V${savedQuote.version}). Total ${moneyGT(totalQuote)}.`
       : (movedToSeguimiento
-        ? `Cotizacion guardada. Total Q ${totalQuote.toFixed(2)}. Estado a Seguimiento.`
-        : `Cotizacion guardada. Total Q ${totalQuote.toFixed(2)}. Estado conservado.`)
+        ? `Cotizacion guardada. Total ${moneyGT(totalQuote)}. Estado a Seguimiento.`
+        : `Cotizacion guardada. Total ${moneyGT(totalQuote)}. Estado conservado.`)
   );
 
   persist();
@@ -10277,7 +15028,7 @@ function formatTemplateRoomRates(roomRates = []) {
   const rows = Array.isArray(roomRates) ? roomRates : [];
   if (!rows.length) return "";
   return rows
-    .map((r) => `${String(r?.habitacion || "").trim()}: Q ${Number(r?.precio || 0).toFixed(2)}`)
+    .map((r) => `${String(r?.habitacion || "").trim()}: ${moneyGT(r?.precio || 0)}`)
     .filter(Boolean)
     .join("\n");
 }
@@ -10306,7 +15057,7 @@ function buildQuoteSummaryText(quote) {
     const qty = Math.max(0, Number(item?.qty || 0));
     const price = Math.max(0, Number(item?.price || 0));
     const total = qty * price;
-    lines.push(`- ${name}${qty > 0 ? ` (${qty})` : ""} | Q ${total.toFixed(2)}`);
+    lines.push(`- ${name}${qty > 0 ? ` (${qty})` : ""} | ${moneyGT(total)}`);
   }
   return lines.length ? lines.join("\n") : "Sin detalle comercial.";
 }
@@ -10457,26 +15208,38 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const pageSize = { w: 595.28, h: 841.89 }; // A4 points
   const margin = 26;
   const contentW = pageSize.w - margin * 2;
+  const selectedTemplateId = String(quote?.templateId || "").trim();
+  const isServiHospTemplate = selectedTemplateId === SERVIHOSP_TEMPLATE_ID;
+  const activeTemplate = (quickTemplates || []).find((t) => String(t?.id || "") === selectedTemplateId) || null;
+  const useCorporateBands = !selectedTemplateId || selectedTemplateId === CORPORATE_TEMPLATE_ID;
+  const headerImageSource = useCorporateBands
+    ? String(activeTemplate?.assets?.headerImage || DEFAULT_TEMPLATE_HEADER_IMAGE).trim()
+    : String(activeTemplate?.assets?.headerImage || "").trim();
+  const footerImageSource = isServiHospTemplate
+    ? ""
+    : (useCorporateBands
+      ? String(activeTemplate?.assets?.footerImage || DEFAULT_TEMPLATE_FOOTER_IMAGE).trim()
+      : String(activeTemplate?.assets?.footerImage || "").trim());
+  const [headerImageDataUrl, footerImageDataUrl] = await Promise.all([
+    resolveTemplateImageAssetToDataUrl(headerImageSource),
+    resolveTemplateImageAssetToDataUrl(footerImageSource),
+  ]);
+  const headerImage = headerImageDataUrl ? await embedTemplateImageFromDataUrl(doc, headerImageDataUrl) : null;
+  const footerImage = footerImageDataUrl ? await embedTemplateImageFromDataUrl(doc, footerImageDataUrl) : null;
+  const headerSlotH = headerImage ? 34 : 0;
+  const footerSlotH = footerImage ? 24 : 0;
   let page = doc.addPage([pageSize.w, pageSize.h]);
   let y = pageSize.h - margin;
   const headerBandH = 28;
-
-  const drawQuotePageHeader = () => {
-    const title = `Cotizacion ${quote?.code ? quote.code : ""}${quote?.version ? ` - V${quote.version}` : ""}`.trim();
-    drawRect(margin, y, contentW, headerBandH, {
-      fill: window.PDFLib.rgb(0.06, 0.43, 0.72),
-      border: window.PDFLib.rgb(0.05, 0.33, 0.56),
-      borderWidth: 1,
-    });
-    page.drawText(title || "Cotizacion", {
-      x: margin + 10,
-      y: y - 18,
-      size: 13,
-      font: fontBold,
-      color: window.PDFLib.rgb(1, 1, 1),
-    });
-    y -= headerBandH + 6;
-  };
+  const quoteLabelColor = window.PDFLib.rgb(114 / 255, 169 / 255, 178 / 255);
+  const quoteSectionColor = window.PDFLib.rgb(33 / 255, 89 / 255, 103 / 255);
+  const quoteSectionBorderColor = window.PDFLib.rgb(24 / 255, 67 / 255, 78 / 255);
+  const quoteGridBorderColor = isServiHospTemplate ? window.PDFLib.rgb(1, 1, 1) : window.PDFLib.rgb(0.86, 0.9, 0.96);
+  const quoteSoftBorderColor = isServiHospTemplate ? window.PDFLib.rgb(1, 1, 1) : window.PDFLib.rgb(0.82, 0.88, 0.96);
+  const quotePanelBorderColor = isServiHospTemplate ? window.PDFLib.rgb(1, 1, 1) : window.PDFLib.rgb(0.75, 0.84, 0.94);
+  const quoteNotesBorderColor = isServiHospTemplate ? window.PDFLib.rgb(1, 1, 1) : window.PDFLib.rgb(0.72, 0.8, 0.9);
+  const quoteSummaryBorderColor = isServiHospTemplate ? window.PDFLib.rgb(1, 1, 1) : window.PDFLib.rgb(0.68, 0.76, 0.86);
+  const quoteSectionStrokeColor = isServiHospTemplate ? quoteSectionColor : quoteSectionBorderColor;
 
   const drawRect = (x, yTop, w, h, opts = {}) => {
     page.drawRectangle({
@@ -10490,12 +15253,61 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     });
   };
 
+  const drawPageBands = () => {
+    if (headerImage) {
+      const maxW = contentW;
+      const maxH = 28;
+      const scale = Math.min(maxW / Math.max(1, headerImage.width), maxH / Math.max(1, headerImage.height));
+      const w = Math.max(10, headerImage.width * scale);
+      const h = Math.max(10, headerImage.height * scale);
+      const x = margin + (contentW - w) / 2;
+      const yTop = pageSize.h - margin;
+      page.drawImage(headerImage, { x, y: yTop - h, width: w, height: h });
+    }
+    if (footerImage) {
+      const maxW = contentW;
+      const maxH = 20;
+      const scale = Math.min(maxW / Math.max(1, footerImage.width), maxH / Math.max(1, footerImage.height));
+      const w = Math.max(10, footerImage.width * scale);
+      const h = Math.max(10, footerImage.height * scale);
+      const x = margin + (contentW - w) / 2;
+      const yBase = margin;
+      page.drawImage(footerImage, { x, y: yBase, width: w, height: h });
+    }
+  };
+
+  const resetCursorForPage = () => {
+    y = pageSize.h - margin - headerSlotH;
+  };
+
+  const drawQuotePageHeader = () => {
+    const title = `Cotizacion ${quote?.code ? quote.code : ""}${quote?.version ? ` - V${quote.version}` : ""}`.trim();
+    drawRect(margin, y, contentW, headerBandH, {
+      fill: quoteSectionColor,
+      border: quoteSectionStrokeColor,
+      borderWidth: 1,
+    });
+    page.drawText(title || "Cotizacion", {
+      x: margin + 10,
+      y: y - 18,
+      size: 13,
+      font: fontBold,
+      color: window.PDFLib.rgb(1, 1, 1),
+    });
+    y -= headerBandH + 6;
+  };
+
   const ensure = (need = 16) => {
-    if (y - need > margin) return;
+    if (y - need > margin + footerSlotH) return;
     page = doc.addPage([pageSize.w, pageSize.h]);
-    y = pageSize.h - margin - 2;
+    drawPageBands();
+    resetCursorForPage();
+    y -= 2;
     drawQuotePageHeader();
   };
+
+  drawPageBands();
+  resetCursorForPage();
 
   const drawLine = (text, opts = {}) => {
     const lh = opts.lineHeight || 14;
@@ -10618,15 +15430,15 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     const rowTop = y;
 
     // left cell
-    drawRect(margin, rowTop, colW, cellH, { border: window.PDFLib.rgb(0.86, 0.9, 0.96), borderWidth: 0.8 });
-    drawRect(margin, rowTop, keyW, cellH, { fill: window.PDFLib.rgb(0.97, 0.99, 1), border: window.PDFLib.rgb(0.86, 0.9, 0.96), borderWidth: 0.8 });
-    page.drawText(String(left[0] || ""), { x: margin + 4, y: rowTop - 11, size: 7.7, font: fontBold, color: window.PDFLib.rgb(0.2, 0.29, 0.4) });
+    drawRect(margin, rowTop, colW, cellH, { border: quoteGridBorderColor, borderWidth: 0.8 });
+    drawRect(margin, rowTop, keyW, cellH, { fill: quoteLabelColor, border: quoteGridBorderColor, borderWidth: 0.8 });
+    page.drawText(String(left[0] || ""), { x: margin + 4, y: rowTop - 11, size: 7.7, font: fontBold, color: window.PDFLib.rgb(1, 1, 1) });
     page.drawText(String(left[1] || ""), { x: margin + keyW + 4, y: rowTop - 11, size: 7.7, font });
 
     // right cell
-    drawRect(margin + colW, rowTop, colW, cellH, { border: window.PDFLib.rgb(0.86, 0.9, 0.96), borderWidth: 0.8 });
-    drawRect(margin + colW, rowTop, keyW, cellH, { fill: window.PDFLib.rgb(0.97, 0.99, 1), border: window.PDFLib.rgb(0.86, 0.9, 0.96), borderWidth: 0.8 });
-    page.drawText(String(right[0] || ""), { x: margin + colW + 4, y: rowTop - 11, size: 7.7, font: fontBold, color: window.PDFLib.rgb(0.2, 0.29, 0.4) });
+    drawRect(margin + colW, rowTop, colW, cellH, { border: quoteGridBorderColor, borderWidth: 0.8 });
+    drawRect(margin + colW, rowTop, keyW, cellH, { fill: quoteLabelColor, border: quoteGridBorderColor, borderWidth: 0.8 });
+    page.drawText(String(right[0] || ""), { x: margin + colW + 4, y: rowTop - 11, size: 7.7, font: fontBold, color: window.PDFLib.rgb(1, 1, 1) });
     page.drawText(String(right[1] || ""), { x: margin + colW + keyW + 4, y: rowTop - 11, size: 7.7, font });
 
     y -= cellH;
@@ -10640,7 +15452,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const col2 = contentW - col1 - col3 - col4;
   const tableHeaderH = 18;
   ensure(tableHeaderH + 10);
-  drawRect(margin, y, contentW, tableHeaderH, { fill: window.PDFLib.rgb(0.95, 0.97, 1), border: window.PDFLib.rgb(0.82, 0.88, 0.96), borderWidth: 1 });
+  drawRect(margin, y, contentW, tableHeaderH, { fill: window.PDFLib.rgb(0.95, 0.97, 1), border: quoteSoftBorderColor, borderWidth: 1 });
   page.drawText("Cant", { x: margin + 6, y: y - 12, size: 8, font: fontBold });
   page.drawText("Descripcion", { x: margin + col1 + 6, y: y - 12, size: 8, font: fontBold });
   page.drawText("Precio U", { x: margin + col1 + col2 + 6, y: y - 12, size: 8, font: fontBold });
@@ -10661,15 +15473,16 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     const size = opts.size || 8;
     const textY = y - (opts.textOffsetY || 11);
     ensure(h + 2);
-    drawRect(margin, y, contentW, h, { border: window.PDFLib.rgb(0.86, 0.9, 0.96), borderWidth: 0.8, fill: opts.fill });
+    drawRect(margin, y, contentW, h, { border: quoteGridBorderColor, borderWidth: 0.8, fill: opts.fill });
     // vertical lines
-    page.drawLine({ start: { x: margin + col1, y: y }, end: { x: margin + col1, y: y - h }, thickness: 0.8, color: window.PDFLib.rgb(0.86, 0.9, 0.96) });
-    page.drawLine({ start: { x: margin + col1 + col2, y: y }, end: { x: margin + col1 + col2, y: y - h }, thickness: 0.8, color: window.PDFLib.rgb(0.86, 0.9, 0.96) });
-    page.drawLine({ start: { x: margin + col1 + col2 + col3, y: y }, end: { x: margin + col1 + col2 + col3, y: y - h }, thickness: 0.8, color: window.PDFLib.rgb(0.86, 0.9, 0.96) });
-    page.drawText(String(qtyText || ""), { x: margin + 6, y: textY, size, font: opts.bold ? fontBold : font });
-    page.drawText(String(descText || ""), { x: margin + col1 + 6, y: textY, size, font: opts.bold ? fontBold : font });
-    page.drawText(String(priceText || ""), { x: margin + col1 + col2 + 6, y: textY, size, font: opts.bold ? fontBold : font });
-    page.drawText(String(totalText || ""), { x: margin + col1 + col2 + col3 + 6, y: textY, size, font: opts.bold ? fontBold : font });
+    page.drawLine({ start: { x: margin + col1, y: y }, end: { x: margin + col1, y: y - h }, thickness: 0.8, color: quoteGridBorderColor });
+    page.drawLine({ start: { x: margin + col1 + col2, y: y }, end: { x: margin + col1 + col2, y: y - h }, thickness: 0.8, color: quoteGridBorderColor });
+    page.drawLine({ start: { x: margin + col1 + col2 + col3, y: y }, end: { x: margin + col1 + col2 + col3, y: y - h }, thickness: 0.8, color: quoteGridBorderColor });
+    const textColor = opts.color || window.PDFLib.rgb(0.08, 0.18, 0.29);
+    page.drawText(String(qtyText || ""), { x: margin + 6, y: textY, size, font: opts.bold ? fontBold : font, color: textColor });
+    page.drawText(String(descText || ""), { x: margin + col1 + 6, y: textY, size, font: opts.bold ? fontBold : font, color: textColor });
+    page.drawText(String(priceText || ""), { x: margin + col1 + col2 + 6, y: textY, size, font: opts.bold ? fontBold : font, color: textColor });
+    page.drawText(String(totalText || ""), { x: margin + col1 + col2 + col3 + 6, y: textY, size, font: opts.bold ? fontBold : font, color: textColor });
     y -= h;
   };
 
@@ -10677,8 +15490,9 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     const dayItems = grouped.get(d) || [];
     drawServiceRow("", `SERVICIOS DEL DIA ${formatDocDate(d)}`, "", "", {
       height: 15,
-      fill: window.PDFLib.rgb(0.91, 0.96, 1),
+      fill: quoteSectionColor,
       bold: true,
+      color: window.PDFLib.rgb(1, 1, 1),
     });
     let daySubtotal = 0;
     for (const item of dayItems) {
@@ -10689,16 +15503,17 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
       drawServiceRow(
         String(qty),
         String(item?.name || item?.description || ""),
-        `Q ${price.toFixed(2)}`,
-        `Q ${lineTotal.toFixed(2)}`
+        moneyGT(price),
+        moneyGT(lineTotal)
       );
     }
-    drawServiceRow("", "", `SUBTOTAL ${formatDocDate(d)}`, `Q ${daySubtotal.toFixed(2)}`, {
+    drawServiceRow("", "", `SUBTOTAL ${formatDocDate(d)}`, moneyGT(daySubtotal), {
       height: 15,
-      fill: window.PDFLib.rgb(0.97, 0.99, 1),
+      fill: quoteLabelColor,
       bold: true,
       size: 7.2,
       textOffsetY: 10.4,
+      color: window.PDFLib.rgb(1, 1, 1),
     });
   }
 
@@ -10711,7 +15526,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const panelW = contentW;
   drawRect(panelX, panelY, panelW, totalsPanelH, {
     fill: window.PDFLib.rgb(0.985, 0.992, 1),
-    border: window.PDFLib.rgb(0.75, 0.84, 0.94),
+    border: quotePanelBorderColor,
     borderWidth: 1,
   });
   page.drawRectangle({
@@ -10729,7 +15544,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const separatorY = hasDiscount ? panelY - 42 : panelY - 28;
   const totalBoxTopY = hasDiscount ? panelY - 64 : panelY - 50;
   const row3Y = hasDiscount ? panelY - 56 : panelY - 42;
-  const money = (n) => `Q ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const money = (n) => moneyGT(n);
   const drawSummaryLine = (lineY, label, value, opts = {}) => {
     const labelFont = opts.bold ? fontBold : font;
     const valueFont = opts.bold ? fontBold : font;
@@ -10756,13 +15571,26 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const discountValue = Number(totals.discountValue || 0);
   const discountLabel = discountType === "PERCENT"
     ? `Descuento (${discountValue.toFixed(2)}%)`
-    : `Descuento (Q ${discountValue.toFixed(2)})`;
+    : `Descuento (${moneyGT(discountValue)})`;
 
-  drawSummaryLine(row1Y, "Subtotal evento", money(totals.subtotal), { size: 8.2 });
+  drawRect(panelX + 10, panelY - 10, panelW - 20, 14, {
+    fill: quoteLabelColor,
+    border: quoteSectionStrokeColor,
+    borderWidth: 0.8,
+  });
+  drawSummaryLine(row1Y, "Subtotal evento", money(totals.subtotal), {
+    size: 8.2,
+    color: window.PDFLib.rgb(1, 1, 1),
+  });
   if (hasDiscount) {
+    drawRect(panelX + 10, panelY - 24, panelW - 20, 14, {
+      fill: quoteLabelColor,
+      border: quoteSectionStrokeColor,
+      borderWidth: 0.8,
+    });
     drawSummaryLine(row2Y, discountLabel, money(totals.discountAmount), {
       size: 8.2,
-      color: window.PDFLib.rgb(0.62, 0.22, 0.08),
+      color: window.PDFLib.rgb(1, 1, 1),
     });
   }
 
@@ -10774,8 +15602,8 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   });
 
   drawRect(panelX + 10, totalBoxTopY, panelW - 20, 18, {
-    fill: window.PDFLib.rgb(0.16, 0.47, 0.79),
-    border: window.PDFLib.rgb(0.08, 0.35, 0.62),
+    fill: quoteLabelColor,
+    border: quoteSectionStrokeColor,
     borderWidth: 0.9,
   });
   drawSummaryLine(row3Y, "TOTAL EVENTO", money(totals.total), {
@@ -10825,7 +15653,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   y -= notesTitleH;
   drawRect(margin, y, contentW, notesBodyH, {
     fill: window.PDFLib.rgb(1, 1, 1),
-    border: window.PDFLib.rgb(0.72, 0.8, 0.9),
+    border: quoteNotesBorderColor,
     borderWidth: 0.9,
   });
   let noteY = y - notesBodyPad - notesLineH + 2;
@@ -10907,7 +15735,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const tX = margin + 22;
   const tW = contentW - 44;
   const descW = tW * 0.68;
-  const borderCol = window.PDFLib.rgb(0.68, 0.76, 0.86);
+  const borderCol = quoteSummaryBorderColor;
   const fitSummaryText = (text, useFont, size, maxWidth) => {
     const raw = String(text || "").trim();
     if (!raw) return "";
@@ -10921,6 +15749,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   };
   const drawSummaryGridRow = (yy, h, descText, valNumber, opts = {}) => {
     const fill = opts.fill || window.PDFLib.rgb(1, 1, 1);
+    const textColor = opts.color || window.PDFLib.rgb(0.08, 0.18, 0.29);
     drawRect(tX, yy, tW, h, {
       fill,
       border: borderCol,
@@ -10935,7 +15764,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
       y: yy - h + 3.8,
       size: rowSize,
       font: rowFont,
-      color: window.PDFLib.rgb(0.08, 0.18, 0.29),
+      color: textColor,
     });
     const valText = showMoney(valNumber);
     const valFont = rowFont;
@@ -10946,25 +15775,25 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
       y: yy - h + 3.8,
       size: valSize,
       font: valFont,
-      color: window.PDFLib.rgb(0.06, 0.16, 0.27),
+      color: textColor,
     });
   };
 
-  drawRect(tX, y, tW, tableHeaderH2, { fill: window.PDFLib.rgb(0.93, 0.96, 1), border: borderCol, borderWidth: 0.7 });
+  drawRect(tX, y, tW, tableHeaderH2, { fill: quoteLabelColor, border: quoteSectionStrokeColor, borderWidth: 0.7 });
   page.drawLine({ start: { x: tX + descW, y }, end: { x: tX + descW, y: y - tableHeaderH2 }, thickness: 0.7, color: borderCol });
   page.drawText("DESCRIPCION", {
     x: tX + 6,
     y: y - 9,
     size: 8,
     font: fontBold,
-    color: window.PDFLib.rgb(0.1, 0.23, 0.36),
+    color: window.PDFLib.rgb(1, 1, 1),
   });
   page.drawText("TOTAL", {
     x: tX + tW - 8 - fontBold.widthOfTextAtSize("TOTAL", 8),
     y: y - 9,
     size: 8,
     font: fontBold,
-    color: window.PDFLib.rgb(0.1, 0.23, 0.36),
+    color: window.PDFLib.rgb(1, 1, 1),
   });
   y -= tableHeaderH2;
 
@@ -10972,24 +15801,18 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     const row = summaryRows[i];
     const baseFill = i % 2 === 0 ? window.PDFLib.rgb(1, 1, 1) : window.PDFLib.rgb(0.985, 0.992, 1);
     const fill = row.tone === "final"
-      ? window.PDFLib.rgb(0.87, 0.93, 1)
+      ? quoteLabelColor
       : row.tone === "em"
-        ? window.PDFLib.rgb(0.94, 0.97, 1)
+        ? quoteLabelColor
         : row.tone === "advance"
           ? window.PDFLib.rgb(0.975, 0.985, 1)
-        : baseFill;
-    drawSummaryGridRow(y, rowH2, row.label, row.amount, { bold: row.bold, fill, size: row.size || 8 });
+          : baseFill;
+    const rowColor = row.tone === "final" || row.tone === "em"
+      ? window.PDFLib.rgb(1, 1, 1)
+      : undefined;
+    drawSummaryGridRow(y, rowH2, row.label, row.amount, { bold: row.bold, fill, size: row.size || 8, color: rowColor });
     y -= rowH2;
   }
-
-  if (quote?.internalNotes) {
-    y -= 8;
-    drawLine("Notas internas:", { bold: true, size: 10, lineHeight: 14 });
-    for (const line of String(quote.internalNotes).split(/\r?\n/)) {
-      drawLine(line);
-    }
-  }
-  return doc;
 }
 
 async function appendTemplateToFinalPdf(finalDoc, template, ev, quote, company, manager) {
@@ -11217,8 +16040,8 @@ async function openQuoteDocument(ev, quote) {
         <tr>
           <td style="text-align:right">${qty}</td>
           <td>${escapeHtml(item.name || item.description || "")}</td>
-          <td style="text-align:right">Q ${price.toFixed(2)}</td>
-          <td style="text-align:right">Q ${lineTotal.toFixed(2)}</td>
+          <td style="text-align:right">${moneyGT(price)}</td>
+          <td style="text-align:right">${moneyGT(lineTotal)}</td>
         </tr>
       `);
     }
@@ -11226,7 +16049,7 @@ async function openQuoteDocument(ev, quote) {
       <tr class="daySubtotalRow">
         <td colspan="2"></td>
         <td class="sumLabel">SUBTOTAL ${escapeHtml(formatDocDate(d))}</td>
-        <td class="sumValue">Q ${daySubtotal.toFixed(2)}</td>
+        <td class="sumValue">${moneyGT(daySubtotal)}</td>
       </tr>
     `);
   }
@@ -11241,8 +16064,8 @@ async function openQuoteDocument(ev, quote) {
   const discountRowHtmlDoc = showDiscountRowDoc ? `
         <tr>
           <td colspan="2"></td>
-          <td class="sumLabel">DESCUENTO ${discountTypeDoc === "PERCENT" ? `(${discountValueDoc.toFixed(2)}%)` : `(Q ${discountValueDoc.toFixed(2)})`}</td>
-          <td class="sumValue">Q ${discountDoc.toFixed(2)}</td>
+          <td class="sumLabel">DESCUENTO ${discountTypeDoc === "PERCENT" ? `(${discountValueDoc.toFixed(2)}%)` : `(${moneyGT(discountValueDoc)})`}</td>
+          <td class="sumValue">${moneyGT(discountDoc)}</td>
         </tr>
   ` : "";
   const cargoRowsDoc = [
@@ -11265,223 +16088,586 @@ async function openQuoteDocument(ev, quote) {
     ? Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : "-";
   const grandTotalWords = numberToWordsEs(totalDoc);
+  let appendedTemplateHtml = "";
+  const builtInTemplateMeta = getBuiltInQuoteTemplateMeta(String(quote.templateId || "").trim());
+  if (builtInTemplateMeta?.attachToQuote) {
+    try {
+      const res = await fetch(builtInTemplateMeta.file, { cache: "no-store" });
+      if (res.ok) {
+        let tplHtml = await res.text();
+        tplHtml = applyBuiltInTemplateAssets(tplHtml, builtInTemplateMeta);
+        tplHtml = fillTemplateHtmlTokens(tplHtml, buildTemplatePrintContextFromQuoteData(ev, quote, company, manager));
+        const parser = new DOMParser();
+        const tplDoc = parser.parseFromString(tplHtml, "text/html");
+        const rawTplStyleText = tplDoc.head
+          ? Array.from(tplDoc.head.querySelectorAll("style"))
+              .map((node) => node.textContent || "")
+              .join("\n")
+          : "";
+        const tplStyleText = rawTplStyleText
+          .replace(/@media print\s*\{[\s\S]*?\}(?=\.[a-zA-Z0-9_-]+\{|[a-z]+\{|$)/g, "")
+          .replace(/@page\s*\{[\s\S]*?\}/g, "")
+          .replace(/html,body\{[\s\S]*?\}/g, "")
+          .replace(/body\.c26\.doc-content\{[\s\S]*?\}/g, "")
+          .replace(/\.contract-header-print\{[\s\S]*?\}/g, "")
+          .replace(/\.contract-footer-print\{[\s\S]*?\}/g, "")
+          .replace(/\.contract-header\{[\s\S]*?\}/g, "")
+          .replace(/\.contract-footer\{[\s\S]*?\}/g, "")
+          .replace(/\.contract-band\{[\s\S]*?\}/g, "");
+        const tplStyles = tplStyleText ? `<style>${tplStyleText}</style>` : "";
+        let tplBody = tplDoc.body ? tplDoc.body.innerHTML : tplHtml;
+        if (tplDoc.body) {
+          const headerImg = tplDoc.body.querySelector(".contract-header img, .contract-header-print img");
+          const footerImg = isServiHospTemplate ? null : tplDoc.body.querySelector(".contract-footer img, .contract-footer-print img");
+          tplDoc.body
+            .querySelectorAll(".contract-header, .contract-header-print, .contract-footer, .contract-footer-print, script")
+            .forEach((node) => node.remove());
+          if (headerImg || footerImg) {
+            const repeatFrameStyles = `<style>
+  .contractPrintFrame{ width:100%; border-collapse:collapse; table-layout:fixed; }
+  .contractPrintHead,.contractPrintFoot{ display:none; }
+  .contractPrintCell{ padding:0; }
+  .contractPrintRow{ break-inside:auto; page-break-inside:auto; }
+  .contractPrintContent{ padding:0; }
+  .contractPrintContent > :first-child{ margin-top:0 !important; }
+  .contractPrintContent .c1:first-child{ display:none; }
+  @media print{
+    .contractTemplateAttach{
+      padding:0;
+      border-top:none;
+      background:#ffffff;
+      break-before:page;
+    }
+    .contractTemplateAttach .templateAttachHead{
+      display:none;
+    }
+    .contractTemplateBody{
+      border:none !important;
+      border-radius:0 !important;
+      overflow:visible !important;
+      background:#fff !important;
+    }
+    .contractPrintFrame thead{ display:table-header-group; }
+    .contractPrintFrame tfoot{ display:table-footer-group; }
+    .contractPrintHead,.contractPrintFoot{ display:table-row; }
+    .contractPrintHead .contractPrintCell{ padding:0 0 4mm; }
+    .contractPrintFoot .contractPrintCell{ padding:4mm 0 0; }
+    .contractPrintHead img{
+      display:block;
+      width:100%;
+      max-height:17mm;
+      object-fit:contain;
+      object-position:center top;
+    }
+    .contractPrintFoot img{
+      display:block;
+      width:100%;
+      max-height:11mm;
+      object-fit:contain;
+      object-position:center bottom;
+    }
+  }
+</style>`;
+            const repeatHead = headerImg
+              ? `<tr class="contractPrintHead"><td class="contractPrintCell">${headerImg.outerHTML}</td></tr>`
+              : "";
+            const repeatFoot = footerImg
+              ? `<tr class="contractPrintFoot"><td class="contractPrintCell">${footerImg.outerHTML}</td></tr>`
+              : "";
+            const bodyRows = Array.from(tplDoc.body.children)
+              .map((node) => `<tr class="contractPrintRow"><td class="contractPrintContent">${node.outerHTML}</td></tr>`)
+              .join("");
+            tplBody = `${repeatFrameStyles}<table class="contractPrintFrame"><thead>${repeatHead}</thead><tfoot>${repeatFoot}</tfoot><tbody>${bodyRows}</tbody></table>`;
+          } else {
+            tplBody = tplDoc.body.innerHTML;
+          }
+        }
+        appendedTemplateHtml = `
+    <section class="templateAttach contractTemplateAttach">
+      <div class="templateAttachHead">Contrato Anexo</div>
+      <div class="templateAttachBody contractTemplateBody">${tplStyles}${tplBody}</div>
+    </section>`;
+      }
+    } catch (err) {
+      console.warn("No se pudo anexar Contrato Corporativo:", err?.message || err);
+    }
+  }
+
+  const quoteInstitutionName = escapeHtml(String(quote.companyName || company?.name || "Cotizacion").trim() || "Cotizacion");
+  const quoteDocLabel = `COTIZACION ${quoteInstitutionName}`;
+  const isServiHospTemplate = String(quote.templateId || "").trim() === SERVIHOSP_TEMPLATE_ID;
+  const brandLogoSrc = "./Oficial_JDL_acua.png";
+  const brandHotelName = "Hotel y Centro de Convenciones Jardines del Lago";
+  const brandManagerName = "Patricio Estanislao Ralon Ordonez";
+  const brandNit = "NIT: 485430-6";
+  const brandWeb = "www.jardinesdellago.com";
+  const brandPhones = "+502 7762-6114 / 7762-6060";
+  const brandAddress = "Calle Monterrey, Panajachel, Solola";
 
   const html = `<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <base href="${escapeHtml(document.baseURI || window.location.href)}" />
   <title>Cotizacion ${escapeHtml(quote.code || "")}</title>
   <style>
     :root{
-      --ink:#0b1220;
-      --muted:#334155;
-      --line:#dbe3ef;
-      --line-strong:#c8d4e8;
-      --head:#f3f7ff;
-      --brand:#0f6db8;
-      --brand-soft:#e8f4ff;
+      --ink:#142b3f;
+      --muted:#5f7183;
+      --line:#dde5ea;
+      --line-strong:#cbd6de;
+      --head:#f6f9fb;
+      --brand:#1f405c;
+      --brand-soft:#eef4f7;
+      --quote-label:#edf3f6;
+      --quote-section:#264d6b;
+      --quote-section-border:#1a3850;
+      --quote-section-soft:rgba(38,77,107,0.08);
+      --accent:#8eacbf;
+      --accent-soft:#f4f8fa;
+      --success-soft:#e8f1ee;
+      --paper:#fbfcfd;
     }
     *{ box-sizing:border-box; }
-    body{ margin:0; padding:24px; font-family:"Segoe UI",Arial,sans-serif; color:var(--ink); background:#f5f8fc; }
+    body{ margin:0; padding:18px; font-family:"Segoe UI",Arial,sans-serif; font-size:12px; color:var(--ink); background:linear-gradient(180deg,#f4f7fa 0%, #edf2f6 100%); }
     .doc{
       max-width:1080px;
       margin:0 auto;
       border:1px solid var(--line);
       border-radius:16px;
       overflow:hidden;
-      background:#fff;
+      background:#ffffff;
       box-shadow:0 14px 38px rgba(10,24,40,0.1);
     }
-    .head{
-      background:linear-gradient(135deg,#0f6db8,#0b548e);
-      color:#fff;
-      padding:14px 16px;
-      border-bottom:1px solid #0a4c7f;
-      font-weight:700;
-      font-size:18px;
-      letter-spacing:0.2px;
+    .brandHeader{
+      display:grid;
+      grid-template-columns: 1.1fr 1.7fr 1.5fr;
+      align-items:stretch;
+      border-bottom:1px solid var(--line-strong);
+      background:linear-gradient(180deg,#f8fafb 0%, #eff4f7 100%);
     }
-    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:0; }
-    .cell{ display:grid; grid-template-columns:180px 1fr; border-right:1px solid var(--line); border-bottom:1px solid var(--line); min-height:36px; }
-    .cell:nth-child(2n){ border-right:none; }
-    .k{ background:#f8fbff; padding:8px 10px; color:var(--muted); font-weight:600; border-right:1px solid var(--line); }
-    .v{ padding:8px 10px; font-weight:600; }
+    .brandBlock{
+      min-height:82px;
+      padding:10px 12px;
+      border-right:1px solid var(--line);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    .brandBlock:last-child{ border-right:none; }
+    .brandLeft{ background:linear-gradient(180deg,#f9fbfc,#f1f5f8); }
+    .brandLeft img{ max-height:58px; width:auto; object-fit:contain; }
+    .brandCenter{ color:#31485d; font-size:11px; line-height:1.42; }
+    .brandCenter strong{ display:block; font-size:12.5px; color:var(--brand); margin-bottom:3px; letter-spacing:0.1px; }
+    .brandRight{ text-align:center; color:#42586c; font-size:11px; line-height:1.45; }
+    .brandRight strong{ color:var(--brand); font-size:12px; }
+    .head{
+      background:linear-gradient(135deg,#264d6b 0%, #1d3f5a 100%);
+      color:#fff;
+      padding:10px 14px;
+      border-bottom:1px solid rgba(20,43,63,0.08);
+      font-weight:800;
+      font-size:12.5px;
+      letter-spacing:0.3px;
+      text-transform:uppercase;
+    }
+    .quoteMetaTable{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      margin:0 0 8px;
+      border-top:2px solid var(--line-strong);
+      border-left:1px solid var(--line);
+      border-right:1px solid var(--line);
+      background:#ffffff;
+    }
+    .quoteMetaTable col.metaLabel{ width:13%; }
+    .quoteMetaTable col.metaValue{ width:20.333%; }
+    .quoteMetaTable td{
+      border-bottom:1px solid var(--line);
+      border-right:1px solid var(--line);
+      padding:4px 8px;
+      font-size:12px;
+      color:#24384a;
+      vertical-align:middle;
+      background:#ffffff;
+    }
+    .quoteMetaTable tr td:last-child{ border-right:none; }
+    .quoteMetaTable td.metaLabel{
+      background:linear-gradient(180deg,#f1f5f7 0%, #e8eef2 100%);
+      color:var(--brand);
+      font-weight:700;
+      letter-spacing:0.15px;
+    }
+    .quoteMetaTable td.metaValue{
+      font-weight:600;
+      background:#ffffff;
+    }
+    .quoteMetaTable tr.metaDivider td{
+      border-top:2px solid rgba(39,74,101,0.28);
+    }
+    .quoteMetaTable tr.metaGap td{
+      padding:0;
+      height:8px;
+      border:none;
+      background:transparent;
+    }
+    .quoteMetaTable td.metaWide{
+      text-align:left;
+    }
     table{ width:100%; border-collapse:collapse; }
     thead th{
-      background:var(--head);
+      background:linear-gradient(180deg,#f7fafc 0%, #f0f5f8 100%);
       border:1px solid var(--line);
-      padding:10px 8px;
+      padding:5px 6px;
       text-align:left;
-      font-size:13px;
+      font-size:12px;
       font-weight:700;
-      color:#173a5c;
+      color:var(--brand);
     }
-    tbody td{ border:1px solid var(--line); padding:9px 8px; font-size:13px; }
+    tbody td{ border:1px solid var(--line); padding:7px 9px; font-size:12px; background:#ffffff; color:#20384b; }
     .dayHeaderRow td{
-      background:linear-gradient(135deg,#d9eefc,#edf7ff);
-      color:#104064;
+      background:linear-gradient(135deg,#315b78 0%, #274a65 100%);
+      color:#ffffff !important;
       font-weight:800;
       letter-spacing:0.2px;
       text-transform:uppercase;
       text-align:center;
-      border:1px solid var(--line-strong);
-      padding:8px 10px;
+      border:1px solid rgba(26,56,80,0.08);
+      padding:5px 8px;
     }
     .daySubtotalRow td{
-      border-top:2px solid #111827;
-      border-bottom:1px solid var(--line-strong);
-      background:#f8fbff;
+      border-top:2px solid var(--quote-section-border);
+      border-bottom:1px solid rgba(20,43,63,0.08);
+      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
+      color:var(--brand);
     }
     tfoot td{
       border:1px solid var(--line-strong);
-      padding:10px 8px;
-      font-size:13px;
-      background:#f8fbff;
+      padding:5px 6px;
+      font-size:10px;
+      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
+      color:var(--brand);
     }
     .sumLabel{
       text-align:right;
       font-weight:700;
-      color:#153a5a;
-      background:var(--brand-soft);
+      color:var(--brand);
+      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
     }
     .sumValue{
       text-align:right;
       font-weight:800;
-      color:#0d2f4d;
-      background:var(--brand-soft);
+      color:var(--brand);
+      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
     }
     .sumTotal .sumLabel,
     .sumTotal .sumValue{
-      background:#dff0ff;
-      color:#0b2c47;
-      font-size:14px;
+      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
+      color:var(--brand);
+      font-size:12px;
     }
     .sumWords{
-      background:#f7fcff;
-      color:#0f3555;
+      border-top:1px solid var(--line);
+      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
+      color:var(--brand);
       font-weight:700;
-      font-size:12.5px;
+      font-size:12px;
       text-transform:uppercase;
       line-height:1.35;
     }
-    .notes{ border-top:1px solid var(--line); padding:12px; min-height:70px; }
+    .notes{ border-top:1px solid var(--line); padding:10px 12px; min-height:52px; background:var(--paper); }
     .notes b{ display:block; margin-bottom:6px; }
     .policyTitle{
-      margin-top:12px;
-      background:#1f5f75;
+      margin-top:8px;
+      background:linear-gradient(135deg,#315b78 0%, #274a65 100%);
       color:#fff;
       font-weight:800;
       text-align:center;
-      padding:6px 8px;
-      border:1px solid #16485a;
+      padding:3px 6px;
+      border:1px solid rgba(26,56,80,0.08);
       letter-spacing:.2px;
     }
     .policyBox{
       border:1px solid #9fb3cc;
       border-top:none;
-      padding:8px 10px;
-      font-size:12px;
+      padding:3px 6px;
+      font-size:10px;
       line-height:1.35;
-      background:#fff;
+      background:#ffffff;
     }
     .policyBox p{ margin:0 0 6px; }
     .policyBox p:last-child{ margin-bottom:0; }
     .cargoSummaryWrap{
-      margin: 0 0 8px;
-      border: 1px solid #bed1e7;
-      border-top: none;
-      border-radius: 0 0 10px 10px;
-      overflow: hidden;
-      background: linear-gradient(180deg, #f4f9ff, #ffffff 28%);
+      margin:0 0 10px;
+      border:1px solid var(--line-strong);
+      border-top:none;
+      border-radius:0 0 12px 12px;
+      overflow:hidden;
+      background:#ffffff;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.65);
     }
     .cargoTable{
       width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-      font-size:12.5px;
+      border-collapse:collapse;
+      table-layout:fixed;
+      font-size:12px;
     }
+    .cargoTable col:first-child{ width:72%; }
+    .cargoTable col:last-child{ width:28%; }
     .cargoTable th,.cargoTable td{
-      border-bottom:1px solid #d8e3f1;
-      padding:8px 10px;
+      padding:9px 10px;
+      border-bottom:1px solid var(--line);
     }
     .cargoTable thead th{
-      background:#edf5ff;
-      color:#173a5c;
-      font-size:12px;
+      background:linear-gradient(180deg,#f4f8fa 0%, #eaf0f4 100%);
+      color:var(--brand);
+      font-size:11px;
       font-weight:800;
-      letter-spacing:.2px;
+      letter-spacing:.24px;
       text-transform:uppercase;
     }
     .cargoTable thead th:first-child{
       text-align:left;
+      border-right:1px solid var(--line);
     }
     .cargoTable thead th:last-child{
       text-align:right;
     }
+    .cargoTable tbody td:first-child{
+      border-right:1px solid var(--line);
+    }
     .cargoTable tbody tr:last-child td{
       border-bottom:none;
     }
-    .cargoTable tbody tr:nth-child(odd):not(.cargoEm){
-      background:#fcfdff;
+    .cargoTable tbody tr:nth-child(odd):not(.cargoEm):not(.cargoEmFinal){
+      background:#fbfcfd;
     }
-    .cargoLabel{ font-weight:700; color:#0f2b45; }
+    .cargoTable tbody tr:nth-child(even):not(.cargoEm):not(.cargoEmFinal){
+      background:#f4f8fa;
+    }
+    .cargoLabel{
+      font-weight:700;
+      color:#1f3446;
+    }
     .cargoAmount{
       text-align:right;
       white-space:nowrap;
       font-weight:800;
-      color:#0f2f4d;
-      font-variant-numeric: tabular-nums;
+      color:#17364d;
+      font-variant-numeric:tabular-nums;
     }
     .cargoEm{
       font-weight:800;
-      background:#eaf2ff !important;
+      background:linear-gradient(180deg,#eef4f6 0%, #e6edf1 100%) !important;
     }
     .cargoEm td{
-      border-bottom-color:#c7d9ef;
+      border-bottom-color:var(--line-strong);
     }
     .cargoEmFinal{
-      background:#dceeff !important;
+      background:linear-gradient(135deg,#264d6b 0%, #1d3f5a 100%) !important;
     }
-    .actions{ padding:12px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--line); background:#fbfdff; }
+    .cargoEm .cargoLabel,
+    .cargoEm .cargoAmount{
+      color:var(--brand);
+    }
+    .cargoEmFinal .cargoLabel,
+    .cargoEmFinal .cargoAmount{
+      color:#ffffff;
+    }
+    .actions{ padding:12px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--line); background:#f8fafb; }
     .actions button{
       border:1px solid #b8cde8;
-      background:#fff;
+      background:#ffffff;
       color:#103654;
       border-radius:10px;
       padding:7px 12px;
       font-weight:700;
       cursor:pointer;
     }
-    .actions button:hover{ background:#eef6ff; }
-    @media print{ .actions{ display:none; } body{ padding:0; } .doc{ border:none; } }
+    .actions button:hover{ background:#eef3f7; }
+    .templateAttach{
+      border-top:1px solid var(--line);
+      background:#f8fbff;
+      padding:12px 12px 0;
+    }
+    .templateAttachHead{
+      font-weight:800;
+      color:#0f3555;
+      margin:0 0 8px;
+      font-size:12.5px;
+    }
+    .templateAttachBody{
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      overflow:visible;
+      font-size:10px;
+      line-height:1.15;
+      page-break-inside:auto;
+    }
+    .templateAttachBody p,
+    .templateAttachBody td,
+    .templateAttachBody th,
+    .templateAttachBody span,
+    .templateAttachBody div{
+      font-size:inherit !important;
+    }
+    .doc.serviHospClean,
+    .doc.serviHospClean *{ box-shadow:none !important; }
+    .doc.serviHospClean,
+    .doc.serviHospClean .brandHeader,
+    .doc.serviHospClean .brandBlock,
+    .doc.serviHospClean .head,
+    .doc.serviHospClean .cell,
+    .doc.serviHospClean .k,
+    .doc.serviHospClean thead th,
+    .doc.serviHospClean tbody td,
+    .doc.serviHospClean tfoot td,
+    .doc.serviHospClean .dayHeaderRow td,
+    .doc.serviHospClean .daySubtotalRow td,
+    .doc.serviHospClean .notes,
+    .doc.serviHospClean .policyTitle,
+    .doc.serviHospClean .policyBox,
+    .doc.serviHospClean .cargoSummaryWrap,
+    .doc.serviHospClean .cargoTable th,
+    .doc.serviHospClean .cargoTable td,
+    .doc.serviHospClean .actions,
+    .doc.serviHospClean .templateAttach,
+    .doc.serviHospClean .templateAttachBody,
+    .doc.serviHospClean .templateAttachBody table,
+    .doc.serviHospClean .templateAttachBody td,
+    .doc.serviHospClean .templateAttachBody th{
+      border:none !important;
+      border-radius:0 !important;
+    }
+    .doc.serviHospClean,
+    .doc.serviHospClean .brandHeader,
+    .doc.serviHospClean .brandLeft,
+    .doc.serviHospClean .templateAttach,
+    .doc.serviHospClean .templateAttachBody{
+      background:#fff !important;
+    }
+    .doc.serviHospClean .templateAttach{ padding-top:4px; }
+    .doc.serviHospClean .contractPrintFoot,
+    .doc.serviHospClean .contract-footer,
+    .doc.serviHospClean .contract-footer-print{
+      display:none !important;
+    }
+    @media print{
+      html, body{
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .actions{ display:none; }
+      body{ padding:0; }
+      .doc{ border:none; }
+      .templateAttach{
+        padding:0;
+        background:transparent;
+        border-top:none;
+      }
+      .templateAttachHead{
+        display:none;
+      }
+      .templateAttachBody{
+        border:none;
+        border-radius:0;
+        overflow:visible;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="doc">
-    <div class="head">Cotizacion ${escapeHtml(quote.code || "")}${quote.version ? ` - V${escapeHtml(String(quote.version))}` : ""}</div>
-    <div class="grid">
-      <div class="cell"><div class="k">Contacto</div><div class="v">${escapeHtml(quote.contact || manager?.name || "")}</div></div>
-      <div class="cell"><div class="k">Codigo</div><div class="v">${escapeHtml(quote.code || "")}</div></div>
-      <div class="cell"><div class="k">Encargado Evento</div><div class="v">${escapeHtml(manager?.name || "")}</div></div>
-      <div class="cell"><div class="k">Fecha Documento</div><div class="v">${escapeHtml(quote.docDate || "")}</div></div>
-      <div class="cell"><div class="k">Email</div><div class="v">${escapeHtml(quote.email || manager?.email || "")}</div></div>
-      <div class="cell"><div class="k">Telefono</div><div class="v">${escapeHtml(quote.phone || manager?.phone || "")}</div></div>
-      <div class="cell"><div class="k">Institucion</div><div class="v">${escapeHtml(quote.companyName || company?.name || "")}</div></div>
-      <div class="cell"><div class="k">Forma de Pago</div><div class="v">${escapeHtml(quote.paymentType || "")}</div></div>
-      <div class="cell"><div class="k">Facturar A</div><div class="v">${escapeHtml(quote.billTo || company?.billTo || company?.businessName || "")}</div></div>
-      <div class="cell"><div class="k">NIT</div><div class="v">${escapeHtml(quote.nit || company?.nit || "")}</div></div>
-      <div class="cell"><div class="k">Direccion</div><div class="v">${escapeHtml(quote.address || company?.address || "")}</div></div>
-      <div class="cell"><div class="k">No Personas</div><div class="v">${escapeHtml(String(quote.people || ""))}</div></div>
-      <div class="cell"><div class="k">Tipo Evento</div><div class="v">${escapeHtml(quote.eventType || "")}</div></div>
-      <div class="cell"><div class="k">Fecha evento</div><div class="v">${escapeHtml(quote.eventDate || ev.date || "")}</div></div>
-      <div class="cell"><div class="k">Salon o Jardin</div><div class="v">${escapeHtml(quote.venue || ev.salon || "")}</div></div>
-      <div class="cell"><div class="k">Folio No</div><div class="v">${escapeHtml(quote.folio || "")}</div></div>
-      <div class="cell"><div class="k">Horario y Evento</div><div class="v">${escapeHtml(quote.schedule || `${ev.startTime} a ${ev.endTime}`)}</div></div>
-      <div class="cell"><div class="k">Fecha Finalizacion</div><div class="v">${escapeHtml(quote.endDate || ev.date || "")}</div></div>
-      <div class="cell"><div class="k"></div><div class="v"></div></div>
-      <div class="cell"><div class="k">Fecha Maxima Pago</div><div class="v">${escapeHtml(quote.dueDate || "")}</div></div>
+  <div class="doc${isServiHospTemplate ? " serviHospClean" : ""}">
+    <div class="brandHeader">
+      <div class="brandBlock brandLeft">
+        <img src="${escapeHtml(brandLogoSrc)}" alt="Jardines del Lago" />
+      </div>
+      <div class="brandBlock brandCenter">
+        <strong>${escapeHtml(brandHotelName)}</strong>
+        <div>${escapeHtml(brandManagerName)}</div>
+        <div>${escapeHtml(brandNit)}</div>
+      </div>
+      <div class="brandBlock brandRight">
+        <strong>${escapeHtml(brandWeb)}</strong>
+        <div>${escapeHtml(brandPhones)}</div>
+        <div>${escapeHtml(brandAddress)}</div>
+      </div>
     </div>
+    <div class="head">${quoteDocLabel}</div>
+    <table class="quoteMetaTable">
+      <colgroup>
+        <col class="metaLabel" />
+        <col class="metaValue" />
+        <col class="metaValue" />
+        <col class="metaLabel" />
+        <col class="metaValue" />
+        <col class="metaValue" />
+      </colgroup>
+      <tbody>
+        <tr>
+          <td class="metaLabel">Codigo</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.code || "")}</td>
+          <td class="metaLabel">Fecha Doc</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.docDate || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Encargado</td>
+          <td class="metaValue" colspan="2">${escapeHtml(manager?.name || "")}</td>
+          <td class="metaLabel">Contacto</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.contact || manager?.name || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Email</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.email || manager?.email || "")}</td>
+          <td class="metaLabel">Telefono</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.phone || manager?.phone || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Institucion</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.companyName || company?.name || "")}</td>
+          <td class="metaLabel">Facturar A</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.billTo || company?.billTo || company?.businessName || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Nit</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.nit || company?.nit || "")}</td>
+          <td class="metaLabel">Direccion</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.address || company?.address || "")}</td>
+        </tr>
+        <tr class="metaDivider">
+          <td class="metaLabel">Forma de Pago</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.paymentType || "")}</td>
+          <td class="metaLabel">Fecha&nbsp;maximo<br>Pago</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.dueDate || "")}</td>
+        </tr>
+        <tr class="metaGap">
+          <td colspan="6"></td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Salon</td>
+          <td class="metaValue">${escapeHtml(quote.venue || ev.salon || "")}</td>
+          <td class="metaLabel">Horario</td>
+          <td class="metaValue metaWide">${escapeHtml(quote.schedule || `${ev.startTime} a ${ev.endTime}`)}</td>
+          <td class="metaLabel">No Personas</td>
+          <td class="metaValue">${escapeHtml(String(quote.people || ""))}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Tipo de Evento</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.eventType || "")}</td>
+          <td class="metaLabel">Folio No</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.folio || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Fecha Inicio</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.eventDate || ev.date || "")}</td>
+          <td class="metaLabel">Fecha Fin</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.endDate || ev.date || "")}</td>
+        </tr>
+      </tbody>
+    </table>
 
     <table>
       <thead>
@@ -11499,13 +16685,13 @@ async function openQuoteDocument(ev, quote) {
         <tr>
           <td colspan="2"></td>
           <td class="sumLabel">SUBTOTAL EVENTO</td>
-          <td class="sumValue">Q ${subtotalDoc.toFixed(2)}</td>
+          <td class="sumValue">${moneyGT(subtotalDoc)}</td>
         </tr>
         ${discountRowHtmlDoc}
         <tr class="sumTotal">
           <td colspan="2" class="sumWords">SON: ${escapeHtml(grandTotalWords)}</td>
           <td class="sumLabel">TOTAL EVENTO</td>
-          <td class="sumValue">Q ${totalDoc.toFixed(2)}</td>
+          <td class="sumValue">${moneyGT(totalDoc)}</td>
         </tr>
       </tfoot>
     </table>
@@ -11521,7 +16707,7 @@ async function openQuoteDocument(ev, quote) {
 
     <div class="policyTitle">RESUMEN DE CARGOS</div>
     <div class="cargoSummaryWrap">
-      <table class="cargoTable">
+      <table class="cargoTable"><colgroup><col><col></colgroup>
         <thead>
           <tr>
             <th style="width:68%">Descripcion</th>
@@ -11562,7 +16748,7 @@ async function openQuoteDocument(ev, quote) {
       </table>
     </div>
 
-    <div class="notes"><b>Notas internas:</b>${escapeHtml(quote.internalNotes || quote.notes || "")}</div>
+    ${appendedTemplateHtml}
     <div class="actions">
       <button onclick="window.print()">Imprimir</button>
     </div>
@@ -11604,17 +16790,17 @@ function saveEventFromForm() {
     : (rawStatus || STATUS.PRIMERA);
   const userId = el.eventUser.value;
   const notes = el.eventNotes.value.trim();
-  const paxRaw = String(el.eventPax?.value || "").trim();
-  const pax = paxRaw ? Math.max(1, Number(paxRaw)) : null;
   const slots = getSlotsFromForm();
+  const pax = syncEventPaxFromSlots() || null;
 
   if (!name) return toast("Falta nombre del evento.");
   if (!rangeStart || !rangeEnd) return toast("Falta la fecha.");
   if (!userId) return toast("Selecciona un vendedor.");
-  if (!paxRaw || Number(paxRaw) <= 0) return toast("Ingresa una cantidad valida de personas.");
+  if (!pax) return toast("Ingresa una cantidad valida de personas por salon.");
   if (!slots.length) return toast("Agrega al menos un bloque de salon/horario.");
   for (const s of slots) {
     if (!s.salon || !s.startTime || !s.endTime) return toast("Completa salon, inicio y fin en cada bloque.");
+    if (!s.slotPax || Number(s.slotPax) <= 0) return toast("Completa un PAX valido en cada salon.");
     if (!isValidClockTime(s.startTime) || !isValidClockTime(s.endTime)) {
       return toast("Formato de hora invalido. Usa HH:mm.");
     }
@@ -11651,6 +16837,7 @@ function saveEventFromForm() {
         endTime: s.endTime,
         userId,
         pax,
+        slotPax: s.slotPax,
         notes,
         quote: existing?.quote,
       });
@@ -11673,6 +16860,13 @@ function saveEventFromForm() {
     if (!rules.ok) {
       toast(rules.message);
       return;
+    }
+  }
+
+  if (status === STATUS.MANTENIMIENTO) {
+    const maintenanceHardBlocks = drafts.flatMap((draft) => findHardBlocks(draft, replaceIds));
+    if (maintenanceHardBlocks.length) {
+      return toast("No puedes poner en Mantenimiento: ya hay una reserva Confirmada o Pre reserva en ese horario.");
     }
   }
 
@@ -11759,10 +16953,26 @@ function uniqueSlotsFromSeries(series) {
   for (const e of series) {
     const key = `${e.salon}|${e.startTime}|${e.endTime}`;
     if (!map.has(key)) {
-      map.set(key, { salon: e.salon, startTime: e.startTime, endTime: e.endTime });
+      map.set(key, {
+        salon: e.salon,
+        slotPax: Math.max(0, Number(e?.slotPax || 0)) || 0,
+        startTime: e.startTime,
+        endTime: e.endTime,
+      });
     }
   }
-  return Array.from(map.values()).sort((a, b) => compareTime(a.startTime, b.startTime));
+  const slots = Array.from(map.values()).sort((a, b) => compareTime(a.startTime, b.startTime));
+  const storedTotalPax = Math.max(0, Number(series?.[0]?.pax || 0)) || 0;
+  const hasSlotPax = slots.some((slot) => Math.max(0, Number(slot?.slotPax || 0)) > 0);
+  if (!hasSlotPax && storedTotalPax > 0 && slots.length) {
+    const basePax = Math.floor(storedTotalPax / slots.length);
+    let remainder = storedTotalPax % slots.length;
+    for (const slot of slots) {
+      slot.slotPax = basePax + (remainder > 0 ? 1 : 0);
+      if (remainder > 0) remainder -= 1;
+    }
+  }
+  return slots;
 }
 
 function summarizeSeriesWindow(series) {
@@ -12781,7 +17991,7 @@ function onGlobalPointerUp() {
     }
 
     const draft = { ...ev, date: nextDate, startTime: nextStart, endTime: nextEnd };
-    const rules = evaluateRules(draft);
+    const rules = evaluateRules(draft, ignoreIds);
     if (!rules.ok) {
       toast(rules.message || "No se puede mover por reglas/choques.");
       render();
@@ -12895,14 +18105,23 @@ function clampToGridMinute(minuteValue, duration) {
 
 // ================== Rules & Conflicts ==================
 
+function buildConflictIgnoreIdsForEditing() {
+  const editingId = String(el.eventId?.value || "").trim();
+  if (!editingId) return null;
+  const editingEvent = (state.events || []).find((x) => String(x?.id || "") === editingId);
+  if (!editingEvent) return null;
+  return new Set(getEventSeries(editingEvent).map((x) => String(x?.id || "")).filter(Boolean));
+}
+
 function updateRulesAndConflictsUI() {
   applyStatusSelectTheme();
   const draft = currentDraftFromForm();
   if (!draft) return;
 
-  // Lista de conflictos (mismo salon + traslape + misma fecha), excluyendo el propio
-  const conflicts = findConflicts(draft);
-  const hardBlocks = findHardBlocks(draft);
+  const ignoreIds = buildConflictIgnoreIdsForEditing();
+  // Lista de conflictos (mismo salon + traslape + misma fecha), excluyendo la reserva en edicion
+  const conflicts = findConflicts(draft, ignoreIds);
+  const hardBlocks = findHardBlocks(draft, ignoreIds);
 
   // Render conflict UI
   if (conflicts.length) {
@@ -12934,12 +18153,11 @@ function updateRulesAndConflictsUI() {
     el.conflictsList.innerHTML = "";
   }
 
-  const rules = evaluateRules(draft);
+  const rules = evaluateRules(draft, ignoreIds);
   el.statusHint.textContent = rules.hint || "";
   // Soft-disable some status options when blocked
   applyStatusOptionDisabling(draft, hardBlocks);
 }
-
 function applyStatusOptionDisabling(draft, hardBlocks) {
   // Reset all enabled
   Array.from(el.eventStatus.options).forEach(o => {
@@ -12953,12 +18171,20 @@ function applyStatusOptionDisabling(draft, hardBlocks) {
   // - No permitir elegir Confirmado ni Pre reserva para un evento que se cruce
   if (hasHardBlock) {
     for (const opt of Array.from(el.eventStatus.options)) {
-      if (opt.value === STATUS.CONFIRMADO || opt.value === STATUS.PRERESERVA) {
+      if (
+        opt.value === STATUS.CONFIRMADO
+        || opt.value === STATUS.PRERESERVA
+        || opt.value === STATUS.MANTENIMIENTO
+      ) {
         opt.disabled = true;
       }
     }
     // Si el usuario ya lo tenia seleccionado, moverlo a Lista
-    if (draft.status === STATUS.CONFIRMADO || draft.status === STATUS.PRERESERVA) {
+    if (
+      draft.status === STATUS.CONFIRMADO
+      || draft.status === STATUS.PRERESERVA
+      || draft.status === STATUS.MANTENIMIENTO
+    ) {
       el.eventStatus.value = STATUS.LISTA;
     }
   }
@@ -12997,6 +18223,13 @@ function evaluateRules(draft, ignoreIds = null) {
   }
 
   if (hasHardBlock) {
+    if (draft.status === STATUS.MANTENIMIENTO) {
+      return {
+        ok: false,
+        message: "No puedes poner en Mantenimiento: ya hay una reserva Confirmada o Pre reserva en ese horario.",
+        hint: "Mantenimiento solo se permite si no hay Confirmado ni Pre reserva cruzados.",
+      };
+    }
     if (draft.status === STATUS.CONFIRMADO || draft.status === STATUS.PRERESERVA) {
       return {
         ok: false,
@@ -13022,9 +18255,10 @@ function evaluateRules(draft, ignoreIds = null) {
   return { ok: true, hint: "" };
 }
 
-function findConflicts(draft) {
+function findConflicts(draft, ignoreIds = null) {
   const id = draft.id;
   return state.events.filter(e => {
+    if (ignoreIds && ignoreIds.has(String(e.id || ""))) return false;
     if (e.id === id) return false;
     if (e.salon !== draft.salon) return false;
     if (e.date !== draft.date) return false;
@@ -13247,6 +18481,7 @@ function normalizeUserRecord(candidate) {
     id: String(u.id || "").trim(),
     name: fullName,
     fullName,
+    role: normalizeUserRole(u.role),
     username: String(u.username || "").trim(),
     email: String(u.email || "").trim(),
     phone: String(u.phone || "").trim(),
@@ -13276,6 +18511,7 @@ function normalizeState(candidate) {
     companies: Array.isArray(candidate.companies) ? candidate.companies : [],
     services: Array.isArray(candidate.services) ? candidate.services.map(normalizeServiceRecord) : [],
     quickTemplates: ensureCorporateTemplateSeed(Array.isArray(templateSource) ? templateSource : []),
+    quoteServiceTemplates: normalizeQuoteServiceTemplatesCollection(candidate.quoteServiceTemplates),
     disabledCompanies: Array.isArray(candidate.disabledCompanies) ? candidate.disabledCompanies.map((x) => String(x || "").trim()).filter(Boolean) : [],
     disabledServices: Array.isArray(candidate.disabledServices) ? candidate.disabledServices.map((x) => String(x || "").trim()).filter(Boolean) : [],
     disabledManagers: Array.isArray(candidate.disabledManagers) ? candidate.disabledManagers.map((x) => String(x || "").trim()).filter(Boolean) : [],
@@ -13283,6 +18519,7 @@ function normalizeState(candidate) {
     globalMonthlyGoals: Array.isArray(candidate.globalMonthlyGoals) ? candidate.globalMonthlyGoals : [],
     changeHistory: (candidate.changeHistory && typeof candidate.changeHistory === "object") ? candidate.changeHistory : {},
     reminders: (candidate.reminders && typeof candidate.reminders === "object") ? candidate.reminders : {},
+    checklistTemplates: Array.isArray(candidate.checklistTemplates) ? candidate.checklistTemplates : [],
     checklistTemplateItems: Array.isArray(candidate.checklistTemplateItems) ? candidate.checklistTemplateItems : [],
     checklistTemplateSections: Array.isArray(candidate.checklistTemplateSections) ? candidate.checklistTemplateSections : [],
     menuMontajeSections: Array.isArray(candidate.menuMontajeSections) ? candidate.menuMontajeSections : [],
@@ -13304,6 +18541,7 @@ function buildInitialState() {
     companies: COMPANIES_DEFAULT.slice(),
     services: SERVICES_DEFAULT.slice(),
     quickTemplates: Array.isArray(templateSeed) ? templateSeed : ensureCorporateTemplateSeed([]),
+    quoteServiceTemplates: [],
     disabledCompanies: [],
     disabledServices: [],
     disabledManagers: [],
@@ -13311,6 +18549,7 @@ function buildInitialState() {
     globalMonthlyGoals: [],
     changeHistory: {},
     reminders: {},
+    checklistTemplates: [],
     checklistTemplateItems: [],
     checklistTemplateSections: ["General"],
     menuMontajeSections: ["General"],
@@ -13372,7 +18611,9 @@ async function syncWithServerState() {
     for (const candidate of API_STATE_CANDIDATES) {
       try {
         const r = await fetch(candidate, { cache: "no-store" });
-        if (r.ok || r.status === 404) {
+        const contentType = String(r.headers.get("content-type") || "").toLowerCase();
+        const isJson404 = r.status === 404 && contentType.includes("application/json");
+        if (r.ok || isJson404) {
           response = r;
           activeApiStateUrl = candidate;
           break;
@@ -13744,7 +18985,6 @@ function validateReservationRequiredFields() {
   const dateStart = String(el.eventDate?.value || "").trim();
   const dateEnd = String(el.eventDateEnd?.value || "").trim();
   const userId = String(el.eventUser?.value || "").trim();
-  const paxRaw = String(el.eventPax?.value || "").trim();
   const slots = getSlotsFromForm();
 
   const okName = !!name;
@@ -13759,9 +18999,9 @@ function validateReservationRequiredFields() {
   const okUser = !!userId;
   mark(el.eventUser, okUser);
   if (!okUser) issues.push("Usuario");
-  const okPax = !!paxRaw && Number(paxRaw) > 0;
+  const okPax = syncEventPaxFromSlots() > 0;
   mark(el.eventPax, okPax);
-  if (!okPax) issues.push("Cantidad Pax");
+  if (!okPax) issues.push("PAX total");
   if (!slots.length) issues.push("Al menos un bloque de salon y horario");
 
   const rows = Array.from(el.slotsBody.querySelectorAll(".slotRow"));
@@ -13770,11 +19010,15 @@ function validateReservationRequiredFields() {
     const idx = i + 1;
     const row = rows[i];
     const roomEl = row?.querySelector(".slotRoom");
+    const paxEl = row?.querySelector(".slotPax");
     const startEl = row?.querySelector(".slotStart");
     const endEl = row?.querySelector(".slotEnd");
     const okRoom = !!s.salon;
     mark(roomEl, okRoom);
     if (!okRoom) issues.push(`Bloque ${idx}: Salon`);
+    const okSlotPax = Number(s.slotPax) > 0;
+    mark(paxEl, okSlotPax);
+    if (!okSlotPax) issues.push(`Bloque ${idx}: PAX`);
     const okStart = !!s.startTime && isValidClockTime(s.startTime);
     mark(startEl, okStart);
     if (!s.startTime) issues.push(`Bloque ${idx}: Hora inicio`);
@@ -13844,7 +19088,9 @@ function deepClone(obj) {
 }
 
 function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+  const value = String(email || "").trim();
+  if (!value || value.length > 254 || /\.\./.test(value)) return false;
+  return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value);
 }
 
 function normalizeCompanyRecord(company) {
@@ -13897,6 +19143,49 @@ function currentDraftFromForm() {
   const id = el.eventId.value || "__draft__";
   if (!date || !startTime || !endTime || !salon || !status) return null;
   return { id, date, startTime, endTime, salon, status };
+}
+
+function findMaintenanceBlockingReservationsFromForm() {
+  const editingId = String(el.eventId?.value || "").trim();
+  const replaceEvents = editingId
+    ? getEventSeries(state.events.find(x => x.id === editingId))
+    : [];
+  const replaceIds = new Set(replaceEvents.map((e) => e.id));
+  const dateStart = String(el.eventDate?.value || "").trim();
+  const dateEndRaw = String(el.eventDateEnd?.value || "").trim();
+  const dateEnd = dateEndRaw || dateStart;
+  if (!dateStart || !dateEnd) return [];
+  const rangeStart = dateStart <= dateEnd ? dateStart : dateEnd;
+  const rangeEnd = dateStart <= dateEnd ? dateEnd : dateStart;
+  const slots = getSlotsFromForm().filter((slot) =>
+    slot?.salon
+    && isValidClockTime(slot.startTime)
+    && isValidClockTime(slot.endTime)
+    && compareTime(slot.endTime, slot.startTime) > 0
+  );
+  if (!slots.length) return [];
+
+  const seen = new Set();
+  const blocks = [];
+  for (const date of listDatesBetween(rangeStart, rangeEnd)) {
+    for (const slot of slots) {
+      const draft = {
+        id: editingId || "__maintenance__",
+        date,
+        salon: slot.salon,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        status: STATUS.MANTENIMIENTO,
+      };
+      for (const conflict of findHardBlocks(draft, replaceIds)) {
+        const key = String(conflict.id || "");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        blocks.push(conflict);
+      }
+    }
+  }
+  return blocks;
 }
 
 function normalizeServiceRecord(service) {
@@ -14001,6 +19290,39 @@ function getEventsInWeek(weekStart, salon, dayCount = 7) {
       return compareTime(a.startTime, b.startTime);
     });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

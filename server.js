@@ -1,4 +1,4 @@
-const path = require("path");
+﻿const path = require("path");
 const express = require("express");
 const mariadb = require("mariadb");
 const crypto = require("crypto");
@@ -53,9 +53,19 @@ const pool = mariadb.createPool({
   password: DB_PASSWORD,
   database: DB_NAME,
   connectionLimit: 5,
+  collation: "utf8mb4_unicode_ci",
 });
 
 const app = express();
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 app.use(express.json({ limit: "25mb" }));
 
 function hashPasswordScrypt(password, saltHex) {
@@ -202,6 +212,32 @@ function str(value) {
   return String(value);
 }
 
+function sanitizeUtf16String(value) {
+  return String(value || "")
+    .replace(/\u0000/g, "")
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "")
+    .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "$1");
+}
+
+function sanitizeJsonValue(value) {
+  if (typeof value === "string") return sanitizeUtf16String(value);
+  if (Array.isArray(value)) return value.map((v) => sanitizeJsonValue(v));
+  if (!value || typeof value !== "object") return value;
+  const out = {};
+  for (const [k, v] of Object.entries(value)) {
+    out[sanitizeUtf16String(k)] = sanitizeJsonValue(v);
+  }
+  return out;
+}
+
+function safeJsonStringify(value) {
+  try {
+    return JSON.stringify(sanitizeJsonValue(value));
+  } catch (_) {
+    return null;
+  }
+}
+
 function normalizeQuantityMode(mode) {
   const m = String(mode || "").trim().toUpperCase();
   return m === "PAX" ? "PAX" : "MANUAL";
@@ -327,6 +363,7 @@ async function ensureServiceCatalogStructure() {
       CREATE TABLE IF NOT EXISTS categorias_servicio (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         nombre VARCHAR(140) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
         creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         UNIQUE KEY uq_categorias_servicio_nombre (nombre)
@@ -337,6 +374,7 @@ async function ensureServiceCatalogStructure() {
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         id_categoria BIGINT UNSIGNED NOT NULL,
         nombre VARCHAR(140) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
         creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         UNIQUE KEY uq_subcategorias_servicio (id_categoria, nombre),
@@ -347,6 +385,24 @@ async function ensureServiceCatalogStructure() {
           ON UPDATE CASCADE
       )
     `);
+
+    const catCols = await conn.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_schema = ? AND table_name = 'categorias_servicio'`,
+      [DB_NAME]
+    );
+    const catColSet = new Set(catCols.map((r) => String(r.column_name || "").toLowerCase()));
+    if (!catColSet.has("activo")) {
+      await conn.query("ALTER TABLE categorias_servicio ADD COLUMN activo TINYINT(1) NOT NULL DEFAULT 1");
+    }
+
+    const subcatCols = await conn.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_schema = ? AND table_name = 'subcategorias_servicio'`,
+      [DB_NAME]
+    );
+    const subcatColSet = new Set(subcatCols.map((r) => String(r.column_name || "").toLowerCase()));
+    if (!subcatColSet.has("activo")) {
+      await conn.query("ALTER TABLE subcategorias_servicio ADD COLUMN activo TINYINT(1) NOT NULL DEFAULT 1");
+    }
 
     const cols = await conn.query(
       `SELECT column_name FROM information_schema.columns WHERE table_schema = ? AND table_name = 'servicios'`,
@@ -423,7 +479,7 @@ async function ensureQuoteVersionStructure() {
         PRIMARY KEY (id),
         UNIQUE KEY uq_cotizacion_version_evento (id_evento, version_num),
         KEY idx_cotizacion_version_evento (id_evento)
-      )
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     await conn.query(`
       CREATE TABLE IF NOT EXISTS items_cotizacion_version_evento (
@@ -439,8 +495,21 @@ async function ensureQuoteVersionStructure() {
         descripcion TEXT NULL,
         PRIMARY KEY (id),
         KEY idx_items_cotizacion_version_evento (id_evento, version_num)
-      )
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    const versionTableMeta = await conn.query(
+      `SELECT table_name, table_collation
+       FROM information_schema.tables
+       WHERE table_schema = ? AND table_name IN ('cotizacion_versiones_evento','items_cotizacion_version_evento')`,
+      [DB_NAME]
+    );
+    for (const row of versionTableMeta) {
+      const tableName = String(row.table_name || "");
+      const collation = String(row.table_collation || "").toLowerCase();
+      if (tableName && !collation.startsWith("utf8mb4_")) {
+        await conn.query(`ALTER TABLE ${tableName} CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+      }
+    }
 
     const itemCols = await conn.query(
       `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = ? AND table_name IN ('items_cotizacion_evento','items_cotizacion_version_evento')`,
@@ -982,7 +1051,7 @@ async function readStateFromTables() {
       conn.query("SELECT clave_evento, cambiado_en_iso, id_usuario_actor, nombre_actor, cambio_texto FROM historial_evento ORDER BY id DESC"),
       conn.query("SELECT id, clave_evento, fecha_recordatorio, hora_recordatorio, medio, notas, creado_en_iso, id_usuario_creador FROM recordatorios_evento ORDER BY id"),
       conn.query("SELECT id, nombre, activo FROM menu_bebidas ORDER BY nombre ASC"),
-      conn.query("SELECT clave, valor_json FROM app_state_kv WHERE clave IN ('quickTemplates','disabledCompanies','disabledServices','disabledManagers','disabledSalones','globalMonthlyGoals','checklistTemplateItems','checklistTemplateSections','menuMontajeSections','menuMontajeBebidas','eventChecklists')"),
+      conn.query("SELECT clave, valor_json FROM app_state_kv WHERE clave IN ('quickTemplates','quoteServiceTemplates','disabledCompanies','disabledServices','disabledManagers','disabledSalones','globalMonthlyGoals','checklistTemplates','checklistTemplateItems','checklistTemplateSections','menuMontajeSections','menuMontajeBebidas','eventChecklists')"),
     ]);
 
     const hasData = salones.length || usuarios.length || empresas.length || servicios.length || eventos.length;
@@ -1057,11 +1126,13 @@ async function readStateFromTables() {
         quantityMode: normalizeQuantityMode(s.modo_cantidad),
       })),
       quickTemplates: [],
+      quoteServiceTemplates: [],
       disabledCompanies: [],
       disabledServices: [],
       disabledManagers: [],
       disabledSalones: [],
       globalMonthlyGoals: [],
+      checklistTemplates: [],
       checklistTemplateItems: [],
       checklistTemplateSections: ["General"],
       menuMontajeSections: ["General"],
@@ -1112,6 +1183,7 @@ async function readStateFromTables() {
     }
 
     const quickTemplatesRow = appStateRows.find((r) => str(r.clave) === "quickTemplates");
+    const quoteServiceTemplatesRow = appStateRows.find((r) => str(r.clave) === "quoteServiceTemplates");
     if (quickTemplatesRow?.valor_json) {
       try {
         const parsed = JSON.parse(quickTemplatesRow.valor_json);
@@ -1120,11 +1192,20 @@ async function readStateFromTables() {
         state.quickTemplates = [];
       }
     }
+    if (quoteServiceTemplatesRow?.valor_json) {
+      try {
+        const parsed = JSON.parse(quoteServiceTemplatesRow.valor_json);
+        state.quoteServiceTemplates = Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        state.quoteServiceTemplates = [];
+      }
+    }
     const disabledCompaniesRow = appStateRows.find((r) => str(r.clave) === "disabledCompanies");
     const disabledServicesRow = appStateRows.find((r) => str(r.clave) === "disabledServices");
     const disabledManagersRow = appStateRows.find((r) => str(r.clave) === "disabledManagers");
     const disabledSalonesRow = appStateRows.find((r) => str(r.clave) === "disabledSalones");
     const globalMonthlyGoalsRow = appStateRows.find((r) => str(r.clave) === "globalMonthlyGoals");
+    const checklistTemplatesRow = appStateRows.find((r) => str(r.clave) === "checklistTemplates");
     const checklistTemplateItemsRow = appStateRows.find((r) => str(r.clave) === "checklistTemplateItems");
     const checklistTemplateSectionsRow = appStateRows.find((r) => str(r.clave) === "checklistTemplateSections");
     const menuMontajeSectionsRow = appStateRows.find((r) => str(r.clave) === "menuMontajeSections");
@@ -1148,12 +1229,22 @@ async function readStateFromTables() {
       const parsed = JSON.parse(str(globalMonthlyGoalsRow?.valor_json) || "[]");
       state.globalMonthlyGoals = Array.isArray(parsed)
         ? parsed
-          .map((g) => ({ month: str(g?.month), amount: Math.max(0, Number(g?.amount || 0)) }))
+          .map((g) => ({
+            month: str(g?.month),
+            amount: Math.max(0, Number(g?.amount || 0)),
+            active: g?.active === false ? false : true,
+          }))
           .filter((g) => /^\d{4}-\d{2}$/.test(g.month))
           .sort((a, b) => a.month.localeCompare(b.month))
         : [];
     } catch (_) {
       state.globalMonthlyGoals = [];
+    }
+    try {
+      const parsed = JSON.parse(str(checklistTemplatesRow?.valor_json) || "[]");
+      state.checklistTemplates = Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      state.checklistTemplates = [];
     }
     try {
       const parsed = JSON.parse(str(checklistTemplateItemsRow?.valor_json) || "[]");
@@ -1239,9 +1330,9 @@ async function readCategoriasServicioFromTables() {
   try {
     conn = await pool.getConnection();
     const rows = await conn.query(
-      "SELECT id, nombre FROM categorias_servicio ORDER BY nombre ASC"
+      "SELECT id, nombre, activo FROM categorias_servicio ORDER BY nombre ASC"
     );
-    return rows.map((r) => ({ id: Number(r.id), nombre: str(r.nombre) }));
+    return rows.map((r) => ({ id: Number(r.id), nombre: str(r.nombre), activo: Number(r.activo) !== 0 }));
   } finally {
     if (conn) conn.release();
   }
@@ -1254,19 +1345,285 @@ async function readSubcategoriasServicioFromTables(categoriaId = null) {
     let rows;
     if (categoriaId !== null && categoriaId !== undefined && Number.isFinite(Number(categoriaId))) {
       rows = await conn.query(
-        "SELECT id, id_categoria, nombre FROM subcategorias_servicio WHERE id_categoria = ? ORDER BY nombre ASC",
+        "SELECT id, id_categoria, nombre, activo FROM subcategorias_servicio WHERE id_categoria = ? ORDER BY nombre ASC",
         [Number(categoriaId)]
       );
     } else {
       rows = await conn.query(
-        "SELECT id, id_categoria, nombre FROM subcategorias_servicio ORDER BY id_categoria ASC, nombre ASC"
+        "SELECT id, id_categoria, nombre, activo FROM subcategorias_servicio ORDER BY id_categoria ASC, nombre ASC"
       );
     }
     return rows.map((r) => ({
       id: Number(r.id),
       id_categoria: Number(r.id_categoria),
       nombre: str(r.nombre),
+      activo: Number(r.activo) !== 0,
     }));
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function createCategoriaServicioInTable(nombre) {
+  const clean = str(nombre).trim();
+  if (!clean) throw new Error("Nombre de categoria es obligatorio.");
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const result = await conn.query("INSERT INTO categorias_servicio (nombre) VALUES (?)", [clean]);
+    return { id: Number(result?.insertId || 0), nombre: clean };
+  } catch (error) {
+    if (error && (Number(error?.errno) === 1062 || String(error?.code || "") === "ER_DUP_ENTRY")) {
+      throw new Error("Esa categoria ya existe.");
+    }
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function updateCategoriaServicioInTable(id, nombre) {
+  const clean = str(nombre).trim();
+  const categoryId = Number(id);
+  if (!Number.isFinite(categoryId) || categoryId <= 0) throw new Error("Categoria invalida.");
+  if (!clean) throw new Error("Nombre de categoria es obligatorio.");
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const existing = await conn.query("SELECT id FROM categorias_servicio WHERE id = ? LIMIT 1", [categoryId]);
+    if (!existing.length) throw new Error("Categoria no encontrada.");
+    await conn.query("UPDATE categorias_servicio SET nombre = ? WHERE id = ?", [clean, categoryId]);
+    return { id: categoryId, nombre: clean };
+  } catch (error) {
+    if (error && (Number(error?.errno) === 1062 || String(error?.code || "") === "ER_DUP_ENTRY")) {
+      throw new Error("Esa categoria ya existe.");
+    }
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function createSubcategoriaServicioInTable(idCategoria, nombre) {
+  const clean = str(nombre).trim();
+  const categoryId = Number(idCategoria);
+  if (!Number.isFinite(categoryId) || categoryId <= 0) throw new Error("Categoria invalida.");
+  if (!clean) throw new Error("Nombre de subcategoria es obligatorio.");
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const category = await conn.query("SELECT id FROM categorias_servicio WHERE id = ? LIMIT 1", [categoryId]);
+    if (!category.length) throw new Error("Categoria no encontrada.");
+    const result = await conn.query(
+      "INSERT INTO subcategorias_servicio (id_categoria, nombre) VALUES (?, ?)",
+      [categoryId, clean]
+    );
+    return { id: Number(result?.insertId || 0), id_categoria: categoryId, nombre: clean };
+  } catch (error) {
+    if (error && (Number(error?.errno) === 1062 || String(error?.code || "") === "ER_DUP_ENTRY")) {
+      throw new Error("Esa subcategoria ya existe en la categoria seleccionada.");
+    }
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function updateSubcategoriaServicioInTable(id, idCategoria, nombre) {
+  const clean = str(nombre).trim();
+  const subcategoryId = Number(id);
+  const categoryId = Number(idCategoria);
+  if (!Number.isFinite(subcategoryId) || subcategoryId <= 0) throw new Error("Subcategoria invalida.");
+  if (!Number.isFinite(categoryId) || categoryId <= 0) throw new Error("Categoria invalida.");
+  if (!clean) throw new Error("Nombre de subcategoria es obligatorio.");
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const category = await conn.query("SELECT id FROM categorias_servicio WHERE id = ? LIMIT 1", [categoryId]);
+    if (!category.length) throw new Error("Categoria no encontrada.");
+    const existing = await conn.query("SELECT id FROM subcategorias_servicio WHERE id = ? LIMIT 1", [subcategoryId]);
+    if (!existing.length) throw new Error("Subcategoria no encontrada.");
+    await conn.query(
+      "UPDATE subcategorias_servicio SET id_categoria = ?, nombre = ? WHERE id = ?",
+      [categoryId, clean, subcategoryId]
+    );
+    return { id: subcategoryId, id_categoria: categoryId, nombre: clean };
+  } catch (error) {
+    if (error && (Number(error?.errno) === 1062 || String(error?.code || "") === "ER_DUP_ENTRY")) {
+      throw new Error("Esa subcategoria ya existe en la categoria seleccionada.");
+    }
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function setCategoriaServicioActivoInTable(id, activo) {
+  const categoryId = Number(id);
+  const activeValue = Number(activo) ? 1 : 0;
+  if (!Number.isFinite(categoryId) || categoryId <= 0) throw new Error("Categoria invalida.");
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const existing = await conn.query("SELECT id FROM categorias_servicio WHERE id = ? LIMIT 1", [categoryId]);
+    if (!existing.length) throw new Error("Categoria no encontrada.");
+    await conn.query("UPDATE categorias_servicio SET activo = ? WHERE id = ?", [activeValue, categoryId]);
+    return { id: categoryId, activo: activeValue === 1 };
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function setSubcategoriaServicioActivoInTable(id, activo) {
+  const subcategoryId = Number(id);
+  const activeValue = Number(activo) ? 1 : 0;
+  if (!Number.isFinite(subcategoryId) || subcategoryId <= 0) throw new Error("Subcategoria invalida.");
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const existing = await conn.query("SELECT id FROM subcategorias_servicio WHERE id = ? LIMIT 1", [subcategoryId]);
+    if (!existing.length) throw new Error("Subcategoria no encontrada.");
+    await conn.query("UPDATE subcategorias_servicio SET activo = ? WHERE id = ?", [activeValue, subcategoryId]);
+    return { id: subcategoryId, activo: activeValue === 1 };
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+async function ensureCategoriaByNameInConn(conn, nombre) {
+  const clean = str(nombre).trim();
+  if (!clean) return null;
+  const res = await conn.query(
+    "INSERT INTO categorias_servicio (nombre, activo) VALUES (?, 1) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), activo = 1",
+    [clean]
+  );
+  const insertId = Number(res?.insertId || 0);
+  if (insertId > 0) return insertId;
+  const row = await conn.query("SELECT id FROM categorias_servicio WHERE nombre = ? LIMIT 1", [clean]);
+  const id = Number(row?.[0]?.id || 0);
+  return id > 0 ? id : null;
+}
+
+async function ensureSubcategoriaByNameInConn(conn, idCategoria, nombre) {
+  const categoryId = Number(idCategoria);
+  const clean = str(nombre).trim();
+  if (!Number.isFinite(categoryId) || categoryId <= 0 || !clean) return null;
+  const res = await conn.query(
+    "INSERT INTO subcategorias_servicio (id_categoria, nombre, activo) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), activo = 1",
+    [categoryId, clean]
+  );
+  const insertId = Number(res?.insertId || 0);
+  if (insertId > 0) return insertId;
+  const row = await conn.query(
+    "SELECT id FROM subcategorias_servicio WHERE id_categoria = ? AND nombre = ? LIMIT 1",
+    [categoryId, clean]
+  );
+  const id = Number(row?.[0]?.id || 0);
+  return id > 0 ? id : null;
+}
+
+function inferCatalogForServiceName(rawName) {
+  const name = str(rawName).toLowerCase();
+  const isThirdPartyStay =
+    name.includes("otro hotel") ||
+    name.includes("tercero") ||
+    name.includes("externo");
+  const isRoom = name.includes("habitacion") || name.includes("hospedaje");
+  if (isRoom && isThirdPartyStay) {
+    return { categoria: "Hospedaje Terceros", subcategoria: "Habitaciones Terceros" };
+  }
+  if (isRoom) {
+    return { categoria: "Habitaciones", subcategoria: "Habitaciones JDL" };
+  }
+
+  const isFood =
+    name.includes("desayuno") ||
+    name.includes("almuerzo") ||
+    name.includes("cena") ||
+    name.includes("coffee") ||
+    name.includes("boquita") ||
+    name.includes("refaccion") ||
+    name.includes("bebida") ||
+    name.includes("refresco") ||
+    name.includes("buffet") ||
+    name.includes("menu") ||
+    name.includes("plato") ||
+    name.includes("postre");
+  if (isFood) {
+    if (name.includes("desayuno")) return { categoria: "Alimentos y Bebidas", subcategoria: "Desayunos" };
+    if (name.includes("almuerzo")) return { categoria: "Alimentos y Bebidas", subcategoria: "Almuerzos" };
+    if (name.includes("cena")) return { categoria: "Alimentos y Bebidas", subcategoria: "Cenas" };
+    if (name.includes("coffee")) return { categoria: "Alimentos y Bebidas", subcategoria: "Coffee Break" };
+    if (name.includes("boquita")) return { categoria: "Alimentos y Bebidas", subcategoria: "Boquitas" };
+    if (name.includes("bebida") || name.includes("refresco")) return { categoria: "Alimentos y Bebidas", subcategoria: "Bebidas" };
+    if (name.includes("refaccion")) return { categoria: "Alimentos y Bebidas", subcategoria: "Refacciones" };
+    return { categoria: "Alimentos y Bebidas", subcategoria: "Otros" };
+  }
+
+  if (name.includes("montaje") || name.includes("decor")) {
+    return { categoria: "Miscelaneos", subcategoria: "Montaje y Decoracion" };
+  }
+  if (name.includes("luz") || name.includes("sonido") || name.includes("audio") || name.includes("video")) {
+    return { categoria: "Miscelaneos", subcategoria: "Equipo y Audiovisual" };
+  }
+  return { categoria: "Miscelaneos", subcategoria: "Otros" };
+}
+
+async function recoverServiceCatalogFromServices(options = {}) {
+  const forceRelink = options?.forceRelink === true;
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    const defaults = [
+      { categoria: "Alimentos y Bebidas", subcategorias: ["Desayunos", "Almuerzos", "Cenas", "Coffee Break", "Boquitas", "Bebidas", "Refacciones", "Otros"] },
+      { categoria: "Habitaciones", subcategorias: ["Habitaciones JDL", "Paquetes Habitacion", "Otros"] },
+      { categoria: "Hospedaje Terceros", subcategorias: ["Habitaciones Terceros", "Otros"] },
+      { categoria: "Miscelaneos", subcategorias: ["Montaje y Decoracion", "Equipo y Audiovisual", "Musica y Entretenimiento", "Transporte", "Otros"] },
+    ];
+
+    const categoryIdByName = new Map();
+    const subcategoryIdByKey = new Map();
+    for (const row of defaults) {
+      const categoryId = await ensureCategoriaByNameInConn(conn, row.categoria);
+      if (!categoryId) continue;
+      categoryIdByName.set(row.categoria, categoryId);
+      for (const subName of row.subcategorias) {
+        const subId = await ensureSubcategoriaByNameInConn(conn, categoryId, subName);
+        if (subId) subcategoryIdByKey.set(`${categoryId}|${subName}`, subId);
+      }
+    }
+
+    const services = await conn.query(
+      "SELECT id, nombre, descripcion, id_categoria, id_subcategoria FROM servicios ORDER BY id ASC"
+    );
+    let updated = 0;
+    for (const s of services) {
+      const currentCategoryId = Number(s?.id_categoria || 0);
+      const currentSubcategoryId = Number(s?.id_subcategoria || 0);
+      const needsRelink =
+        forceRelink ||
+        !(Number.isFinite(currentCategoryId) && currentCategoryId > 0) ||
+        !(Number.isFinite(currentSubcategoryId) && currentSubcategoryId > 0);
+      if (!needsRelink) continue;
+
+      const guess = inferCatalogForServiceName(`${str(s?.nombre)} ${str(s?.descripcion)}`);
+      const categoryId = categoryIdByName.get(guess.categoria);
+      const subcategoryId = subcategoryIdByKey.get(`${categoryId}|${guess.subcategoria}`);
+      if (!categoryId || !subcategoryId) continue;
+      await conn.query(
+        "UPDATE servicios SET id_categoria = ?, id_subcategoria = ? WHERE id = ?",
+        [categoryId, subcategoryId, str(s?.id)]
+      );
+      updated++;
+    }
+
+    await conn.commit();
+    return { updated, categoriesCreated: categoryIdByName.size };
+  } catch (error) {
+    if (conn) await conn.rollback();
+    throw error;
   } finally {
     if (conn) conn.release();
   }
@@ -1683,11 +2040,13 @@ async function writeStateToTables(state) {
     const companies = Array.isArray(state.companies) ? state.companies : [];
     const services = Array.isArray(state.services) ? state.services : [];
     const quickTemplates = Array.isArray(state.quickTemplates) ? state.quickTemplates : [];
+    const quoteServiceTemplates = Array.isArray(state.quoteServiceTemplates) ? state.quoteServiceTemplates : [];
     const disabledCompanies = Array.isArray(state.disabledCompanies) ? state.disabledCompanies : [];
     const disabledServices = Array.isArray(state.disabledServices) ? state.disabledServices : [];
     const disabledManagers = Array.isArray(state.disabledManagers) ? state.disabledManagers : [];
     const disabledSalones = Array.isArray(state.disabledSalones) ? state.disabledSalones : [];
     const globalMonthlyGoals = Array.isArray(state.globalMonthlyGoals) ? state.globalMonthlyGoals : [];
+    const checklistTemplates = Array.isArray(state.checklistTemplates) ? state.checklistTemplates : [];
     const checklistTemplateItems = Array.isArray(state.checklistTemplateItems) ? state.checklistTemplateItems : [];
     const checklistTemplateSections = Array.isArray(state.checklistTemplateSections) ? state.checklistTemplateSections : [];
     const menuMontajeSections = Array.isArray(state.menuMontajeSections) ? state.menuMontajeSections : [];
@@ -1721,8 +2080,6 @@ async function writeStateToTables(state) {
     await conn.query("DELETE FROM encargados_empresa");
     await conn.query("DELETE FROM empresas");
     await conn.query("DELETE FROM servicios");
-    await conn.query("DELETE FROM subcategorias_servicio");
-    await conn.query("DELETE FROM categorias_servicio");
     await conn.query("DELETE FROM usuarios");
     await conn.query("DELETE FROM salones");
 
@@ -1820,32 +2177,48 @@ async function writeStateToTables(state) {
       }
     }
 
-    const categoryMap = new Map();
-    for (const s of services) {
-      const categoryName = str(s?.category || s?.categoria).trim();
-      if (!categoryName) continue;
-      if (categoryMap.has(categoryName.toLowerCase())) continue;
-      const res = await conn.query(
-        "INSERT INTO categorias_servicio (nombre) VALUES (?)",
-        [categoryName]
-      );
-      categoryMap.set(categoryName.toLowerCase(), Number(res.insertId));
+    const existingCategories = await conn.query("SELECT id, nombre FROM categorias_servicio");
+    const categoryMap = new Map(existingCategories.map((r) => [String(r.nombre || "").trim().toLowerCase(), Number(r.id)]));
+    const categoryById = new Set(existingCategories.map((r) => Number(r.id)));
+
+    const existingSubcategories = await conn.query("SELECT id, id_categoria, nombre FROM subcategorias_servicio");
+    const subcategoryMap = new Map(
+      existingSubcategories.map((r) => [`${Number(r.id_categoria)}|${String(r.nombre || "").trim().toLowerCase()}`, Number(r.id)])
+    );
+    const subcategoryById = new Map(existingSubcategories.map((r) => [Number(r.id), Number(r.id_categoria)]));
+
+    async function findCategoryIdByName(categoryName) {
+      const clean = str(categoryName).trim();
+      if (!clean) return null;
+      const key = clean.toLowerCase();
+      if (categoryMap.has(key)) return Number(categoryMap.get(key));
+      const fallback = await conn.query("SELECT id FROM categorias_servicio WHERE nombre = ? LIMIT 1", [clean]);
+      const fallbackId = Number(fallback?.[0]?.id || 0);
+      if (fallbackId > 0) {
+        categoryMap.set(key, fallbackId);
+        categoryById.add(fallbackId);
+        return fallbackId;
+      }
+      return null;
     }
 
-    const subcategoryMap = new Map();
-    for (const s of services) {
-      const categoryName = str(s?.category || s?.categoria).trim();
-      const subcategoryName = str(s?.subcategory || s?.subcategoria).trim();
-      if (!categoryName || !subcategoryName) continue;
-      const categoryId = categoryMap.get(categoryName.toLowerCase());
-      if (!categoryId) continue;
-      const key = `${categoryId}|${subcategoryName.toLowerCase()}`;
-      if (subcategoryMap.has(key)) continue;
-      const res = await conn.query(
-        "INSERT INTO subcategorias_servicio (id_categoria, nombre) VALUES (?, ?)",
-        [categoryId, subcategoryName]
+    async function findSubcategoryIdByName(categoryId, subcategoryName) {
+      const catId = Number(categoryId);
+      const clean = str(subcategoryName).trim();
+      if (!Number.isFinite(catId) || catId <= 0 || !clean) return null;
+      const key = `${catId}|${clean.toLowerCase()}`;
+      if (subcategoryMap.has(key)) return Number(subcategoryMap.get(key));
+      const fallback = await conn.query(
+        "SELECT id FROM subcategorias_servicio WHERE id_categoria = ? AND nombre = ? LIMIT 1",
+        [catId, clean]
       );
-      subcategoryMap.set(key, Number(res.insertId));
+      const fallbackId = Number(fallback?.[0]?.id || 0);
+      if (fallbackId > 0) {
+        subcategoryMap.set(key, fallbackId);
+        subcategoryById.set(fallbackId, catId);
+        return fallbackId;
+      }
+      return null;
     }
 
     for (const s of services) {
@@ -1854,10 +2227,21 @@ async function writeStateToTables(state) {
       if (!id || !nombre) continue;
       const categoryName = str(s?.category || s?.categoria).trim();
       const subcategoryName = str(s?.subcategory || s?.subcategoria).trim();
-      const categoryId = categoryName ? (categoryMap.get(categoryName.toLowerCase()) || null) : null;
-      const subcategoryId = (categoryId && subcategoryName)
-        ? (subcategoryMap.get(`${categoryId}|${subcategoryName.toLowerCase()}`) || null)
-        : null;
+      let categoryId = Number(s?.categoryId || s?.idCategoria || NaN);
+      if (!Number.isFinite(categoryId) || categoryId <= 0 || !categoryById.has(categoryId)) {
+        categoryId = categoryName ? await findCategoryIdByName(categoryName) : null;
+      }
+
+      let subcategoryId = Number(s?.subcategoryId || s?.idSubcategoria || NaN);
+      if (!Number.isFinite(subcategoryId) || subcategoryId <= 0 || !subcategoryById.has(subcategoryId)) {
+        subcategoryId = (categoryId && subcategoryName)
+          ? await findSubcategoryIdByName(categoryId, subcategoryName)
+          : null;
+      } else if (categoryId && Number(subcategoryById.get(subcategoryId)) !== Number(categoryId)) {
+        subcategoryId = (categoryId && subcategoryName)
+          ? await findSubcategoryIdByName(categoryId, subcategoryName)
+          : null;
+      }
       await conn.query(
         "INSERT INTO servicios (id, nombre, precio, descripcion, id_categoria, id_subcategoria, modo_cantidad) VALUES (?, ?, ?, ?, ?, ?, ?)",
         [
@@ -1959,7 +2343,7 @@ async function writeStateToTables(state) {
             Number(quoteTotals.discountAmount || 0),
             Number(quoteTotals.total || 0),
             str(q.quotedAt).trim() || null,
-            JSON.stringify(q),
+            safeJsonStringify(q),
           ]
         );
 
@@ -2025,7 +2409,7 @@ async function writeStateToTables(state) {
               Number(vTotals.discountAmount || 0),
               Number(vTotals.total || 0),
               str(v.snapshot?.quotedAt).trim() || null,
-              JSON.stringify(v.snapshot),
+              safeJsonStringify(v.snapshot),
             ]
           );
 
@@ -2115,6 +2499,14 @@ async function writeStateToTables(state) {
     await conn.query(
       `
         INSERT INTO app_state_kv (clave, valor_json)
+        VALUES ('quoteServiceTemplates', ?)
+        ON DUPLICATE KEY UPDATE valor_json = VALUES(valor_json)
+      `,
+      [JSON.stringify(quoteServiceTemplates)]
+    );
+    await conn.query(
+      `
+        INSERT INTO app_state_kv (clave, valor_json)
         VALUES ('disabledCompanies', ?)
         ON DUPLICATE KEY UPDATE valor_json = VALUES(valor_json)
       `,
@@ -2153,10 +2545,22 @@ async function writeStateToTables(state) {
       [
         JSON.stringify(
           globalMonthlyGoals
-            .map((g) => ({ month: str(g?.month), amount: Math.max(0, Number(g?.amount || 0)) }))
+            .map((g) => ({
+              month: str(g?.month),
+              amount: Math.max(0, Number(g?.amount || 0)),
+              active: g?.active === false ? false : true,
+            }))
             .filter((g) => /^\d{4}-\d{2}$/.test(g.month))
         ),
       ]
+    );
+    await conn.query(
+      `
+        INSERT INTO app_state_kv (clave, valor_json)
+        VALUES ('checklistTemplates', ?)
+        ON DUPLICATE KEY UPDATE valor_json = VALUES(valor_json)
+      `,
+      [JSON.stringify(checklistTemplates)]
     );
     await conn.query(
       `
@@ -2294,6 +2698,33 @@ app.get("/api/categorias-servicio", async (_req, res) => {
   }
 });
 
+app.post("/api/categorias-servicio", async (req, res) => {
+  try {
+    const categoria = await createCategoriaServicioInTable(req.body?.nombre);
+    return res.json({ ok: true, categoria });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudo crear la categoria.", detail: error.message });
+  }
+});
+
+app.put("/api/categorias-servicio/:id", async (req, res) => {
+  try {
+    const categoria = await updateCategoriaServicioInTable(req.params?.id, req.body?.nombre);
+    return res.json({ ok: true, categoria });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudo actualizar la categoria.", detail: error.message });
+  }
+});
+
+app.patch("/api/categorias-servicio/:id/activo", async (req, res) => {
+  try {
+    const categoria = await setCategoriaServicioActivoInTable(req.params?.id, req.body?.activo);
+    return res.json({ ok: true, categoria });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudo actualizar el estado de la categoria.", detail: error.message });
+  }
+});
+
 app.get("/api/subcategorias-servicio", async (req, res) => {
   try {
     const categoriaIdRaw = req.query?.categoria_id;
@@ -2304,6 +2735,47 @@ app.get("/api/subcategorias-servicio", async (req, res) => {
     return res.json({ subcategorias });
   } catch (error) {
     return res.status(500).json({ message: "No se pudieron leer las subcategorias.", detail: error.message });
+  }
+});
+
+app.post("/api/subcategorias-servicio", async (req, res) => {
+  try {
+    const subcategoria = await createSubcategoriaServicioInTable(req.body?.id_categoria, req.body?.nombre);
+    return res.json({ ok: true, subcategoria });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudo crear la subcategoria.", detail: error.message });
+  }
+});
+
+app.put("/api/subcategorias-servicio/:id", async (req, res) => {
+  try {
+    const subcategoria = await updateSubcategoriaServicioInTable(
+      req.params?.id,
+      req.body?.id_categoria,
+      req.body?.nombre
+    );
+    return res.json({ ok: true, subcategoria });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudo actualizar la subcategoria.", detail: error.message });
+  }
+});
+
+app.patch("/api/subcategorias-servicio/:id/activo", async (req, res) => {
+  try {
+    const subcategoria = await setSubcategoriaServicioActivoInTable(req.params?.id, req.body?.activo);
+    return res.json({ ok: true, subcategoria });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudo actualizar el estado de la subcategoria.", detail: error.message });
+  }
+});
+
+app.post("/api/service-catalog/recover", async (req, res) => {
+  try {
+    const forceRelink = req.body?.forceRelink === true;
+    const result = await recoverServiceCatalogFromServices({ forceRelink });
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    return res.status(400).json({ message: "No se pudo recuperar el catalogo de servicios.", detail: error.message });
   }
 });
 
@@ -2429,7 +2901,7 @@ async function start() {
     await ensureRequiredTables();
     await ensureDefaultUserCarlos();
     app.listen(APP_PORT, () => {
-      console.log(`CRM listo en http://localhost:${APP_PORT}`);
+      console.log(`CRM listo en http://192.168.10.2:${APP_PORT}`);
       console.log(`MariaDB -> ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
       console.log("Persistencia activa en tablas relacionales.");
     });
@@ -2440,5 +2912,6 @@ async function start() {
 }
 
 start();
+
 
 

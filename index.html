@@ -38,7 +38,277 @@
     </div>
   </div>
 
-  <div class="app">
+  <div class="moduleScreen" id="moduleHubScreen" hidden>
+    <div class="moduleHub moduleHubShowcase">
+      <div class="moduleHero">
+        <div class="moduleHubBrand">
+          <div class="moduleHubBadge">
+            <img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="moduleHubLogoImg" />
+          </div>
+          <div class="moduleHubTitle">CRM Reservas</div>
+          <div class="moduleHubSub">Accede rapido a cada modulo</div>
+        </div>
+      </div>
+
+      <div class="moduleDock">
+        <div class="moduleGrid">
+          <button class="moduleCard" id="btnModuleCalendar" type="button">
+            <span class="moduleIconTile">
+              <svg class="moduleCardIconSvg" viewBox="0 0 64 64" aria-hidden="true">
+                <rect x="10" y="14" width="44" height="38" rx="10"></rect>
+                <path d="M20 10v10M44 10v10M10 24h44"></path>
+                <path d="M22 34h8M34 34h8M22 42h8M34 42h8"></path>
+              </svg>
+            </span>
+            <span class="moduleCardTitle">Calendario</span>
+            <span class="moduleCardText">Reservas y salones</span>
+          </button>
+
+          <button class="moduleCard" id="btnModuleReports" type="button">
+            <span class="moduleIconTile">
+              <svg class="moduleCardIconSvg" viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M14 50h36"></path>
+                <path d="M20 44V30"></path>
+                <path d="M32 44V18"></path>
+                <path d="M44 44V24"></path>
+                <circle cx="20" cy="26" r="3"></circle>
+                <circle cx="32" cy="14" r="3"></circle>
+                <circle cx="44" cy="20" r="3"></circle>
+              </svg>
+            </span>
+            <span class="moduleCardTitle">Reportes</span>
+            <span class="moduleCardText">Panel de reportes</span>
+          </button>
+
+          <button class="moduleCard" id="btnModuleSettings" type="button">
+            <span class="moduleIconTile">
+              <svg class="moduleCardIconSvg" viewBox="0 0 64 64" aria-hidden="true">
+                <circle cx="32" cy="32" r="8"></circle>
+                <path d="M32 14v6M32 44v6M14 32h6M44 32h6M19.3 19.3l4.2 4.2M40.5 40.5l4.2 4.2M44.7 19.3l-4.2 4.2M23.5 40.5l-4.2 4.2"></path>
+              </svg>
+            </span>
+            <span class="moduleCardTitle">Configuracion</span>
+            <span class="moduleCardText">Ajustes y catalogos</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="moduleScreen" id="reportsHubScreen" hidden>
+    <div class="moduleHub moduleHubNarrow">
+      <div class="moduleHubHeaderRow">
+        <div>
+          <div class="moduleHubTitle">Reportes</div>
+          <div class="moduleHubSub">Elige el reporte que deseas consultar</div>
+        </div>
+        <button class="btn" id="btnBackFromReports" type="button">Volver</button>
+      </div>
+
+      <div class="moduleActionGrid">
+        <button class="moduleActionBtn" id="btnReportSales" type="button">
+          <span class="actionCardInner">
+            <span class="actionCardIcon">
+              <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M14 50h36"></path>
+                <path d="M20 44V30"></path>
+                <path d="M32 44V18"></path>
+                <path d="M44 44V24"></path>
+              </svg>
+            </span>
+            <span class="actionCardText">
+              <span class="actionCardLabel">Reporte Ventas</span>
+              <span class="actionCardMeta">Resumen comercial y montos</span>
+            </span>
+          </span>
+        </button>
+        <button class="moduleActionBtn" id="btnReportOccupancy" type="button">
+          <span class="actionCardInner">
+            <span class="actionCardIcon">
+              <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                <rect x="14" y="16" width="36" height="30" rx="8"></rect>
+                <path d="M24 24h16M24 32h8M38 32h2"></path>
+              </svg>
+            </span>
+            <span class="actionCardText">
+              <span class="actionCardLabel">Reporte Ocupacion</span>
+              <span class="actionCardMeta">Uso de salones y disponibilidad</span>
+            </span>
+          </span>
+        </button>
+        <button class="moduleActionBtn" id="btnReportDashboard" type="button">
+          <span class="actionCardInner">
+            <span class="actionCardIcon">
+              <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M16 40h10V24H16zM30 40h10V18H30zM44 40h4V30h-4z"></path>
+              </svg>
+            </span>
+            <span class="actionCardText">
+              <span class="actionCardLabel">Reporte Dashboard</span>
+              <span class="actionCardMeta">Indicadores y vista ejecutiva</span>
+            </span>
+          </span>
+        </button>
+        <button class="moduleActionBtn" id="btnReportInstitution" type="button">
+          <span class="actionCardInner">
+            <span class="actionCardIcon">
+              <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M14 48h36"></path>
+                <path d="M18 48V24l14-8 14 8v24"></path>
+                <path d="M26 30h2M36 30h2M26 38h2M36 38h2"></path>
+              </svg>
+            </span>
+            <span class="actionCardText">
+              <span class="actionCardLabel">Reporte por institucion</span>
+              <span class="actionCardMeta">Dashboard y detalle por cliente</span>
+            </span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="moduleScreen" id="settingsScreen" hidden>
+    <div class="moduleHub moduleHubWide">
+      <div class="moduleHubHeaderRow">
+        <div>
+          <div class="moduleHubTitle">Configuraciones</div>
+          <div class="moduleHubSub">Opciones generales y accesos rapidos</div>
+        </div>
+        <button class="btn" id="btnBackFromSettings" type="button">Volver</button>
+      </div>
+
+      <div class="settingsPanelScreen" id="settingsPanel">
+        <div class="settingsSectionTitle">Vista del calendario</div>
+        <div class="settingsVisualGrid">
+          <label class="settingsVisualCard">
+            <input id="settingShowLegend" type="checkbox" checked />
+            <span class="settingsVisualIcon">L</span>
+            <span class="settingsVisualTitle">Mostrar leyenda</span>
+            <span class="settingsVisualText">Activa la guia de estados y colores</span>
+          </label>
+          <label class="settingsVisualCard">
+            <input id="settingCompactEvents" type="checkbox" />
+            <span class="settingsVisualIcon">C</span>
+            <span class="settingsVisualTitle">Vista compacta</span>
+            <span class="settingsVisualText">Reduce el alto visual de los eventos</span>
+          </label>
+          <label class="settingsVisualCard">
+            <input id="settingShowWeekends" type="checkbox" checked />
+            <span class="settingsVisualIcon">F</span>
+            <span class="settingsVisualTitle">Fines de semana</span>
+            <span class="settingsVisualText">Muestra sabado y domingo en el calendario</span>
+          </label>
+        </div>
+
+        <div class="settingsDivider"></div>
+
+        <div class="settingsSectionTitle">Accesos rapidos</div>
+        <div class="moduleActionGrid settingsActionGridEnhanced" id="quickAddGroup">
+          <button class="moduleActionBtn settingsHubBtn" id="btnQuickAddUser" type="button">
+            <span class="actionCardInner">
+              <span class="actionCardIcon">
+                <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                  <circle cx="32" cy="24" r="8"></circle>
+                  <path d="M18 46c3-7 9-10 14-10s11 3 14 10"></path>
+                </svg>
+              </span>
+              <span class="actionCardText">
+                <span class="actionCardLabel">Agregar usuario</span>
+                <span class="actionCardMeta">Cuentas y accesos</span>
+              </span>
+            </span>
+          </button>
+          <button class="moduleActionBtn settingsHubBtn" id="btnQuickAddInstitution" type="button">
+            <span class="actionCardInner">
+              <span class="actionCardIcon">
+                <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                  <path d="M18 48V24l14-8 14 8v24"></path>
+                  <path d="M14 48h36M26 30h2M36 30h2M26 38h2M36 38h2"></path>
+                </svg>
+              </span>
+              <span class="actionCardText">
+                <span class="actionCardLabel">Gestionar empresas</span>
+                <span class="actionCardMeta">Catalogo de clientes</span>
+              </span>
+            </span>
+          </button>
+          <button class="moduleActionBtn settingsHubBtn" id="btnQuickAddManager" type="button">
+            <span class="actionCardInner">
+              <span class="actionCardIcon">
+                <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                  <circle cx="32" cy="22" r="7"></circle>
+                  <path d="M24 34h16M22 46c2-6 7-9 10-9s8 3 10 9"></path>
+                </svg>
+              </span>
+              <span class="actionCardText">
+                <span class="actionCardLabel">Agregar encargado</span>
+                <span class="actionCardMeta">Responsables por empresa</span>
+              </span>
+            </span>
+          </button>
+          <button class="moduleActionBtn settingsHubBtn" id="btnQuickAddService" type="button">
+            <span class="actionCardInner">
+              <span class="actionCardIcon">
+                <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                  <path d="M22 20h20M22 32h20M22 44h12"></path>
+                  <circle cx="46" cy="44" r="4"></circle>
+                </svg>
+              </span>
+              <span class="actionCardText">
+                <span class="actionCardLabel">Agregar servicio</span>
+                <span class="actionCardMeta">Servicios y categorias</span>
+              </span>
+            </span>
+          </button>
+          <button class="moduleActionBtn settingsHubBtn" id="btnQuickAddSalon" type="button">
+            <span class="actionCardInner">
+              <span class="actionCardIcon">
+                <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                  <rect x="16" y="20" width="32" height="24" rx="6"></rect>
+                  <path d="M24 28h16M24 36h10"></path>
+                </svg>
+              </span>
+              <span class="actionCardText">
+                <span class="actionCardLabel">Agregar salones</span>
+                <span class="actionCardMeta">Espacios y capacidad</span>
+              </span>
+            </span>
+          </button>
+          <button class="moduleActionBtn settingsHubBtn" id="btnQuickAddGlobalGoal" type="button">
+            <span class="actionCardInner">
+              <span class="actionCardIcon">
+                <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                  <path d="M18 46l10-12 8 6 12-18"></path>
+                  <path d="M18 50h28"></path>
+                </svg>
+              </span>
+              <span class="actionCardText">
+                <span class="actionCardLabel">Metas globales</span>
+                <span class="actionCardMeta">Objetivos mensuales</span>
+              </span>
+            </span>
+          </button>
+          <button class="moduleActionBtn settingsHubBtn" id="btnQuickAddChecklist" type="button">
+            <span class="actionCardInner">
+              <span class="actionCardIcon">
+                <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                  <path d="M22 20h20M22 32h20M22 44h12"></path>
+                  <path d="M16 32l3 3 5-6M16 44l3 3 5-6"></path>
+                </svg>
+              </span>
+              <span class="actionCardText">
+                <span class="actionCardLabel">Agregar Check List</span>
+                <span class="actionCardMeta">Plantillas y tareas</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app" id="appShell">
     <header class="topbar">
       <div class="brand">
         <div class="logo"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="topbarLogoImg" /></div>
@@ -95,40 +365,7 @@
           </div>
         </div>
 
-        <div class="settingsMenu" id="settingsMenu">
-          <button class="btn" id="btnSettings" type="button" aria-haspopup="true" aria-expanded="false">Configuracion</button>
-          <div class="settingsPanel" id="settingsPanel" hidden>
-            <label class="settingsOption">
-              <input id="settingShowLegend" type="checkbox" checked />
-              <span>Mostrar leyenda</span>
-            </label>
-            <label class="settingsOption">
-              <input id="settingCompactEvents" type="checkbox" />
-              <span>Vista compacta de eventos</span>
-            </label>
-            <label class="settingsOption">
-              <input id="settingShowWeekends" type="checkbox" checked />
-              <span>Mostrar fines de semana</span>
-            </label>
-            <div class="settingsDivider"></div>
-            <button class="settingsGroupToggle" id="btnToggleQuickAdd" type="button" aria-expanded="false">Agregar</button>
-            <div class="settingsGroupBody" id="quickAddGroup" hidden>
-              <button class="settingsActionBtn" id="btnQuickAddUser" type="button">Agregar usuario</button>
-              <button class="settingsActionBtn" id="btnQuickAddInstitution" type="button">Gestionar empresas</button>
-              <button class="settingsActionBtn" id="btnQuickAddManager" type="button">Agregar encargado</button>
-              <button class="settingsActionBtn" id="btnQuickAddService" type="button">Agregar servicio</button>
-              <button class="settingsActionBtn" id="btnQuickAddSalon" type="button">Agregar salones</button>
-              <button class="settingsActionBtn" id="btnQuickAddGlobalGoal" type="button">Metas globales</button>
-              <button class="settingsActionBtn" id="btnQuickAddChecklist" type="button">Agregar Check List</button>
-            </div>
-            <button class="settingsGroupToggle" id="btnToggleReports" type="button" aria-expanded="false">Reportes</button>
-            <div class="settingsGroupBody" id="reportsGroup" hidden>
-              <button class="settingsActionBtn" id="btnReportSales" type="button">Reporte Ventas</button>
-              <button class="settingsActionBtn" id="btnReportOccupancy" type="button">Reporte Ocupacion</button>
-              <button class="settingsActionBtn" id="btnReportDashboard" type="button">Reporte Dashboard</button>
-            </div>
-          </div>
-        </div>
+        <button class="btn" id="btnOpenModules" type="button">Modulos</button>
 
         <button class="btn" id="btnFindEvent" type="button">Buscar evento</button>
         <button class="btnPrimary" id="btnNew">+ Reservar</button>
@@ -169,15 +406,16 @@
             </label>
 
             <div class="field">
-              <span>Bloques de salon y horario</span>
+              <span>Salones y horarios</span>
               <div class="userPick">
-                <button class="btn" type="button" id="btnAddSlot">Bloque</button>
+                <button class="btn" type="button" id="btnAddSlot">Salon</button>
               </div>
               <div class="quoteTableWrap">
                 <table class="quoteTable">
                   <thead>
                     <tr>
                       <th>Salon</th>
+                      <th>PAX</th>
                       <th>Inicio</th>
                       <th>Fin</th>
                       <th></th>
@@ -214,8 +452,8 @@
             </label>
 
             <label class="field">
-              <span>Cantidad Pax</span>
-              <input id="eventPax" type="number" min="1" step="1" placeholder="Ej: 120" required />
+              <span>PAX total</span>
+              <input id="eventPax" type="number" min="1" step="1" placeholder="Se calcula automaticamente" required readonly />
             </label>
 
             <label class="field">
@@ -245,8 +483,7 @@
                 <button class="btn" type="button" id="btnSetMaintenance">Poner en mantenimiento</button>
                 <button class="btnDanger" type="button" id="btnCancelEvent" hidden>Cancelar evento</button>
                 <button class="btn" type="button" id="btnQuoteEvent" hidden>Cotizar evento</button>
-                <button class="btn" type="button" id="btnMarkQuoted" hidden>Marcar como cotizado - Seguimiento</button>
-              </div>
+                              </div>
 
               <div class="rightActions">
                 <button class="btn" type="button" id="btnDelete" hidden>Eliminar</button>
@@ -443,7 +680,14 @@
               <span>Avatar (JPG/PNG)</span>
               <input id="userAvatar" type="file" accept="image/png,image/jpeg" />
             </label>
-            <div></div>
+            <label class="field">
+              <span>Rol</span>
+              <select id="userRole">
+                <option value="vendedor">Vendedor</option>
+                <option value="recepcionista">Recepcionista</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </label>
           </div>
 
           <div class="row2">
@@ -451,7 +695,7 @@
               <span>Meta de ventas</span>
               <label class="checkInline">
                 <input id="userSalesTargetEnabled" type="checkbox" />
-                <span>Este vendedor influye en meta mensual</span>
+                <span>Este usuario influye en meta mensual segun su rol</span>
               </label>
             </div>
             <div class="field">
@@ -465,7 +709,7 @@
           </div>
 
           <div class="field">
-            <span>Metas mensuales del vendedor</span>
+            <span>Metas mensuales del usuario</span>
             <div class="quoteTableWrap">
               <table class="quoteTable">
                 <thead>
@@ -594,9 +838,31 @@
               </div>
             </div>
           </section>
+          <section class="quoteCard quoteServiceCard">
+            <div class="quoteCardTitle">Plantillas de servicios</div>
+            <div class="quoteServiceAdder">
+              <label class="field">
+                <span>Plantilla guardada</span>
+                <select id="quoteServiceTemplateSelect"></select>
+              </label>
+              <label class="field quoteServiceSearchField">
+                <span>Nombre de plantilla</span>
+                <input id="quoteServiceTemplateName" type="text" placeholder="Ej: Boda premium 150 pax" />
+              </label>
+              <div class="quoteServiceActions">
+                <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateApply">Aplicar</button>
+                <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateSave">Guardar nueva</button>
+                <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateUpdate">Actualizar</button>
+                <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateDelete">Eliminar</button>
+              </div>
+            </div>
+          </section>
 
-          <section class="quoteCard quoteItemsCard quoteItemsPanel">
-            <div class="quoteCardTitle">Detalle de servicios</div>
+          <section class="quoteCard quoteItemsCard quoteItemsPanel" id="quoteItemsPanel">
+            <div class="quoteCardTitleRow">
+              <div class="quoteCardTitle">Detalle de servicios</div>
+              <button class="btn" type="button" id="btnToggleQuoteItemsExpand" aria-expanded="false">Expandir</button>
+            </div>
             <div class="quoteTableWrap">
               <table class="quoteTable">
                 <thead>
@@ -848,6 +1114,10 @@
               <div class="mmsPosLeft">
                 <div class="field">
                   <span>Seleccion por botones</span>
+                  <div class="mmsPrimaryTabs" id="mmsPrimaryTabs">
+                    <button class="btn mmsPrimaryTab" id="btnMmsPrimaryMenu" type="button" data-mms-primary="menu">Menu</button>
+                    <button class="btn mmsPrimaryTab" id="btnMmsPrimaryMontaje" type="button" data-mms-primary="montaje">Montaje</button>
+                  </div>
                   <div class="mmsStageTabs" id="mmsStageTabs">
                     <button class="btn mmsStageTab" id="btnMmsStagePlato" type="button" data-mms-stage="plato">Plato fuerte</button>
                     <button class="btn mmsStageTab" id="btnMmsStagePrep" type="button" data-mms-stage="preparacion">Preparacion</button>
@@ -873,12 +1143,14 @@
               <div class="mmsPosRight">
                 <div class="field">
                   <span class="mmsPosLiveTitle">Cuenta POS en vivo</span>
+                  <div class="mmsActivePlateHint" id="mmsActivePlateHint">Toca un plato para editarlo.</div>
                   <div class="mmsComanda" id="mmsComandaPreview">
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Plato fuerte</div><div class="mmsComandaItems" id="mmsComandaPlato"></div></div>
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Salsas</div><div class="mmsComandaItems" id="mmsComandaSalsas"></div></div>
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Guarniciones</div><div class="mmsComandaItems" id="mmsComandaGuarniciones"></div></div>
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Postres</div><div class="mmsComandaItems" id="mmsComandaPostres"></div></div>
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Bebidas</div><div class="mmsComandaItems" id="mmsComandaBebidas"></div></div>
+                    <div class="mmsComandaBlock"><div class="mmsComandaTitle">Comentarios</div><div class="mmsComandaItems" id="mmsComandaComentarios"></div></div>
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Montaje</div><div class="mmsComandaItems" id="mmsComandaMontaje"></div></div>
                   </div>
                   <small class="hint">Puedes quitar cualquier opcion tocando la `x` en cada etiqueta.</small>
@@ -972,7 +1244,23 @@
           <button class="iconBtn" id="btnCompanyClose" type="button" title="Cerrar">&#10005;</button>
         </div>
 
-        <form class="modalBody" id="companyForm">
+        <form class="modalBody" id="companyForm" autocomplete="off">
+          <div class="row2">
+            <label class="field">
+              <span>Empresa existente</span>
+              <select id="companyEditSelect">
+                <option value="">Crear nueva empresa</option>
+              </select>
+            </label>
+            <div class="field">
+              <span>Estado</span>
+              <label class="checkInline">
+                <input id="companyActive" type="checkbox" checked />
+                <span>Empresa activa</span>
+              </label>
+            </div>
+          </div>
+
           <div class="row2">
             <label class="field">
               <span>Nombre de la Organizacion</span>
@@ -987,7 +1275,7 @@
           <div class="row2">
             <label class="field">
               <span>Correo</span>
-              <input id="companyEmail" type="email" placeholder="correo@empresa.com" required />
+              <input id="companyEmail" type="email" placeholder="correo@empresa.com" required autocomplete="off" />
             </label>
             <label class="field">
               <span>NIT</span>
@@ -1003,6 +1291,7 @@
             <label class="field">
               <span>Tipo Evento</span>
               <select id="companyEventType" required>
+                <option value="">Selecciona tipo</option>
                 <option value="Social">Social</option>
                 <option value="Corporativo">Corporativo</option>
                 <option value="Individual">Individual</option>
@@ -1053,7 +1342,7 @@
               <input id="managerPhone" type="text" placeholder="Telefono" />
             </div>
             <div class="row2">
-              <input id="managerEmail" type="email" placeholder="Correo" />
+              <input id="managerEmail" type="email" placeholder="Correo" autocomplete="off" />
               <input id="managerAddress" type="text" placeholder="Direccion (opcional)" />
             </div>
             <div class="rightActions">
@@ -1076,9 +1365,11 @@
           </div>
 
           <div class="modalFooter">
-            <div></div>
+            <div class="leftActions">
+              <button class="btnDanger" id="btnCompanyDisable" type="button">Inhabilitar</button>
+            </div>
             <div class="rightActions">
-              <button class="btnPrimary" type="submit">Agregar</button>
+              <button class="btnPrimary" type="submit">Guardar empresa</button>
             </div>
           </div>
         </form>
@@ -1098,6 +1389,22 @@
         <form class="modalBody" id="serviceForm">
           <div class="row2">
             <label class="field">
+              <span>Servicio existente</span>
+              <select id="serviceEditSelect">
+                <option value="">Crear nuevo servicio</option>
+              </select>
+            </label>
+            <div class="field">
+              <span>Estado</span>
+              <label class="checkInline">
+                <input id="serviceActive" type="checkbox" checked />
+                <span>Servicio activo</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="row2">
+            <label class="field">
               <span>Nombre del servicio</span>
               <input id="serviceName" type="text" placeholder="Ej: Catering premium" required />
             </label>
@@ -1111,10 +1418,16 @@
             <label class="field">
               <span>Categoria</span>
               <select id="serviceCategory" required></select>
+              <div style="display:flex;gap:8px;margin-top:6px;">
+                <button class="btn" type="button" id="btnServiceCategoryManage">Gestionar categorias</button>
+              </div>
             </label>
             <label class="field">
               <span>Subcategoria</span>
               <select id="serviceSubcategory" required></select>
+              <div style="display:flex;gap:8px;margin-top:6px;">
+                <button class="btn" type="button" id="btnServiceSubcategoryManage">Gestionar subcategorias</button>
+              </div>
             </label>
           </div>
 
@@ -1131,14 +1444,279 @@
             <textarea id="serviceDescription" rows="2" placeholder="Descripcion del servicio"></textarea>
           </label>
 
+          <div class="field">
+            <span>Servicios registrados</span>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Servicio</th>
+                    <th>Categoria</th>
+                    <th>Subcategoria</th>
+                    <th>Precio</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="servicesManagerBody"></tbody>
+              </table>
+            </div>
+          </div>
+
           <div class="modalFooter">
-            <div></div>
+            <div class="leftActions">
+              <button class="btnDanger" type="button" id="btnServiceDisable">Inhabilitar</button>
+            </div>
             <div class="rightActions">
               <button class="btn" type="button" id="btnServiceDiscard">Cancelar</button>
               <button class="btnPrimary" type="submit">Guardar servicio</button>
             </div>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="serviceCategoryBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="serviceCategoryTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="serviceCategoryTitle">Categorias de servicio</div>
+            <div class="modalSubtitle">Crea y edita categorias para tus servicios</div>
+          </div>
+          <button class="iconBtn" id="btnServiceCategoryClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody">
+          <label class="field">
+            <span>Categoria existente</span>
+            <select id="serviceCategoryEditSelect">
+              <option value="">Crear nueva categoria</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Nombre de categoria</span>
+            <input id="serviceCategoryNameInput" type="text" placeholder="Ej: Alimentos y bebidas" />
+          </label>
+
+          <div class="field">
+            <span>Categorias registradas</span>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="serviceCategoryBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="modalFooter">
+          <div class="leftActions"></div>
+          <div class="rightActions">
+            <button class="btn" id="btnServiceCategoryReset" type="button">Nueva categoria</button>
+            <button class="btnPrimary" id="btnServiceCategorySave" type="button">Guardar categoria</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="serviceSubcategoryBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="serviceSubcategoryTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="serviceSubcategoryTitle">Subcategorias de servicio</div>
+            <div class="modalSubtitle">Crea y edita subcategorias por categoria</div>
+          </div>
+          <button class="iconBtn" id="btnServiceSubcategoryClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody">
+          <div class="row2">
+            <label class="field">
+              <span>Categoria</span>
+              <select id="serviceSubcategoryCategorySelect"></select>
+            </label>
+            <label class="field">
+              <span>Subcategoria existente</span>
+              <select id="serviceSubcategoryEditSelect">
+                <option value="">Crear nueva subcategoria</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Nombre de subcategoria</span>
+            <input id="serviceSubcategoryNameInput" type="text" placeholder="Ej: Cocteles" />
+          </label>
+
+          <div class="field">
+            <span>Subcategorias registradas</span>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Subcategoria</th>
+                    <th>Categoria</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="serviceSubcategoryBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="modalFooter">
+          <div class="leftActions"></div>
+          <div class="rightActions">
+            <button class="btn" id="btnServiceSubcategoryReset" type="button">Nueva subcategoria</button>
+            <button class="btnPrimary" id="btnServiceSubcategorySave" type="button">Guardar subcategoria</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="globalGoalsBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="globalGoalsTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="globalGoalsTitle">Metas globales</div>
+            <div class="modalSubtitle">Agrega, edita e inhabilita metas mensuales</div>
+          </div>
+          <button class="iconBtn" id="btnGlobalGoalsClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody">
+          <div class="row2">
+            <label class="field">
+              <span>Meta existente</span>
+              <select id="globalGoalsEditSelect">
+                <option value="">Crear nueva meta</option>
+              </select>
+            </label>
+            <div class="field">
+              <span>Estado</span>
+              <label class="checkInline">
+                <input id="globalGoalActive" type="checkbox" checked />
+                <span>Meta activa</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="row2">
+            <label class="field">
+              <span>Mes</span>
+              <select id="globalGoalMonth"></select>
+            </label>
+            <label class="field">
+              <span>Rol</span>
+              <select id="globalGoalRole">
+                <option value="vendedor">Vendedor</option>
+                <option value="recepcionista">Recepcionista</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Monto meta</span>
+              <input id="globalGoalAmount" type="number" min="0" step="0.01" placeholder="Ej: 250000" />
+            </label>
+          </div>
+
+          <div class="field">
+            <span>Metas registradas</span>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Mes</th>
+                    <th>Rol</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="globalGoalsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="modalFooter">
+          <div class="leftActions">
+            <button class="btnDanger" id="btnGlobalGoalDisable" type="button">Inhabilitar</button>
+          </div>
+          <div class="rightActions">
+            <button class="btn" id="btnGlobalGoalReset" type="button">Nueva meta</button>
+            <button class="btnPrimary" id="btnGlobalGoalSave" type="button">Guardar meta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="salonesBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="salonesTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="salonesTitle">Salones</div>
+            <div class="modalSubtitle">Agrega, edita e inhabilita salones</div>
+          </div>
+          <button class="iconBtn" id="btnSalonesClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody">
+          <div class="row2">
+            <label class="field">
+              <span>Salon existente</span>
+              <select id="salonEditSelect">
+                <option value="">Crear nuevo salon</option>
+              </select>
+            </label>
+            <div class="field">
+              <span>Estado</span>
+              <label class="checkInline">
+                <input id="salonActive" type="checkbox" checked />
+                <span>Salon activo</span>
+              </label>
+            </div>
+          </div>
+
+          <label class="field">
+            <span>Nombre del salon</span>
+            <input id="salonNameInput" type="text" placeholder="Ej: Salon Aurora" />
+          </label>
+
+          <div class="field">
+            <span>Salones registrados</span>
+            <div class="quoteTableWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="salonesBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="modalFooter">
+          <div class="leftActions">
+            <button class="btnDanger" id="btnSalonDisable" type="button">Inhabilitar</button>
+          </div>
+          <div class="rightActions">
+            <button class="btn" id="btnSalonReset" type="button">Nuevo salon</button>
+            <button class="btnPrimary" id="btnSalonSave" type="button">Guardar salon</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1390,8 +1968,12 @@
         <div class="modalBody occupancyReportBody">
           <div class="occupancyToolbar">
             <label class="field">
-              <span>Semana</span>
-              <input id="occupancyReportWeek" type="week" />
+              <span>Semana (desde lunes)</span>
+              <div class="occupancyWeekNav">
+                <button class="btn" id="btnOccupancyReportPrevWeek" type="button" aria-label="Semana anterior">&#8249;</button>
+                <input id="occupancyReportWeek" type="date" />
+                <button class="btn" id="btnOccupancyReportNextWeek" type="button" aria-label="Semana siguiente">&#8250;</button>
+              </div>
             </label>
             <div class="rightActions">
               <button class="btn" id="btnOccupancyReportTodayWeek" type="button">Semana actual</button>
@@ -1433,16 +2015,252 @@
       </div>
     </div>
 
+    <div class="modalBackdrop" id="dashboardReportBackdrop" hidden>
+      <div class="modal dashboardReportModal" role="dialog" aria-modal="true" aria-labelledby="dashboardReportTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="dashboardReportTitle">Reporte Dashboard</div>
+            <div class="modalSubtitle" id="dashboardReportSubtitle">Vista mensual de vendedores, metas y comparativos</div>
+          </div>
+          <button class="iconBtn" id="btnDashboardReportClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody dashboardReportBody">
+          <div class="dashboardReportFilters">
+            <label class="field">
+              <span>Periodo</span>
+              <select id="dashboardReportPeriod">
+                <option value="month">Mes</option>
+                <option value="week">Semana</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Mes base</span>
+              <input id="dashboardReportMonth" type="month" />
+            </label>
+            <label class="field" id="dashboardReportWeekField" hidden>
+              <span>Semana (desde lunes)</span>
+              <input id="dashboardReportWeek" type="date" />
+            </label>
+            <label class="field">
+              <span>Desde</span>
+              <input id="dashboardReportFrom" type="date" />
+            </label>
+            <label class="field">
+              <span>Hasta</span>
+              <input id="dashboardReportTo" type="date" />
+            </label>
+            <label class="field">
+              <span>Rol</span>
+              <select id="dashboardReportRole">
+                <option value="vendedor">Vendedor</option>
+                <option value="recepcionista">Recepcionista</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Vista</span>
+              <select id="dashboardReportScope">
+                <option value="mine">Mi dashboard</option>
+                <option value="all">Todos usuarios del rol</option>
+                <option value="seller">Usuario especifico</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Usuario</span>
+              <select id="dashboardReportSeller"></select>
+            </label>
+            <div class="rightActions dashboardReportActions">
+              <button class="btn" id="btnDashboardReportCurrentMonth" type="button">Mes actual</button>
+              <button class="btn" id="btnDashboardReportReset" type="button">Limpiar filtros</button>
+            </div>
+          </div>
+
+          <div class="dashboardGoalsGrid" id="dashboardGoalsGrid"></div>
+
+          <div class="dashboardChartsGrid">
+            <article class="dashboardCard">
+              <header class="dashboardCardHead">
+                <strong id="dashboardCompareTitle">Comparativo meses atras</strong>
+                <small id="dashboardCompareSubtitle">Ultimos 6 meses (segun filtro)</small>
+              </header>
+              <div class="dashboardMiniChart" id="dashboardCompareChart"></div>
+            </article>
+            <article class="dashboardCard">
+              <header class="dashboardCardHead">
+                <strong id="dashboardBestTitle">Mes con mas ventas</strong>
+                <small id="dashboardBestSubtitle">Ultimos 12 meses (Confirmados)</small>
+              </header>
+              <div class="dashboardMiniChart" id="dashboardBestMonthChart"></div>
+            </article>
+          </div>
+
+          <div class="dashboardSellerList" id="dashboardSellerList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="institutionReportBackdrop" hidden>
+      <div class="modal dashboardReportModal institutionReportModal" role="dialog" aria-modal="true" aria-labelledby="institutionReportTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="institutionReportTitle">Reporte por institucion</div>
+            <div class="modalSubtitle">Dashboard de clientes, consumo y comportamiento historico</div>
+          </div>
+          <button class="iconBtn" id="btnInstitutionReportClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody dashboardReportBody institutionReportBody">
+          <div class="dashboardReportFilters institutionReportFilters">
+            <label class="field">
+              <span>Buscar institucion</span>
+              <input id="institutionReportCompanySearch" type="text" placeholder="Escribe nombre, contacto o correo" />
+            </label>
+            <label class="field">
+              <span>Institucion</span>
+              <select id="institutionReportCompany"></select>
+            </label>
+            <label class="field">
+              <span>Desde</span>
+              <input id="institutionReportFrom" type="date" />
+            </label>
+            <label class="field">
+              <span>Hasta</span>
+              <input id="institutionReportTo" type="date" />
+            </label>
+            <div class="rightActions dashboardReportActions">
+              <button class="btn" id="btnInstitutionReportCurrentYear" type="button">Anio actual</button>
+              <button class="btn" id="btnInstitutionReportReset" type="button">Limpiar filtros</button>
+            </div>
+          </div>
+
+          <div class="dashboardCard institutionHeadlineCard" id="institutionReportHeadline"></div>
+
+          <div class="institutionReportSummary" id="institutionReportSummary"></div>
+
+          <div class="institutionReportNav" id="institutionReportNav">
+            <button class="btn" type="button" data-target-section="institutionSectionOverview">Resumen</button>
+            <button class="btn" type="button" data-target-section="institutionSectionCharts">Graficas</button>
+            <button class="btn" type="button" data-target-section="institutionSectionSalons">Salones</button>
+            <button class="btn" type="button" data-target-section="institutionSectionDishes">Platillos</button>
+            <button class="btn" type="button" data-target-section="institutionSectionManagers">Encargados</button>
+            <button class="btn" type="button" data-target-section="institutionSectionTimeline">Historial</button>
+            <button class="btn" type="button" data-target-section="institutionSectionEvents">Eventos</button>
+          </div>
+
+          <div class="institutionReportContent" id="institutionReportContent">
+            <section class="dashboardCard institutionDetailCard" id="institutionSectionOverview">
+              <header class="dashboardCardHead">
+                <strong>Resumen ejecutivo</strong>
+                <small>Lectura rapida de la relacion comercial</small>
+              </header>
+              <div class="institutionOverviewGrid" id="institutionOverviewGrid"></div>
+            </section>
+
+            <section class="dashboardCard institutionDetailCard" id="institutionSectionCharts">
+              <header class="dashboardCardHead">
+                <strong>Graficas interactivas</strong>
+                <small>Pasa el mouse sobre barras o segmentos para ver detalle</small>
+              </header>
+              <div class="institutionChartsGrid" id="institutionReportChartsBody"></div>
+            </section>
+
+            <section class="dashboardCard institutionDetailCard" id="institutionSectionSalons">
+              <header class="dashboardCardHead">
+                <strong>Salones mas usados</strong>
+                <small>Ranking por frecuencia dentro del rango</small>
+              </header>
+              <div class="institutionMetricList" id="institutionReportSalonBody"></div>
+            </section>
+
+            <section class="dashboardCard institutionDetailCard" id="institutionSectionDishes">
+              <header class="dashboardCardHead">
+                <strong>Platillos y servicios mas pedidos</strong>
+                <small>Consolidado de cotizaciones por cantidad</small>
+              </header>
+              <div class="institutionMetricList" id="institutionReportDishBody"></div>
+            </section>
+
+            <section class="dashboardCard institutionDetailCard" id="institutionSectionManagers">
+              <header class="dashboardCardHead">
+                <strong>Encargados con mas actividad</strong>
+                <small>Quien genera mas eventos con nosotros</small>
+              </header>
+              <div class="institutionMetricList" id="institutionReportManagerBody"></div>
+            </section>
+
+            <section class="dashboardCard institutionDetailCard" id="institutionSectionTimeline">
+              <header class="dashboardCardHead">
+                <strong>Historial y comportamiento</strong>
+                <small>Meses fuertes y ultima visita</small>
+              </header>
+              <div class="institutionTimelineGrid" id="institutionReportTimelineBody"></div>
+            </section>
+
+            <section class="dashboardCard institutionDetailCard" id="institutionSectionEvents">
+              <header class="dashboardCardHead">
+                <strong>Eventos del rango</strong>
+                <small>Detalle para bajar a un caso especifico</small>
+              </header>
+              <div class="salesReportTableWrap institutionEventsWrap">
+                <table class="quoteTable institutionEventsTable">
+                  <thead>
+                    <tr>
+                      <th>Estado</th>
+                      <th>Reserva</th>
+                      <th>Fecha</th>
+                      <th>Evento</th>
+                      <th>Salon</th>
+                      <th>Encargado</th>
+                      <th>PAX</th>
+                      <th>Total</th>
+                      <th>Ultima visita</th>
+                    </tr>
+                  </thead>
+                  <tbody id="institutionReportEventsBody"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="modalBackdrop" id="checklistTemplateBackdrop" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="checklistTemplateTitle">
         <div class="modalHeader">
           <div>
             <div class="modalTitle" id="checklistTemplateTitle">Configurar Check List</div>
-            <div class="modalSubtitle">Define los puntos que se revisaran en eventos</div>
+            <div class="modalSubtitle">Define plantillas, secciones y puntos para eventos</div>
           </div>
           <button class="iconBtn" id="btnChecklistTemplateClose" type="button" title="Cerrar">&#10005;</button>
         </div>
         <div class="modalBody">
+          <div class="row2">
+            <label class="field">
+              <span>Plantilla existente</span>
+              <select id="checklistTemplateSelect"></select>
+            </label>
+            <label class="field">
+              <span>Nombre de plantilla</span>
+              <input id="checklistTemplateName" type="text" placeholder="Ej: Checklist corporativo" />
+            </label>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <span>Estado plantilla</span>
+              <label class="checkInline">
+                <input id="checklistTemplateActive" type="checkbox" checked />
+                <span>Plantilla activa</span>
+              </label>
+            </div>
+            <div class="field">
+              <span>Acciones plantilla</span>
+              <div class="rightActions">
+                <button class="btn" id="btnChecklistTemplateNew" type="button">Nueva plantilla</button>
+                <button class="btnDanger" id="btnChecklistTemplateDisable" type="button">Inhabilitar</button>
+              </div>
+            </div>
+          </div>
           <div class="row2">
             <label class="field">
               <span>Punto a chequear</span>
@@ -1455,16 +2273,40 @@
           </div>
           <div class="row2">
             <label class="field">
-              <span>Nueva seccion</span>
+              <span>Seccion a editar</span>
+              <select id="checklistTemplateSectionEditSelect"></select>
+            </label>
+            <label class="field">
+              <span>Nueva o editar seccion</span>
               <input id="checklistTemplateSectionInput" type="text" placeholder="Ej: Salon" />
             </label>
+          </div>
+          <div class="row2">
             <div class="field">
-              <span>Acciones</span>
+              <span>Acciones seccion</span>
               <div class="rightActions">
-                <button class="btn" id="btnChecklistTemplateAdd" type="button">Agregar punto</button>
-                <button class="btn" id="btnChecklistTemplateAddSection" type="button">Agregar seccion</button>
+                <button class="btn" id="btnChecklistTemplateAddSection" type="button">Guardar seccion</button>
+                <button class="btn" id="btnChecklistTemplateResetSection" type="button">Nueva seccion</button>
               </div>
             </div>
+            <div class="field">
+              <span>Acciones punto</span>
+              <div class="rightActions">
+                <button class="btn" id="btnChecklistTemplateAdd" type="button">Agregar punto</button>
+              </div>
+            </div>
+          </div>
+          <div class="quoteTableWrap">
+            <table class="quoteTable">
+              <thead>
+                <tr>
+                  <th>Seccion</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="checklistTemplateSectionsBody"></tbody>
+            </table>
           </div>
           <div class="quoteTableWrap">
             <table class="quoteTable">
@@ -1494,6 +2336,12 @@
           <button class="iconBtn" id="btnEventChecklistClose" type="button" title="Cerrar">&#10005;</button>
         </div>
         <div class="modalBody">
+          <div class="row1">
+            <label class="field">
+              <span>Plantilla</span>
+              <select id="eventChecklistTemplateSelect"></select>
+            </label>
+          </div>
           <div class="row2">
             <label class="field">
               <span>Fecha</span>
@@ -1508,6 +2356,15 @@
             <span>Sugerencias / comentarios</span>
             <textarea id="eventChecklistNotes" rows="2" placeholder="Observaciones generales del check list"></textarea>
           </label>
+          <div class="checklistProgressCard">
+            <div class="checklistProgressHead">
+              <strong id="eventChecklistProgressLabel">Avance 0%</strong>
+              <span id="eventChecklistSatisfactionLabel">Satisfaccion 0%</span>
+            </div>
+            <div class="checklistProgressTrack" aria-hidden="true">
+              <div class="checklistProgressFill" id="eventChecklistProgressFill"></div>
+            </div>
+          </div>
           <div class="quoteTableWrap">
             <table class="quoteTable">
               <thead>
@@ -1535,9 +2392,15 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
+
+
+
+
+
