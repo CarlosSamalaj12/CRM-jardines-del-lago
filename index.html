@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -7,12 +7,133 @@
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <style>
+    .statusSwitchInline{
+      display:inline-flex !important;
+      align-items:center !important;
+      gap:12px !important;
+      width:fit-content !important;
+      min-width:0 !important;
+      min-height:44px !important;
+      padding:0 !important;
+      border:none !important;
+      background:transparent !important;
+      box-shadow:none !important;
+    }
+    .field > .statusSwitchInline{
+      margin-top:2px !important;
+    }
+    .statusSwitchInline input[type='checkbox']{
+      -webkit-appearance:none !important;
+      appearance:none !important;
+      position:relative !important;
+      width:86px !important;
+      min-width:86px !important;
+      max-width:86px !important;
+      height:34px !important;
+      min-height:34px !important;
+      max-height:34px !important;
+      margin:0 !important;
+      border-radius:999px !important;
+      border:2px solid #8f231f !important;
+      background:linear-gradient(180deg,#f13c2f 0%,#c92722 100%) !important;
+      box-shadow:inset 0 2px 5px rgba(255,255,255,.16), inset 0 -3px 7px rgba(0,0,0,.22), 0 4px 10px rgba(0,0,0,.16) !important;
+      cursor:pointer !important;
+      transition:background .18s ease,border-color .18s ease,box-shadow .18s ease !important;
+    }
+    .statusSwitchInline input[type='checkbox']::before{
+      content:'OFF' !important;
+      position:absolute !important;
+      top:50% !important;
+      left:40px !important;
+      transform:translateY(-50%) !important;
+      color:#fff !important;
+      font-size:10px !important;
+      font-weight:900 !important;
+      letter-spacing:.08em !important;
+      line-height:1 !important;
+    }
+    .statusSwitchInline input[type='checkbox']::after{
+      content:'' !important;
+      position:absolute !important;
+      top:2px !important;
+      left:2px !important;
+      width:26px !important;
+      height:26px !important;
+      border-radius:999px !important;
+      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#f4f7fb 58%,#d8e0ea 100%) !important;
+      box-shadow:0 2px 6px rgba(0,0,0,.28), inset 0 1px 1px rgba(255,255,255,.92) !important;
+      border:none !important;
+      transition:left .18s ease !important;
+    }
+    .statusSwitchInline input[type='checkbox']:checked{
+      border-color:#3b9828 !important;
+      background:linear-gradient(180deg,#79e25d 0%,#49b932 100%) !important;
+      box-shadow:inset 0 2px 5px rgba(255,255,255,.18), inset 0 -3px 7px rgba(0,0,0,.18), 0 4px 10px rgba(27,94,32,.22) !important;
+    }
+    .statusSwitchInline input[type='checkbox']:checked::before{
+      content:'ON' !important;
+      left:16px !important;
+    }
+    .statusSwitchInline input[type='checkbox']:checked::after{
+      left:56px !important;
+      width:26px !important;
+      height:26px !important;
+      border:none !important;
+      transform:none !important;
+    }
+    .statusSwitchInline input[type='checkbox']:focus-visible{
+      outline:none !important;
+      box-shadow:inset 0 2px 5px rgba(255,255,255,.16), inset 0 -3px 7px rgba(0,0,0,.22), 0 0 0 3px rgba(56,189,248,.22) !important;
+    }
+    .salesTargetSwitchInline{
+      align-items:flex-start !important;
+      gap:14px !important;
+    }
+    .salesTargetSwitchInline span:last-child{
+      white-space:normal !important;
+      max-width:430px;
+      padding-top:6px;
+    }
+    .salesTargetSwitchInline input[type='checkbox']{
+      flex:0 0 auto;
+      margin-top:4px !important;
+    }
+    .logo{
+      width:56px !important;
+      height:56px !important;
+      border-radius:18px !important;
+      background:transparent !important;
+      border:1px solid rgba(255,255,255,0.14) !important;
+      box-shadow:none !important;
+    }
+    .topbarLogoImg{
+      width:42px !important;
+      height:42px !important;
+      object-fit:contain !important;
+      filter:brightness(0) invert(1) drop-shadow(0 3px 8px rgba(255,255,255,0.16)) !important;
+      opacity:0.96 !important;
+    }
+    .topbarUserBadge{
+      border:2px solid rgba(255,255,255,0.96) !important;
+      box-shadow:0 8px 20px rgba(0,0,0,0.28) !important;
+    }
+    .welcomeUser{
+      color:rgba(255,255,255,0.98) !important;
+    }    .statusSwitchInline span:last-child{
+      color:#eef6ff !important;
+      line-height:1.1 !important;
+      font-size:14px !important;
+      font-weight:800 !important;
+      white-space:nowrap !important;
+    }
+  </style>
 </head>
 <body>
   <div class="loginScreen" id="loginScreen">
     <div class="loginCard">
       <div class="loginBrand">
-        <div class="loginBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="loginLogoImg" /></div>
+        <div class="loginBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="loginLogoImg" /></div>
         <div class="loginBrandTitle">CRM RESERVAS</div>
         <div class="loginBrandSub">Calendario de salones</div>
       </div>
@@ -311,7 +432,7 @@
   <div class="app" id="appShell">
     <header class="topbar">
       <div class="brand">
-        <div class="logo"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="topbarLogoImg" /></div>
+        <div class="logo"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="topbarLogoImg" /></div>
         <div class="brandText">
           <div class="title">CRM Reservas</div>
           <div class="brandMeta">
@@ -628,7 +749,7 @@
             </label>
             <div class="field">
               <span>Estado</span>
-              <label class="checkInline">
+              <label class="statusSwitchInline">
                 <input id="userActive" type="checkbox" checked />
                 <span>Usuario activo</span>
               </label>
@@ -693,7 +814,7 @@
           <div class="row2">
             <div class="field">
               <span>Meta de ventas</span>
-              <label class="checkInline">
+              <label class="statusSwitchInline salesTargetSwitchInline">
                 <input id="userSalesTargetEnabled" type="checkbox" />
                 <span>Este usuario influye en meta mensual segun su rol</span>
               </label>
@@ -994,6 +1115,7 @@
         <div class="modalBody menuMontajeBody">
           <section class="quoteCard mmCard mmCardWide">
             <div class="quoteCardTitle">Datos por fecha y salon</div>
+            <div class="mmsSectionLead">Elige la version, fecha y salon para trabajar sobre la comanda correcta.</div>
             <div class="mmGrid">
               <label class="field">
                 <span>Version Menu &amp; Montaje</span>
@@ -1089,6 +1211,7 @@
         <div class="modalBody menuMontajeBody">
           <section class="quoteCard mmCard mmCardWide">
             <div class="quoteCardTitle">Datos por fecha y salon</div>
+            <div class="mmsSectionLead">Elige la version, fecha y salon para trabajar sobre la comanda correcta.</div>
             <div class="mmGrid">
               <label class="field">
                 <span>Version Menu &amp; Montaje</span>
@@ -1110,10 +1233,12 @@
 
           <section class="quoteCard mmCard mmCardWide">
             <div class="quoteCardTitle">Comanda POS (Menu y Montaje)</div>
+            <div class="mmsSectionLead">Sigue el flujo: modo, categoria y opciones. El resumen de la derecha te confirma lo que ya llevas armado.</div>
             <div class="mmsPosLayout">
               <div class="mmsPosLeft">
                 <div class="field">
                   <span>Seleccion por botones</span>
+                  <div class="mmsFlowHint">1. Elige modo. 2. Elige categoria. 3. Toca opciones para agregarlas.</div>
                   <div class="mmsPrimaryTabs" id="mmsPrimaryTabs">
                     <button class="btn mmsPrimaryTab" id="btnMmsPrimaryMenu" type="button" data-mms-primary="menu">Menu</button>
                     <button class="btn mmsPrimaryTab" id="btnMmsPrimaryMontaje" type="button" data-mms-primary="montaje">Montaje</button>
@@ -1143,6 +1268,7 @@
               <div class="mmsPosRight">
                 <div class="field">
                   <span class="mmsPosLiveTitle">Cuenta POS en vivo</span>
+                  <div class="mmsSummaryLead">Resumen en vivo de lo que estas construyendo.</div>
                   <div class="mmsActivePlateHint" id="mmsActivePlateHint">Toca un plato para editarlo.</div>
                   <div class="mmsComanda" id="mmsComandaPreview">
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Plato fuerte</div><div class="mmsComandaItems" id="mmsComandaPlato"></div></div>
@@ -1254,7 +1380,7 @@
             </label>
             <div class="field">
               <span>Estado</span>
-              <label class="checkInline">
+              <label class="statusSwitchInline">
                 <input id="companyActive" type="checkbox" checked />
                 <span>Empresa activa</span>
               </label>
@@ -1396,7 +1522,7 @@
             </label>
             <div class="field">
               <span>Estado</span>
-              <label class="checkInline">
+              <label class="statusSwitchInline">
                 <input id="serviceActive" type="checkbox" checked />
                 <span>Servicio activo</span>
               </label>
@@ -1603,7 +1729,7 @@
             </label>
             <div class="field">
               <span>Estado</span>
-              <label class="checkInline">
+              <label class="statusSwitchInline">
                 <input id="globalGoalActive" type="checkbox" checked />
                 <span>Meta activa</span>
               </label>
@@ -1679,7 +1805,7 @@
             </label>
             <div class="field">
               <span>Estado</span>
-              <label class="checkInline">
+              <label class="statusSwitchInline">
                 <input id="salonActive" type="checkbox" checked />
                 <span>Salon activo</span>
               </label>
@@ -1725,38 +1851,63 @@
         <div class="modalHeader">
           <div>
             <div class="modalTitle" id="menuSuggestionsTitle">Reglas de Menu sugerido</div>
-            <div class="modalSubtitle">Define que salsas, postres y guarniciones se sugieren por proteina/preparacion.</div>
+            <div class="modalSubtitle">Define que salsas, postres y guarniciones se sugieren por combinacion de plato y tipo de preparacion.</div>
           </div>
           <button class="iconBtn" id="btnMenuSuggestionsClose" type="button" title="Cerrar">&#10005;</button>
         </div>
 
-        <div class="modalBody">
-          <div class="row2">
-            <label class="field">
-              <span>Proteina / Plato fuerte</span>
-              <select id="menuSuggestionsProtein"></select>
-            </label>
-            <label class="field">
-              <span>Preparacion</span>
-              <select id="menuSuggestionsPreparation"></select>
-            </label>
-          </div>
+        <div class="modalBody menuSuggestBody">
+          <section class="menuSuggestIntroCard">
+            <div class="menuSuggestIntroEyebrow">Flujo recomendado</div>
+            <div class="menuSuggestIntroText">Un mismo platillo puede tener varias preparaciones. En esta pantalla configuras una combinacion especifica de plato + preparacion, luego marcas y ordenas las sugerencias que se mostraran automaticamente.</div>
+          </section>
 
-          <div class="row2 menuSuggestCols">
-            <div class="field">
-              <span>Salsas / Aderezos sugeridos</span>
-              <div class="menuSuggestList" id="menuSuggestionsSalsas"></div>
+          <section class="menuSuggestContextCard">
+            <div class="menuSuggestSectionHead">
+              <div>
+                <div class="menuSuggestSectionTitle">1. Contexto del plato</div>
+                <div class="menuSuggestSectionText">Estas reglas se guardan para este plato y esta preparacion en particular.</div>
+              </div>
             </div>
-            <div class="field">
-              <span>Postres sugeridos</span>
-              <div class="menuSuggestList" id="menuSuggestionsPostres"></div>
+            <div class="row2 menuSuggestContextGrid">
+              <label class="field menuSuggestField">
+                <span>Proteina / Plato fuerte</span>
+                <select id="menuSuggestionsProtein"></select>
+              </label>
+              <label class="field menuSuggestField">
+                <span>Tipo de preparacion</span>
+                <select id="menuSuggestionsPreparation"></select>
+              </label>
             </div>
-          </div>
+          </section>
 
-          <div class="field">
-            <span>Guarniciones sugeridas para la proteina</span>
-            <div class="menuSuggestList" id="menuSuggestionsGuarniciones"></div>
-          </div>
+          <section class="menuSuggestSelectionCard">
+            <div class="menuSuggestSectionHead">
+              <div>
+                <div class="menuSuggestSectionTitle">2. Seleccion y prioridad</div>
+                <div class="menuSuggestSectionText">Marca lo que se sugerira al usuario. Las opciones activas se pueden arrastrar para definir cual aparece primero.</div>
+              </div>
+            </div>
+
+            <div class="row2 menuSuggestCols">
+              <div class="field menuSuggestField menuSuggestFieldCard">
+                <span>Salsas / Aderezos sugeridos</span>
+                <small class="menuSuggestFieldHint">Ideal para definir acompanamientos rapidos del plato.</small>
+                <div class="menuSuggestList" id="menuSuggestionsSalsas"></div>
+              </div>
+              <div class="field menuSuggestField menuSuggestFieldCard">
+                <span>Postres sugeridos</span>
+                <small class="menuSuggestFieldHint">Ordena primero los postres que quieres recomendar con mas frecuencia.</small>
+                <div class="menuSuggestList" id="menuSuggestionsPostres"></div>
+              </div>
+            </div>
+
+            <div class="field menuSuggestField menuSuggestFieldCard menuSuggestWideField">
+              <span>Guarniciones sugeridas para la proteina</span>
+              <small class="menuSuggestFieldHint">Estas opciones se mostraran como apoyo natural para esta proteina.</small>
+              <div class="menuSuggestList" id="menuSuggestionsGuarniciones"></div>
+            </div>
+          </section>
         </div>
 
         <div class="modalFooter">
@@ -1865,7 +2016,7 @@
       <div class="modal salesReportModal" role="dialog" aria-modal="true" aria-labelledby="salesReportTitle">
         <div class="modalHeader">
           <div class="reportBrandHeader">
-            <div class="reportBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandBadge salesReportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo salesReportBrandLogo" /></div>
             <div class="reportBrandCopy">
               <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
               <div class="modalTitle" id="salesReportTitle">Reporte de ventas</div>
@@ -1984,7 +2135,7 @@
       <div class="modal occupancyReportModal" role="dialog" aria-modal="true" aria-labelledby="occupancyReportTitle">
         <div class="modalHeader">
           <div class="reportBrandHeader">
-            <div class="reportBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
             <div class="reportBrandCopy">
               <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
               <div class="modalTitle" id="occupancyReportTitle">Reporte de ocupacion</div>
@@ -2094,7 +2245,7 @@
       <div class="modal dashboardReportModal" role="dialog" aria-modal="true" aria-labelledby="dashboardReportTitle">
         <div class="modalHeader">
           <div class="reportBrandHeader">
-            <div class="reportBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
             <div class="reportBrandCopy">
               <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
               <div class="modalTitle" id="dashboardReportTitle">Reporte Dashboard</div>
@@ -2215,7 +2366,7 @@
       <div class="modal dashboardReportModal institutionReportModal" role="dialog" aria-modal="true" aria-labelledby="institutionReportTitle">
         <div class="modalHeader">
           <div class="reportBrandHeader">
-            <div class="reportBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
             <div class="reportBrandCopy">
               <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
               <div class="modalTitle" id="institutionReportTitle">Reporte por institucion</div>
@@ -2364,17 +2515,17 @@
           <div class="row2">
             <label class="field">
               <span>Plantilla existente</span>
-              <select id="checklistTemplateSelect"></select>
+              <select id="checklistTemplateSelect" class="uniformFieldControl"></select>
             </label>
             <label class="field">
               <span>Nombre de plantilla</span>
-              <input id="checklistTemplateName" type="text" placeholder="Ej: Checklist corporativo" />
+              <input id="checklistTemplateName" class="uniformFieldControl" type="text" placeholder="Ej: Checklist corporativo" />
             </label>
           </div>
           <div class="row2">
             <div class="field">
               <span>Estado plantilla</span>
-              <label class="checkInline">
+              <label class="statusSwitchInline uniformFieldControl">
                 <input id="checklistTemplateActive" type="checkbox" checked />
                 <span>Plantilla activa</span>
               </label>
@@ -2390,21 +2541,21 @@
           <div class="row2">
             <label class="field">
               <span>Punto a chequear</span>
-              <input id="checklistTemplateInput" type="text" placeholder="Ej: Montaje de mesas completo" />
+              <input id="checklistTemplateInput" class="uniformFieldControl" type="text" placeholder="Ej: Montaje de mesas completo" />
             </label>
             <label class="field">
               <span>Seccion</span>
-              <select id="checklistTemplateSectionSelect"></select>
+              <select id="checklistTemplateSectionSelect" class="uniformFieldControl"></select>
             </label>
           </div>
           <div class="row2">
             <label class="field">
               <span>Seccion a editar</span>
-              <select id="checklistTemplateSectionEditSelect"></select>
+              <select id="checklistTemplateSectionEditSelect" class="uniformFieldControl"></select>
             </label>
             <label class="field">
               <span>Nueva o editar seccion</span>
-              <input id="checklistTemplateSectionInput" type="text" placeholder="Ej: Salon" />
+              <input id="checklistTemplateSectionInput" class="uniformFieldControl" type="text" placeholder="Ej: Salon" />
             </label>
           </div>
           <div class="row2">
@@ -2525,6 +2676,31 @@
   <script src="./app.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

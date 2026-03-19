@@ -1729,8 +1729,8 @@ function renderGlobalGoalsTable() {
       <td>${moneyGT(row.amount)}</td>
       <td>${row.active === false ? "Inhabilitada" : "Activa"}</td>
       <td class="appointmentActions">
-        <button class="apptIconBtn apptEdit" type="button" data-global-goal-edit="${escapeHtml(globalGoalCompositeKey(row))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
-        <button class="apptIconBtn ${row.active === false ? "" : "apptDelete"}" type="button" data-global-goal-toggle="${escapeHtml(globalGoalCompositeKey(row))}" title="${row.active === false ? "Reactivar" : "Inhabilitar"}">${row.active === false ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â"}</button>
+        <button class="apptIconBtn apptEdit" type="button" data-global-goal-edit="${escapeHtml(globalGoalCompositeKey(row))}" title="Editar" aria-label="Editar">&#9998;</button>
+        <button class="apptIconBtn ${row.active === false ? "" : "apptDelete"}" type="button" data-global-goal-toggle="${escapeHtml(globalGoalCompositeKey(row))}" title="${row.active === false ? "Reactivar" : "Inhabilitar"}" aria-label="${row.active === false ? "Reactivar" : "Inhabilitar"}">${row.active === false ? "&#8635;" : "&#9940;"}</button>
       </td>
     `;
     el.globalGoalsBody.appendChild(tr);
@@ -1876,9 +1876,9 @@ function renderSalonesTable() {
     tr.innerHTML = `
       <td>${escapeHtml(label)}</td>
       <td>${isSalonDisabled(label) ? "Inhabilitado" : "Activo"}</td>
-      <td class="appointmentActions">
-        <button class="apptIconBtn apptEdit" type="button" data-salon-edit="${escapeHtml(label)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
-        <button class="apptIconBtn ${isSalonDisabled(label) ? "" : "apptDelete"}" type="button" data-salon-toggle="${escapeHtml(label)}" title="${isSalonDisabled(label) ? "Reactivar" : "Inhabilitar"}">${isSalonDisabled(label) ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â"}</button>
+      <td class="appointmentActions salonActionIcons">
+        <button class="apptIconBtn apptEdit" type="button" data-salon-edit="${escapeHtml(label)}" title="Editar" aria-label="Editar">&#9998;</button>
+        <button class="apptIconBtn ${isSalonDisabled(label) ? "" : "apptDelete"}" type="button" data-salon-toggle="${escapeHtml(label)}" title="${isSalonDisabled(label) ? "Reactivar" : "Inhabilitar"}" aria-label="${isSalonDisabled(label) ? "Reactivar" : "Inhabilitar"}">${isSalonDisabled(label) ? "&#8635;" : "&#9940;"}</button>
       </td>
     `;
     el.salonesBody.appendChild(tr);
@@ -2133,9 +2133,18 @@ function renderMenuSuggestionCheckboxList(container, items, selectedIds) {
     row.draggable = isChecked;
     row.classList.toggle("isChecked", isChecked);
     row.innerHTML = `
-      <span class="menuSuggestDrag" title="Arrastra para priorizar">&#9776;</span>
-      <input type="checkbox" value="${escapeHtml(id)}" ${isChecked ? "checked" : ""} />
-      <span>${escapeHtml(String(item.nombre || "").trim())}</span>
+      <span class="menuSuggestDragWrap">
+        <span class="menuSuggestDrag" title="Arrastra para priorizar">&#9776;</span>
+      </span>
+      <span class="menuSuggestCheckWrap">
+        <input type="checkbox" value="${escapeHtml(id)}" ${isChecked ? "checked" : ""} />
+        <span class="menuSuggestCheckVisual" aria-hidden="true"></span>
+      </span>
+      <span class="menuSuggestMeta">
+        <span class="menuSuggestName">${escapeHtml(String(item.nombre || "").trim())}</span>
+        <span class="menuSuggestHint">${isChecked ? "Sugerencia activa y ordenable." : "Marca para sugerir esta opcion."}</span>
+      </span>
+      <span class="menuSuggestState">${isChecked ? "Activo" : "Opcional"}</span>
     `;
     container.appendChild(row);
   }
@@ -2280,7 +2289,7 @@ function renderMenuCatalogManagerRows(kind, rows, proteins = []) {
       <td>
         <div class="appointmentActions">
           <button type="button" class="btn" data-mmcat-action="edit" data-mmcat-id="${escapeHtml(id)}">Editar</button>
-          <button type="button" class="btnDanger" data-mmcat-action="toggle" data-mmcat-id="${escapeHtml(id)}">${isActive ? "Inhabilitar" : "Reactivar"}</button>
+          <button type="button" class="btnDanger" data-mmcat-action="toggle" data-mmcat-id="${escapeHtml(id)}">${isActive ? "&#9940;" : "&#8635;"}</button>
         </div>
       </td>
     `;
@@ -3721,6 +3730,9 @@ function resetSalesReportFilters() {
 
 function openSalesReportModal() {
   if (!el.salesReportBackdrop) return;
+  if (el.occupancyReportBackdrop) el.occupancyReportBackdrop.hidden = true;
+  if (el.dashboardReportBackdrop) el.dashboardReportBackdrop.hidden = true;
+  if (el.institutionReportBackdrop) el.institutionReportBackdrop.hidden = true;
   renderSalesReportFilters();
   resetSalesReportFilters();
   renderSalesReportTable();
@@ -7235,8 +7247,8 @@ function renderServiceCategoryManagerTable() {
       <td>${escapeHtml(String(row?.nombre || ""))}</td>
       <td>${isActive ? "Activa" : "Inhabilitada"}</td>
       <td class="tableActionsCell">
-        <button class="apptIconBtn apptEdit" type="button" data-service-category-edit="${escapeHtml(String(row?.id || ""))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
-        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-category-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº"}</button>
+        <button class="apptIconBtn apptEdit" type="button" data-service-category-edit="${escapeHtml(String(row?.id || ""))}" title="Editar" aria-label="Editar">&#9998;</button>
+        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-category-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}" aria-label="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "&#9940;" : "&#8635;"}</button>
       </td>`;
     el.serviceCategoryBody.appendChild(tr);
   }
@@ -7353,8 +7365,8 @@ function renderServiceSubcategoryManagerTable(categoryFilter = "") {
       <td>${escapeHtml(String(categoryById.get(Number(row?.id_categoria)) || "-"))}</td>
       <td>${isActive ? "Activa" : "Inhabilitada"}</td>
       <td class="tableActionsCell">
-        <button class="apptIconBtn apptEdit" type="button" data-service-subcategory-edit="${escapeHtml(String(row?.id || ""))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
-        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-subcategory-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº"}</button>
+        <button class="apptIconBtn apptEdit" type="button" data-service-subcategory-edit="${escapeHtml(String(row?.id || ""))}" title="Editar" aria-label="Editar">&#9998;</button>
+        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-subcategory-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}" aria-label="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "&#9940;" : "&#8635;"}</button>
       </td>`;
     el.serviceSubcategoryBody.appendChild(tr);
   }
@@ -8232,12 +8244,9 @@ function renderMenuMontajeRichText(rawText) {
       htmlParts.push(`
         <section class="mmReportSection">
           <div class="mmReportSubtitle">${escapeHtml(sectionTitle)}</div>
-          <div class="mmReportGrid">
+          <div class="mmReportInlineFlow">
             ${rows.map((row) => `
-              <div class="mmReportCell">
-                <span class="mmReportMiniLabel">${escapeHtml(row.label)}</span>
-                <span class="mmReportMiniValue">${escapeHtml(row.value)}</span>
-              </div>
+              <span class="mmReportInlinePair"><span class="mmReportInlineLabel">[${escapeHtml(row.label)}]</span> <span class="mmReportMiniValue">${escapeHtml(row.value)}</span></span>
             `).join("")}
           </div>
         </section>
@@ -8271,12 +8280,9 @@ function renderMenuMontajeRichText(rawText) {
       htmlParts.push(`
         <section class="mmReportSection">
           <div class="mmReportSubtitle">${escapeHtml(sectionTitle)}</div>
-          <div class="mmReportGrid">
+          <div class="mmReportInlineFlow">
             ${rows.map((row) => `
-              <div class="mmReportCell">
-                <span class="mmReportMiniLabel">${escapeHtml(row.label)}</span>
-                <span class="mmReportMiniValue">${escapeHtml(row.value)}</span>
-              </div>
+              <span class="mmReportInlinePair"><span class="mmReportInlineLabel">[${escapeHtml(row.label)}]</span> <span class="mmReportMiniValue">${escapeHtml(row.value)}</span></span>
             `).join("")}
           </div>
         </section>
@@ -8656,42 +8662,33 @@ function buildMenuMontajeReportHtml(ev, quoteLike) {
       gap:6px;
       margin-left:10px;
     }
-    .mmReportGrid{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(280px, 1fr));
-      gap:10px 16px;
+    .mmReportInlineFlow{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 18px;
       margin-left:10px;
+      align-items:baseline;
     }
-    .mmReportRow{
-      display:grid;
-      grid-template-columns: 150px 1fr;
-      gap:10px;
-      align-items:start;
-      padding:4px 0;
+    .mmReportInlinePair{
+      display:inline-flex;
+      align-items:baseline;
+      gap:4px;
+      white-space:nowrap;
     }
-    .mmReportCell{
-      display:grid;
-      grid-template-columns: 150px 1fr;
-      gap:10px;
-      align-items:start;
-      padding:2px 0;
-    }
-    .mmReportMiniLabel{
-      display:inline-block;
-      padding:3px 8px;
-      border-radius:7px;
-      background:#dbeafe;
-      color:#0b4f87;
-      font-size:12px;
+    .mmReportInlineLabel{
+      font-size:12.5px;
+      line-height:1.45;
       font-weight:900;
-      letter-spacing:.4px;
+      letter-spacing:.2px;
       text-transform:uppercase;
+      color:#0a4b80;
+      white-space:nowrap;
     }
     .mmReportMiniValue{
       font-size:12.5px;
       line-height:1.45;
       color:#0f172a;
-      padding-top:2px;
+      white-space:nowrap;
     }
     @media print {
       .mmReportGrid{
@@ -13932,8 +13929,8 @@ function renderQuoteAdvancesModal() {
         <td>${escapeHtml(row.description || "-")}</td>
         <td>${moneyGT(row.amount || 0)}</td>
         <td class="appointmentActions">
-          <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
-          <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¹Ãƒâ€¦Ã¢â‚¬Å“</button>
+          <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar" aria-label="Editar">&#9998;</button>
+          <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar" aria-label="Eliminar">&#128465;</button>
         </td>
       `;
       el.quoteAdvanceBody.appendChild(tr);
@@ -14413,7 +14410,7 @@ function renderServiceManagerTable() {
       <td>${escapeHtml(Number(s?.price || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</td>
       <td>${disabled ? "Inhabilitado" : "Activo"}</td>
       <td class="tableActionsCell">
-        <button class="apptIconBtn apptEdit" type="button" data-service-row-edit="${escapeHtml(serviceId)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn apptEdit" type="button" data-service-row-edit="${escapeHtml(serviceId)}" title="Editar" aria-label="Editar">&#9998;</button>
       </td>`;
     el.servicesManagerBody.appendChild(tr);
   }
@@ -19418,6 +19415,28 @@ function getEventsInWeek(weekStart, salon, dayCount = 7) {
       return compareTime(a.startTime, b.startTime);
     });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
