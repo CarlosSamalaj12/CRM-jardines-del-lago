@@ -27,6 +27,12 @@
   --c-primera: #38bdf8;          /* azul cielo */
   --c-seguimiento: #fb923c;      /* naranja */
   --calendar-header-offset: 48px;
+  --scrollbar-size: 10px;
+  --scrollbar-radius: 999px;
+  --scrollbar-track: rgba(8, 15, 35, 0.88);
+  --scrollbar-track-border: rgba(148, 163, 184, 0.14);
+  --scrollbar-thumb: linear-gradient(180deg, rgba(96,165,250,0.95), rgba(34,197,94,0.82));
+  --scrollbar-thumb-hover: linear-gradient(180deg, rgba(125,211,252,0.98), rgba(16,185,129,0.92));
 }
 
 *{ box-sizing: border-box; }
@@ -1936,6 +1942,81 @@ input[type="file"]::-webkit-file-upload-button:active{
   min-height: 38px;
   padding-top: 8px;
   padding-bottom: 8px;
+}
+#eventForm #eventDate,
+#eventForm #eventDateEnd,
+.modernPickerInput{
+  min-height: 50px;
+  border-radius: 18px;
+  border: 1px solid rgba(120, 176, 255, 0.24);
+  background:
+    radial-gradient(circle at top right, rgba(52, 211, 153, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(18, 31, 53, 0.96), rgba(10, 18, 34, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 12px 28px rgba(2, 6, 23, 0.18);
+  color: #eff6ff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+#eventForm #eventDate,
+#eventForm #eventDateEnd,
+.modernDateInput,
+.modernTimeInput{
+  padding-left: 46px;
+  padding-right: 16px;
+  background-repeat: no-repeat;
+  background-position: 14px 50%, center;
+  background-size: 17px 17px, auto;
+}
+.modernDateInput{
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2393c5fd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='4'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E"),
+    radial-gradient(circle at top right, rgba(52, 211, 153, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(18, 31, 53, 0.96), rgba(10, 18, 34, 0.98));
+}
+.modernTimeInput{
+  padding-left: 22px;
+  background-image:
+    radial-gradient(circle at top right, rgba(52, 211, 153, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(18, 31, 53, 0.96), rgba(10, 18, 34, 0.98));
+  background-position: center;
+  background-size: auto;
+  color: #f8fbff;
+  text-shadow: 0 1px 0 rgba(2, 6, 23, 0.55);
+}
+
+#eventForm #slotsBody .modernTimeInput{
+  font-variant-numeric: tabular-nums;
+}
+
+#eventForm #slotsBody .modernTimeInput::selection{
+  background: rgba(56, 189, 248, 0.88);
+  color: #06111f;
+}
+#eventForm #eventDate:hover,
+#eventForm #eventDateEnd:hover,
+.modernPickerInput:hover{
+  transform: translateY(-1px);
+  border-color: rgba(125, 211, 252, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.07),
+    0 18px 30px rgba(8, 47, 73, 0.2);
+}
+#eventForm #eventDate:focus,
+#eventForm #eventDateEnd:focus,
+.modernPickerInput:focus,
+.modernPickerInputOpen{
+  outline: none;
+  border-color: rgba(52, 211, 153, 0.68);
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(16, 31, 51, 0.98), rgba(7, 21, 37, 0.99));
+  box-shadow:
+    0 0 0 4px rgba(45,212,191,0.14),
+    0 20px 34px rgba(8, 145, 178, 0.24),
+    inset 0 1px 0 rgba(255,255,255,0.08);
 }
 #eventForm #eventPax{
   max-width: 170px;
@@ -3905,68 +3986,308 @@ input[type="file"]::-webkit-file-upload-button:active{
   z-index: 25;
   backdrop-filter: blur(8px);
 }
-.institutionHeadlineCard{
+.institutionSearchField{
+  position: relative;
+}
+.institutionSearchResults{
   display: grid;
-  gap: 12px;
-  border-color: rgba(96, 165, 250, 0.36);
-  border-width: 1px;
+  gap: 10px;
+  margin-top: 8px;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 2px;
+}
+.institutionSearchResults:empty{
+  display: none;
+}
+.institutionSearchCard,
+.institutionSearchEmpty{
+  width: 100%;
+  text-align: left;
+  padding: 14px 15px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.institutionSearchCard{
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.institutionSearchCard:hover{
+  transform: translateY(-1px);
+  border-color: rgba(96, 165, 250, 0.42);
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.18), rgba(30, 64, 175, 0.08));
+  box-shadow: 0 12px 26px rgba(2, 6, 23, 0.22);
+}
+.institutionSearchCard.isActive{
+  border-color: rgba(125, 211, 252, 0.5);
+  background: linear-gradient(180deg, rgba(8, 145, 178, 0.22), rgba(30, 64, 175, 0.1));
+  box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.18), 0 14px 28px rgba(2, 6, 23, 0.24);
+}
+.institutionSearchCardTitle,
+.institutionSearchCardMeta,
+.institutionSearchCardSub{
+  display: block;
+}
+.institutionSearchCardTitle{
+  font-size: 14px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.institutionSearchCardMeta{
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(191, 219, 254, 0.94);
+}
+.institutionSearchCardSub,
+.institutionSearchEmpty{
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(226, 232, 240, 0.72);
+}
+.institutionSearchResults::-webkit-scrollbar{
+  width: 8px;
+}
+.institutionSearchResults::-webkit-scrollbar-thumb{
+  background: linear-gradient(180deg, rgba(96,165,250,0.8), rgba(34,197,94,0.7));
+  border-radius: 999px;
+}
+.institutionHeadlineCard{
+  position: relative;
+  display: grid;
+  gap: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 26px;
   background:
-    radial-gradient(circle at 3% 0%, rgba(56,189,248,0.22), transparent 30%),
-    radial-gradient(circle at 100% 0%, rgba(217,70,239,0.2), transparent 35%),
-    radial-gradient(circle at 88% 90%, rgba(251,146,60,0.16), transparent 28%),
-    linear-gradient(145deg, rgba(13, 30, 65, 0.95), rgba(19, 25, 58, 0.88));
-  background-size: 130% 130%;
-  animation: institutionAurora 16s ease-in-out infinite alternate;
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), transparent 30%),
+    radial-gradient(circle at 92% 12%, rgba(244, 114, 182, 0.16), transparent 30%),
+    linear-gradient(135deg, rgba(7, 18, 39, 0.97), rgba(17, 35, 73, 0.94) 55%, rgba(33, 34, 70, 0.95));
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.1),
-    0 20px 38px rgba(2,6,23,0.36);
+    0 24px 50px rgba(2,6,23,0.38);
+}
+.institutionHeadlineCard::before{
+  content: "";
+  position: absolute;
+  inset: auto -12% -38% auto;
+  width: 320px;
+  height: 320px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.18), transparent 65%);
+  pointer-events: none;
 }
 .institutionHeadlineTop{
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.75fr);
+  gap: 18px;
+  align-items: stretch;
+}
+.institutionHeadlineIdentity,
+.institutionHeadlineValueBlock,
+.institutionStatCard{
+  position: relative;
+  z-index: 1;
+}
+.institutionHeroEyebrow{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.26);
+  background: rgba(8, 145, 178, 0.12);
+  color: rgba(186, 230, 253, 0.96);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 .institutionHeadlineTop strong{
   display: block;
-  font-size: 30px;
+  margin-top: 14px;
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.05;
   letter-spacing: 0.01em;
   color: #f8fafc;
-  text-shadow: 0 10px 28px rgba(2,6,23,0.45);
+  text-shadow: 0 12px 28px rgba(2,6,23,0.4);
 }
 .institutionHeadlineTop small{
   display: block;
-  margin-top: 5px;
-  color: rgba(219, 234, 254, 0.92);
+  max-width: 52ch;
+  margin-top: 8px;
+  color: rgba(219, 234, 254, 0.8);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.institutionHeadlineValueBlock{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(196, 181, 253, 0.2);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  backdrop-filter: blur(10px);
+}
+.institutionHeadlineValueLabel{
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(196, 181, 253, 0.85);
 }
 .institutionHeadlineMoney{
-  font-size: 38px;
+  font-size: clamp(34px, 3.5vw, 48px);
   font-weight: 900;
+  line-height: 1;
   letter-spacing: 0.01em;
-  color: #c4b5fd;
+  color: #f5f3ff;
   white-space: nowrap;
-  text-shadow: 0 0 24px rgba(167, 139, 250, 0.35), 0 10px 24px rgba(30, 64, 175, 0.4);
+  text-shadow: 0 0 24px rgba(167, 139, 250, 0.22), 0 12px 28px rgba(15, 23, 42, 0.42);
 }
-.institutionHeadlineMeta{
+.institutionHeadlineCard.isEmpty{
+  min-height: 248px;
+  align-items: stretch;
+}
+.institutionHeadlineEmpty{
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.95fr);
+  gap: 18px;
+  align-items: stretch;
+}
+.institutionHeadlineEmptyMain,
+.institutionHeadlineHintCard{
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.institutionHeadlineEmptyMain{
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 26px 28px;
 }
-.institutionHeadlineMeta .pill:nth-child(1){
-  background: rgba(37, 99, 235, 0.32);
-  border-color: rgba(96, 165, 250, 0.42);
+.institutionHeadlineEmptyMain strong{
+  display: block;
+  margin-top: 14px;
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.08;
+  color: #f8fafc;
 }
-.institutionHeadlineMeta .pill:nth-child(2){
-  background: rgba(8, 145, 178, 0.3);
-  border-color: rgba(103, 232, 249, 0.4);
+.institutionHeadlineEmptyMain small{
+  display: block;
+  max-width: 58ch;
+  margin-top: 10px;
+  color: rgba(219, 234, 254, 0.8);
+  font-size: 14px;
+  line-height: 1.6;
 }
-.institutionHeadlineMeta .pill:nth-child(3){
-  background: rgba(245, 158, 11, 0.26);
-  border-color: rgba(252, 211, 77, 0.42);
+.institutionHeadlineHintGrid{
+  display: grid;
+  gap: 12px;
 }
-.institutionHeadlineMeta .pill:nth-child(4){
-  background: rgba(217, 70, 239, 0.24);
-  border-color: rgba(244, 114, 182, 0.36);
+.institutionHeadlineHintCard{
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  min-height: 0;
+  padding: 18px 20px;
+}
+.institutionHeadlineHintCard span{
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.74);
+}
+.institutionHeadlineHintCard b{
+  color: #f8fbff;
+  font-size: 18px;
+  line-height: 1.35;
+}
+.institutionHeadlineStats{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.institutionStatCard{
+  min-height: 108px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.institutionStatLabel{
+  display: block;
+  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.74);
+}
+.institutionStatCard strong{
+  display: block;
+  font-size: 18px;
+  line-height: 1.35;
+  color: #f8fafc;
+}
+.institutionStatPrimary{
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.14));
+  border-color: rgba(96, 165, 250, 0.3);
+}
+.institutionStatTeal{
+  background: linear-gradient(180deg, rgba(8, 145, 178, 0.28), rgba(8, 145, 178, 0.12));
+  border-color: rgba(103, 232, 249, 0.26);
+}
+.institutionStatAmber{
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.24), rgba(245, 158, 11, 0.1));
+  border-color: rgba(252, 211, 77, 0.24);
+}
+.institutionStatMagenta{
+  background: linear-gradient(180deg, rgba(217, 70, 239, 0.22), rgba(217, 70, 239, 0.1));
+  border-color: rgba(244, 114, 182, 0.22);
+}
+@media (max-width: 1100px){
+  .institutionHeadlineTop,
+  .institutionHeadlineEmpty{
+    grid-template-columns: 1fr;
+  }
+  .institutionHeadlineValueBlock{
+    align-items: flex-start;
+  }
+  .institutionHeadlineStats{
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+@media (max-width: 760px){
+  .institutionHeadlineTop,
+  .institutionHeadlineEmpty{
+    grid-template-columns: 1fr;
+  }
+  .institutionHeadlineEmptyMain,
+  .institutionHeadlineHintCard,
+  .institutionHeadlineValueBlock{
+    padding: 16px 18px;
+  }
+  .institutionHeadlineMoney{
+    white-space: normal;
+  }
+  .institutionHeadlineStats{
+    grid-template-columns: 1fr;
+  }
+  .institutionStatCard{
+    min-height: 0;
+  }
 }
 .institutionReportSummary{
   display: grid;
@@ -4600,35 +4921,76 @@ input[type="file"]::-webkit-file-upload-button:active{
   background: rgba(59,130,246,0.25);
 }
 .occupancyChecklistLinkBtn{
-  border: 1px solid rgba(148,163,184,0.45);
-  border-radius: 10px;
-  min-width: 92px;
-  min-height: 30px;
-  padding: 6px 10px;
+  border: 1px solid rgba(148,163,184,0.42);
+  border-radius: 14px;
+  min-width: 118px;
+  min-height: 38px;
+  padding: 8px 12px 8px 14px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
   line-height: 1.1;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 18px rgba(2,6,23,0.16);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease, filter .16s ease;
+}
+.occupancyChecklistLinkBtn:hover{
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 24px rgba(2,6,23,0.22);
+}
+.occupancyChecklistLinkBtn:active{
+  transform: translateY(0);
+}
+.occupancyChecklistLinkBtn:focus-visible{
+  outline: 2px solid rgba(191,219,254,0.9);
+  outline-offset: 2px;
+}
+.occupancyChecklistActionLabel{
+  display: inline-flex;
+  align-items: center;
+}
+.occupancyChecklistActionIcon{
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 900;
+  background: rgba(255,255,255,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
 .occupancyChecklistLinkBtn--has{
-  border-color: rgba(16,185,129,0.7);
-  background: rgba(16,185,129,0.2);
-  color: #d1fae5;
+  border-color: rgba(34,197,94,0.44);
+  background: linear-gradient(180deg, rgba(22,163,74,0.24), rgba(21,128,61,0.14));
+  color: #ecfdf5;
+}
+.occupancyChecklistLinkBtn--has .occupancyChecklistActionIcon{
+  background: rgba(255,255,255,0.16);
+  color: #dcfce7;
 }
 .occupancyChecklistLinkBtn--has:hover{
-  background: rgba(16,185,129,0.28);
+  border-color: rgba(74,222,128,0.56);
+  background: linear-gradient(180deg, rgba(22,163,74,0.3), rgba(21,128,61,0.18));
 }
 .occupancyChecklistLinkBtn--missing{
-  border-color: rgba(239,68,68,0.7);
-  background: rgba(239,68,68,0.18);
-  color: #fee2e2;
+  border-color: rgba(251,113,133,0.55);
+  background: linear-gradient(180deg, rgba(190,24,93,0.22), rgba(159,18,57,0.12));
+  color: #fff1f2;
+}
+.occupancyChecklistLinkBtn--missing .occupancyChecklistActionIcon{
+  background: rgba(255,255,255,0.16);
+  color: #ffe4e6;
 }
 .occupancyChecklistLinkBtn--missing:hover{
-  background: rgba(239,68,68,0.26);
+  border-color: rgba(251,146,60,0.62);
+  background: linear-gradient(180deg, rgba(244,63,94,0.26), rgba(190,24,93,0.16));
 }
 .checklistStateBtn{
   border: 1px solid rgba(148,163,184,0.45);
@@ -6432,3 +6794,2173 @@ textarea.fieldInvalid{
   place-items: center;
 }
 /* === END UI HOTFIX: CHECKLIST SECTION ICON BUTTONS === */
+
+
+
+/* === GLOBAL SCROLLBARS === */
+:where(
+  .cselectMenu,
+  .ss-content,
+  .choices--glass .choices__list--dropdown,
+  .choices--glass .choices__list[aria-expanded],
+  .topbarReminderPanel,
+  #appointmentPanel .historyGrid,
+  .salesReportTableWrap,
+  .dashboardReportBody,
+  .dashboardSellerList,
+  .institutionReportBody,
+  .institutionReportContent,
+  .institutionEventsWrap,
+  .institutionSearchResults,
+  .occupancyTableWrap
+){
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96,165,250,0.9) var(--scrollbar-track);
+  scrollbar-gutter: stable;
+}
+
+:where(
+  .cselectMenu,
+  .ss-content,
+  .choices--glass .choices__list--dropdown,
+  .choices--glass .choices__list[aria-expanded],
+  .topbarReminderPanel,
+  #appointmentPanel .historyGrid,
+  .salesReportTableWrap,
+  .dashboardReportBody,
+  .dashboardSellerList,
+  .institutionReportBody,
+  .institutionReportContent,
+  .institutionEventsWrap,
+  .institutionSearchResults,
+  .occupancyTableWrap
+)::-webkit-scrollbar{
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+:where(
+  .cselectMenu,
+  .ss-content,
+  .choices--glass .choices__list--dropdown,
+  .choices--glass .choices__list[aria-expanded],
+  .topbarReminderPanel,
+  #appointmentPanel .historyGrid,
+  .salesReportTableWrap,
+  .dashboardReportBody,
+  .dashboardSellerList,
+  .institutionReportBody,
+  .institutionReportContent,
+  .institutionEventsWrap,
+  .institutionSearchResults,
+  .occupancyTableWrap
+)::-webkit-scrollbar-track{
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
+  border: 1px solid var(--scrollbar-track-border);
+}
+
+:where(
+  .cselectMenu,
+  .ss-content,
+  .choices--glass .choices__list--dropdown,
+  .choices--glass .choices__list[aria-expanded],
+  .topbarReminderPanel,
+  #appointmentPanel .historyGrid,
+  .salesReportTableWrap,
+  .dashboardReportBody,
+  .dashboardSellerList,
+  .institutionReportBody,
+  .institutionReportContent,
+  .institutionEventsWrap,
+  .institutionSearchResults,
+  .occupancyTableWrap
+)::-webkit-scrollbar-thumb{
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
+  border: 2px solid rgba(7, 13, 30, 0.82);
+}
+
+:where(
+  .cselectMenu,
+  .ss-content,
+  .choices--glass .choices__list--dropdown,
+  .choices--glass .choices__list[aria-expanded],
+  .topbarReminderPanel,
+  #appointmentPanel .historyGrid,
+  .salesReportTableWrap,
+  .dashboardReportBody,
+  .dashboardSellerList,
+  .institutionReportBody,
+  .institutionReportContent,
+  .institutionEventsWrap,
+  .institutionSearchResults,
+  .occupancyTableWrap
+)::-webkit-scrollbar-thumb:hover{
+  background: var(--scrollbar-thumb-hover);
+}
+
+.ss-content{
+  overflow: auto !important;
+}
+
+.choices--glass .choices__list--dropdown,
+.choices--glass .choices__list[aria-expanded]{
+  overflow: auto !important;
+}
+/* === END GLOBAL SCROLLBARS === */
+
+/* === OCCUPANCY EXECUTIVE REDESIGN === */
+.occupancyReportModal{
+  width: min(96vw, 1820px);
+  max-height: 95vh;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.12), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.10), transparent 30%),
+    linear-gradient(180deg, rgba(223, 232, 246, 0.94), rgba(205, 219, 238, 0.96));
+  box-shadow: 0 38px 90px rgba(2, 6, 23, 0.48), inset 0 1px 0 rgba(255,255,255,0.75);
+}
+.occupancyReportModal .modalHeader{
+  position: relative;
+  align-items: center;
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  background:
+    linear-gradient(135deg, rgba(9, 26, 56, 0.98), rgba(14, 47, 74, 0.94) 58%, rgba(15, 23, 42, 0.95));
+  overflow: hidden;
+}
+.occupancyReportModal .modalHeader::before{
+  content: "";
+  position: absolute;
+  inset: -30% auto auto -10%;
+  width: 320px;
+  height: 320px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.24), transparent 68%);
+  pointer-events: none;
+}
+.occupancyReportModal .modalHeader::after{
+  content: "";
+  position: absolute;
+  inset: auto -8% -45% auto;
+  width: 340px;
+  height: 340px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.18), transparent 70%);
+  pointer-events: none;
+}
+.occupancyReportModal #occupancyReportTitle,
+.occupancyReportModal #occupancyReportSubtitle,
+.occupancyReportModal .modalHeader .iconBtn{
+  position: relative;
+  z-index: 1;
+}
+.occupancyReportModal #occupancyReportTitle{
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #f8fbff;
+}
+.occupancyReportModal #occupancyReportSubtitle{
+  margin-top: 6px;
+  color: rgba(224, 231, 255, 0.78);
+  font-size: 13px;
+}
+.occupancyReportModal .modalHeader .iconBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  color: #f8fbff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.occupancyReportBody{
+  height: calc(95vh - 98px);
+  max-height: calc(95vh - 98px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 24px 24px 28px;
+  background:
+    linear-gradient(180deg, rgba(213, 223, 238, 0.90), rgba(196, 209, 229, 0.94));
+}
+.occupancyHeroPanel,
+.occupancySection{
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 24px;
+  background: rgba(223, 232, 246, 0.72);
+  box-shadow:
+    0 18px 34px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.72);
+  backdrop-filter: blur(8px);
+}
+.occupancyHeroPanel{
+  padding: 22px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.12), transparent 32%),
+    radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.10), transparent 30%),
+    linear-gradient(145deg, rgba(230, 238, 250, 0.82), rgba(210, 223, 241, 0.78));
+}
+.occupancySection{
+  padding: 20px;
+}
+.occupancySectionIntro{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.occupancySectionIntro--hero{
+  margin-bottom: 18px;
+}
+.occupancySectionIntro--table{
+  margin-bottom: 18px;
+}
+.occupancySectionEyebrow{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.occupancySectionTitle{
+  margin-top: 12px;
+  font-size: 22px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+.occupancySectionText{
+  margin-top: 8px;
+  max-width: 74ch;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.occupancyToolbar{
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+}
+.occupancyField{
+  gap: 10px;
+}
+.occupancyField > span{
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.occupancyWeekNav{
+  display: grid;
+  grid-template-columns: 48px minmax(220px, 1fr) 48px;
+  gap: 10px;
+  align-items: center;
+}
+.occupancyWeekNav #occupancyReportWeek{
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: linear-gradient(180deg, rgba(229, 236, 247, 0.92), rgba(210, 220, 236, 0.90));
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+}
+.occupancyWeekNav .btn,
+#btnOccupancyReportTodayWeek,
+#btnOccupancyReportExportExcel{
+  min-height: 48px;
+  border-radius: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+.occupancyWeekNav .btn{
+  min-width: 48px;
+  padding-inline: 0;
+  border-color: rgba(148, 163, 184, 0.22);
+  background: linear-gradient(180deg, rgba(214, 224, 239, 0.94), rgba(190, 204, 224, 0.90));
+  color: #0f172a;
+}
+.occupancyHeroActions{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+#btnOccupancyReportTodayWeek{
+  min-width: 156px;
+  border-color: rgba(59,130,246,0.18);
+  background: linear-gradient(180deg, rgba(221, 231, 245, 0.94), rgba(198, 213, 233, 0.90));
+  color: #0f172a;
+}
+#btnOccupancyReportExportExcel{
+  min-width: 168px;
+  border-color: rgba(37,99,235,0.32);
+  background: linear-gradient(135deg, #1d4ed8, #2563eb 58%, #0ea5e9);
+  color: #f8fbff;
+}
+#btnOccupancyReportTodayWeek:hover,
+#btnOccupancyReportExportExcel:hover,
+.occupancyWeekNav .btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255,255,255,0.72);
+}
+.occupancySummary{
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+.occupancyCard{
+  position: relative;
+  overflow: hidden;
+  min-height: 168px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: linear-gradient(180deg, rgba(223, 231, 244, 0.92), rgba(203, 214, 231, 0.90));
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.10);
+}
+.occupancyCard::before{
+  content: "";
+  position: absolute;
+  inset: auto -18% -42% auto;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.12), transparent 68%);
+}
+.occupancyCardTop,
+.occupancyCard strong,
+.occupancyCardMeta,
+.occupancyCardHint{
+  position: relative;
+  z-index: 1;
+}
+.occupancyCardTop{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.occupancyCardKicker{
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.occupancyCardIcon{
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.occupancyCard strong{
+  display: block;
+  margin-top: 22px;
+  font-size: clamp(30px, 3vw, 40px);
+  line-height: 1;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.04em;
+}
+.occupancyCardMeta{
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.occupancyCardHint{
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+}
+.occupancyCard--events{
+  background: linear-gradient(180deg, rgba(220, 230, 244, 0.92), rgba(199, 212, 233, 0.90));
+}
+.occupancyCard--confirmed{
+  background: linear-gradient(180deg, rgba(214, 233, 222, 0.92), rgba(191, 222, 203, 0.88));
+  border-color: rgba(34,197,94,0.18);
+}
+.occupancyCard--pre{
+  background: linear-gradient(180deg, rgba(212, 225, 244, 0.92), rgba(191, 209, 236, 0.88));
+  border-color: rgba(59,130,246,0.18);
+}
+.occupancyCard--pax{
+  background: linear-gradient(180deg, rgba(233, 225, 204, 0.90), rgba(220, 207, 168, 0.86));
+  border-color: rgba(245,158,11,0.18);
+}
+.occupancyCard--revenue{
+  background: linear-gradient(180deg, rgba(225, 217, 238, 0.90), rgba(207, 194, 227, 0.86));
+  border-color: rgba(168,85,247,0.18);
+}
+.occupancyDaysStrip{
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+}
+.occupancyDayCard{
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: linear-gradient(180deg, rgba(229, 236, 247, 0.92), rgba(210, 220, 236, 0.90));
+  color: #0f172a;
+  border-radius: 20px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 12px 24px rgba(15,23,42,0.08);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.occupancyDayCard:hover{
+  transform: translateY(-2px);
+  border-color: rgba(96, 165, 250, 0.30);
+  box-shadow: 0 16px 30px rgba(15,23,42,0.12);
+}
+.occupancyDayCard.hasEvents::before,
+.occupancyDayCard.active::before{
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  border-radius: 20px 0 0 20px;
+  background: linear-gradient(180deg, #0ea5e9, #2563eb);
+}
+.occupancyDayCard.active{
+  border-color: rgba(59,130,246,0.35);
+  background: linear-gradient(180deg, rgba(196, 212, 235, 0.96), rgba(179, 197, 223, 0.94));
+  box-shadow: 0 18px 34px rgba(37,99,235,0.14);
+}
+.occupancyDayCardTop{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.occupancyDayCardTop small{
+  color: #475569;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.occupancyDayDate{
+  font-size: 12px;
+  font-weight: 800;
+  color: #1e293b;
+}
+.occupancyDayPrimary{
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.occupancyDayPrimary strong{
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+.occupancyDayPrimary span{
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+.occupancyDayMeta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.occupancyDayMeta span{
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(15,23,42,0.12);
+  color: #334155;
+  font-size: 11px;
+  font-weight: 800;
+}
+.occupancyDayRevenue{
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.occupancyDayDetail{
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(223, 232, 246, 0.90), rgba(205, 217, 234, 0.90));
+  padding: 18px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
+}
+.occupancyDetailHeader{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+.occupancyDayDetailTitle{
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+.occupancyDayDetailText{
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.occupancyDetailStats{
+  display: grid;
+  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  gap: 10px;
+}
+.occupancyDetailStat{
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(224, 232, 244, 0.82);
+}
+.occupancyDetailStat small{
+  display: block;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.occupancyDetailStat strong{
+  display: block;
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
+}
+.occupancyDayDetailEmpty{
+  padding: 26px 24px;
+  border-radius: 18px;
+  border: 1px dashed rgba(148,163,184,0.32);
+  background: rgba(248,250,252,0.78);
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.occupancyEventCards{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+.occupancyEventCard{
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 20px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(221, 229, 242, 0.90), rgba(201, 213, 230, 0.88));
+  box-shadow: 0 14px 28px rgba(15,23,42,0.08);
+}
+.occupancyEventCard::before{
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #0ea5e9, #2563eb);
+}
+.occupancyEventCard--confirmed::before{
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+}
+.occupancyEventCard--pre::before{
+  background: linear-gradient(180deg, #38bdf8, #2563eb);
+}
+.occupancyEventHead{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.occupancyEventHeading strong{
+  display: block;
+  margin-top: 10px;
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 900;
+}
+.occupancyEventHeading small{
+  display: block;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+.occupancyEventMoney{
+  min-width: 130px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,0.14);
+  background: rgba(220, 228, 240, 0.82);
+  text-align: right;
+}
+.occupancyEventMoney span{
+  display: block;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.occupancyEventMoney strong{
+  display: block;
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
+}
+.occupancyEventBody{
+  display: grid;
+  gap: 14px;
+}
+.occupancyInfoGrid,
+.occupancyMetricsGrid,
+.occupancyActionGrid{
+  display: grid;
+  gap: 10px;
+}
+.occupancyInfoGrid{
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.occupancyMetricsGrid{
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.occupancyActionGrid{
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.occupancyInfoItem,
+.occupancyMetricItem,
+.occupancyActionItem{
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,0.14);
+  background: rgba(218, 227, 240, 0.82);
+}
+.occupancyInfoWide{
+  grid-column: 1 / -1;
+}
+.occupancyInfoItem small,
+.occupancyMetricItem small,
+.occupancyActionItem small{
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.occupancyInfoItem strong,
+.occupancyMetricItem strong{
+  display: block;
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.occupancyMetricItem strong{
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+.occupancyActionItem > div{
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+}
+.occupancyTableSection{
+  padding-bottom: 16px;
+}
+.occupancyTableWrap{
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 22px;
+  background: rgba(218, 227, 241, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
+}
+.occupancyTable{
+  min-width: 2200px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.occupancyTable thead th{
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  padding: 16px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(30, 41, 59, 0.96));
+  color: rgba(226,232,240,0.94);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+.occupancyTable tbody td{
+  padding: 16px 14px;
+  border-top: 1px solid rgba(226, 232, 240, 0.72);
+  background: rgba(222, 230, 242, 0.82);
+  color: #1e293b;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.occupancyTable tbody tr:nth-child(even) td{
+  background: rgba(212, 221, 235, 0.82);
+}
+.occupancyTableRow:hover td{
+  background: rgba(195, 210, 231, 0.84);
+}
+.occupancyTableRow--confirmed:hover td{
+  background: rgba(202, 221, 209, 0.88);
+}
+.occupancyTableRow--pre:hover td{
+  background: rgba(198, 211, 232, 0.88);
+}
+.occupancyTableEvent strong,
+.occupancyTableInstitution,
+.occupancyTableSalon,
+.occupancyTableSeller,
+.occupancyTableManager{
+  color: #0f172a;
+  font-weight: 800;
+}
+.occupancyTablePax,
+.occupancyTableMoney{
+  font-weight: 900;
+  color: #0f172a;
+}
+.occupancyTableMoney{
+  white-space: nowrap;
+}
+.occupancyTableUpdated,
+.occupancyTableDate,
+.occupancyTableTime{
+  color: #475569;
+  font-weight: 700;
+}
+.occupancyTableEmpty{
+  padding: 24px 18px !important;
+  text-align: center;
+  color: #64748b !important;
+  font-weight: 700;
+}
+.occupancyTable .salesStatusBadge,
+.occupancyEventCard .salesStatusBadge{
+  min-width: 116px;
+  min-height: 32px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(15,23,42,0.12);
+}
+.occupancyQuoteLinkBtn{
+  border: 1px solid rgba(59,130,246,0.28);
+  background: linear-gradient(180deg, rgba(239,246,255,0.98), rgba(219,234,254,0.95));
+  color: #1d4ed8;
+  border-radius: 14px;
+  min-width: 144px;
+  min-height: 38px;
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 10px 18px rgba(37,99,235,0.10);
+}
+.occupancyQuoteLinkBtn:hover,
+.occupancyMenuMontajeLinkBtn:hover{
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.72), 0 14px 24px rgba(37,99,235,0.14);
+}
+.occupancyMenuMontajeLinkBtn{
+  border-color: rgba(14,165,233,0.24);
+  background: linear-gradient(180deg, rgba(236,254,255,0.98), rgba(207,250,254,0.94));
+  color: #0f766e;
+}
+@media (max-width: 1280px){
+  .occupancyToolbar{
+    grid-template-columns: 1fr;
+  }
+  .occupancyHeroActions{
+    justify-content: flex-start;
+  }
+  .occupancySummary{
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .occupancyDaysStrip{
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .occupancyDetailHeader{
+    grid-template-columns: 1fr;
+  }
+  .occupancyDetailStats{
+    grid-template-columns: repeat(3, minmax(110px, 1fr));
+  }
+}
+@media (max-width: 900px){
+  .occupancyReportModal{
+    width: min(100vw, 100%);
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  .occupancyReportBody{
+    height: calc(100vh - 88px);
+    max-height: calc(100vh - 88px);
+    padding: 16px;
+    gap: 14px;
+  }
+  .occupancySection,
+  .occupancyHeroPanel{
+    padding: 16px;
+    border-radius: 20px;
+  }
+  .occupancySectionTitle{
+    font-size: 19px;
+  }
+  .occupancyWeekNav{
+    grid-template-columns: 42px 1fr 42px;
+  }
+  .occupancySummary{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .occupancyDaysStrip{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .occupancyDetailStats,
+  .occupancyMetricsGrid,
+  .occupancyActionGrid{
+    grid-template-columns: 1fr;
+  }
+  .occupancyInfoGrid{
+    grid-template-columns: 1fr;
+  }
+  .occupancyEventHead{
+    flex-direction: column;
+  }
+  .occupancyEventMoney{
+    width: 100%;
+    text-align: left;
+  }
+}
+@media (max-width: 640px){
+  .occupancySummary{
+    grid-template-columns: 1fr;
+  }
+  .occupancyDaysStrip{
+    grid-template-columns: 1fr;
+  }
+  .occupancyDetailStats{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .occupancyCard{
+    min-height: 0;
+  }
+  .occupancyCard strong{
+    font-size: 32px;
+  }
+}
+/* === END OCCUPANCY EXECUTIVE REDESIGN === */
+
+/* === EXECUTIVE REPORTS REDESIGN === */
+.reportModalHeader{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  padding:24px 28px 20px;
+  background:
+    radial-gradient(circle at top right, rgba(74,135,255,0.22), transparent 34%),
+    linear-gradient(135deg, rgba(20,29,52,0.96) 0%, rgba(18,42,60,0.94) 54%, rgba(24,32,52,0.96) 100%);
+  border-bottom:1px solid rgba(130,165,218,0.18);
+}
+.reportBrandHeader{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  min-width:0;
+}
+.reportBrandBadge{
+  width:56px;
+  height:56px;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg, rgba(24,58,86,0.95), rgba(40,99,126,0.84));
+  border:1px solid rgba(117,197,233,0.28);
+  box-shadow:0 14px 30px rgba(7,14,24,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+  flex:0 0 auto;
+}
+.reportBrandLogo{
+  width:34px;
+  height:34px;
+  object-fit:contain;
+}
+.reportBrandCopy{
+  min-width:0;
+}
+.reportBrandEyebrow{
+  font-size:11px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:#8faecd;
+  margin-bottom:6px;
+}
+.reportModalHeader .modalTitle{
+  font-size:29px;
+  font-weight:800;
+  letter-spacing:-0.03em;
+  color:#f7fbff;
+  line-height:1.05;
+}
+.reportModalHeader .modalSubtitle{
+  margin-top:6px;
+  color:#adc2d8;
+  font-size:13px;
+}
+.reportModalClose{
+  width:44px;
+  height:44px;
+  border-radius:14px;
+  background:linear-gradient(180deg, rgba(63,76,106,0.92), rgba(41,52,77,0.92));
+  border:1px solid rgba(155,181,220,0.2);
+  box-shadow:0 10px 20px rgba(6,12,22,0.24);
+}
+.salesReportBody,
+.dashboardReportBody,
+.institutionReportBody{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  padding:22px;
+  background:
+    radial-gradient(circle at top left, rgba(74,135,255,0.08), transparent 28%),
+    linear-gradient(180deg, rgba(9,16,30,0.97) 0%, rgba(12,20,36,0.985) 100%);
+}
+.reportHeroPanel,
+.reportDataSection{
+  position:relative;
+  border-radius:24px;
+  padding:20px;
+  border:1px solid rgba(109,138,182,0.18);
+  background:linear-gradient(180deg, rgba(19,29,50,0.9) 0%, rgba(12,20,37,0.94) 100%);
+  box-shadow:0 20px 36px rgba(3,8,18,0.28);
+  overflow:hidden;
+}
+.reportHeroPanel::before,
+.reportDataSection::before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto 0;
+  height:1px;
+  background:linear-gradient(90deg, rgba(120,173,255,0.12), rgba(140,225,255,0.45), rgba(120,173,255,0.12));
+  pointer-events:none;
+}
+.reportSectionIntro{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:18px;
+}
+.reportSectionIntro--table{
+  margin-bottom:14px;
+}
+.reportSectionEyebrow{
+  color:#78c8ea;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.reportSectionTitle{
+  color:#eef5ff;
+  font-size:24px;
+  font-weight:800;
+  letter-spacing:-0.03em;
+  line-height:1.08;
+}
+.reportSectionText{
+  margin-top:8px;
+  max-width:760px;
+  color:#96adc7;
+  font-size:13px;
+  line-height:1.6;
+}
+.reportFilterMeta{
+  align-self:flex-start;
+  min-height:40px;
+  padding:11px 14px;
+  border-radius:14px;
+  background:rgba(32,48,79,0.82);
+  border:1px solid rgba(122,164,222,0.18);
+  color:#c8d7e8;
+  font-size:12px;
+  line-height:1.45;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.salesReportHeroPanel .salesReportFilters,
+.dashboardReportHeroPanel .dashboardReportFilters,
+.institutionReportHeroPanel .institutionReportFilters{
+  margin:0;
+  padding:18px;
+  border-radius:20px;
+  background:linear-gradient(180deg, rgba(17,27,46,0.96), rgba(13,21,38,0.98));
+  border:1px solid rgba(121,150,201,0.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.salesReportHeroPanel .field,
+.dashboardReportHeroPanel .field,
+.institutionReportHeroPanel .field{
+  gap:8px;
+}
+.salesReportHeroPanel .field > span,
+.dashboardReportHeroPanel .field > span,
+.institutionReportHeroPanel .field > span{
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:#86a0bc;
+}
+.salesReportHeroPanel input,
+.salesReportHeroPanel select,
+.dashboardReportHeroPanel input,
+.dashboardReportHeroPanel select,
+.institutionReportHeroPanel input,
+.institutionReportHeroPanel select{
+  height:48px;
+  border-radius:14px;
+  border:1px solid rgba(124,154,203,0.18);
+  background:linear-gradient(180deg, rgba(38,50,76,0.95), rgba(29,39,60,0.96));
+  color:#f3f8ff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.salesReportHeroPanel input:focus,
+.salesReportHeroPanel select:focus,
+.dashboardReportHeroPanel input:focus,
+.dashboardReportHeroPanel select:focus,
+.institutionReportHeroPanel input:focus,
+.institutionReportHeroPanel select:focus{
+  border-color:rgba(94,168,255,0.7);
+  box-shadow:0 0 0 3px rgba(64,140,255,0.16);
+}
+.salesReportHeroPanel .btn,
+.dashboardReportHeroPanel .btn,
+.institutionReportHeroPanel .btn{
+  min-height:46px;
+  padding:0 18px;
+  border-radius:14px;
+  background:linear-gradient(180deg, rgba(74,88,117,0.9), rgba(53,66,91,0.96));
+  border:1px solid rgba(158,184,224,0.16);
+  color:#eef4fb;
+  box-shadow:0 12px 24px rgba(6,12,22,0.18);
+}
+.salesReportHeroPanel .btnPrimary,
+.dashboardReportHeroPanel .btnPrimary,
+.institutionReportHeroPanel .btnPrimary{
+  min-height:46px;
+  padding:0 20px;
+  border-radius:14px;
+  background:linear-gradient(135deg, #2f8fff 0%, #226fe0 100%);
+  border:1px solid rgba(117,189,255,0.4);
+  box-shadow:0 16px 28px rgba(16,64,153,0.34);
+}
+.salesReportSummary{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:14px;
+  margin-top:18px;
+}
+.salesSummaryCard{
+  position:relative;
+  padding:18px 18px 16px;
+  border-radius:20px;
+  border:1px solid rgba(126,153,197,0.18);
+  background:linear-gradient(180deg, rgba(18,28,47,0.94), rgba(13,20,35,0.96));
+  box-shadow:0 16px 28px rgba(5,11,21,0.22);
+}
+.salesSummaryCard::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  border-radius:20px 0 0 20px;
+  background:var(--report-tone, #5b8ff9);
+}
+.salesSummaryCard--primary{ --report-tone:#60a5fa; }
+.salesSummaryCard--success{ --report-tone:#32c787; }
+.salesSummaryCard--info{ --report-tone:#38bdf8; }
+.salesSummaryCard--accent{ --report-tone:#f5b547; }
+.salesSummaryEyebrow{
+  display:inline-flex;
+  margin-bottom:10px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:#f4fbff;
+  background:color-mix(in srgb, var(--report-tone) 22%, transparent);
+  border:1px solid color-mix(in srgb, var(--report-tone) 42%, transparent);
+}
+.salesSummaryCard small{
+  display:block;
+  color:#8ca5c1;
+  font-size:12px;
+  margin-bottom:8px;
+}
+.salesSummaryCard strong{
+  display:block;
+  color:#f8fbff;
+  font-size:31px;
+  font-weight:800;
+  letter-spacing:-0.04em;
+  line-height:1.04;
+}
+.salesSummaryMeta{
+  margin-top:10px;
+  color:#a8b9cf;
+  font-size:12px;
+  line-height:1.45;
+}
+.salesReportDataSection .salesReportTableWrap,
+.institutionEventsWrap{
+  margin:0;
+  border-radius:22px;
+  border:1px solid rgba(109,136,178,0.16);
+  background:linear-gradient(180deg, rgba(11,19,34,0.96), rgba(8,14,28,0.98));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.salesReportTable,
+.institutionEventsTable{
+  min-width:max-content;
+  border-collapse:separate;
+  border-spacing:0;
+}
+.salesReportTable thead th,
+.institutionEventsTable thead th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  padding:14px 12px;
+  border-bottom:1px solid rgba(109,136,178,0.18);
+  background:linear-gradient(180deg, rgba(31,50,84,0.96), rgba(21,35,60,0.98));
+  color:#dbe8f7;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.salesReportTable tbody td,
+.institutionEventsTable tbody td{
+  padding:14px 12px;
+  border-bottom:1px solid rgba(93,117,153,0.14);
+  color:#e7eef8;
+  font-size:13px;
+  white-space:nowrap;
+}
+.salesReportTable tbody tr:nth-child(odd) td,
+.institutionEventsTable tbody tr:nth-child(odd) td{
+  background:rgba(12,20,35,0.74);
+}
+.salesReportTable tbody tr:nth-child(even) td,
+.institutionEventsTable tbody tr:nth-child(even) td{
+  background:rgba(17,28,46,0.86);
+}
+.salesReportTable tbody tr:hover td,
+.institutionEventsTable tbody tr:hover td{
+  background:rgba(33,53,87,0.9);
+}
+.salesStatusBadge{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px rgba(3,8,16,0.14);
+}
+.dashboardGoalsSection .dashboardGoalsGrid,
+.dashboardReportBody .dashboardChartsGrid,
+.dashboardSellerSection .dashboardSellerList,
+.institutionReportSummary,
+.institutionReportNav,
+.institutionReportContent{
+  margin-top:0;
+}
+.dashboardGoalsGrid{
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0, 1fr));
+  gap:14px;
+}
+.dashboardHeroCard,
+.dashboardGoalCard,
+.dashboardCard,
+.dashboardSellerList,
+.institutionHeadlineCard,
+.institutionDetailCard{
+  border-radius:22px;
+  border:1px solid rgba(112,141,186,0.16);
+  background:linear-gradient(180deg, rgba(19,29,50,0.92), rgba(12,20,36,0.96));
+  box-shadow:0 18px 30px rgba(4,9,19,0.24);
+}
+.dashboardHeroCard{
+  padding:22px;
+  grid-column:span 2;
+  background:
+    radial-gradient(circle at top right, rgba(78,146,255,0.22), transparent 38%),
+    linear-gradient(135deg, rgba(30,47,84,0.96), rgba(16,26,43,0.96));
+}
+.dashboardGoalCard{
+  padding:18px;
+}
+.dashboardGoalCard small{
+  color:#8da7c2;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  font-size:11px;
+}
+.dashboardGoalCard strong{
+  color:#f7fbff;
+  font-size:30px;
+  letter-spacing:-0.04em;
+}
+.dashboardGoalMeta{
+  color:#9cb1c7;
+}
+.dashboardGoalProgress{
+  margin-top:12px;
+  height:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.06);
+  overflow:hidden;
+}
+.dashboardGoalProgress span{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg, rgba(83,152,255,0.96), rgba(81,209,188,0.96));
+}
+.dashboardChartsGrid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:16px;
+}
+.dashboardCard{
+  padding:18px;
+}
+.dashboardCardHead{
+  margin-bottom:16px;
+}
+.dashboardCardHead strong{
+  color:#f1f7ff;
+  font-size:18px;
+}
+.dashboardCardHead small{
+  color:#95abc3;
+  font-size:12px;
+}
+.dashboardMiniChart{
+  min-height:300px;
+  border-radius:18px;
+  padding:16px;
+  background:linear-gradient(180deg, rgba(10,19,34,0.96), rgba(14,22,37,0.92));
+  border:1px solid rgba(110,140,182,0.14);
+}
+.dashboardSellerList{
+  padding:18px;
+  background:
+    radial-gradient(circle at top right, rgba(91,143,249,0.1), transparent 35%),
+    linear-gradient(180deg, rgba(18,28,47,0.92), rgba(12,20,36,0.96));
+}
+.dashboardSellerPerfHead strong{
+  color:#f3f8ff;
+}
+.dashboardSellerPerfHead small,
+.dashboardSellerPerfMeta,
+.dashboardPieLegendItem span,
+.dashboardPieLegendMore,
+.dashboardEmpty,
+.dashboardStatusChip span{
+  color:#9db2c9;
+}
+.dashboardSellerPerfCard{
+  padding:16px 14px;
+  border-radius:20px;
+  background:linear-gradient(180deg, rgba(14,23,39,0.95), rgba(10,17,30,0.97));
+  border:1px solid rgba(107,137,180,0.16);
+}
+.dashboardSellerPerfValue,
+.dashboardStatusChip b{
+  color:#f4f9ff;
+}
+.dashboardStatusChip{
+  background:rgba(19,30,50,0.82);
+  border:1px solid rgba(112,140,184,0.16);
+}
+.institutionReportHeroPanel .institutionHeadlineCard{
+  margin-top:18px;
+}
+.institutionHeadlineCard{
+  background:
+    radial-gradient(circle at top right, rgba(86,164,255,0.18), transparent 33%),
+    linear-gradient(135deg, rgba(24,37,62,0.96) 0%, rgba(20,48,67,0.95) 52%, rgba(31,31,56,0.96) 100%);
+}
+.institutionHeadlineValueBlock{
+  background:linear-gradient(180deg, rgba(13,22,37,0.6), rgba(10,16,28,0.72));
+  border:1px solid rgba(118,151,198,0.16);
+}
+.institutionReportSummary{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:14px;
+}
+.institutionSummaryCard{
+  min-height:154px;
+  border-radius:22px;
+  border:1px solid rgba(116,144,189,0.16);
+  box-shadow:0 16px 28px rgba(5,11,21,0.22);
+}
+.institutionReportNav{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:14px;
+  border-radius:20px;
+  border:1px solid rgba(108,136,177,0.16);
+  background:linear-gradient(180deg, rgba(17,27,46,0.9), rgba(11,18,31,0.96));
+}
+.institutionReportNav .btn{
+  min-height:42px;
+  padding:0 16px;
+  border-radius:12px;
+  border:1px solid rgba(112,141,186,0.16);
+  background:rgba(29,43,69,0.9);
+}
+.institutionReportContent{
+  display:grid;
+  gap:16px;
+}
+.institutionDetailCard{
+  padding:18px;
+}
+.institutionMetricCard,
+.institutionChartCard,
+.institutionTimelineCard{
+  border-radius:18px;
+  background:linear-gradient(180deg, rgba(14,22,38,0.92), rgba(10,17,29,0.96));
+  border:1px solid rgba(112,140,184,0.14);
+}
+@media (max-width: 1280px){
+  .salesReportSummary,
+  .institutionReportSummary,
+  .dashboardGoalsGrid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+  .dashboardHeroCard{
+    grid-column:span 2;
+  }
+}
+@media (max-width: 900px){
+  .reportModalHeader{
+    padding:20px 18px 16px;
+  }
+  .reportSectionIntro{
+    flex-direction:column;
+  }
+  .salesReportBody,
+  .dashboardReportBody,
+  .institutionReportBody{
+    padding:16px;
+  }
+  .dashboardChartsGrid,
+  .salesReportSummary,
+  .institutionReportSummary,
+  .dashboardGoalsGrid{
+    grid-template-columns:1fr;
+  }
+  .dashboardHeroCard{
+    grid-column:span 1;
+  }
+}
+@media (max-width: 640px){
+  .reportBrandHeader{
+    align-items:flex-start;
+  }
+  .reportBrandBadge{
+    width:48px;
+    height:48px;
+    border-radius:16px;
+  }
+  .reportModalHeader .modalTitle{
+    font-size:23px;
+  }
+  .reportHeroPanel,
+  .reportDataSection,
+  .dashboardCard,
+  .institutionDetailCard,
+  .dashboardSellerList{
+    padding:16px;
+    border-radius:18px;
+  }
+  .salesSummaryCard strong,
+  .dashboardGoalCard strong,
+  .institutionSummaryCard strong{
+    font-size:26px;
+  }
+}
+/* === END EXECUTIVE REPORTS REDESIGN === */
+
+/* === EXECUTIVE REPORTS HOTFIX: SCROLL + LAYOUT === */
+.salesReportBody,
+.dashboardReportBody,
+.institutionReportBody{
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  min-height:0;
+  padding-right:8px;
+}
+
+.reportHeroPanel,
+.reportDataSection,
+.institutionDetailCard,
+.institutionHeadlineCard,
+.dashboardCard,
+.dashboardSellerList{
+  overflow:visible;
+}
+
+.salesReportHeroPanel .salesReportFilters,
+.dashboardReportHeroPanel .dashboardReportFilters,
+.institutionReportHeroPanel .institutionReportFilters,
+.institutionReportNav{
+  position:static;
+  top:auto;
+}
+
+.salesReportHeroPanel .salesReportFilters,
+.dashboardReportHeroPanel .dashboardReportFilters,
+.institutionReportHeroPanel .institutionReportFilters{
+  margin-top:18px;
+}
+
+.salesReportDataSection{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+
+.salesReportDataSection .salesReportTableWrap{
+  flex:1 1 auto;
+  min-height:320px;
+}
+
+.dashboardGoalsSection,
+.dashboardChartsSection,
+.dashboardSellerSection{
+  flex:0 0 auto;
+}
+
+.dashboardGoalsGrid,
+.dashboardChartsGrid,
+.institutionReportSummary{
+  align-items:stretch;
+}
+
+.dashboardChartsGrid,
+.dashboardGoalsGrid,
+.salesReportSummary,
+.institutionReportSummary,
+.institutionReportContent{
+  overflow:visible;
+}
+
+@media (max-width: 900px){
+  .salesReportBody,
+  .dashboardReportBody,
+  .institutionReportBody{
+    padding-right:0;
+  }
+
+  .salesReportHeroPanel .salesReportFilters,
+  .dashboardReportHeroPanel .dashboardReportFilters,
+  .institutionReportHeroPanel .institutionReportFilters{
+    margin-top:14px;
+  }
+}
+/* === END EXECUTIVE REPORTS HOTFIX === */
+
+/* === SALES REPORT HOTFIX: HORIZONTAL SCROLL + SINGLE BRAND FOCUS === */
+#salesReportBackdrop{
+  background:rgba(3, 8, 20, 0.82);
+  backdrop-filter:blur(10px);
+}
+
+#salesReportBackdrop .salesReportBody{
+  display:grid;
+  grid-template-rows:auto minmax(0, 1fr);
+  gap:18px;
+  overflow:hidden !important;
+  padding-right:0;
+}
+
+#salesReportBackdrop .salesReportHeroPanel{
+  min-height:0;
+}
+
+#salesReportBackdrop .salesReportDataSection{
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+#salesReportBackdrop .salesReportDataSection .salesReportTableWrap{
+  flex:1 1 auto;
+  min-height:0;
+  height:100%;
+  max-height:none;
+  padding-bottom:2px;
+  overflow:auto;
+}
+
+#salesReportBackdrop .salesReportTable{
+  min-width:3600px;
+}
+
+#salesReportBackdrop .reportBrandBadge{
+  width:64px;
+  height:64px;
+  border-radius:20px;
+}
+
+@media (max-width: 900px){
+  #salesReportBackdrop .salesReportBody{
+    display:flex;
+    overflow-y:auto !important;
+  }
+
+  #salesReportBackdrop .salesReportDataSection .salesReportTableWrap{
+    min-height:360px;
+  }
+}
+/* === END SALES REPORT HOTFIX === */
+
+/* === SALES REPORT REFINEMENT: FILTERS + COMPACT KPIS + SINGLE LOGO === */
+#salesReportBackdrop .reportBrandEyebrow{
+  display:none;
+}
+
+#salesReportBackdrop .reportBrandHeader{
+  gap:14px;
+}
+
+#salesReportBackdrop .reportBrandBadge{
+  width:72px;
+  height:72px;
+  border-radius:22px;
+  overflow:hidden;
+}
+
+#salesReportBackdrop .reportBrandLogo{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 4%;
+  transform:scale(1.9);
+  transform-origin:center top;
+  display:block;
+}
+
+#salesReportBackdrop .salesReportHeroPanel{
+  padding:18px 20px;
+}
+
+#salesReportBackdrop .salesReportSummary{
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:12px;
+  margin-top:2px;
+}
+
+#salesReportBackdrop .salesSummaryCard{
+  padding:12px 14px 12px;
+  border-radius:18px;
+  min-height:118px;
+}
+
+#salesReportBackdrop .salesSummaryEyebrow{
+  margin-bottom:8px;
+  padding:5px 9px;
+  font-size:9px;
+}
+
+#salesReportBackdrop .salesSummaryCard small{
+  font-size:11px;
+  margin-bottom:6px;
+}
+
+#salesReportBackdrop .salesSummaryCard strong{
+  font-size:24px;
+  line-height:1;
+}
+
+#salesReportBackdrop .salesSummaryMeta{
+  margin-top:8px;
+  font-size:11px;
+  line-height:1.35;
+}
+
+#salesReportBackdrop .salesReportDataSection{
+  gap:14px;
+}
+
+#salesReportBackdrop .salesReportFiltersInline{
+  margin:0;
+  padding:14px;
+  border-radius:18px;
+  background:linear-gradient(180deg, rgba(17,27,46,0.96), rgba(13,21,38,0.98));
+  border:1px solid rgba(121,150,201,0.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+#salesReportBackdrop .salesReportFiltersInline .field > span{
+  font-size:10px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:#8ea9c6;
+}
+
+#salesReportBackdrop .salesReportFiltersInline input,
+#salesReportBackdrop .salesReportFiltersInline select{
+  height:44px;
+}
+
+#salesReportBackdrop .salesReportActions{
+  align-self:end;
+}
+
+@media (max-width: 1200px){
+  #salesReportBackdrop .salesReportSummary{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px){
+  #salesReportBackdrop .salesReportSummary{
+    grid-template-columns:1fr;
+  }
+
+  #salesReportBackdrop .salesReportFiltersInline{
+    padding:12px;
+  }
+}
+/* === END SALES REPORT REFINEMENT === */
+
+/* === SALES REPORT DENSITY TUNING === */
+#salesReportBackdrop .reportModalHeader{
+  padding:18px 24px 16px;
+}
+
+#salesReportBackdrop .reportModalHeader .modalTitle{
+  font-size:25px;
+}
+
+#salesReportBackdrop .reportModalHeader .modalSubtitle{
+  font-size:12px;
+  margin-top:4px;
+}
+
+#salesReportBackdrop .salesReportBody{
+  gap:12px;
+}
+
+#salesReportBackdrop .salesReportHeroPanel{
+  padding:14px 18px;
+}
+
+#salesReportBackdrop .reportSectionIntro{
+  margin-bottom:10px;
+}
+
+#salesReportBackdrop .reportSectionEyebrow{
+  margin-bottom:4px;
+  font-size:10px;
+}
+
+#salesReportBackdrop .reportSectionTitle{
+  font-size:18px;
+}
+
+#salesReportBackdrop .reportSectionText{
+  margin-top:4px;
+  font-size:12px;
+}
+
+#salesReportBackdrop .reportFilterMeta{
+  min-height:auto;
+  padding:8px 12px;
+  font-size:11px;
+}
+
+#salesReportBackdrop .salesReportSummary{
+  gap:10px;
+}
+
+#salesReportBackdrop .salesSummaryCard{
+  min-height:94px;
+  padding:10px 12px;
+}
+
+#salesReportBackdrop .salesSummaryCard strong{
+  font-size:18px;
+}
+
+#salesReportBackdrop .salesSummaryMeta{
+  font-size:10px;
+  margin-top:6px;
+}
+
+#salesReportBackdrop .salesReportDataSection{
+  gap:10px;
+  padding:14px 18px 16px;
+}
+
+#salesReportBackdrop .salesReportFiltersInline{
+  padding:10px 12px;
+  gap:8px;
+}
+
+#salesReportBackdrop .salesReportFiltersInline .field{
+  gap:6px;
+}
+
+#salesReportBackdrop .salesReportFiltersInline input,
+#salesReportBackdrop .salesReportFiltersInline select{
+  height:38px;
+  font-size:13px;
+}
+
+#salesReportBackdrop .salesReportFiltersInline .btn,
+#salesReportBackdrop .salesReportFiltersInline .btnPrimary{
+  min-height:38px;
+  height:38px;
+  padding:0 14px;
+}
+
+#salesReportBackdrop .salesReportDataSection .salesReportTableWrap{
+  min-height:520px;
+}
+
+#salesReportBackdrop .salesReportTable thead th{
+  padding:10px 12px;
+  font-size:10px;
+}
+
+#salesReportBackdrop .salesReportTable tbody td{
+  padding:10px 12px;
+  font-size:12px;
+}
+
+#salesReportBackdrop .salesStatusBadge{
+  padding:6px 14px;
+  font-size:11px;
+}
+
+@media (max-width: 900px){
+  #salesReportBackdrop .salesReportDataSection .salesReportTableWrap{
+    min-height:420px;
+  }
+}
+/* === END SALES REPORT DENSITY TUNING === */
+
+/* === CRM FLATPICKR REDESIGN === */
+.crmDatePicker.flatpickr-calendar,
+.crmTimePicker.flatpickr-calendar{
+  width: 344px;
+  padding: 12px 12px 14px;
+  border-radius: 26px;
+  border: 1px solid rgba(120, 176, 255, 0.24);
+  background:
+    radial-gradient(circle at top right, rgba(52, 211, 153, 0.18), transparent 30%),
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.2), transparent 36%),
+    linear-gradient(180deg, rgba(11, 19, 35, 0.98) 0%, rgba(8, 15, 29, 0.99) 100%);
+  box-shadow:
+    0 28px 70px rgba(2, 6, 23, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: #eff6ff;
+  overflow: hidden;
+}
+
+.crmDatePicker::before,
+.crmTimePicker::before{
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(125, 211, 252, 0.08), rgba(125, 211, 252, 0.42), rgba(125, 211, 252, 0.08));
+  pointer-events: none;
+}
+
+.crmDatePicker .flatpickr-months,
+.crmTimePicker .flatpickr-months{
+  position: relative;
+  align-items: center;
+  padding: 2px 4px 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(120, 176, 255, 0.14);
+}
+
+.crmDatePicker .flatpickr-current-month,
+.crmTimePicker .flatpickr-current-month{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #f8fbff;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.crmDatePicker .flatpickr-current-month .flatpickr-monthDropdown-months,
+.crmDatePicker .flatpickr-current-month input.cur-year,
+.crmTimePicker .flatpickr-current-month .flatpickr-monthDropdown-months,
+.crmTimePicker .flatpickr-current-month input.cur-year{
+  color: #f8fbff;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.crmDatePicker .flatpickr-months .flatpickr-prev-month,
+.crmDatePicker .flatpickr-months .flatpickr-next-month,
+.crmTimePicker .flatpickr-months .flatpickr-prev-month,
+.crmTimePicker .flatpickr-months .flatpickr-next-month{
+  top: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 176, 255, 0.16);
+  background: linear-gradient(180deg, rgba(28, 45, 77, 0.96), rgba(19, 33, 59, 0.96));
+  color: #dbeafe;
+  box-shadow: 0 14px 28px rgba(10, 20, 40, 0.28);
+}
+
+.crmDatePicker .flatpickr-months .flatpickr-prev-month:hover,
+.crmDatePicker .flatpickr-months .flatpickr-next-month:hover,
+.crmTimePicker .flatpickr-months .flatpickr-prev-month:hover,
+.crmTimePicker .flatpickr-months .flatpickr-next-month:hover{
+  background: linear-gradient(180deg, rgba(37, 99, 235, 1), rgba(29, 78, 216, 1));
+  border-color: rgba(147, 197, 253, 0.34);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.crmDatePicker .flatpickr-weekdays,
+.crmTimePicker .flatpickr-weekdays{
+  margin-bottom: 10px;
+  padding: 6px 4px;
+  border-radius: 14px;
+  background: rgba(20, 34, 58, 0.78);
+}
+
+.crmDatePicker span.flatpickr-weekday,
+.crmTimePicker span.flatpickr-weekday{
+  color: #8bdcff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.crmDatePicker .flatpickr-days,
+.crmTimePicker .flatpickr-days{
+  width: 100%;
+}
+
+.crmDatePicker .dayContainer,
+.crmTimePicker .dayContainer{
+  min-width: 100%;
+  max-width: 100%;
+  gap: 2px 0;
+}
+
+.crmDatePicker .flatpickr-day,
+.crmTimePicker .flatpickr-day{
+  max-width: 44px;
+  height: 42px;
+  line-height: 42px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  color: #dbe7f5;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.crmDatePicker .flatpickr-day.prevMonthDay,
+.crmDatePicker .flatpickr-day.nextMonthDay,
+.crmTimePicker .flatpickr-day.prevMonthDay,
+.crmTimePicker .flatpickr-day.nextMonthDay{
+  color: rgba(139, 161, 187, 0.42);
+}
+
+.crmDatePicker .flatpickr-day:hover,
+.crmTimePicker .flatpickr-day:hover{
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(96, 165, 250, 0.28);
+  color: #ffffff;
+}
+
+.crmDatePicker .flatpickr-day.today,
+.crmTimePicker .flatpickr-day.today{
+  border-color: rgba(52, 211, 153, 0.46);
+  background: rgba(16, 185, 129, 0.12);
+  color: #d1fae5;
+}
+
+.crmDatePicker .flatpickr-day.selected,
+.crmDatePicker .flatpickr-day.startRange,
+.crmDatePicker .flatpickr-day.endRange,
+.crmTimePicker .flatpickr-day.selected,
+.crmTimePicker .flatpickr-day.startRange,
+.crmTimePicker .flatpickr-day.endRange{
+  background: linear-gradient(135deg, #38bdf8 0%, #2563eb 55%, #1d4ed8 100%);
+  border-color: rgba(147, 197, 253, 0.8);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.34);
+}
+
+.crmDatePicker .flatpickr-day.inRange,
+.crmTimePicker .flatpickr-day.inRange{
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.06);
+  color: #dbeafe;
+}
+
+.crmDatePicker .flatpickr-day.flatpickr-disabled,
+.crmDatePicker .flatpickr-day.flatpickr-disabled:hover,
+.crmTimePicker .flatpickr-day.flatpickr-disabled,
+.crmTimePicker .flatpickr-day.flatpickr-disabled:hover{
+  color: rgba(120, 141, 167, 0.26);
+  background: transparent;
+  border-color: transparent;
+}
+
+.crmDatePicker .flatpickr-rContainer,
+.crmTimePicker .flatpickr-rContainer{
+  padding: 0 2px 2px;
+}
+
+.crmTimePicker.flatpickr-calendar{
+  width: 300px;
+}
+
+.crmTimePicker .flatpickr-time{
+  border-top: 1px solid rgba(120, 176, 255, 0.14);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(8, 15, 29, 0.98));
+  border-radius: 0 0 24px 24px;
+  padding: 12px 14px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crmTimePicker .flatpickr-time input,
+.crmTimePicker .flatpickr-time .flatpickr-am-pm{
+  color: #eff6ff;
+  font-weight: 800;
+  background: transparent;
+}
+
+.crmTimePicker .flatpickr-time .numInputWrapper{
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 176, 255, 0.18);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.94), rgba(15, 23, 42, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow: hidden;
+}
+
+.crmTimePicker .flatpickr-time .numInputWrapper:hover{
+  border-color: rgba(125, 211, 252, 0.32);
+}
+
+.crmTimePicker .flatpickr-time .numInputWrapper input{
+  height: 100%;
+  padding: 0 28px 0 12px;
+  color: #eff6ff;
+  caret-color: #38bdf8;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(2, 6, 23, 0.55);
+}
+
+.crmTimePicker .flatpickr-time .numInputWrapper input:focus{
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.crmTimePicker .flatpickr-time .flatpickr-time-separator{
+  color: rgba(191, 219, 254, 0.9);
+  font-size: 22px;
+  font-weight: 800;
+  align-self: center;
+  line-height: 1;
+  margin: 0 2px;
+}
+
+.crmTimePicker .flatpickr-time .numInputWrapper span{
+  width: 20px;
+  border-left: 1px solid rgba(120, 176, 255, 0.16);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.96));
+}
+
+.crmTimePicker .flatpickr-time .numInputWrapper span:hover{
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.38), rgba(30, 64, 175, 0.42));
+}
+
+.crmTimePicker .numInputWrapper span.arrowUp:after,
+.crmTimePicker .numInputWrapper span.arrowDown:after{
+  border-bottom-color: #93c5fd;
+  border-top-color: #93c5fd;
+}
+/* === END CRM FLATPICKR REDESIGN === */
+.crmDatePicker.flatpickr-calendar,
+.crmTimePicker.flatpickr-calendar{
+  animation: crmPickerFloatIn .22s ease;
+}
+
+.crmDatePicker.open::after,
+.crmTimePicker.open::after{
+  content: "";
+  position: absolute;
+  inset: auto 22px 10px 22px;
+  height: 16px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.22), transparent 72%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.crmDatePicker .flatpickr-day.startRange:not(.endRange),
+.crmDatePicker .flatpickr-day.endRange:not(.startRange){
+  position: relative;
+}
+
+.crmDatePicker .flatpickr-day.startRange:not(.endRange)::after,
+.crmDatePicker .flatpickr-day.endRange:not(.startRange)::after{
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 11px;
+  border: 1px solid rgba(255,255,255,0.34);
+}
+
+@keyframes crmPickerFloatIn{
+  from{
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+  }
+  to{
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* User modal scroll fix */
+#userBackdrop{
+  overflow: auto;
+  place-items: start center;
+  padding: 12px;
+}
+#userBackdrop .modal{
+  width: min(1120px, 98vw);
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#userBackdrop .modalBody{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 18px;
+}
+#userBackdrop .modalFooter{
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(5,15,34,0.15), rgba(5,15,34,0.92) 42%);
+  border-top: 1px solid rgba(96,165,250,0.22);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+#userBackdrop .userPick{
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+#userBackdrop .userPick .btn{
+  min-height: 42px;
+  white-space: nowrap;
+}
+@media (max-width: 920px){
+  #userBackdrop .modal{
+    width: min(1120px, 100vw);
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  #userBackdrop{
+    padding: 0;
+  }
+  #userBackdrop .modalBody{
+    padding-bottom: 12px;
+  }
+  #userBackdrop .row2{
+    grid-template-columns: 1fr;
+  }
+  #userBackdrop .userPick{
+    grid-template-columns: 1fr;
+  }
+  #userBackdrop .userPick .btn{
+    width: 100%;
+  }
+}

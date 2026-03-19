@@ -910,7 +910,7 @@
               <button class="btn" type="button" id="btnMenuMontaje">Menu &amp; Montaje</button>
               <button class="btn" type="button" id="btnQuoteAdvances">Anticipos</button>
               <button class="btn" type="button" id="btnMenuMontajeSelectable">Menu &amp; Montaje (Listas)</button>
-              <button class="btn" type="button" id="btnQuotePrintTemplate">Imprimir plantilla</button>
+              
               <button class="btnPrimary" type="submit">Guardar cotizacion</button>
             </div>
           </div>
@@ -1863,16 +1863,40 @@
 
     <div class="modalBackdrop" id="salesReportBackdrop" hidden>
       <div class="modal salesReportModal" role="dialog" aria-modal="true" aria-labelledby="salesReportTitle">
-        <div class="modalHeader">
-          <div>
-            <div class="modalTitle" id="salesReportTitle">Reporte de ventas</div>
-            <div class="modalSubtitle">Listado de eventos/cotizaciones con filtros avanzados</div>
+        <div class="modalHeader reportModalHeader">
+          <div class="reportBrandHeader">
+            <div class="reportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandCopy">
+              <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
+              <div class="modalTitle" id="salesReportTitle">Reporte de ventas</div>
+              <div class="modalSubtitle" id="salesReportSubtitle">Listado de eventos y cotizaciones con lectura ejecutiva</div>
+            </div>
           </div>
-          <button class="iconBtn" id="btnSalesReportClose" type="button" title="Cerrar">&#10005;</button>
+          <button class="iconBtn reportModalClose" id="btnSalesReportClose" type="button" title="Cerrar">&#10005;</button>
         </div>
 
         <div class="modalBody salesReportBody">
-          <div class="salesReportFilters">
+          <section class="reportHeroPanel salesReportHeroPanel">
+            <div class="reportSectionIntro">
+              <div>
+                <div class="reportSectionEyebrow">Vision comercial</div>
+                <div class="reportSectionTitle">Seguimiento premium del pipeline y la facturacion</div>
+                <div class="reportSectionText">Filtra rapido, detecta volumen, vendedores y estados clave sin perder contexto operativo.</div>
+              </div>
+              <div class="reportFilterMeta" id="salesReportFiltersMeta">Sin filtros</div>
+            </div>
+            <div class="salesReportSummary" id="salesReportSummary"></div>
+          </section>
+
+          <section class="reportDataSection salesReportDataSection">
+            <div class="reportSectionIntro reportSectionIntro--table">
+              <div>
+                <div class="reportSectionEyebrow">Detalle operacional</div>
+                
+              </div>
+            </div>
+
+            <div class="salesReportFilters salesReportFiltersInline">
             <label class="field">
               <span>Buscar</span>
               <input id="salesReportSearch" type="text" placeholder="ID, vendedor, institucion, salon..." />
@@ -1951,6 +1975,7 @@
               <tbody id="salesReportBody"></tbody>
             </table>
           </div>
+          </section>
         </div>
       </div>
     </div>
@@ -1966,67 +1991,125 @@
         </div>
 
         <div class="modalBody occupancyReportBody">
-          <div class="occupancyToolbar">
-            <label class="field">
-              <span>Semana (desde lunes)</span>
-              <div class="occupancyWeekNav">
-                <button class="btn" id="btnOccupancyReportPrevWeek" type="button" aria-label="Semana anterior">&#8249;</button>
-                <input id="occupancyReportWeek" type="date" />
-                <button class="btn" id="btnOccupancyReportNextWeek" type="button" aria-label="Semana siguiente">&#8250;</button>
+          <section class="occupancyHeroPanel">
+            <div class="occupancySectionIntro occupancySectionIntro--hero">
+              <div>
+                <div class="occupancySectionEyebrow">Vista ejecutiva semanal</div>
+                <div class="occupancySectionTitle">Lectura de ocupacion y rentabilidad</div>
+                <div class="occupancySectionText">Filtra la semana, identifica dias criticos y baja al detalle operativo sin perder contexto.</div>
               </div>
-            </label>
-            <div class="rightActions">
-              <button class="btn" id="btnOccupancyReportTodayWeek" type="button">Semana actual</button>
-              <button class="btnPrimary" id="btnOccupancyReportExportExcel" type="button">Exportar Excel</button>
             </div>
-          </div>
 
-          <div class="occupancySummary" id="occupancyReportSummary"></div>
-          <div class="occupancyDaysStrip" id="occupancyDaysStrip"></div>
-          <div class="occupancyDayDetail" id="occupancyDayDetail"></div>
+            <div class="occupancyToolbar">
+              <label class="field occupancyField occupancyField--week">
+                <span>Semana (desde lunes)</span>
+                <div class="occupancyWeekNav">
+                  <button class="btn" id="btnOccupancyReportPrevWeek" type="button" aria-label="Semana anterior">&#8249;</button>
+                  <input id="occupancyReportWeek" type="date" />
+                  <button class="btn" id="btnOccupancyReportNextWeek" type="button" aria-label="Semana siguiente">&#8250;</button>
+                </div>
+              </label>
+              <div class="rightActions occupancyHeroActions">
+                <button class="btn" id="btnOccupancyReportTodayWeek" type="button">Semana actual</button>
+                <button class="btnPrimary" id="btnOccupancyReportExportExcel" type="button">Exportar Excel</button>
+              </div>
+            </div>
+          </section>
 
-          <div class="occupancyTableWrap">
-            <table class="quoteTable occupancyTable">
-              <thead>
-                <tr>
-                  <th>Estado</th>
-                  <th>PAX</th>
-                  <th>Fecha evento</th>
-                  <th>Hora inicio</th>
-                  <th>Hora final</th>
-                  <th>Evento</th>
-                  <th>Salon</th>
-                  <th>Institucion</th>
-                  <th>Encargado evento</th>
-                  <th>Vendedor</th>
-                  <th>Ultima cotizacion enviada</th>
-                  <th>Ultimo informe menu/montaje</th>
-                  <th>Check List</th>
-                  <th>Total evento</th>
-                  <th>Ingreso dia</th>
-                  <th>Ingreso salon-dia</th>
-                  <th>Ultima modificacion</th>
-                </tr>
-              </thead>
-              <tbody id="occupancyReportBody"></tbody>
-            </table>
-          </div>
+          <section class="occupancySection occupancySummarySection">
+            <div class="occupancySectionIntro">
+              <div>
+                <div class="occupancySectionEyebrow">Resumen ejecutivo</div>
+                <div class="occupancySectionTitle">KPIs prioritarios de la semana</div>
+              </div>
+            </div>
+            <div class="occupancySummary" id="occupancyReportSummary"></div>
+          </section>
+
+          <section class="occupancySection occupancyWeekSection">
+            <div class="occupancySectionIntro">
+              <div>
+                <div class="occupancySectionEyebrow">Comportamiento diario</div>
+                <div class="occupancySectionTitle">Distribucion y ritmo de eventos</div>
+              </div>
+            </div>
+            <div class="occupancyDaysStrip" id="occupancyDaysStrip"></div>
+          </section>
+
+          <section class="occupancySection occupancyDetailSection">
+            <div class="occupancySectionIntro">
+              <div>
+                <div class="occupancySectionEyebrow">Foco del dia</div>
+                <div class="occupancySectionTitle">Detalle interpretativo</div>
+              </div>
+            </div>
+            <div class="occupancyDayDetail" id="occupancyDayDetail"></div>
+          </section>
+
+          <section class="occupancySection occupancyTableSection">
+            <div class="occupancySectionIntro occupancySectionIntro--table">
+              <div>
+                <div class="occupancySectionEyebrow">Operacion detallada</div>
+                <div class="occupancySectionTitle">Tabla de eventos y resultados</div>
+                <div class="occupancySectionText">Prioriza estado, salon, vendedor, cotizacion, checklist y montos sin saturar la lectura.</div>
+              </div>
+            </div>
+
+            <div class="occupancyTableWrap">
+              <table class="quoteTable occupancyTable">
+                <thead>
+                  <tr>
+                    <th>Estado</th>
+                    <th>PAX</th>
+                    <th>Fecha evento</th>
+                    <th>Hora inicio</th>
+                    <th>Hora final</th>
+                    <th>Evento</th>
+                    <th>Salon</th>
+                    <th>Institucion</th>
+                    <th>Encargado evento</th>
+                    <th>Vendedor</th>
+                    <th>Ultima cotizacion enviada</th>
+                    <th>Ultimo informe menu/montaje</th>
+                    <th>Check List</th>
+                    <th>Total evento</th>
+                    <th>Ingreso dia</th>
+                    <th>Ingreso salon-dia</th>
+                    <th>Ultima modificacion</th>
+                  </tr>
+                </thead>
+                <tbody id="occupancyReportBody"></tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </div>
     </div>
 
     <div class="modalBackdrop" id="dashboardReportBackdrop" hidden>
       <div class="modal dashboardReportModal" role="dialog" aria-modal="true" aria-labelledby="dashboardReportTitle">
-        <div class="modalHeader">
-          <div>
-            <div class="modalTitle" id="dashboardReportTitle">Reporte Dashboard</div>
-            <div class="modalSubtitle" id="dashboardReportSubtitle">Vista mensual de vendedores, metas y comparativos</div>
+        <div class="modalHeader reportModalHeader">
+          <div class="reportBrandHeader">
+            <div class="reportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandCopy">
+              <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
+              <div class="modalTitle" id="dashboardReportTitle">Reporte Dashboard</div>
+              <div class="modalSubtitle" id="dashboardReportSubtitle">Vista mensual de vendedores, metas y comparativos</div>
+            </div>
           </div>
-          <button class="iconBtn" id="btnDashboardReportClose" type="button" title="Cerrar">&#10005;</button>
+          <button class="iconBtn reportModalClose" id="btnDashboardReportClose" type="button" title="Cerrar">&#10005;</button>
         </div>
 
         <div class="modalBody dashboardReportBody">
-          <div class="dashboardReportFilters">
+          <section class="reportHeroPanel dashboardReportHeroPanel">
+            <div class="reportSectionIntro">
+              <div>
+                <div class="reportSectionEyebrow">Control gerencial</div>
+                <div class="reportSectionTitle">Metas, comparativos y rendimiento por vendedor</div>
+                <div class="reportSectionText">Un dashboard ejecutivo con mejor separacion visual para identificar avances, brechas y desempeno del periodo.</div>
+              </div>
+            </div>
+            <div class="dashboardReportFilters">
             <label class="field">
               <span>Periodo</span>
               <select id="dashboardReportPeriod">
@@ -2074,10 +2157,26 @@
               <button class="btn" id="btnDashboardReportReset" type="button">Limpiar filtros</button>
             </div>
           </div>
+          </section>
 
-          <div class="dashboardGoalsGrid" id="dashboardGoalsGrid"></div>
+          <section class="reportDataSection dashboardGoalsSection">
+            <div class="reportSectionIntro">
+              <div>
+                <div class="reportSectionEyebrow">KPIs clave</div>
+                <div class="reportSectionTitle">Lectura inmediata del avance comercial</div>
+              </div>
+            </div>
+            <div class="dashboardGoalsGrid" id="dashboardGoalsGrid"></div>
+          </section>
 
-          <div class="dashboardChartsGrid">
+          <section class="reportDataSection dashboardChartsSection">
+            <div class="reportSectionIntro">
+              <div>
+                <div class="reportSectionEyebrow">Analitica visual</div>
+                <div class="reportSectionTitle">Comparativos y distribuciones del periodo</div>
+              </div>
+            </div>
+            <div class="dashboardChartsGrid">
             <article class="dashboardCard">
               <header class="dashboardCardHead">
                 <strong id="dashboardCompareTitle">Comparativo meses atras</strong>
@@ -2093,27 +2192,49 @@
               <div class="dashboardMiniChart" id="dashboardBestMonthChart"></div>
             </article>
           </div>
+          </section>
 
-          <div class="dashboardSellerList" id="dashboardSellerList"></div>
+          <section class="reportDataSection dashboardSellerSection">
+            <div class="reportSectionIntro">
+              <div>
+                <div class="reportSectionEyebrow">Equipo</div>
+                <div class="reportSectionTitle">Lectura rapida del rendimiento individual</div>
+              </div>
+            </div>
+            <div class="dashboardSellerList" id="dashboardSellerList"></div>
+          </section>
         </div>
       </div>
     </div>
 
     <div class="modalBackdrop" id="institutionReportBackdrop" hidden>
       <div class="modal dashboardReportModal institutionReportModal" role="dialog" aria-modal="true" aria-labelledby="institutionReportTitle">
-        <div class="modalHeader">
-          <div>
-            <div class="modalTitle" id="institutionReportTitle">Reporte por institucion</div>
-            <div class="modalSubtitle">Dashboard de clientes, consumo y comportamiento historico</div>
+        <div class="modalHeader reportModalHeader">
+          <div class="reportBrandHeader">
+            <div class="reportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandCopy">
+              <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
+              <div class="modalTitle" id="institutionReportTitle">Reporte por institucion</div>
+              <div class="modalSubtitle">Dashboard de clientes, consumo y comportamiento historico</div>
+            </div>
           </div>
-          <button class="iconBtn" id="btnInstitutionReportClose" type="button" title="Cerrar">&#10005;</button>
+          <button class="iconBtn reportModalClose" id="btnInstitutionReportClose" type="button" title="Cerrar">&#10005;</button>
         </div>
 
         <div class="modalBody dashboardReportBody institutionReportBody">
-          <div class="dashboardReportFilters institutionReportFilters">
-            <label class="field">
+          <section class="reportHeroPanel institutionReportHeroPanel">
+            <div class="reportSectionIntro">
+              <div>
+                <div class="reportSectionEyebrow">Relacion comercial</div>
+                <div class="reportSectionTitle">Cliente, consumo e historial en una vista premium</div>
+                <div class="reportSectionText">Encuentra rapidamente instituciones clave, entiende su comportamiento y baja al detalle sin perder legibilidad.</div>
+              </div>
+            </div>
+            <div class="dashboardReportFilters institutionReportFilters">
+            <label class="field institutionSearchField">
               <span>Buscar institucion</span>
               <input id="institutionReportCompanySearch" type="text" placeholder="Escribe nombre, contacto o correo" />
+              <div class="institutionSearchResults" id="institutionReportCompanyResults"></div>
             </label>
             <label class="field">
               <span>Institucion</span>
@@ -2134,6 +2255,7 @@
           </div>
 
           <div class="dashboardCard institutionHeadlineCard" id="institutionReportHeadline"></div>
+          </section>
 
           <div class="institutionReportSummary" id="institutionReportSummary"></div>
 
@@ -2399,6 +2521,8 @@
   <script src="./app.js"></script>
 </body>
 </html>
+
+
 
 
 

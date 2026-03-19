@@ -141,7 +141,7 @@ const CORPORATE_TEMPLATE_NAME = "Corporativo";
 const SERVIHOSP_TEMPLATE_ID = "tpl-servi-hosp";
 const SERVIHOSP_TEMPLATE_NAME = "Servi Hosp";
 const CONTRACT_CORP_TEMPLATE_ID = "tpl-contrato-corp";
-const CONTRACT_CORP_TEMPLATE_NAME = "Contrato Corporativo";
+const CONTRACT_CORP_TEMPLATE_NAME = "Jardines";
 const DEFAULT_TEMPLATE_HEADER_IMAGE = "./Encabezadojdl.png";
 const DEFAULT_TEMPLATE_FOOTER_IMAGE = "./piedepaginajdl.png";
 const SERVIHOSP_TEMPLATE_HEADER_IMAGE = "./ServiHosp_header.png";
@@ -314,6 +314,8 @@ const el = {
   salesReportCompany: document.getElementById("salesReportCompany"),
   btnSalesReportReset: document.getElementById("btnSalesReportReset"),
   btnSalesReportExportExcel: document.getElementById("btnSalesReportExportExcel"),
+  salesReportFiltersMeta: document.getElementById("salesReportFiltersMeta"),
+  salesReportSummary: document.getElementById("salesReportSummary"),
   salesReportBody: document.getElementById("salesReportBody"),
   occupancyReportBackdrop: document.getElementById("occupancyReportBackdrop"),
   btnOccupancyReportClose: document.getElementById("btnOccupancyReportClose"),
@@ -353,6 +355,7 @@ const el = {
   institutionReportBackdrop: document.getElementById("institutionReportBackdrop"),
   btnInstitutionReportClose: document.getElementById("btnInstitutionReportClose"),
   institutionReportCompanySearch: document.getElementById("institutionReportCompanySearch"),
+  institutionReportCompanyResults: document.getElementById("institutionReportCompanyResults"),
   institutionReportCompany: document.getElementById("institutionReportCompany"),
   institutionReportFrom: document.getElementById("institutionReportFrom"),
   institutionReportTo: document.getElementById("institutionReportTo"),
@@ -1214,7 +1217,7 @@ function getBuiltInQuoteTemplateMeta(templateId = "") {
   if (id === CONTRACT_CORP_TEMPLATE_ID) {
     return {
       file: "./ContradoCorp.html",
-      label: "Contrato Corporativo",
+      label: "Jardines",
       attachToQuote: true,
       headerImage: "",
     };
@@ -1726,8 +1729,8 @@ function renderGlobalGoalsTable() {
       <td>${moneyGT(row.amount)}</td>
       <td>${row.active === false ? "Inhabilitada" : "Activa"}</td>
       <td class="appointmentActions">
-        <button class="apptIconBtn apptEdit" type="button" data-global-goal-edit="${escapeHtml(globalGoalCompositeKey(row))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
-        <button class="apptIconBtn ${row.active === false ? "" : "apptDelete"}" type="button" data-global-goal-toggle="${escapeHtml(globalGoalCompositeKey(row))}" title="${row.active === false ? "Reactivar" : "Inhabilitar"}">${row.active === false ? "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â"}</button>
+        <button class="apptIconBtn apptEdit" type="button" data-global-goal-edit="${escapeHtml(globalGoalCompositeKey(row))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn ${row.active === false ? "" : "apptDelete"}" type="button" data-global-goal-toggle="${escapeHtml(globalGoalCompositeKey(row))}" title="${row.active === false ? "Reactivar" : "Inhabilitar"}">${row.active === false ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â"}</button>
       </td>
     `;
     el.globalGoalsBody.appendChild(tr);
@@ -1874,8 +1877,8 @@ function renderSalonesTable() {
       <td>${escapeHtml(label)}</td>
       <td>${isSalonDisabled(label) ? "Inhabilitado" : "Activo"}</td>
       <td class="appointmentActions">
-        <button class="apptIconBtn apptEdit" type="button" data-salon-edit="${escapeHtml(label)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
-        <button class="apptIconBtn ${isSalonDisabled(label) ? "" : "apptDelete"}" type="button" data-salon-toggle="${escapeHtml(label)}" title="${isSalonDisabled(label) ? "Reactivar" : "Inhabilitar"}">${isSalonDisabled(label) ? "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â"}</button>
+        <button class="apptIconBtn apptEdit" type="button" data-salon-edit="${escapeHtml(label)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn ${isSalonDisabled(label) ? "" : "apptDelete"}" type="button" data-salon-toggle="${escapeHtml(label)}" title="${isSalonDisabled(label) ? "Reactivar" : "Inhabilitar"}">${isSalonDisabled(label) ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â"}</button>
       </td>
     `;
     el.salonesBody.appendChild(tr);
@@ -3485,9 +3488,43 @@ function renderSalesReportFilters() {
   fillSelect(el.salesReportCompany, companies.map((c) => ({ value: c.id, label: c.name })), "Todas instituciones");
 }
 
+function renderSalesReportSummary(rows = []) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  if (el.salesReportFiltersMeta) {
+    el.salesReportFiltersMeta.textContent = salesReportFiltersSummaryText();
+  }
+  if (!el.salesReportSummary) return;
+  const confirmedCount = safeRows.filter((row) => String(row?.status || "") === STATUS.CONFIRMADO).length;
+  const preReservedCount = safeRows.filter((row) => String(row?.status || "") === STATUS.PRE_RESERVA).length;
+  const totalPax = safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.pax || 0)), 0);
+  const totalAmount = safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.total || 0)), 0);
+  const avgTicket = safeRows.length ? (totalAmount / safeRows.length) : 0;
+  const topSellerMap = new Map();
+  for (const row of safeRows) {
+    const seller = String(row?.seller || "Sin vendedor").trim() || "Sin vendedor";
+    topSellerMap.set(seller, Number(topSellerMap.get(seller) || 0) + Math.max(0, Number(row?.total || 0)));
+  }
+  const topSeller = Array.from(topSellerMap.entries()).sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))[0];
+  const cards = [
+    { tone: "primary", eyebrow: "Pipeline", label: "Registros visibles", value: String(safeRows.length), meta: safeRows.length ? `Con filtros activos sobre ${safeRows.length} fila(s)` : "No hay resultados para el filtro actual" },
+    { tone: "success", eyebrow: "Conversion", label: "Confirmados", value: String(confirmedCount), meta: `${preReservedCount} pre reserva(s) en seguimiento` },
+    { tone: "info", eyebrow: "Capacidad", label: "PAX total", value: String(totalPax), meta: `Ticket promedio ${moneyGT(avgTicket)}` },
+    { tone: "accent", eyebrow: "Facturacion", label: "Total cotizado", value: moneyGT(totalAmount), meta: topSeller ? `Top vendedor ${topSeller[0]}` : "Sin vendedor destacado" },
+  ];
+  el.salesReportSummary.innerHTML = cards.map((card) => `
+    <article class="salesSummaryCard salesSummaryCard--${escapeHtml(card.tone)}">
+      <span class="salesSummaryEyebrow">${escapeHtml(card.eyebrow)}</span>
+      <small>${escapeHtml(card.label)}</small>
+      <strong>${escapeHtml(card.value)}</strong>
+      <div class="salesSummaryMeta">${escapeHtml(card.meta)}</div>
+    </article>
+  `).join("");
+}
+
 function renderSalesReportTable() {
   if (!el.salesReportBody) return;
   const rows = getSalesReportFilteredRows();
+  renderSalesReportSummary(rows);
   el.salesReportBody.innerHTML = "";
   if (!rows.length) {
     const tr = document.createElement("tr");
@@ -3616,7 +3653,7 @@ function exportSalesReportToExcel() {
   <meta charset="utf-8" />
   <meta name="ProgId" content="Excel.Sheet" />
   <meta name="Generator" content="CRM Jardines" />
-  <style>
+      <style>
     body{ font-family: Calibri, Arial, sans-serif; background:#eef3fb; margin:0; padding:16px; color:#0f172a; }
     .card{ background:#ffffff; border:1px solid #c5d4ea; border-radius:10px; overflow:hidden; }
     .meta{ padding:10px 14px; border-top:1px solid #bfd3ee; border-bottom:1px solid #bfd3ee; background:#eaf3ff; font-size:12px; }
@@ -3836,7 +3873,7 @@ function buildOccupancyChecklistActionHtml(row) {
   const cls = hasChecklist
     ? "occupancyChecklistLinkBtn occupancyChecklistLinkBtn--has"
     : "occupancyChecklistLinkBtn occupancyChecklistLinkBtn--missing";
-  return `<button type="button" class="${cls}" data-event-id="${escapeHtml(eventId)}">${escapeHtml(label)}</button>`;
+  return `<button type="button" class="${cls}" data-event-id="${escapeHtml(eventId)}"><span class="occupancyChecklistActionLabel">${escapeHtml(label)}</span><span class="occupancyChecklistActionIcon" aria-hidden="true">&#8250;</span></button>`;
 }
 
 async function openOccupancyQuoteByRow(eventId, versionRaw = "") {
@@ -3983,40 +4020,46 @@ function buildOccupancyReportRows() {
   });
 }
 
+function getOccupancyUniqueReservationTotal(rows, fieldName = "totalEvent") {
+  const totalsByReservation = new Map();
+  for (const r of rows) {
+    const key = String(r?.reservationKey || r?.eventId || "");
+    if (!key) continue;
+    const amount = Math.max(0, Number(r?.[fieldName] || 0));
+    if (!totalsByReservation.has(key)) totalsByReservation.set(key, amount);
+  }
+  return Array.from(totalsByReservation.values()).reduce((acc, n) => acc + n, 0);
+}
+
 function renderOccupancySummary(rows) {
   if (!el.occupancyReportSummary) return;
   const confirmed = rows.filter((r) => r.status === STATUS.CONFIRMADO).length;
   const pre = rows.filter((r) => r.status === STATUS.PRERESERVA).length;
   const pax = rows.reduce((acc, r) => acc + Math.max(0, Number(r.pax || 0)), 0);
-  const totalsByReservation = new Map();
-  for (const r of rows) {
-    const key = String(r.reservationKey || r.eventId || "");
-    if (!key) continue;
-    if (!totalsByReservation.has(key)) totalsByReservation.set(key, Math.max(0, Number(r.totalEvent || 0)));
-  }
-  const total = Array.from(totalsByReservation.values()).reduce((acc, n) => acc + n, 0);
-  el.occupancyReportSummary.innerHTML = `
-    <div class="occupancyCard">
-      <small>Eventos semana</small>
-      <strong>${rows.length}</strong>
-    </div>
-    <div class="occupancyCard occupancyConfirmed">
-      <small>Confirmados</small>
-      <strong>${confirmed}</strong>
-    </div>
-    <div class="occupancyCard occupancyPre">
-      <small>Pre reserva</small>
-      <strong>${pre}</strong>
-    </div>
-    <div class="occupancyCard">
-      <small>PAX total</small>
-      <strong>${pax}</strong>
-    </div>
-    <div class="occupancyCard">
-      <small>Total cotizado</small>
-      <strong>${moneyGT(total)}</strong>
-    </div>
-  `;
+  const total = getOccupancyUniqueReservationTotal(rows, "totalEvent");
+  const activeDays = new Set(rows.map((r) => String(r.eventDate || "").trim()).filter(Boolean)).size;
+  const avgPax = rows.length ? Math.round(pax / rows.length) : 0;
+  const confirmedPct = rows.length ? Math.round((confirmed / rows.length) * 100) : 0;
+  const prePct = rows.length ? Math.round((pre / rows.length) * 100) : 0;
+  const avgTicket = rows.length ? total / rows.length : 0;
+  const cards = [
+    { tone: "events", code: "EV", label: "Eventos semana", value: String(rows.length), meta: `${activeDays} dia(s) con actividad`, hint: rows.length ? "Panorama general de ocupacion" : "Sin actividad en el periodo" },
+    { tone: "confirmed", code: "OK", label: "Confirmados", value: String(confirmed), meta: `${confirmedPct}% del total semanal`, hint: "Eventos listos para ejecutar" },
+    { tone: "pre", code: "PR", label: "Pre reserva", value: String(pre), meta: `${prePct}% del total semanal`, hint: "Pendientes de consolidacion" },
+    { tone: "pax", code: "PX", label: "PAX total", value: String(pax), meta: `Promedio ${avgPax} por evento`, hint: "Capacidad movilizada en la semana" },
+    { tone: "revenue", code: "GT", label: "Total cotizado", value: moneyGT(total), meta: `Ticket promedio ${moneyGT(avgTicket)}`, hint: "Monto unico por reserva consolidada" },
+  ];
+  el.occupancyReportSummary.innerHTML = cards.map((card) => `
+    <article class="occupancyCard occupancyCard--${escapeHtml(card.tone)}">
+      <div class="occupancyCardTop">
+        <span class="occupancyCardKicker">${escapeHtml(card.label)}</span>
+        <span class="occupancyCardIcon" aria-hidden="true">${escapeHtml(card.code)}</span>
+      </div>
+      <strong>${escapeHtml(card.value)}</strong>
+      <div class="occupancyCardMeta">${escapeHtml(card.meta)}</div>
+      <div class="occupancyCardHint">${escapeHtml(card.hint)}</div>
+    </article>
+  `).join("");
 }
 
 function formatDayCardLabel(isoDate) {
@@ -4032,21 +4075,34 @@ function renderOccupancyDayCards(rows) {
   if (!occupancySelectedDayIso || !dates.includes(occupancySelectedDayIso)) {
     occupancySelectedDayIso = dates[0];
   }
-  const countByDay = new Map(dates.map((d) => [d, 0]));
-  for (const r of rows) {
-    const prev = countByDay.get(r.eventDate) || 0;
-    countByDay.set(r.eventDate, prev + 1);
-  }
   el.occupancyDaysStrip.innerHTML = "";
   for (const d of dates) {
-    const count = Number(countByDay.get(d) || 0);
+    const dayRows = rows.filter((r) => r.eventDate === d);
+    const count = dayRows.length;
+    const confirmedCount = dayRows.filter((r) => r.status === STATUS.CONFIRMADO).length;
+    const preCount = dayRows.filter((r) => r.status === STATUS.PRERESERVA).length;
+    const revenue = getOccupancyUniqueReservationTotal(dayRows, "totalEvent");
+    const label = formatDayCardLabel(d);
+    const parts = label.split(",");
+    const dayName = String(parts[0] || label).trim();
+    const dayDate = String(parts[1] || d).trim();
     const card = document.createElement("button");
     card.type = "button";
-    card.className = `occupancyDayCard${d === occupancySelectedDayIso ? " active" : ""}`;
+    card.className = `occupancyDayCard${d === occupancySelectedDayIso ? " active" : ""}${count ? " hasEvents" : ""}`;
     card.innerHTML = `
-      <small>${escapeHtml(formatDayCardLabel(d))}</small>
-      <strong>${count}</strong>
-      <span>evento${count === 1 ? "" : "s"}</span>
+      <div class="occupancyDayCardTop">
+        <small>${escapeHtml(dayName)}</small>
+        <span class="occupancyDayDate">${escapeHtml(dayDate)}</span>
+      </div>
+      <div class="occupancyDayPrimary">
+        <strong>${count}</strong>
+        <span>evento${count === 1 ? "" : "s"}</span>
+      </div>
+      <div class="occupancyDayMeta">
+        <span>${escapeHtml(String(confirmedCount))} conf.</span>
+        <span>${escapeHtml(String(preCount))} pre</span>
+      </div>
+      <div class="occupancyDayRevenue">${escapeHtml(count ? moneyGT(revenue) : "Sin monto")}</div>
     `;
     card.addEventListener("click", () => {
       occupancySelectedDayIso = d;
@@ -4062,83 +4118,75 @@ function renderOccupancyDayDetail(rows) {
   const target = String(occupancySelectedDayIso || "").trim();
   const dayRows = rows.filter((r) => r.eventDate === target);
   const title = target ? `Detalle ${target}` : "Detalle del dia";
+  const confirmedCount = dayRows.filter((r) => r.status === STATUS.CONFIRMADO).length;
+  const preCount = dayRows.filter((r) => r.status === STATUS.PRERESERVA).length;
+  const pax = dayRows.reduce((acc, r) => acc + Math.max(0, Number(r.pax || 0)), 0);
+  const revenue = getOccupancyUniqueReservationTotal(dayRows, "totalEvent");
+  const metrics = `
+    <div class="occupancyDetailStat"><small>Eventos</small><strong>${escapeHtml(String(dayRows.length))}</strong></div>
+    <div class="occupancyDetailStat"><small>Confirmados</small><strong>${escapeHtml(String(confirmedCount))}</strong></div>
+    <div class="occupancyDetailStat"><small>Pre reserva</small><strong>${escapeHtml(String(preCount))}</strong></div>
+    <div class="occupancyDetailStat"><small>PAX</small><strong>${escapeHtml(String(pax))}</strong></div>
+    <div class="occupancyDetailStat"><small>Total</small><strong>${escapeHtml(moneyGT(revenue))}</strong></div>
+  `;
   if (!dayRows.length) {
     el.occupancyDayDetail.innerHTML = `
-      <div class="occupancyDayDetailTitle">${escapeHtml(title)}</div>
-      <div class="occupancyDayDetailEmpty">Sin eventos Confirmados/Pre reserva para este dia.</div>
+      <div class="occupancyDetailHeader">
+        <div>
+          <div class="occupancyDayDetailTitle">${escapeHtml(title)}</div>
+          <div class="occupancyDayDetailText">No se registran eventos Confirmados o Pre reserva en este dia.</div>
+        </div>
+        <div class="occupancyDetailStats">${metrics}</div>
+      </div>
+      <div class="occupancyDayDetailEmpty">Elige otro dia de la semana para revisar eventos, montos y acciones operativas.</div>
     `;
     return;
   }
-  const cards = dayRows.map((r) => `
-    <article class="occupancyEventCard">
-      <div class="occupancyEventHead">
-        <span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.25))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.6))}">${escapeHtml(r.status)}</span>
-        <strong>${escapeHtml(r.refId)}</strong>
-      </div>
-      <div class="occupancyEventBody">
-        <div class="occupancyInfoGrid">
-          <div class="occupancyInfoItem occupancyInfoWide">
-            <small>Evento</small>
+  const cards = dayRows.map((r) => {
+    const rowTone = r.status === STATUS.CONFIRMADO ? "confirmed" : "pre";
+    return `
+      <article class="occupancyEventCard occupancyEventCard--${escapeHtml(rowTone)}">
+        <div class="occupancyEventHead">
+          <div class="occupancyEventHeading">
+            <span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.18))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.48))};color:${escapeHtml(r.statusColor || "#e2e8f0")}">${escapeHtml(r.status)}</span>
             <strong title="${escapeHtml(r.eventName || "-")}">${escapeHtml(r.eventName || "-")}</strong>
+            <small>${escapeHtml(r.refId || "Sin referencia")} | ${escapeHtml(r.startTime || "-")} - ${escapeHtml(r.endTime || "-")}</small>
           </div>
-          <div class="occupancyInfoItem">
-            <small>Horario</small>
-            <strong>${escapeHtml(r.startTime)} - ${escapeHtml(r.endTime)}</strong>
-          </div>
-          <div class="occupancyInfoItem">
-            <small>Salon</small>
-            <strong>${escapeHtml(r.salon || "-")}</strong>
-          </div>
-          <div class="occupancyInfoItem">
-            <small>Institucion</small>
-            <strong title="${escapeHtml(r.company || "-")}">${escapeHtml(r.company || "-")}</strong>
-          </div>
-          <div class="occupancyInfoItem">
-            <small>Encargado</small>
-            <strong title="${escapeHtml(r.manager || "-")}">${escapeHtml(r.manager || "-")}</strong>
-          </div>
-          <div class="occupancyInfoItem">
-            <small>Vendedor</small>
-            <strong title="${escapeHtml(r.seller || "-")}">${escapeHtml(r.seller || "-")}</strong>
-          </div>
-          <div class="occupancyInfoItem">
-            <small>PAX</small>
-            <strong>${escapeHtml(String(r.pax || 0))}</strong>
-          </div>
-        </div>
-        <div class="occupancyMetricsGrid">
-          <div class="occupancyMetricItem">
-            <small>Total evento</small>
+          <div class="occupancyEventMoney">
+            <span>Total evento</span>
             <strong>${escapeHtml(moneyGT(r.totalEvent || 0))}</strong>
           </div>
-          <div class="occupancyMetricItem">
-            <small>Ingreso dia</small>
-            <strong>${escapeHtml(moneyGT(r.incomePerDay || 0))}</strong>
+        </div>
+        <div class="occupancyEventBody">
+          <div class="occupancyInfoGrid">
+            <div class="occupancyInfoItem occupancyInfoWide"><small>Institucion</small><strong title="${escapeHtml(r.company || "-")}">${escapeHtml(r.company || "-")}</strong></div>
+            <div class="occupancyInfoItem"><small>Salon</small><strong>${escapeHtml(r.salon || "-")}</strong></div>
+            <div class="occupancyInfoItem"><small>Encargado</small><strong title="${escapeHtml(r.manager || "-")}">${escapeHtml(r.manager || "-")}</strong></div>
+            <div class="occupancyInfoItem"><small>Vendedor</small><strong title="${escapeHtml(r.seller || "-")}">${escapeHtml(r.seller || "-")}</strong></div>
+            <div class="occupancyInfoItem"><small>PAX</small><strong>${escapeHtml(String(r.pax || 0))}</strong></div>
           </div>
-          <div class="occupancyMetricItem">
-            <small>Ingreso salon-dia</small>
-            <strong>${escapeHtml(moneyGT(r.incomePerSalonDay || 0))}</strong>
+          <div class="occupancyMetricsGrid">
+            <div class="occupancyMetricItem"><small>Ingreso dia</small><strong>${escapeHtml(moneyGT(r.incomePerDay || 0))}</strong></div>
+            <div class="occupancyMetricItem"><small>Ingreso salon-dia</small><strong>${escapeHtml(moneyGT(r.incomePerSalonDay || 0))}</strong></div>
+            <div class="occupancyMetricItem"><small>Ultima modificacion</small><strong>${escapeHtml(r.updatedAt || "-")}</strong></div>
+          </div>
+          <div class="occupancyActionGrid">
+            <div class="occupancyActionItem"><small>Ultima cotizacion</small><div>${buildOccupancyQuoteActionHtml(r)}</div></div>
+            <div class="occupancyActionItem"><small>Ultimo informe</small><div>${buildOccupancyMenuMontajeActionHtml(r)}</div></div>
+            <div class="occupancyActionItem"><small>Check List</small><div>${buildOccupancyChecklistActionHtml(r)}</div></div>
           </div>
         </div>
-        <div class="occupancyActionGrid">
-          <div class="occupancyActionItem">
-            <small>Ult. cotizacion</small>
-            <div>${buildOccupancyQuoteActionHtml(r)}</div>
-          </div>
-          <div class="occupancyActionItem">
-            <small>Ult. informe</small>
-            <div>${buildOccupancyMenuMontajeActionHtml(r)}</div>
-          </div>
-          <div class="occupancyActionItem">
-            <small>Check List</small>
-            <div>${buildOccupancyChecklistActionHtml(r)}</div>
-          </div>
-        </div>
-      </div>
-    </article>
-  `).join("");
+      </article>
+    `;
+  }).join("");
   el.occupancyDayDetail.innerHTML = `
-    <div class="occupancyDayDetailTitle">${escapeHtml(title)}</div>
+    <div class="occupancyDetailHeader">
+      <div>
+        <div class="occupancyDayDetailTitle">${escapeHtml(title)}</div>
+        <div class="occupancyDayDetailText">Lectura rapida del dia seleccionado con eventos, responsables y acciones relacionadas.</div>
+      </div>
+      <div class="occupancyDetailStats">${metrics}</div>
+    </div>
     <div class="occupancyEventCards">${cards}</div>
   `;
 }
@@ -4152,30 +4200,32 @@ function renderOccupancyReportTable() {
   renderOccupancyDayDetail(rows);
   if (!rows.length) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="17">Sin eventos Confirmados/Pre reserva para esta semana.</td>`;
+    tr.innerHTML = `<td colspan="17" class="occupancyTableEmpty">Sin eventos Confirmados/Pre reserva para esta semana.</td>`;
     el.occupancyReportBody.appendChild(tr);
     return;
   }
   for (const r of rows) {
     const tr = document.createElement("tr");
+    const rowTone = r.status === STATUS.CONFIRMADO ? "confirmed" : "pre";
+    tr.className = `occupancyTableRow occupancyTableRow--${rowTone}`;
     tr.innerHTML = `
-      <td><span class="salesStatusBadge" style="background:${hexToRgba(r.statusColor, 0.25)};border-color:${hexToRgba(r.statusColor, 0.6)}">${escapeHtml(r.status || "-")}</span></td>
-      <td>${escapeHtml(String(r.pax || 0))}</td>
-      <td>${escapeHtml(r.eventDate || "-")}</td>
-      <td>${escapeHtml(r.startTime || "-")}</td>
-      <td>${escapeHtml(r.endTime || "-")}</td>
-      <td>${escapeHtml(r.eventName || "-")}</td>
-      <td>${escapeHtml(r.salon || "-")}</td>
-      <td>${escapeHtml(r.company || "-")}</td>
-      <td>${escapeHtml(r.manager || "-")}</td>
-      <td>${escapeHtml(r.seller || "-")}</td>
+      <td class="occupancyTableStatus"><span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.18))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.48))};color:${escapeHtml(r.statusColor || "#e2e8f0")}">${escapeHtml(r.status || "-")}</span></td>
+      <td class="occupancyTablePax">${escapeHtml(String(r.pax || 0))}</td>
+      <td class="occupancyTableDate">${escapeHtml(r.eventDate || "-")}</td>
+      <td class="occupancyTableTime">${escapeHtml(r.startTime || "-")}</td>
+      <td class="occupancyTableTime">${escapeHtml(r.endTime || "-")}</td>
+      <td class="occupancyTableEvent"><strong title="${escapeHtml(r.eventName || "-")}">${escapeHtml(r.eventName || "-")}</strong></td>
+      <td class="occupancyTableSalon">${escapeHtml(r.salon || "-")}</td>
+      <td class="occupancyTableInstitution">${escapeHtml(r.company || "-")}</td>
+      <td class="occupancyTableManager">${escapeHtml(r.manager || "-")}</td>
+      <td class="occupancyTableSeller">${escapeHtml(r.seller || "-")}</td>
       <td>${buildOccupancyQuoteActionHtml(r)}</td>
       <td>${buildOccupancyMenuMontajeActionHtml(r)}</td>
       <td>${buildOccupancyChecklistActionHtml(r)}</td>
-      <td>${escapeHtml(moneyGT(r.totalEvent || 0))}</td>
-      <td>${escapeHtml(moneyGT(r.incomePerDay || 0))}</td>
-      <td>${escapeHtml(moneyGT(r.incomePerSalonDay || 0))}</td>
-      <td>${escapeHtml(r.updatedAt || "-")}</td>
+      <td class="occupancyTableMoney">${escapeHtml(moneyGT(r.totalEvent || 0))}</td>
+      <td class="occupancyTableMoney">${escapeHtml(moneyGT(r.incomePerDay || 0))}</td>
+      <td class="occupancyTableMoney">${escapeHtml(moneyGT(r.incomePerSalonDay || 0))}</td>
+      <td class="occupancyTableUpdated">${escapeHtml(r.updatedAt || "-")}</td>
     `;
     el.occupancyReportBody.appendChild(tr);
   }
@@ -4975,11 +5025,9 @@ function setInstitutionReportDefaultRange() {
   if (el.institutionReportTo) el.institutionReportTo.value = toIso;
 }
 
-function renderInstitutionReportCompanyOptions() {
-  if (!el.institutionReportCompany) return;
-  const previous = String(el.institutionReportCompany.value || "").trim();
+function getInstitutionReportFilteredCompanies() {
   const search = String(el.institutionReportCompanySearch?.value || "").trim();
-  const companies = (state.companies || [])
+  return (state.companies || [])
     .filter((c) => {
       if (!String(c?.id || "").trim() || isCompanyDisabled(c.id)) return false;
       if (!search) return true;
@@ -4995,26 +5043,61 @@ function renderInstitutionReportCompanyOptions() {
     })
     .slice()
     .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity: "base" }));
+}
+
+function renderInstitutionReportCompanyResults(companies = []) {
+  if (!el.institutionReportCompanyResults) return;
+  const selectedId = String(el.institutionReportCompany?.value || "").trim();
+  const search = String(el.institutionReportCompanySearch?.value || "").trim();
+  if (!companies.length) {
+    el.institutionReportCompanyResults.innerHTML = search
+      ? '<div class="institutionSearchEmpty">No se encontraron instituciones con ese criterio.</div>'
+      : "";
+    return;
+  }
+  el.institutionReportCompanyResults.innerHTML = companies.slice(0, 6).map((company) => {
+    const companyId = String(company.id || "").trim();
+    const metaPrimary = String(company.owner || company.email || company.businessName || "Sin contacto principal").trim();
+    const metaSecondary = [company.phone, company.email].filter(Boolean).join(" | ");
+    const activeClass = companyId === selectedId ? " isActive" : "";
+    return `
+      <button class="institutionSearchCard${activeClass}" type="button" data-institution-company-pick="${escapeHtml(companyId)}">
+        <span class="institutionSearchCardTitle">${escapeHtml(String(company.name || "Institucion").trim())}</span>
+        <span class="institutionSearchCardMeta">${escapeHtml(metaPrimary)}</span>
+        <span class="institutionSearchCardSub">${escapeHtml(metaSecondary || "Sin telefono o correo")}</span>
+      </button>
+    `;
+  }).join("");
+}
+
+function renderInstitutionReportCompanyOptions() {
+  if (!el.institutionReportCompany) return;
+  const previous = String(el.institutionReportCompany.value || "").trim();
+  const companies = getInstitutionReportFilteredCompanies();
   el.institutionReportCompany.innerHTML = "";
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent = search ? "Selecciona una coincidencia" : "Selecciona institucion";
+  placeholder.textContent = companies.length ? "Selecciona institucion" : "Sin coincidencias";
   el.institutionReportCompany.appendChild(placeholder);
   for (const company of companies) {
     const opt = document.createElement("option");
+    const detail = [company.owner || company.email || "Sin contacto", company.phone || "Sin telefono"]
+      .filter(Boolean)
+      .join(" | ");
     opt.value = String(company.id || "").trim();
-    opt.textContent = String(company.name || "Institucion").trim();
+    opt.textContent = `${String(company.name || "Institucion").trim()} - ${detail}`;
     el.institutionReportCompany.appendChild(opt);
   }
   if (previous && companies.some((c) => String(c.id) === previous)) {
     el.institutionReportCompany.value = previous;
-  } else if (!previous && companies.length) {
-    el.institutionReportCompany.value = String(companies[0].id || "");
   } else if (companies.length) {
     el.institutionReportCompany.value = String(companies[0].id || "");
   } else {
     el.institutionReportCompany.value = "";
   }
+  syncEnhancedSelectValue(el.institutionReportCompany, el.institutionReportCompany.value || "");
+  queueSelectEnhancement(el.institutionReportCompany, true);
+  renderInstitutionReportCompanyResults(companies);
 }
 
 function normalizeInstitutionItemLabel(item) {
@@ -5302,26 +5385,81 @@ function renderInstitutionReport() {
   const data = buildInstitutionReportData(companyId, safeFrom, safeTo);
 
   if (el.institutionReportHeadline) {
+    const companyName = String(data.company?.name || "Institucion").trim() || "Institucion";
+    const companyType = String(
+      data.company?.businessName
+      || data.company?.billTo
+      || data.company?.owner
+      || "Selecciona una institucion para ver su tablero"
+    ).trim();
+    const contactLine = [
+      data.company?.owner || data.company?.email || "Sin contacto principal",
+      data.company?.phone || "Sin telefono",
+    ].filter(Boolean).join(" | ");
+    const lastVisitText = data.latestVisitIso
+      ? fmtDateShort(new Date(`${data.latestVisitIso}T00:00:00`))
+      : "Sin visitas registradas";
+    const firstVisitText = data.firstVisitIso
+      ? fmtDateShort(new Date(`${data.firstVisitIso}T00:00:00`))
+      : "Sin historial previo";
+    const rangeText = safeFrom && safeTo
+      ? `${fmtDateShort(new Date(`${safeFrom}T00:00:00`))} al ${fmtDateShort(new Date(`${safeTo}T00:00:00`))}`
+      : "Define un rango para analizar a tus clientes";
+    el.institutionReportHeadline.classList.toggle("isEmpty", !data.company);
     if (!data.company) {
-      el.institutionReportHeadline.innerHTML = `<div class="dashboardEmpty">Selecciona una institucion para ver su dashboard.</div>`;
+      el.institutionReportHeadline.innerHTML = `
+        <div class="institutionHeadlineEmpty">
+          <div class="institutionHeadlineEmptyMain">
+            <span class="institutionHeroEyebrow">Vista premium</span>
+            <strong>Selecciona una institucion para desbloquear el dashboard</strong>
+            <small>Usa el buscador, el selector o ajusta el rango para mostrar consumo, encargados, salones y tendencia historica en una sola vista.</small>
+          </div>
+          <div class="institutionHeadlineHintGrid">
+            <article class="institutionHeadlineHintCard">
+              <span>Periodo activo</span>
+              <b>${escapeHtml(rangeText)}</b>
+            </article>
+            <article class="institutionHeadlineHintCard">
+              <span>Instituciones disponibles</span>
+              <b>${escapeHtml(String((state.companies || []).filter((c) => !isCompanyDisabled(c?.id)).length))}</b>
+            </article>
+            <article class="institutionHeadlineHintCard">
+              <span>Que veras aqui</span>
+              <b>Ingresos, historial, estados y consumo</b>
+            </article>
+          </div>
+        </div>
+      `;
     } else {
-      const lastVisitText = data.latestVisitIso
-        ? `${data.latestVisitIso}${Number.isFinite(data.daysSinceLastVisit) ? ` | hace ${data.daysSinceLastVisit} dias` : ""}`
-        : "Sin visitas registradas";
-      const companyType = String(data.company.eventType || "").trim() || "Sin tipo definido";
       el.institutionReportHeadline.innerHTML = `
         <div class="institutionHeadlineTop">
-          <div>
-            <strong>${escapeHtml(String(data.company.name || "Institucion"))}</strong>
-            <small>${escapeHtml(companyType)} | ${escapeHtml(String(data.company.owner || data.company.email || "Sin contacto principal"))}</small>
+          <div class="institutionHeadlineIdentity">
+            <span class="institutionHeroEyebrow">Cliente destacado</span>
+            <strong>${escapeHtml(companyName)}</strong>
+            <small>${escapeHtml(companyType)} | ${escapeHtml(contactLine)}</small>
           </div>
-          <div class="institutionHeadlineMoney">${escapeHtml(moneyGT(data.totalRevenue || 0))}</div>
+          <div class="institutionHeadlineValueBlock">
+            <span class="institutionHeadlineValueLabel">Ingreso acumulado</span>
+            <div class="institutionHeadlineMoney">${escapeHtml(moneyGT(data.totalRevenue || 0))}</div>
+          </div>
         </div>
-        <div class="institutionHeadlineMeta">
-          <span class="pill">Ultima visita: ${escapeHtml(lastVisitText)}</span>
-          <span class="pill">Primera visita: ${escapeHtml(data.firstVisitIso || "-")}</span>
-          <span class="pill">Encargado top: ${escapeHtml(data.topManagerLabel || "-")}</span>
-          <span class="pill">Vendedor top: ${escapeHtml(data.topSellerLabel || "-")}</span>
+        <div class="institutionHeadlineStats">
+          <article class="institutionStatCard institutionStatPrimary">
+            <span class="institutionStatLabel">Ultima visita</span>
+            <strong>${escapeHtml(lastVisitText)}</strong>
+          </article>
+          <article class="institutionStatCard institutionStatTeal">
+            <span class="institutionStatLabel">Primera visita</span>
+            <strong>${escapeHtml(firstVisitText)}</strong>
+          </article>
+          <article class="institutionStatCard institutionStatAmber">
+            <span class="institutionStatLabel">Encargado top</span>
+            <strong>${escapeHtml(data.topManagerLabel || "-")}</strong>
+          </article>
+          <article class="institutionStatCard institutionStatMagenta">
+            <span class="institutionStatLabel">Vendedor top</span>
+            <strong>${escapeHtml(data.topSellerLabel || "-")}</strong>
+          </article>
         </div>
       `;
     }
@@ -6553,6 +6691,7 @@ function initModernTimePicker(input) {
   if (!input) return;
   if (typeof window.flatpickr === "function") {
     if (input._flatpickr) input._flatpickr.destroy();
+    input.classList.add("modernPickerInput", "modernTimeInput");
     window.flatpickr(input, {
       enableTime: true,
       noCalendar: true,
@@ -6561,11 +6700,53 @@ function initModernTimePicker(input) {
       minuteIncrement: SNAP_MINUTES,
       allowInput: true,
       disableMobile: true,
+      nextArrow: "<span aria-hidden=\"true\">&rsaquo;</span>",
+      prevArrow: "<span aria-hidden=\"true\">&lsaquo;</span>",
+      onReady: (_, __, instance) => {
+        instance.calendarContainer?.classList.add("crmTimePicker");
+        input.addEventListener("focus", () => instance.open());
+        input.addEventListener("click", () => instance.open());
+      },
+      onOpen: () => input.classList.add("modernPickerInputOpen"),
+      onClose: () => input.classList.remove("modernPickerInputOpen"),
     });
     return;
   }
   input.type = "time";
   input.step = String(SNAP_MINUTES * 60);
+}
+
+function syncEventDateRangePickerConstraints() {
+  const startPicker = el.eventDate?._flatpickr || null;
+  const endPicker = el.eventDateEnd?._flatpickr || null;
+  const startValue = String(el.eventDate?.value || "").trim();
+  const endValue = String(el.eventDateEnd?.value || "").trim();
+
+  if (endPicker) endPicker.set("minDate", startValue || null);
+  if (startPicker) startPicker.set("maxDate", endValue || null);
+}
+
+function normalizeEventDateRange(changedInput) {
+  const startValue = String(el.eventDate?.value || "").trim();
+  const endValue = String(el.eventDateEnd?.value || "").trim();
+  if (!startValue || !endValue) {
+    syncEventDateRangePickerConstraints();
+    return;
+  }
+  if (startValue <= endValue) {
+    syncEventDateRangePickerConstraints();
+    return;
+  }
+  if (changedInput === el.eventDate && el.eventDateEnd?._flatpickr) {
+    el.eventDateEnd._flatpickr.setDate(startValue, true);
+  } else if (changedInput === el.eventDateEnd && el.eventDate?._flatpickr) {
+    el.eventDate._flatpickr.setDate(endValue, true);
+  } else if (changedInput === el.eventDate) {
+    el.eventDateEnd.value = startValue;
+  } else if (changedInput === el.eventDateEnd) {
+    el.eventDate.value = endValue;
+  }
+  syncEventDateRangePickerConstraints();
 }
 
 function initModernDatePicker(input) {
@@ -6574,6 +6755,9 @@ function initModernDatePicker(input) {
     if (input._flatpickr) input._flatpickr.destroy();
     input.type = "text";
     input.autocomplete = "off";
+    input.classList.add("modernPickerInput", "modernDateInput");
+    if (input.id === "eventDate") input.classList.add("modernDateInputStart");
+    if (input.id === "eventDateEnd") input.classList.add("modernDateInputEnd");
     window.flatpickr(input, {
       dateFormat: "Y-m-d",
       allowInput: false,
@@ -6584,13 +6768,18 @@ function initModernDatePicker(input) {
       nextArrow: "<span aria-hidden=\"true\">&rsaquo;</span>",
       prevArrow: "<span aria-hidden=\"true\">&lsaquo;</span>",
       onChange: () => {
+        normalizeEventDateRange(input);
         input.dispatchEvent(new Event("input", { bubbles: true }));
         input.dispatchEvent(new Event("change", { bubbles: true }));
       },
       onReady: (_, __, instance) => {
+        instance.calendarContainer?.classList.add("crmDatePicker");
+        normalizeEventDateRange(input);
         input.addEventListener("focus", () => instance.open());
         input.addEventListener("click", () => instance.open());
       },
+      onOpen: () => input.classList.add("modernPickerInputOpen"),
+      onClose: () => input.classList.remove("modernPickerInputOpen"),
     });
     return;
   }
@@ -7046,8 +7235,8 @@ function renderServiceCategoryManagerTable() {
       <td>${escapeHtml(String(row?.nombre || ""))}</td>
       <td>${isActive ? "Activa" : "Inhabilitada"}</td>
       <td class="tableActionsCell">
-        <button class="apptIconBtn apptEdit" type="button" data-service-category-edit="${escapeHtml(String(row?.id || ""))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
-        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-category-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â" : "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº"}</button>
+        <button class="apptIconBtn apptEdit" type="button" data-service-category-edit="${escapeHtml(String(row?.id || ""))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-category-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº"}</button>
       </td>`;
     el.serviceCategoryBody.appendChild(tr);
   }
@@ -7164,8 +7353,8 @@ function renderServiceSubcategoryManagerTable(categoryFilter = "") {
       <td>${escapeHtml(String(categoryById.get(Number(row?.id_categoria)) || "-"))}</td>
       <td>${isActive ? "Activa" : "Inhabilitada"}</td>
       <td class="tableActionsCell">
-        <button class="apptIconBtn apptEdit" type="button" data-service-subcategory-edit="${escapeHtml(String(row?.id || ""))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
-        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-subcategory-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â" : "ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº"}</button>
+        <button class="apptIconBtn apptEdit" type="button" data-service-subcategory-edit="${escapeHtml(String(row?.id || ""))}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn ${isActive ? "apptDelete" : ""}" type="button" data-service-subcategory-toggle="${escapeHtml(String(row?.id || ""))}" title="${isActive ? "Inhabilitar" : "Reactivar"}">${isActive ? "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â" : "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº"}</button>
       </td>`;
     el.serviceSubcategoryBody.appendChild(tr);
   }
@@ -12749,6 +12938,17 @@ function bindEvents() {
       renderInstitutionReport();
     });
   }
+  if (el.institutionReportCompanyResults) {
+    el.institutionReportCompanyResults.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-institution-company-pick]");
+      if (!btn) return;
+      const companyId = String(btn.dataset.institutionCompanyPick || "").trim();
+      if (!companyId) return;
+      syncEnhancedSelectValue(el.institutionReportCompany, companyId);
+      renderInstitutionReportCompanyOptions();
+      renderInstitutionReport();
+    });
+  }
   if (el.btnInstitutionReportCurrentYear) {
     el.btnInstitutionReportCurrentYear.addEventListener("click", () => {
       setInstitutionReportDefaultRange();
@@ -13732,8 +13932,8 @@ function renderQuoteAdvancesModal() {
         <td>${escapeHtml(row.description || "-")}</td>
         <td>${moneyGT(row.amount || 0)}</td>
         <td class="appointmentActions">
-          <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
-          <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œ</button>
+          <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
+          <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¹Ãƒâ€¦Ã¢â‚¬Å“</button>
         </td>
       `;
       el.quoteAdvanceBody.appendChild(tr);
@@ -14213,7 +14413,7 @@ function renderServiceManagerTable() {
       <td>${escapeHtml(Number(s?.price || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</td>
       <td>${disabled ? "Inhabilitado" : "Activo"}</td>
       <td class="tableActionsCell">
-        <button class="apptIconBtn apptEdit" type="button" data-service-row-edit="${escapeHtml(serviceId)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½</button>
+        <button class="apptIconBtn apptEdit" type="button" data-service-row-edit="${escapeHtml(serviceId)}" title="Editar">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½</button>
       </td>`;
     el.servicesManagerBody.appendChild(tr);
   }
@@ -16088,6 +16288,7 @@ async function openQuoteDocument(ev, quote) {
     ? Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : "-";
   const grandTotalWords = numberToWordsEs(totalDoc);
+  const isServiHospTemplate = String(quote.templateId || "").trim() === SERVIHOSP_TEMPLATE_ID;
   let appendedTemplateHtml = "";
   const builtInTemplateMeta = getBuiltInQuoteTemplateMeta(String(quote.templateId || "").trim());
   if (builtInTemplateMeta?.attachToQuote) {
@@ -16189,20 +16390,28 @@ async function openQuoteDocument(ev, quote) {
     </section>`;
       }
     } catch (err) {
-      console.warn("No se pudo anexar Contrato Corporativo:", err?.message || err);
+      console.warn("No se pudo anexar Jardines:", err?.message || err);
     }
   }
 
   const quoteInstitutionName = escapeHtml(String(quote.companyName || company?.name || "Cotizacion").trim() || "Cotizacion");
   const quoteDocLabel = `COTIZACION ${quoteInstitutionName}`;
-  const isServiHospTemplate = String(quote.templateId || "").trim() === SERVIHOSP_TEMPLATE_ID;
-  const brandLogoSrc = "./Oficial_JDL_acua.png";
-  const brandHotelName = "Hotel y Centro de Convenciones Jardines del Lago";
-  const brandManagerName = "Patricio Estanislao Ralon Ordonez";
-  const brandNit = "NIT: 485430-6";
-  const brandWeb = "www.jardinesdellago.com";
-  const brandPhones = "+502 7762-6114 / 7762-6060";
-  const brandAddress = "Calle Monterrey, Panajachel, Solola";
+  const quoteHeaderSrc = String(
+    builtInTemplateMeta?.headerImage
+    || (isServiHospTemplate ? SERVIHOSP_TEMPLATE_HEADER_IMAGE : DEFAULT_TEMPLATE_HEADER_IMAGE)
+    || DEFAULT_TEMPLATE_HEADER_IMAGE
+  ).trim();
+  const sellerUser = normalizeUserRecord((state.users || []).find((u) => String(u.id || "") === String(ev?.userId || "")) || {});
+  const sellerNameDoc = String(sellerUser?.fullName || sellerUser?.name || authSession.fullName || authSession.username || "").trim();
+  const sellerEmailDoc = String(sellerUser?.email || "").trim();
+  const sellerPhoneDoc = String(sellerUser?.phone || "").trim();
+  const sellerSignatureDoc = String(sellerUser?.signatureDataUrl || authSession.signatureDataUrl || "").trim();
+  const sellerSignatureHtmlDoc = sellerSignatureDoc
+    ? `<img class="signatureImage" src="${escapeHtml(sellerSignatureDoc)}" alt="Firma vendedor" />`
+    : "";
+  const eventManagerNameDoc = String(quote?.contact || manager?.name || "").trim();
+  const eventManagerEmailDoc = String(quote?.email || manager?.email || "").trim();
+  const eventManagerPhoneDoc = String(quote?.phone || manager?.phone || "").trim();
 
   const html = `<!doctype html>
 <html lang="es">
@@ -16211,314 +16420,245 @@ async function openQuoteDocument(ev, quote) {
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <base href="${escapeHtml(document.baseURI || window.location.href)}" />
   <title>Cotizacion ${escapeHtml(quote.code || "")}</title>
-  <style>
+    <style>
     :root{
-      --ink:#142b3f;
-      --muted:#5f7183;
-      --line:#dde5ea;
-      --line-strong:#cbd6de;
-      --head:#f6f9fb;
-      --brand:#1f405c;
-      --brand-soft:#eef4f7;
-      --quote-label:#edf3f6;
-      --quote-section:#264d6b;
-      --quote-section-border:#1a3850;
-      --quote-section-soft:rgba(38,77,107,0.08);
-      --accent:#8eacbf;
-      --accent-soft:#f4f8fa;
-      --success-soft:#e8f1ee;
-      --paper:#fbfcfd;
+      --ink:#183447;
+      --line:#d7e2e8;
+      --line-strong:#b9cad4;
+      --paper:#fbfdfd;
+      --surface:#ffffff;
+      --brand:#1ea7ad;
+      --brand-deep:#117d8f;
+      --brand-soft:#e8f8f8;
+      --brand-muted:#d7efef;
+      --navy:#1e3f57;
+      --title:#16465e;
+      --head-soft:#eff9fa;
+      --zebra:#f6fbfc;
     }
     *{ box-sizing:border-box; }
-    body{ margin:0; padding:18px; font-family:"Segoe UI",Arial,sans-serif; font-size:12px; color:var(--ink); background:linear-gradient(180deg,#f4f7fa 0%, #edf2f6 100%); }
+    body{
+      margin:0;
+      padding:18px;
+      font-family:"Segoe UI",Arial,sans-serif;
+      font-size:12px;
+      color:var(--ink);
+      background:radial-gradient(circle at top left,#eaf7f8 0%,#eff4f8 40%,#edf2f6 100%);
+    }
     .doc{
       max-width:1080px;
       margin:0 auto;
       border:1px solid var(--line);
-      border-radius:16px;
+      border-radius:18px;
       overflow:hidden;
+      background:var(--surface);
+      box-shadow:0 18px 42px rgba(17,47,66,0.14);
+    }
+    .quoteContractHeader{
+      display:block;
+      border-bottom:1px solid var(--line);
       background:#ffffff;
-      box-shadow:0 14px 38px rgba(10,24,40,0.1);
     }
-    .brandHeader{
-      display:grid;
-      grid-template-columns: 1.1fr 1.7fr 1.5fr;
-      align-items:stretch;
-      border-bottom:1px solid var(--line-strong);
-      background:linear-gradient(180deg,#f8fafb 0%, #eff4f7 100%);
+    .quoteContractHeader img{
+      display:block;
+      width:100%;
+      height:auto;
+      max-height:92px;
+      object-fit:contain;
+      object-position:center top;
     }
-    .brandBlock{
-      min-height:82px;
-      padding:10px 12px;
-      border-right:1px solid var(--line);
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-    }
-    .brandBlock:last-child{ border-right:none; }
-    .brandLeft{ background:linear-gradient(180deg,#f9fbfc,#f1f5f8); }
-    .brandLeft img{ max-height:58px; width:auto; object-fit:contain; }
-    .brandCenter{ color:#31485d; font-size:11px; line-height:1.42; }
-    .brandCenter strong{ display:block; font-size:12.5px; color:var(--brand); margin-bottom:3px; letter-spacing:0.1px; }
-    .brandRight{ text-align:center; color:#42586c; font-size:11px; line-height:1.45; }
-    .brandRight strong{ color:var(--brand); font-size:12px; }
     .head{
-      background:linear-gradient(135deg,#264d6b 0%, #1d3f5a 100%);
-      color:#fff;
-      padding:10px 14px;
-      border-bottom:1px solid rgba(20,43,63,0.08);
+      background:linear-gradient(100deg,var(--brand-deep) 0%,var(--brand) 42%,#4fc2c7 100%);
+      color:#ffffff;
+      padding:11px 16px;
+      border-top:1px solid rgba(255,255,255,0.28);
+      border-bottom:1px solid rgba(14,78,90,0.25);
       font-weight:800;
-      font-size:12.5px;
-      letter-spacing:0.3px;
+      font-size:13px;
+      letter-spacing:0.42px;
       text-transform:uppercase;
+      text-shadow:0 1px 0 rgba(9,48,56,0.2);
     }
     .quoteMetaTable{
       width:100%;
       border-collapse:collapse;
       table-layout:fixed;
-      margin:0 0 8px;
-      border-top:2px solid var(--line-strong);
+      margin:0 0 10px;
+      border-top:3px solid rgba(30,167,173,0.32);
       border-left:1px solid var(--line);
       border-right:1px solid var(--line);
-      background:#ffffff;
+      background:var(--surface);
     }
     .quoteMetaTable col.metaLabel{ width:13%; }
     .quoteMetaTable col.metaValue{ width:20.333%; }
     .quoteMetaTable td{
       border-bottom:1px solid var(--line);
       border-right:1px solid var(--line);
-      padding:4px 8px;
+      padding:6px 8px;
       font-size:12px;
-      color:#24384a;
+      color:#274152;
       vertical-align:middle;
-      background:#ffffff;
+      background:var(--surface);
     }
     .quoteMetaTable tr td:last-child{ border-right:none; }
-    .quoteMetaTable td.metaLabel{
-      background:linear-gradient(180deg,#f1f5f7 0%, #e8eef2 100%);
-      color:var(--brand);
-      font-weight:700;
-      letter-spacing:0.15px;
-    }
-    .quoteMetaTable td.metaValue{
-      font-weight:600;
-      background:#ffffff;
-    }
-    .quoteMetaTable tr.metaDivider td{
-      border-top:2px solid rgba(39,74,101,0.28);
-    }
-    .quoteMetaTable tr.metaGap td{
-      padding:0;
-      height:8px;
-      border:none;
-      background:transparent;
-    }
-    .quoteMetaTable td.metaWide{
-      text-align:left;
-    }
+    .quoteMetaTable td.metaLabel{ background:linear-gradient(180deg,#f1fbfb 0%,#e7f5f6 100%); color:var(--title); font-weight:700; letter-spacing:0.14px; }
+    .quoteMetaTable td.metaValue{ font-weight:600; background:var(--surface); }
+    .quoteMetaTable tr.metaDivider td{ border-top:2px solid rgba(30,167,173,0.35); }
+    .quoteMetaTable tr.metaGap td{ padding:0; height:9px; border:none; background:linear-gradient(180deg,rgba(244,250,252,0.95) 0%,rgba(255,255,255,0.92) 100%); }
+    .quoteMetaTable td.metaWide{ text-align:left; }
     table{ width:100%; border-collapse:collapse; }
     thead th{
-      background:linear-gradient(180deg,#f7fafc 0%, #f0f5f8 100%);
-      border:1px solid var(--line);
-      padding:5px 6px;
+      background:linear-gradient(180deg,var(--head-soft) 0%,#e5f5f6 100%);
+      border:1px solid #cddde5;
+      padding:6px 8px;
       text-align:left;
-      font-size:12px;
-      font-weight:700;
-      color:var(--brand);
+      font-size:11.5px;
+      font-weight:800;
+      color:var(--title);
+      text-transform:uppercase;
+      letter-spacing:0.2px;
     }
-    tbody td{ border:1px solid var(--line); padding:7px 9px; font-size:12px; background:#ffffff; color:#20384b; }
+    tbody td{ border:1px solid var(--line); padding:7px 9px; font-size:12px; background:var(--surface); color:#1f3b4d; }
+    tbody tr:nth-child(even):not(.dayHeaderRow):not(.daySubtotalRow) td{ background:var(--zebra); }
     .dayHeaderRow td{
-      background:linear-gradient(135deg,#315b78 0%, #274a65 100%);
+      background:linear-gradient(100deg,var(--navy) 0%,#215d78 54%,#287f93 100%);
       color:#ffffff !important;
       font-weight:800;
-      letter-spacing:0.2px;
+      letter-spacing:0.32px;
       text-transform:uppercase;
       text-align:center;
-      border:1px solid rgba(26,56,80,0.08);
-      padding:5px 8px;
+      border:1px solid rgba(16,64,79,0.24);
+      padding:6px 9px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);
     }
     .daySubtotalRow td{
-      border-top:2px solid var(--quote-section-border);
-      border-bottom:1px solid rgba(20,43,63,0.08);
-      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
-      color:var(--brand);
-    }
-    tfoot td{
-      border:1px solid var(--line-strong);
-      padding:5px 6px;
-      font-size:10px;
-      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
-      color:var(--brand);
-    }
-    .sumLabel{
-      text-align:right;
+      border-top:2px solid rgba(17,125,143,0.42);
+      border-bottom:1px solid #cfe1e7;
+      background:linear-gradient(180deg,var(--brand-soft) 0%,var(--brand-muted) 100%) !important;
+      color:#15516b;
       font-weight:700;
-      color:var(--brand);
-      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
     }
-    .sumValue{
-      text-align:right;
-      font-weight:800;
-      color:var(--brand);
-      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
-    }
+    tfoot td{ border:1px solid #c8d7e0; padding:6px 8px; font-size:11px; background:linear-gradient(180deg,#f4fbfc 0%,#e9f5f7 100%); color:#18445a; }
+    .sumLabel{ text-align:right; font-weight:700; color:#15495f; background:linear-gradient(180deg,#f0f9fa 0%,#e2f1f3 100%); }
+    .sumValue{ text-align:right; font-weight:800; color:#103b52; background:linear-gradient(180deg,#f0f9fa 0%,#e2f1f3 100%); font-variant-numeric:tabular-nums; }
     .sumTotal .sumLabel,
-    .sumTotal .sumValue{
-      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
-      color:var(--brand);
-      font-size:12px;
-    }
-    .sumWords{
-      border-top:1px solid var(--line);
-      background:linear-gradient(180deg,#eef4f6 0%, #e7eef2 100%);
-      color:var(--brand);
-      font-weight:700;
-      font-size:12px;
-      text-transform:uppercase;
-      line-height:1.35;
-    }
-    .notes{ border-top:1px solid var(--line); padding:10px 12px; min-height:52px; background:var(--paper); }
+    .sumTotal .sumValue{ background:linear-gradient(100deg,var(--brand-deep) 0%,var(--brand) 100%); color:#ffffff; font-size:12.2px; border-color:rgba(16,77,89,0.4); letter-spacing:0.14px; }
+    .sumWords{ border-top:1px solid #c7dde4; background:linear-gradient(180deg,#ebf8f8 0%,#e0f2f3 100%); color:#16536d; font-weight:700; font-size:12px; text-transform:uppercase; line-height:1.35; }
+    .notes{ border-top:1px solid var(--line); padding:11px 13px; min-height:56px; background:var(--paper); }
     .notes b{ display:block; margin-bottom:6px; }
     .policyTitle{
-      margin-top:8px;
-      background:linear-gradient(135deg,#315b78 0%, #274a65 100%);
+      margin-top:9px;
+      background:linear-gradient(95deg,var(--navy) 0%,#1f5f7a 58%,#2890a0 100%);
       color:#fff;
       font-weight:800;
       text-align:center;
-      padding:3px 6px;
-      border:1px solid rgba(26,56,80,0.08);
-      letter-spacing:.2px;
-    }
-    .policyBox{
-      border:1px solid #9fb3cc;
-      border-top:none;
-      padding:3px 6px;
-      font-size:10px;
-      line-height:1.35;
-      background:#ffffff;
-    }
-    .policyBox p{ margin:0 0 6px; }
-    .policyBox p:last-child{ margin-bottom:0; }
-    .cargoSummaryWrap{
-      margin:0 0 10px;
-      border:1px solid var(--line-strong);
-      border-top:none;
-      border-radius:0 0 12px 12px;
-      overflow:hidden;
-      background:#ffffff;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,0.65);
-    }
-    .cargoTable{
-      width:100%;
-      border-collapse:collapse;
-      table-layout:fixed;
-      font-size:12px;
-    }
-    .cargoTable col:first-child{ width:72%; }
-    .cargoTable col:last-child{ width:28%; }
-    .cargoTable th,.cargoTable td{
-      padding:9px 10px;
-      border-bottom:1px solid var(--line);
-    }
-    .cargoTable thead th{
-      background:linear-gradient(180deg,#f4f8fa 0%, #eaf0f4 100%);
-      color:var(--brand);
-      font-size:11px;
-      font-weight:800;
+      padding:4px 8px;
+      border:1px solid rgba(18,70,86,0.24);
       letter-spacing:.24px;
       text-transform:uppercase;
     }
-    .cargoTable thead th:first-child{
-      text-align:left;
-      border-right:1px solid var(--line);
-    }
-    .cargoTable thead th:last-child{
-      text-align:right;
-    }
-    .cargoTable tbody td:first-child{
-      border-right:1px solid var(--line);
-    }
-    .cargoTable tbody tr:last-child td{
-      border-bottom:none;
-    }
-    .cargoTable tbody tr:nth-child(odd):not(.cargoEm):not(.cargoEmFinal){
-      background:#fbfcfd;
-    }
-    .cargoTable tbody tr:nth-child(even):not(.cargoEm):not(.cargoEmFinal){
-      background:#f4f8fa;
-    }
-    .cargoLabel{
-      font-weight:700;
-      color:#1f3446;
-    }
-    .cargoAmount{
-      text-align:right;
-      white-space:nowrap;
-      font-weight:800;
-      color:#17364d;
-      font-variant-numeric:tabular-nums;
-    }
-    .cargoEm{
-      font-weight:800;
-      background:linear-gradient(180deg,#eef4f6 0%, #e6edf1 100%) !important;
-    }
-    .cargoEm td{
-      border-bottom-color:var(--line-strong);
-    }
-    .cargoEmFinal{
-      background:linear-gradient(135deg,#264d6b 0%, #1d3f5a 100%) !important;
-    }
+    .policyBox{ border:1px solid #b5cad8; border-top:none; padding:7px 9px; font-size:10.4px; line-height:1.4; background:linear-gradient(180deg,#ffffff 0%,#f9fcfd 100%); }
+    .policyBox p{ margin:0 0 6px; }
+    .policyBox p:last-child{ margin-bottom:0; }
+    .cargoSummaryWrap{ margin:0 0 11px; border:1px solid #c4d7e3; border-top:none; border-radius:0 0 12px 12px; overflow:hidden; background:var(--surface); box-shadow:inset 0 1px 0 rgba(255,255,255,0.72); }
+    .cargoTable{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:12px; }
+    .cargoTable col:first-child{ width:72%; }
+    .cargoTable col:last-child{ width:28%; }
+    .cargoTable th,.cargoTable td{ padding:9px 10px; border-bottom:1px solid var(--line); }
+    .cargoTable thead th{ background:linear-gradient(180deg,#f1fbfb 0%,#e6f4f6 100%); color:var(--title); font-size:11px; font-weight:800; letter-spacing:.24px; text-transform:uppercase; }
+    .cargoTable thead th:first-child{ text-align:left; border-right:1px solid var(--line); }
+    .cargoTable thead th:last-child{ text-align:right; }
+    .cargoTable tbody td:first-child{ border-right:1px solid var(--line); }
+    .cargoTable tbody tr:last-child td{ border-bottom:none; }
+    .cargoTable tbody tr:nth-child(odd):not(.cargoEm):not(.cargoEmFinal){ background:#fcfefe; }
+    .cargoTable tbody tr:nth-child(even):not(.cargoEm):not(.cargoEmFinal){ background:#f3f9fb; }
+    .cargoLabel{ font-weight:700; color:#1c3f52; }
+    .cargoAmount{ text-align:right; white-space:nowrap; font-weight:800; color:#163f55; font-variant-numeric:tabular-nums; }
+    .cargoEm{ font-weight:800; background:linear-gradient(180deg,#ebf8f9 0%,#e1f2f4 100%) !important; }
+    .cargoEm td{ border-bottom-color:#c7dbe4; }
+    .cargoEmFinal{ background:linear-gradient(100deg,var(--brand-deep) 0%,#1698a4 100%) !important; }
     .cargoEm .cargoLabel,
-    .cargoEm .cargoAmount{
-      color:var(--brand);
-    }
+    .cargoEm .cargoAmount{ color:#14546e; }
     .cargoEmFinal .cargoLabel,
-    .cargoEmFinal .cargoAmount{
-      color:#ffffff;
-    }
-    .actions{ padding:12px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--line); background:#f8fafb; }
-    .actions button{
-      border:1px solid #b8cde8;
-      background:#ffffff;
-      color:#103654;
-      border-radius:10px;
-      padding:7px 12px;
-      font-weight:700;
-      cursor:pointer;
-    }
-    .actions button:hover{ background:#eef3f7; }
-    .templateAttach{
-      border-top:1px solid var(--line);
-      background:#f8fbff;
-      padding:12px 12px 0;
-    }
-    .templateAttachHead{
-      font-weight:800;
-      color:#0f3555;
-      margin:0 0 8px;
-      font-size:12.5px;
-    }
-    .templateAttachBody{
-      background:#ffffff;
-      border:1px solid var(--line);
+    .cargoEmFinal .cargoAmount{ color:#ffffff; }
+    .actions{ padding:12px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--line); background:linear-gradient(180deg,#f6fbfc 0%,#f0f7fa 100%); }
+    .actions button{ border:1px solid rgba(17,125,143,0.32); background:#ffffff; color:#0f4760; border-radius:10px; padding:7px 12px; font-weight:700; cursor:pointer; }
+    .actions button:hover{ background:#e9f7f8; }
+    .templateAttach{ border-top:1px solid var(--line); background:linear-gradient(180deg,#f7fcff 0%,#f3f9fc 100%); padding:12px 12px 0; }
+    .templateAttachHead{ font-weight:800; color:#124c67; margin:0 0 8px; font-size:12.5px; letter-spacing:0.12px; text-transform:uppercase; }
+    .templateAttachBody{ background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:visible; font-size:10px; line-height:1.15; page-break-inside:auto; }
+    .signatureSection{
+      margin:10px 12px 0;
+      padding:14px 10px 8px;
+      border:1px solid #c7dbe2;
       border-radius:12px;
-      overflow:visible;
-      font-size:10px;
-      line-height:1.15;
-      page-break-inside:auto;
+      background:linear-gradient(180deg,#ffffff 0%,#f6fbfc 100%);
+    }
+    .signatureGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+    }
+    .signatureSignArea{
+      width:100%;
+      min-height:72px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      margin-bottom:8px;
+    }
+    .signatureImage{
+      max-height:68px;
+      width:auto;
+      max-width:320px;
+      object-fit:contain;
+      object-position:center bottom;
+      display:block;
+    }
+    .signatureCard{
+      padding:6px 10px;
+      min-height:120px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+    }
+    .signatureLine{
+      width:78%;
+      max-width:320px;
+      border-top:2px solid #6b8798;
+      margin:0 auto;
+    }
+    .signatureRole{
+      font-weight:800;
+      color:#164d66;
+      text-transform:uppercase;
+      letter-spacing:.2px;
+      font-size:11px;
+      margin-bottom:6px;
+      text-align:center;
+    }
+    .signatureData{
+      margin:2px 0;
+      font-size:11px;
+      color:#2a4b5e;
+      line-height:1.35;
+      text-align:center;
+      width:100%;
+    }
+    @media print{
+      .signatureSection{ break-inside:avoid; }
     }
     .templateAttachBody p,
     .templateAttachBody td,
     .templateAttachBody th,
     .templateAttachBody span,
-    .templateAttachBody div{
-      font-size:inherit !important;
-    }
+    .templateAttachBody div{ font-size:inherit !important; }
     .doc.serviHospClean,
     .doc.serviHospClean *{ box-shadow:none !important; }
     .doc.serviHospClean,
-    .doc.serviHospClean .brandHeader,
-    .doc.serviHospClean .brandBlock,
+     .doc.serviHospClean .quoteContractHeader,
+    
     .doc.serviHospClean .head,
     .doc.serviHospClean .cell,
     .doc.serviHospClean .k,
@@ -16538,63 +16678,31 @@ async function openQuoteDocument(ev, quote) {
     .doc.serviHospClean .templateAttachBody,
     .doc.serviHospClean .templateAttachBody table,
     .doc.serviHospClean .templateAttachBody td,
-    .doc.serviHospClean .templateAttachBody th{
-      border:none !important;
-      border-radius:0 !important;
-    }
+    .doc.serviHospClean .templateAttachBody th{ border:none !important; border-radius:0 !important; }
     .doc.serviHospClean,
-    .doc.serviHospClean .brandHeader,
-    .doc.serviHospClean .brandLeft,
+     .doc.serviHospClean .quoteContractHeader,
+    
     .doc.serviHospClean .templateAttach,
-    .doc.serviHospClean .templateAttachBody{
-      background:#fff !important;
-    }
+    .doc.serviHospClean .templateAttachBody{ background:#fff !important; }
     .doc.serviHospClean .templateAttach{ padding-top:4px; }
     .doc.serviHospClean .contractPrintFoot,
     .doc.serviHospClean .contract-footer,
-    .doc.serviHospClean .contract-footer-print{
-      display:none !important;
-    }
+    .doc.serviHospClean .contract-footer-print{ display:none !important; }
     @media print{
-      html, body{
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
+      html, body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       .actions{ display:none; }
-      body{ padding:0; }
-      .doc{ border:none; }
-      .templateAttach{
-        padding:0;
-        background:transparent;
-        border-top:none;
-      }
-      .templateAttachHead{
-        display:none;
-      }
-      .templateAttachBody{
-        border:none;
-        border-radius:0;
-        overflow:visible;
-      }
+      body{ padding:0; background:#ffffff; }
+      .doc{ border:none; box-shadow:none; }
+      .templateAttach{ padding:0; background:transparent; border-top:none; }
+      .templateAttachHead{ display:none; }
+      .templateAttachBody{ border:none; border-radius:0; overflow:visible; }
     }
   </style>
 </head>
 <body>
   <div class="doc${isServiHospTemplate ? " serviHospClean" : ""}">
-    <div class="brandHeader">
-      <div class="brandBlock brandLeft">
-        <img src="${escapeHtml(brandLogoSrc)}" alt="Jardines del Lago" />
-      </div>
-      <div class="brandBlock brandCenter">
-        <strong>${escapeHtml(brandHotelName)}</strong>
-        <div>${escapeHtml(brandManagerName)}</div>
-        <div>${escapeHtml(brandNit)}</div>
-      </div>
-      <div class="brandBlock brandRight">
-        <strong>${escapeHtml(brandWeb)}</strong>
-        <div>${escapeHtml(brandPhones)}</div>
-        <div>${escapeHtml(brandAddress)}</div>
-      </div>
+    <div class="quoteContractHeader">
+      <img src="${escapeHtml(quoteHeaderSrc)}" alt="Encabezado contrato" />
     </div>
     <div class="head">${quoteDocLabel}</div>
     <table class="quoteMetaTable">
@@ -16749,7 +16857,27 @@ async function openQuoteDocument(ev, quote) {
     </div>
 
     ${appendedTemplateHtml}
-    <div class="actions">
+    <section class="signatureSection">
+      <div class="signatureGrid">
+        <div class="signatureCard">
+          <div class="signatureSignArea">${sellerSignatureHtmlDoc}</div>
+          <div class="signatureLine"></div>
+          <div class="signatureRole">Firma Vendedor</div>
+          <div class="signatureData">${escapeHtml(sellerNameDoc || "-")}</div>
+          <div class="signatureData">${escapeHtml(sellerEmailDoc || "-")}</div>
+          <div class="signatureData">${escapeHtml(sellerPhoneDoc || "-")}</div>
+        </div>
+        <div class="signatureCard">
+          <div class="signatureSignArea"></div>
+          <div class="signatureLine"></div>
+          <div class="signatureRole">Firma Encargado Evento</div>
+          <div class="signatureData">${escapeHtml(eventManagerNameDoc || "-")}</div>
+          <div class="signatureData">${escapeHtml(eventManagerEmailDoc || "-")}</div>
+          <div class="signatureData">${escapeHtml(eventManagerPhoneDoc || "-")}</div>
+        </div>
+      </div>
+    </section>
+    <div class="actions"> 
       <button onclick="window.print()">Imprimir</button>
     </div>
   </div>
@@ -19290,6 +19418,23 @@ function getEventsInWeek(weekStart, salon, dayCount = 7) {
       return compareTime(a.startTime, b.startTime);
     });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
