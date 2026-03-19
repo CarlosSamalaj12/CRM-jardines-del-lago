@@ -144,7 +144,7 @@ const CONTRACT_CORP_TEMPLATE_ID = "tpl-contrato-corp";
 const CONTRACT_CORP_TEMPLATE_NAME = "Jardines";
 const DEFAULT_TEMPLATE_HEADER_IMAGE = "./Encabezadojdl.png";
 const DEFAULT_TEMPLATE_FOOTER_IMAGE = "./piedepaginajdl.png";
-const SERVIHOSP_TEMPLATE_HEADER_IMAGE = "./ServiHosp_header.png";
+const SERVIHOSP_TEMPLATE_HEADER_IMAGE = "./EncabezadoServ.jpg";
 const TEMPLATE_SIGNATURE_MIN_W_PCT = 10;
 const TEMPLATE_SIGNATURE_MIN_H_PCT = 3;
 const TEMPLATE_SIGNATURE_MAX_W_PCT = 35;
@@ -1216,7 +1216,7 @@ function getBuiltInQuoteTemplateMeta(templateId = "") {
   if (!id) return null;
   if (id === CONTRACT_CORP_TEMPLATE_ID) {
     return {
-      file: "./ContradoCorp.html",
+      file: "./Jardines.html",
       label: "Jardines",
       attachToQuote: true,
       headerImage: "",
@@ -1224,7 +1224,7 @@ function getBuiltInQuoteTemplateMeta(templateId = "") {
   }
   if (id === SERVIHOSP_TEMPLATE_ID) {
     return {
-      file: "./Contrato.html",
+      file: "./ServiHosp.html",
       label: "Servi Hosp",
       attachToQuote: true,
       headerImage: SERVIHOSP_TEMPLATE_HEADER_IMAGE,
@@ -14644,7 +14644,7 @@ const QUOTE_PAYMENT_TYPES = ["Credito", "Deposito", "Efectivo", "Tarjeta"];
 function normalizeQuotePaymentTypes(rawValue) {
   const values = Array.isArray(rawValue)
     ? rawValue
-    : String(rawValue || "").replaceAll("|", ",").split(",");
+    : String(rawValue || "").split("|").join(",").split(",");
   const out = [];
   for (const item of values) {
     const raw = String(item || "").trim();
@@ -19204,11 +19204,11 @@ function toast(msg) {
 
 function escapeHtml(s) {
   return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .split("&").join("&amp;")
+    .split("<").join("&lt;")
+    .split(">").join("&gt;")
+    .split('"').join("&quot;")
+    .split("'").join("&#039;");
 }
 
 function deepClone(obj) {
