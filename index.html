@@ -3,7 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#182131" />
+  <meta name="application-name" content="CRM Reservas JDL" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CRM JDL" />
+  <meta name="msapplication-TileColor" content="#0b1220" />
+  <meta name="msapplication-TileImage" content="./icons/icon-256.png?v=20260321c" />
   <title>CRM Reservas - Salones</title>
+  <link rel="manifest" href="./manifest.json?v=20260321c" />
+  <link rel="icon" href="./favicon.ico?v=20260321c" sizes="any" />
+  <link rel="shortcut icon" href="./favicon.ico?v=20260321c" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=20260321c" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
@@ -127,7 +138,366 @@
       font-weight:800 !important;
       white-space:nowrap !important;
     }
-  </style>
+      #appShell{
+      background:#0a1120 !important;
+    }
+    body{
+      background:#08101d !important;
+    }
+    .topbar{
+      background:#182131 !important;
+      border-color:rgba(255,255,255,0.10) !important;
+      box-shadow:none !important;
+      -webkit-backdrop-filter:none !important;
+      backdrop-filter:none !important;
+    }
+    .legend{
+      background:#1a2233 !important;
+      border:1px solid rgba(255,255,255,0.08) !important;
+      border-radius:18px !important;
+    }
+    .calendar{
+      background:#0d1524 !important;
+      border-radius:22px !important;
+      gap:12px !important;
+    }
+    .timeCol{
+      background:#1a2233 !important;
+      border:1px solid rgba(255,255,255,0.08) !important;
+      border-radius:18px !important;
+    }
+    .gridWrap{
+      background:#111a2a !important;
+      border:1px solid rgba(255,255,255,0.08) !important;
+      border-radius:18px !important;
+      overflow:hidden !important;
+    }
+    .daysHeader{
+      background:#162132 !important;
+      border-bottom:1px solid rgba(255,255,255,0.08) !important;
+    }
+    .grid{
+      background:#121b2b !important;
+    }
+    .legend .chip,
+    .legend button,
+    .topbar .btn,
+    .topbar .iconBtn,
+    .topbar .weekLabel,
+    .topbar .select,
+    .topbar .select select{
+      background-color:#243041 !important;
+      background-image:none !important;
+    }
+      .moduleScreen{
+      background:rgba(4,10,20,0.88) !important;
+      -webkit-backdrop-filter:none !important;
+      backdrop-filter:none !important;
+    }
+    .moduleHub,
+    .moduleHubShowcase{
+      background:#0f1724 !important;
+      border:1px solid rgba(255,255,255,0.10) !important;
+      box-shadow:0 24px 60px rgba(0,0,0,0.34) !important;
+    }
+    .moduleHero{
+      min-height:300px !important;
+      background:#162131 !important;
+      border:1px solid rgba(255,255,255,0.08) !important;
+    }
+    .moduleHero::before,
+    .moduleHero::after,
+    .moduleCard::before,
+    .moduleCard::after{
+      display:none !important;
+      content:none !important;
+    }
+    .moduleHubBadge{
+      background:#f4f7fb !important;
+      border:1px solid rgba(255,255,255,0.22) !important;
+      box-shadow:0 14px 28px rgba(0,0,0,0.18) !important;
+    }
+    .moduleHubTitle,
+    .moduleCardTitle,
+    .moduleActionBtn .actionCardLabel{
+      text-shadow:none !important;
+    }
+    .moduleDock{
+      margin-top:-48px !important;
+    }
+    .moduleCard,
+    .moduleActionBtn,
+    .settingsHubBtn{
+      background:#253142 !important;
+      border:1px solid rgba(255,255,255,0.10) !important;
+      box-shadow:0 14px 30px rgba(0,0,0,0.18) !important;
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
+    }
+    .moduleCard:hover,
+    .moduleActionBtn:hover,
+    .settingsHubBtn:hover{
+      background:#2c394c !important;
+      border-color:rgba(191,219,254,0.18) !important;
+      box-shadow:0 18px 34px rgba(0,0,0,0.22) !important;
+      transform:translateY(-4px) !important;
+    }
+    .moduleIconTile,
+    .actionCardIcon{
+      background:#5a6577 !important;
+      border:1px solid rgba(255,255,255,0.16) !important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.12) !important;
+    }
+      #occupancyReportBackdrop,
+    #salesReportBackdrop,
+    #institutionReportBackdrop{
+      background:rgba(6,10,18,0.86) !important;
+      -webkit-backdrop-filter:none !important;
+      backdrop-filter:none !important;
+    }
+    #occupancyReportBackdrop .modal,
+    #salesReportBackdrop .modal,
+    #institutionReportBackdrop .modal{
+      background:#0f1724 !important;
+      border:1px solid rgba(255,255,255,0.10) !important;
+      box-shadow:0 24px 60px rgba(0,0,0,0.34) !important;
+    }
+    #occupancyReportBackdrop .modalHeader,
+    #occupancyReportBackdrop .reportModalHeader,
+    #salesReportBackdrop .modalHeader,
+    #salesReportBackdrop .reportModalHeader,
+    #institutionReportBackdrop .modalHeader,
+    #institutionReportBackdrop .reportModalHeader{
+      background:#172131 !important;
+      border-bottom:1px solid rgba(255,255,255,0.08) !important;
+    }
+    #occupancyReportBackdrop .reportBrandHeader,
+    #salesReportBackdrop .reportBrandHeader,
+    #institutionReportBackdrop .reportBrandHeader,
+    #occupancyReportBackdrop .reportBrandCopy,
+    #salesReportBackdrop .reportBrandCopy,
+    #institutionReportBackdrop .reportBrandCopy,
+    #occupancyReportBackdrop .reportHeroPanel,
+    #salesReportBackdrop .reportHeroPanel,
+    #institutionReportBackdrop .reportHeroPanel,
+    #occupancyReportBackdrop .occupancyHeroPanel,
+    #occupancyReportBackdrop .occupancySection,
+    #salesReportBackdrop .reportDataSection,
+    #institutionReportBackdrop .dashboardCard,
+    #institutionReportBackdrop .institutionDetailCard,
+    #institutionReportBackdrop .institutionHeadlineCard,
+    #institutionReportBackdrop .institutionReportNav,
+    #institutionReportBackdrop .institutionMetricCard,
+    #institutionReportBackdrop .institutionChartCard,
+    #institutionReportBackdrop .institutionTimelineCard{
+      background:#162132 !important;
+      background-image:none !important;
+      border:1px solid rgba(255,255,255,0.08) !important;
+      box-shadow:none !important;
+    }
+    #occupancyReportBackdrop .occupancySummary .occupancyCard,
+    #occupancyReportBackdrop .occupancyDaysStrip .occupancyDayCard,
+    #occupancyReportBackdrop .occupancyDayDetail .occupancyEventCard,
+    #salesReportBackdrop .salesSummaryCard,
+    #institutionReportBackdrop .institutionSummaryCard,
+    #institutionReportBackdrop .institutionHeadlineValueBlock,
+    #institutionReportBackdrop .dashboardSellerPerfCard,
+    #institutionReportBackdrop .dashboardStatusChip{
+      background:#223043 !important;
+      background-image:none !important;
+      border:1px solid rgba(255,255,255,0.08) !important;
+      box-shadow:none !important;
+    }
+    #occupancyReportBackdrop input,
+    #occupancyReportBackdrop select,
+    #occupancyReportBackdrop .occupancyWeekNav,
+    #occupancyReportBackdrop .occupancyToolbar .btn,
+    #occupancyReportBackdrop .occupancyToolbar .btnPrimary,
+    #salesReportBackdrop input,
+    #salesReportBackdrop select,
+    #salesReportBackdrop .btn,
+    #salesReportBackdrop .btnPrimary,
+    #institutionReportBackdrop input,
+    #institutionReportBackdrop select,
+    #institutionReportBackdrop .btn,
+    #institutionReportBackdrop .btnPrimary{
+      background:#243041 !important;
+      background-image:none !important;
+      border:1px solid rgba(255,255,255,0.10) !important;
+      box-shadow:none !important;
+    }
+    #occupancyReportBackdrop .occupancyTableWrap,
+    #salesReportBackdrop .salesReportTableWrap,
+    #institutionReportBackdrop .salesReportTableWrap,
+    #institutionReportBackdrop .institutionEventsWrap{
+      background:#101927 !important;
+      border:1px solid rgba(255,255,255,0.08) !important;
+      box-shadow:none !important;
+    }
+    #occupancyReportBackdrop .occupancyTable thead th,
+    #salesReportBackdrop .salesReportTable thead th,
+    #institutionReportBackdrop .salesReportTable thead th{
+      background:#1d2a3b !important;
+    }
+    #occupancyReportBackdrop .occupancyTable tbody tr:nth-child(odd),
+    #salesReportBackdrop .salesReportTable tbody tr:nth-child(odd),
+    #institutionReportBackdrop .salesReportTable tbody tr:nth-child(odd){
+      background:#111b2a !important;
+    }
+    #occupancyReportBackdrop .occupancyTable tbody tr:nth-child(even),
+    #salesReportBackdrop .salesReportTable tbody tr:nth-child(even),
+    #institutionReportBackdrop .salesReportTable tbody tr:nth-child(even){
+      background:#152031 !important;
+    }
+    #occupancyReportBackdrop .occupancyTable tbody tr:hover,
+    #salesReportBackdrop .salesReportTable tbody tr:hover,
+    #institutionReportBackdrop .salesReportTable tbody tr:hover{
+      background:#1c2940 !important;
+    }
+      #occupancyReportBackdrop .occupancySectionEyebrow,
+    #salesReportBackdrop .salesSummaryEyebrow,
+    #institutionReportBackdrop .reportSectionEyebrow,
+    #institutionReportBackdrop .dashboardCardHead small,
+    #institutionReportBackdrop .institutionDetailCard small,
+    #institutionReportBackdrop .institutionMetricList small,
+    #occupancyReportBackdrop .occupancyCard small,
+    #occupancyReportBackdrop .occupancyDayCard small,
+    #occupancyReportBackdrop .occupancySectionText,
+    #salesReportBackdrop .salesSummaryCard small,
+    #salesReportBackdrop .salesSummaryMeta,
+    #institutionReportBackdrop .institutionHeadlineValueBlock small,
+    #institutionReportBackdrop .institutionSummaryCard small,
+    #institutionReportBackdrop .dashboardStatusChip span{
+      color:#b9c4d3 !important;
+    }
+    #occupancyReportBackdrop .occupancySectionTitle,
+    #salesReportBackdrop .reportSectionTitle,
+    #institutionReportBackdrop .reportSectionTitle,
+    #occupancyReportBackdrop .occupancySummary .occupancyCard strong,
+    #occupancyReportBackdrop .occupancyDaysStrip .occupancyDayCard strong,
+    #occupancyReportBackdrop .occupancyDayDetail .occupancyEventCard strong,
+    #salesReportBackdrop .salesSummaryCard strong,
+    #institutionReportBackdrop .institutionSummaryCard strong,
+    #institutionReportBackdrop .institutionHeadlineValueBlock strong,
+    #institutionReportBackdrop .dashboardCardHead strong,
+    #institutionReportBackdrop .dashboardSellerPerfValue,
+    #institutionReportBackdrop .dashboardStatusChip b{
+      color:#f4f7fb !important;
+    }
+    #occupancyReportBackdrop .occupancyDayCard,
+    #occupancyReportBackdrop .occupancyCard,
+    #salesReportBackdrop .salesSummaryCard,
+    #institutionReportBackdrop .institutionSummaryCard{
+      color:#c7d0dc !important;
+    }
+      #occupancyReportBackdrop .occupancySectionEyebrow,
+    #salesReportBackdrop .salesSummaryEyebrow,
+    #institutionReportBackdrop .reportSectionEyebrow{
+      color:#d7e3f4 !important;
+    }
+    #occupancyReportBackdrop .occupancyCard small,
+    #occupancyReportBackdrop .occupancyDayCard small,
+    #occupancyReportBackdrop .occupancySectionText,
+    #salesReportBackdrop .salesSummaryCard small,
+    #salesReportBackdrop .salesSummaryMeta,
+    #institutionReportBackdrop .dashboardCardHead small,
+    #institutionReportBackdrop .institutionDetailCard small,
+    #institutionReportBackdrop .institutionMetricList small,
+    #institutionReportBackdrop .institutionHeadlineValueBlock small,
+    #institutionReportBackdrop .institutionSummaryCard small,
+    #institutionReportBackdrop .dashboardStatusChip span{
+      color:#d2dbe8 !important;
+    }
+    #occupancyReportBackdrop .occupancyDayCard,
+    #occupancyReportBackdrop .occupancyCard,
+    #salesReportBackdrop .salesSummaryCard,
+    #institutionReportBackdrop .institutionSummaryCard{
+      color:#e3ebf5 !important;
+    }
+    #occupancyReportBackdrop .occupancyCard strong,
+    #occupancyReportBackdrop .occupancyDayCard strong,
+    #salesReportBackdrop .salesSummaryCard strong,
+    #institutionReportBackdrop .institutionSummaryCard strong,
+    #institutionReportBackdrop .institutionHeadlineValueBlock strong{
+      color:#ffffff !important;
+    }
+  #occupancyReportBackdrop .occupancyCardKicker,
+#occupancyReportBackdrop .occupancyCardIcon,
+#occupancyReportBackdrop .occupancyDayCardTop,
+#occupancyReportBackdrop .occupancyDayPills span{
+  color:#dbe7f6 !important;
+  opacity:1 !important;
+}
+#occupancyReportBackdrop .occupancyCardMeta,
+#occupancyReportBackdrop .occupancyCardHint,
+#occupancyReportBackdrop .occupancyDayMeta{
+  color:#d1dced !important;
+  opacity:1 !important;
+}
+#occupancyReportBackdrop .occupancyDayRevenue,
+#occupancyReportBackdrop .occupancyCardValue,
+#occupancyReportBackdrop .occupancyDayCount{
+  color:#ffffff !important;
+  opacity:1 !important;
+}
+#occupancyReportBackdrop .occupancyDayPills span{
+  background:rgba(255,255,255,.08) !important;
+  border-color:rgba(255,255,255,.12) !important;
+}
+.quoteCurrencyPickerWrap{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:6px;
+}
+.quoteCurrencyPickerLabel{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:rgba(191,219,254,.84);
+}
+.quoteCurrencyPicker{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px;
+  border-radius:16px;
+  border:1px solid rgba(96,165,250,.22);
+  background:rgba(15,23,42,.82);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+.quoteCurrencyBtn{
+  width:42px;
+  height:42px;
+  border:none;
+  border-radius:12px;
+  background:rgba(30,41,59,.92);
+  color:rgba(226,232,240,.92);
+  font-size:18px;
+  font-weight:900;
+  cursor:pointer;
+  transition:background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.quoteCurrencyBtn:hover{
+  transform:translateY(-1px);
+  background:rgba(37,99,235,.32);
+  color:#fff;
+}
+.quoteCurrencyBtn.isActive{
+  background:linear-gradient(180deg, rgba(37,99,235,.98), rgba(29,78,216,.98));
+  color:#fff;
+  box-shadow:0 8px 18px rgba(29,78,216,.28);
+}
+@media (max-width: 900px){
+  .quoteTotalRow{
+    align-items:flex-start;
+  }
+  .quoteCurrencyPickerWrap{
+    align-items:flex-start;
+  }
+}
+</style>
 </head>
 <body>
   <div class="loginScreen" id="loginScreen">
@@ -909,7 +1279,7 @@
                 </div>
 
                 <div class="quoteDocCol">
-                  <label class="quoteDocRow"><span>Codigo:</span><input id="quoteCode" type="text" required /></label>
+                  <label class="quoteDocRow"><span>Codigo:</span><input id="quoteCode" type="text" required readonly aria-readonly="true" title="El codigo de cotizacion se genera automaticamente" /></label>
                   <label class="quoteDocRow"><span>Fecha Documento:</span><input id="quoteDocDate" type="date" required /></label>
                   <label class="quoteDocRow"><span>Telefono:</span><input id="quotePhone" type="text" required /></label>
                   <label class="quoteDocRow">
@@ -931,9 +1301,9 @@
                   </label>
                   <label class="quoteDocRow"><span>NIT:</span><input id="quoteNIT" type="text" required /></label>
                   <label class="quoteDocRow"><span>No Personas:</span><input id="quotePeople" type="number" min="1" step="1" required /></label>
-                  <label class="quoteDocRow"><span>Fecha evento:</span><input id="quoteEventDate" type="date" required /></label>
+                  <label class="quoteDocRow"><span>Fecha evento:</span><input id="quoteEventDate" type="date" required readonly aria-readonly="true" title="La fecha del evento se toma de la reservacion" /></label>
                   <label class="quoteDocRow"><span>Folio No:</span><input id="quoteFolio" type="text" /></label>
-                  <label class="quoteDocRow"><span>Fecha Finalizacion:</span><input id="quoteEndDate" type="date" required /></label>
+                  <label class="quoteDocRow"><span>Fecha Finalizacion:</span><input id="quoteEndDate" type="date" required readonly aria-readonly="true" title="La fecha final se toma de la reservacion" /></label>
                   <label class="quoteDocRow"><span>Fecha Maxima Pago:</span><input id="quoteDueDate" type="date" required /></label>
                 </div>
               </div>
@@ -1016,6 +1386,13 @@
               <div>
                 <div>Subtotal: <strong id="quoteSubtotal">Q 0.00</strong></div>
                 <div>Descuento: <strong id="quoteDiscountAmount">Q 0.00</strong></div>
+              </div>
+              <div class="quoteCurrencyPickerWrap">
+                <div class="quoteCurrencyPickerLabel">Tipo de cotizacion</div>
+                <div class="quoteCurrencyPicker" role="group" aria-label="Moneda de cotizacion">
+                  <button class="quoteCurrencyBtn isActive" type="button" id="btnQuoteCurrencyGTQ" data-currency="GTQ" title="Cotizacion en quetzales">Q</button>
+                  <button class="quoteCurrencyBtn" type="button" id="btnQuoteCurrencyUSD" data-currency="USD" title="Cotizacion en dolares">$</button>
+                </div>
               </div>
               <div>Total cotizacion: <strong id="quoteTotal">Q 0.00</strong></div>
             </div>
@@ -1972,7 +2349,7 @@
           <div class="row2">
             <div class="field" id="menuCatalogNoProteinWrap" hidden>
               <span>Aplicacion</span>
-              <label class="menuSuggestRow">
+              <label class="statusSwitchInline menuCatalogSwitchInline">
                 <input id="menuCatalogNoProtein" type="checkbox" />
                 <span>Este plato puede ser sin proteina</span>
               </label>
@@ -2674,8 +3051,24 @@
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="./app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js?v=20260321c").catch((error) => {
+          console.warn("No se pudo registrar el service worker de la PWA.", error);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
+
+
+
+
+
+
+
 
 
 

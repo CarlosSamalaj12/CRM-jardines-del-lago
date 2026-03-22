@@ -1,0 +1,43 @@
+{
+  "id": "./?source=pwa",
+  "name": "CRM Reservas JDL",
+  "short_name": "CRM JDL",
+  "description": "CRM de reservas y calendario de salones de Jardines del Lago.",
+  "lang": "es-GT",
+  "dir": "ltr",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#182131",
+  "background_color": "#0b1220",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "./favicon.ico?v=20260321c", "sizes": "16x16 32x32 48x48 64x64 128x128 256x256", "type": "image/x-icon", "purpose": "any" },
+    { "src": "./icons/icon-48.png?v=20260321c", "sizes": "48x48", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-72.png?v=20260321c", "sizes": "72x72", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-96.png?v=20260321c", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-128.png?v=20260321c", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-144.png?v=20260321c", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-152.png?v=20260321c", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-167.png?v=20260321c", "sizes": "167x167", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-180.png?v=20260321c", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-192.png?v=20260321c", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-256.png?v=20260321c", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-384.png?v=20260321c", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png?v=20260321c", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-192-maskable.png?v=20260321c", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icons/icon-256-maskable.png?v=20260321c", "sizes": "256x256", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icons/icon-512-maskable.png?v=20260321c", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Abrir CRM",
+      "short_name": "CRM",
+      "url": "./?source=shortcut",
+      "icons": [
+        { "src": "./icons/icon-192.png?v=20260321c", "sizes": "192x192", "type": "image/png" }
+      ]
+    }
+  ]
+}

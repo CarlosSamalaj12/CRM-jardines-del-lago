@@ -2880,6 +2880,17 @@ app.put("/api/state", async (req, res) => {
   }
 });
 
+app.get("/manifest.json", (req, res) => {
+  res.type("application/manifest+json");
+  return res.sendFile(path.join(__dirname, "manifest.json"));
+});
+
+app.get("/sw.js", (req, res) => {
+  res.setHeader("Cache-Control", "no-cache");
+  res.type("application/javascript");
+  return res.sendFile(path.join(__dirname, "sw.js"));
+});
+
 app.use(express.static(path.join(__dirname)));
 
 app.get("*", (req, res) => {

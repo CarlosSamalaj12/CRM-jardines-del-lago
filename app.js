@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    CRM Reservas - Calendario tipo Google Calendar (frontend)
    - Salones
    - Estados con colores
@@ -536,6 +536,8 @@ const el = {
   quoteSubtotal: document.getElementById("quoteSubtotal"),
   quoteDiscountAmount: document.getElementById("quoteDiscountAmount"),
   quoteTotal: document.getElementById("quoteTotal"),
+  btnQuoteCurrencyGTQ: document.getElementById("btnQuoteCurrencyGTQ"),
+  btnQuoteCurrencyUSD: document.getElementById("btnQuoteCurrencyUSD"),
   quoteInternalNotes: document.getElementById("quoteInternalNotes"),
   btnMenuMontaje: document.getElementById("btnMenuMontaje"),
   btnQuoteAdvances: document.getElementById("btnQuoteAdvances"),
@@ -2288,8 +2290,8 @@ function renderMenuCatalogManagerRows(kind, rows, proteins = []) {
       <td>${isActive ? "Activo" : "Inhabilitado"}</td>
       <td>
         <div class="appointmentActions">
-          <button type="button" class="btn" data-mmcat-action="edit" data-mmcat-id="${escapeHtml(id)}">Editar</button>
-          <button type="button" class="btnDanger" data-mmcat-action="toggle" data-mmcat-id="${escapeHtml(id)}">${isActive ? "&#9940;" : "&#8635;"}</button>
+          <button type="button" class="apptIconBtn apptEdit" data-mmcat-action="edit" data-mmcat-id="${escapeHtml(id)}" title="Editar registro" aria-label="Editar registro">&#9998;</button>
+          <button type="button" class="apptIconBtn ${isActive ? "apptDelete" : ""}" data-mmcat-action="toggle" data-mmcat-id="${escapeHtml(id)}" title="${isActive ? "Inhabilitar registro" : "Reactivar registro"}" aria-label="${isActive ? "Inhabilitar registro" : "Reactivar registro"}">${isActive ? "&#9940;" : "&#8635;"}</button>
         </div>
       </td>
     `;
@@ -3349,6 +3351,64 @@ function formatMoneyGTValue(v) {
 
 function moneyGT(v) {
   return `Q ${formatMoneyGTValue(v)}`;
+}
+
+function normalizeQuoteCurrency(value) {
+  return String(value || "").trim().toUpperCase() === "USD" ? "USD" : "GTQ";
+}
+
+function getQuoteCurrencySymbol(currency) {
+  return normalizeQuoteCurrency(currency) === "USD" ? "$" : "Q";
+}
+
+function getQuoteCurrencyWord(currency, whole) {
+  if (normalizeQuoteCurrency(currency) === "USD") {
+    return Number(whole || 0) === 1 ? "DOLAR" : "DOLARES";
+  }
+  return Number(whole || 0) === 1 ? "QUETZAL" : "QUETZALES";
+}
+
+function moneyQuote(v, currency = "GTQ") {
+  return `${getQuoteCurrencySymbol(currency)} ${formatMoneyGTValue(v)}`;
+}
+
+function numberToWordsQuoteEs(value, currency = "GTQ") {
+  const units = ["", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
+  const teens = ["DIEZ", "ONCE", "DOCE", "TRECE", "CATORCE", "QUINCE", "DIECISEIS", "DIECISIETE", "DIECIOCHO", "DIECINUEVE"];
+  const tens = ["", "", "VEINTE", "TREINTA", "CUARENTA", "CINCUENTA", "SESENTA", "SETENTA", "OCHENTA", "NOVENTA"];
+  const hundreds = ["", "CIENTO", "DOSCIENTOS", "TRESCIENTOS", "CUATROCIENTOS", "QUINIENTOS", "SEISCIENTOS", "SETECIENTOS", "OCHOCIENTOS", "NOVECIENTOS"];
+  const belowHundred = (n) => {
+    if (n < 10) return units[n];
+    if (n < 20) return teens[n - 10];
+    if (n < 30) return n === 20 ? "VEINTE" : `VEINTI${units[n - 20].toLowerCase()}`.toUpperCase();
+    const t = Math.floor(n / 10);
+    const u = n % 10;
+    return u ? `${tens[t]} Y ${units[u]}` : tens[t];
+  };
+  const belowThousand = (n) => {
+    if (n === 0) return "";
+    if (n === 100) return "CIEN";
+    const h = Math.floor(n / 100);
+    const r = n % 100;
+    if (!h) return belowHundred(r);
+    return r ? `${hundreds[h]} ${belowHundred(r)}` : hundreds[h];
+  };
+  const toWords = (n) => {
+    if (n === 0) return "CERO";
+    const millions = Math.floor(n / 1000000);
+    const thousands = Math.floor((n % 1000000) / 1000);
+    const rest = n % 1000;
+    const parts = [];
+    if (millions) parts.push(millions === 1 ? "UN MILLON" : `${toWords(millions)} MILLONES`);
+    if (thousands) parts.push(thousands === 1 ? "MIL" : `${belowThousand(thousands)} MIL`);
+    if (rest) parts.push(belowThousand(rest));
+    return parts.join(" ").replace(/\s+/g, " ").trim();
+  };
+  const amount = Math.max(0, Number(value || 0));
+  const whole = Math.floor(amount);
+  const cents = Math.round((amount - whole) * 100);
+  const centsText = String(cents).padStart(2, "0");
+  return `${toWords(whole)} ${getQuoteCurrencyWord(currency, whole)} CON ${centsText}/100`;
 }
 
 function getEventLastUpdatedLabel(ev) {
@@ -5702,8 +5762,8 @@ function renderChecklistTemplateTable() {
         <button class="btn" type="button" data-checklist-template-down="${escapeHtml(String(item.id || ""))}">Bajar</button>
       </td>
       <td>
-        <button class="btn" type="button" data-checklist-template-edit="${escapeHtml(String(item.id || ""))}">Editar</button>
-        <button class="btnDanger" type="button" data-checklist-template-remove="${escapeHtml(String(item.id || ""))}">X</button>
+        <button class="apptIconBtn apptEdit" type="button" data-checklist-template-edit="${escapeHtml(String(item.id || ""))}" title="Editar plantilla" aria-label="Editar plantilla">&#9998;</button>
+        <button class="apptIconBtn apptDelete" type="button" data-checklist-template-remove="${escapeHtml(String(item.id || ""))}" title="Eliminar plantilla" aria-label="Eliminar plantilla">&#128465;</button>
       </td>
     `;
     el.checklistTemplateBody.appendChild(tr);
@@ -5839,8 +5899,8 @@ function renderChecklistTemplateTable() {
         <button class="btn" type="button" data-checklist-template-down="${escapeHtml(String(item.id || ""))}">Bajar</button>
       </td>
       <td>
-        <button class="btn" type="button" data-checklist-template-edit="${escapeHtml(String(item.id || ""))}">Editar</button>
-        <button class="btnDanger" type="button" data-checklist-template-remove="${escapeHtml(String(item.id || ""))}">X</button>
+        <button class="apptIconBtn apptEdit" type="button" data-checklist-template-edit="${escapeHtml(String(item.id || ""))}" title="Editar plantilla" aria-label="Editar plantilla">&#9998;</button>
+        <button class="apptIconBtn apptDelete" type="button" data-checklist-template-remove="${escapeHtml(String(item.id || ""))}" title="Eliminar plantilla" aria-label="Eliminar plantilla">&#128465;</button>
       </td>
     `;
     el.checklistTemplateBody.appendChild(tr);
@@ -7580,6 +7640,7 @@ function buildQuoteVersionComparable(quoteLike) {
     discountValue: Math.max(0, Number(q.discountValue || 0)),
     internalNotes: String(q.internalNotes || q.notes || "").trim(),
     templateId: String(q.templateId || "").trim(),
+    currency: normalizeQuoteCurrency(q.currency),
     items,
   };
 }
@@ -7667,6 +7728,7 @@ function cloneQuoteSnapshot(rawQuote, forcedVersion = null) {
   base.items = normalizeQuoteItemsForSnapshot(base.items);
   base.discountType = normalizeDiscountType(base.discountType);
   base.discountValue = Math.max(0, Number(base.discountValue || 0));
+  base.currency = normalizeQuoteCurrency(base.currency);
   return base;
 }
 
@@ -7944,11 +8006,13 @@ function applyQuoteSnapshotToDraft(snapshot) {
   };
   quoteDraft.paymentType = quotePaymentTypesToStorage(quoteDraft.paymentType || "");
   quoteDraft.advances = normalizeQuoteAdvancesForSnapshot(quoteDraft.advances);
+  quoteDraft.currency = normalizeQuoteCurrency(quoteDraft.currency);
   renderCompaniesSelect(quoteDraft.companyId);
   renderQuoteManagerSelect(quoteDraft.companyId, quoteDraft.managerId || null);
   renderQuoteTemplateSelect(quoteDraft.templateId || "");
   renderQuoteServiceTemplateSelect("");
   fillQuoteHeaderFields(true, true);
+  renderQuoteCurrencyPicker();
   el.quoteDueDate.value = quoteDraft.dueDate || "";
   setQuotePaymentTypesOnForm(quoteDraft.paymentType || "");
   el.quoteDocDate.value = quoteDraft.docDate || "";
@@ -8108,6 +8172,9 @@ function getCurrentQuoteHistoryContext() {
   return { ev, key };
 }
 
+// Sincroniza el borrador de cotizacion con el formulario sin validar todavia.
+// Sirve para mantener el estado interno actualizado mientras el usuario escribe,
+// pero respeta valores sensibles como el codigo generado automaticamente.
 function syncQuoteDraftFromQuoteFormLoose() {
   if (!quoteDraft) return;
   quoteDraft.companyId = String(el.quoteCompany?.value || quoteDraft.companyId || "").trim();
@@ -8119,7 +8186,7 @@ function syncQuoteDraftFromQuoteFormLoose() {
   quoteDraft.eventType = String(el.quoteEventType?.value || quoteDraft.eventType || "").trim();
   quoteDraft.venue = String(el.quoteVenue?.value || quoteDraft.venue || "").trim();
   quoteDraft.schedule = String(el.quoteSchedule?.value || quoteDraft.schedule || "").trim();
-  quoteDraft.code = String(el.quoteCode?.value || quoteDraft.code || "").trim();
+  quoteDraft.code = String(quoteDraft.code || el.quoteCode?.value || "").trim();
   quoteDraft.docDate = String(el.quoteDocDate?.value || quoteDraft.docDate || "").trim();
   quoteDraft.phone = String(el.quotePhone?.value || quoteDraft.phone || "").trim();
   quoteDraft.nit = String(el.quoteNIT?.value || quoteDraft.nit || "").trim();
@@ -8129,6 +8196,7 @@ function syncQuoteDraftFromQuoteFormLoose() {
   quoteDraft.endDate = String(el.quoteEndDate?.value || quoteDraft.endDate || "").trim();
   quoteDraft.dueDate = String(el.quoteDueDate?.value || quoteDraft.dueDate || "").trim();
   quoteDraft.paymentType = quotePaymentTypesToStorage(getSelectedQuotePaymentTypesFromForm().length ? getSelectedQuotePaymentTypesFromForm() : quoteDraft.paymentType);
+  quoteDraft.currency = normalizeQuoteCurrency(quoteDraft.currency);
   quoteDraft.internalNotes = String(el.quoteInternalNotes?.value || quoteDraft.internalNotes || "").trim();
   quoteDraft.notes = quoteDraft.internalNotes;
 }
@@ -10637,6 +10705,9 @@ async function saveMenuMontajeSelectableFromModal({ updateCurrentVersion = false
         : `Menu & Montaje guardado en V${targetVersion}.`)));
 }
 
+// Solicita al servidor el siguiente codigo de cotizacion disponible.
+// Si el backend responde con un codigo valido como COT-123, ese valor se usa
+// como fuente principal para evitar duplicados entre varios usuarios.
 async function requestServerQuoteCode() {
   try {
     const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, "doc-code-next");
@@ -10653,6 +10724,9 @@ async function requestServerQuoteCode() {
   }
 }
 
+// Genera un codigo local de respaldo recorriendo las cotizaciones existentes.
+// Solo se usa cuando el servidor no pudo entregar el siguiente correlativo,
+// para que la cotizacion nunca se quede sin codigo al guardar o versionar.
 function buildQuoteCode() {
   let maxNum = 0;
   const parseCodeNum = (raw) => {
@@ -10677,6 +10751,9 @@ function buildQuoteCode() {
   return `COT-${String(next).padStart(3, "0")}`;
 }
 
+// Reune el contexto del evento asociado a la cotizacion.
+// Devuelve el evento base y su rango de fechas para autocompletar encabezados,
+// documentos y datos dependientes del evento sin repetir busquedas en varios lugares.
 function getQuoteEventMeta(eventId) {
   const ev = state.events.find(x => x.id === eventId);
   if (!ev) return null;
@@ -10686,6 +10763,33 @@ function getQuoteEventMeta(eventId) {
   return { ev, startDate, endDate };
 }
 
+// Fija en el formulario las fechas reales de la reservacion.
+// Con esto la cotizacion siempre usa el mismo rango del evento y evita
+// que se guarden fechas fuera del periodo reservado.
+function syncQuoteReservationDates(meta = getQuoteEventMeta(el.quoteEventId?.value)) {
+  const startDate = String(meta?.startDate || "").trim();
+  const endDate = String(meta?.endDate || startDate || "").trim();
+  if (el.quoteEventDate) {
+    el.quoteEventDate.value = startDate;
+    el.quoteEventDate.min = startDate;
+    el.quoteEventDate.max = startDate;
+    el.quoteEventDate.readOnly = true;
+  }
+  if (el.quoteEndDate) {
+    el.quoteEndDate.value = endDate;
+    el.quoteEndDate.min = endDate;
+    el.quoteEndDate.max = endDate;
+    el.quoteEndDate.readOnly = true;
+  }
+  if (quoteDraft) {
+    quoteDraft.eventDate = startDate;
+    quoteDraft.endDate = endDate;
+  }
+}
+
+// Rellena el encabezado de la cotizacion con datos del borrador, del evento,
+// de la empresa y del encargado. Si force=true, sobrescribe el formulario;
+// de lo contrario, solo completa campos vacios para no pisar lo que ya eligio el usuario.
 function fillQuoteHeaderFields(force = false, allowContextFallback = true) {
   if (!quoteDraft) return;
   const company = (state.companies || []).find(c => c.id === el.quoteCompany.value);
@@ -10712,6 +10816,7 @@ function fillQuoteHeaderFields(force = false, allowContextFallback = true) {
   apply(el.quotePeople, quoteDraft.people || "");
   apply(el.quoteEventDate, quoteDraft.eventDate || (allowContextFallback ? (meta?.startDate || "") : ""));
   apply(el.quoteEndDate, quoteDraft.endDate || (allowContextFallback ? (meta?.endDate || "") : ""));
+  syncQuoteReservationDates(meta);
   apply(el.quoteFolio, quoteDraft.folio || "");
   apply(el.quoteInternalNotes, quoteDraft.internalNotes || quoteDraft.notes || "");
   if (force || !getSelectedQuotePaymentTypesFromForm().length) {
@@ -13376,6 +13481,20 @@ function bindEvents() {
       quoteDraft.templateId = String(el.quoteTemplateSelect.value || "").trim();
     });
   }
+  if (el.btnQuoteCurrencyGTQ) {
+    el.btnQuoteCurrencyGTQ.addEventListener("click", () => {
+      if (!quoteDraft) return;
+      quoteDraft.currency = "GTQ";
+      renderQuoteItems();
+    });
+  }
+  if (el.btnQuoteCurrencyUSD) {
+    el.btnQuoteCurrencyUSD.addEventListener("click", () => {
+      if (!quoteDraft) return;
+      quoteDraft.currency = "USD";
+      renderQuoteItems();
+    });
+  }
   if (el.quoteServiceTemplateSelect) {
     el.quoteServiceTemplateSelect.addEventListener("change", () => {
       const selectedId = String(el.quoteServiceTemplateSelect.value || "").trim();
@@ -13705,8 +13824,8 @@ function renderUserMonthlyGoalsDraft() {
       <td>${escapeHtml(g.month)}</td>
       <td>Q ${Number(g.amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td>
-        <button type="button" class="btn" data-goal-action="edit" data-goal-month="${escapeHtml(g.month)}">Editar</button>
-        <button type="button" class="btnDanger" data-goal-action="remove" data-goal-month="${escapeHtml(g.month)}">X</button>
+        <button type="button" class="apptIconBtn apptEdit" data-goal-action="edit" data-goal-month="${escapeHtml(g.month)}" title="Editar meta mensual" aria-label="Editar meta mensual">&#9998;</button>
+        <button type="button" class="apptIconBtn apptDelete" data-goal-action="remove" data-goal-month="${escapeHtml(g.month)}" title="Eliminar meta mensual" aria-label="Eliminar meta mensual">&#128465;</button>
       </td>
     `;
     el.userGoalsBody.appendChild(tr);
@@ -13807,6 +13926,9 @@ function closeUserModal() {
   restoreModuleScreenAfterModal();
 }
 
+// Abre el modal principal de cotizacion para un evento.
+// Aqui se prepara el borrador, se asegura un codigo si hace falta,
+// y se cargan en pantalla los datos que luego se podran guardar o versionar.
 async function openQuoteModal(eventId) {
   const ev = state.events.find(x => x.id === eventId);
   if (!ev) return;
@@ -13847,6 +13969,7 @@ async function openQuoteModal(eventId) {
     items: [],
     notes: "",
     templateId: CONTRACT_CORP_TEMPLATE_ID,
+    currency: "GTQ",
   };
   quoteDraft.version = currentVersion;
   quoteDraft.versions = existingVersions;
@@ -13856,6 +13979,7 @@ async function openQuoteModal(eventId) {
   }
   quoteDraft.paymentType = quotePaymentTypesToStorage(quoteDraft.paymentType || "");
   quoteDraft.advances = normalizeQuoteAdvancesForSnapshot(quoteDraft.advances);
+  quoteDraft.currency = normalizeQuoteCurrency(quoteDraft.currency);
   if (quoteDraft.companyId && !quoteDraft.managerId) {
     const cmp = (state.companies || []).find(c => c.id === quoteDraft.companyId);
     const byUserName = cmp?.managers?.find(m => m.name.toLowerCase() === String(user?.name || "").toLowerCase());
@@ -13875,6 +13999,7 @@ async function openQuoteModal(eventId) {
   renderQuoteServiceTemplateSelect("");
   if (el.quoteServiceTemplateName) el.quoteServiceTemplateName.value = "";
   fillQuoteHeaderFields(true, !!existingQuote);
+  renderQuoteCurrencyPicker();
   el.quoteDueDate.value = quoteDraft.dueDate || "";
   setQuotePaymentTypesOnForm(quoteDraft.paymentType || "");
   el.quoteDocDate.value = quoteDraft.docDate || "";
@@ -14720,6 +14845,8 @@ function getQuoteAdvanceTotal(quoteLike) {
   return advances.reduce((acc, item) => acc + Number(item.amount || 0), 0);
 }
 
+// Calcula subtotal, descuento, impuestos y total final de una cotizacion.
+// Centralizar este calculo evita diferencias entre pantalla, PDF y versiones guardadas.
 function getQuoteTotals(quoteLike) {
   const q = quoteLike || {};
   const items = Array.isArray(q.items) ? q.items : [];
@@ -14809,8 +14936,32 @@ function addServiceToQuoteDraft(rawName) {
   }
 }
 
+function renderQuoteCurrencyPicker() {
+  if (!quoteDraft) return;
+  quoteDraft.currency = normalizeQuoteCurrency(quoteDraft.currency);
+  const currency = quoteDraft.currency;
+  if (el.btnQuoteCurrencyGTQ) {
+    el.btnQuoteCurrencyGTQ.classList.toggle("isActive", currency === "GTQ");
+    el.btnQuoteCurrencyGTQ.setAttribute("aria-pressed", currency === "GTQ" ? "true" : "false");
+  }
+  if (el.btnQuoteCurrencyUSD) {
+    el.btnQuoteCurrencyUSD.classList.toggle("isActive", currency === "USD");
+    el.btnQuoteCurrencyUSD.setAttribute("aria-pressed", currency === "USD" ? "true" : "false");
+  }
+  if (el.quoteDiscountType) {
+    const amountOption = Array.from(el.quoteDiscountType.options || []).find((opt) => String(opt.value || "") === "AMOUNT");
+    if (amountOption) amountOption.textContent = `Monto (${getQuoteCurrencySymbol(currency)})`;
+  }
+}
+
+// Redibuja la tabla de servicios de la cotizacion y recalcula la vista.
+// Cada vez que cambia cantidad, precio, descuento o moneda,
+// esta funcion refleja el cambio visual y prepara el resumen final.
 function renderQuoteItems() {
   if (!quoteDraft || !el.quoteItemsBody) return;
+  quoteDraft.currency = normalizeQuoteCurrency(quoteDraft.currency);
+  renderQuoteCurrencyPicker();
+  const money = (n) => moneyQuote(n, quoteDraft.currency);
   quoteDraft.discountType = normalizeDiscountType(quoteDraft.discountType);
   quoteDraft.discountValue = Math.max(0, Number(quoteDraft.discountValue || 0));
   if (el.quoteDiscountType && el.quoteDiscountType.value !== quoteDraft.discountType) {
@@ -14874,7 +15025,7 @@ function renderQuoteItems() {
           <input class="quoteInput" data-field="description" list="serviceDescriptionsList" value="${escapeHtml(item.description || "")}" placeholder="Descripcion del servicio" style="margin-top:6px;" />
         </td>
         <td>${priceInputHtml}</td>
-        <td class="quoteMoney">${moneyGT(subtotal)}</td>
+        <td class="quoteMoney">${money(subtotal)}</td>
         <td><button type="button" class="btnDanger quoteRemoveBtn">X</button></td>
       `;
       el.quoteItemsBody.appendChild(tr);
@@ -14885,19 +15036,22 @@ function renderQuoteItems() {
     subtotalRow.className = "quoteSubtotalRow";
     subtotalRow.innerHTML = `
       <td colspan="4">Subtotal ${escapeHtml(dateKey)}</td>
-      <td class="quoteMoney">${moneyGT(subtotalDay)}</td>
+      <td class="quoteMoney">${money(subtotalDay)}</td>
       <td></td>
     `;
     el.quoteItemsBody.appendChild(subtotalRow);
   }
 
   const totals = getQuoteTotals(quoteDraft);
-  if (el.quoteSubtotal) el.quoteSubtotal.textContent = moneyGT(totals.subtotal);
-  if (el.quoteDiscountAmount) el.quoteDiscountAmount.textContent = moneyGT(totals.discountAmount);
-  el.quoteTotal.textContent = moneyGT(totals.total);
+  if (el.quoteSubtotal) el.quoteSubtotal.textContent = money(totals.subtotal);
+  if (el.quoteDiscountAmount) el.quoteDiscountAmount.textContent = money(totals.discountAmount);
+  el.quoteTotal.textContent = money(totals.total);
   syncQuoteServiceDateRequired();
 }
 
+// Procesa cambios directos en los renglones de servicios.
+// Actualiza el borrador en memoria y vuelve a recalcular totales
+// para que el usuario vea de inmediato el efecto de cada ajuste.
 function handleQuoteItemsInput(e) {
   const input = e.target.closest("[data-field]");
   if (!input || !quoteDraft) return;
@@ -15014,12 +15168,17 @@ function focusQuoteValidationTarget(node, message, opts = {}) {
   }, 40);
   return false;
 }
+// Guarda la cotizacion tomando el estado actual del formulario.
+// Esta rutina valida los campos obligatorios, normaliza montos y pagos,
+// y decide si debe crear o actualizar versiones dentro del evento actual.
 async function saveQuoteFromForm() {
   if (!quoteDraft) return;
   const eventId = el.quoteEventId.value;
   const ev = state.events.find(x => x.id === eventId);
   if (!ev) return;
   const reservationKey = reservationKeyFromEvent(ev);
+  const quoteMeta = getQuoteEventMeta(eventId);
+  syncQuoteReservationDates(quoteMeta);
 
   quoteDraft.companyId = el.quoteCompany.value;
   quoteDraft.managerId = el.quoteManagerSelect.value;
@@ -15030,20 +15189,21 @@ async function saveQuoteFromForm() {
   quoteDraft.eventType = el.quoteEventType.value.trim();
   quoteDraft.venue = el.quoteVenue.value.trim();
   quoteDraft.schedule = el.quoteSchedule.value.trim();
-  quoteDraft.code = el.quoteCode.value.trim();
+  quoteDraft.code = String(quoteDraft.code || el.quoteCode.value || "").trim();
   quoteDraft.docDate = el.quoteDocDate.value;
   quoteDraft.phone = el.quotePhone.value.trim();
   quoteDraft.nit = el.quoteNIT.value.trim();
   quoteDraft.people = el.quotePeople.value;
   syncPaxQuantityItems();
-  quoteDraft.eventDate = el.quoteEventDate.value;
+  quoteDraft.eventDate = String(quoteMeta?.startDate || el.quoteEventDate.value || "").trim();
   quoteDraft.folio = el.quoteFolio.value.trim();
-  quoteDraft.endDate = el.quoteEndDate.value;
+  quoteDraft.endDate = String(quoteMeta?.endDate || el.quoteEndDate.value || quoteDraft.eventDate || "").trim();
   quoteDraft.dueDate = el.quoteDueDate.value;
   quoteDraft.paymentType = quotePaymentTypesToStorage(getSelectedQuotePaymentTypesFromForm());
   quoteDraft.discountType = normalizeDiscountType(el.quoteDiscountType?.value || quoteDraft.discountType);
   quoteDraft.discountValue = Math.max(0, Number(el.quoteDiscountValue?.value || quoteDraft.discountValue || 0));
   quoteDraft.templateId = String(el.quoteTemplateSelect?.value || quoteDraft.templateId || "").trim();
+  quoteDraft.currency = normalizeQuoteCurrency(quoteDraft.currency);
   quoteDraft.internalNotes = el.quoteInternalNotes.value.trim();
   quoteDraft.notes = quoteDraft.internalNotes;
 
@@ -15065,6 +15225,8 @@ async function saveQuoteFromForm() {
   if (!quoteDraft.people || Number(quoteDraft.people) <= 0) return focusQuoteValidationTarget(el.quotePeople, "Ingresa un numero valido en No Personas.");
   if (!quoteDraft.eventDate) return focusQuoteValidationTarget(el.quoteEventDate, "Completa Fecha evento en Datos de cotizacion.");
   if (!quoteDraft.endDate) return focusQuoteValidationTarget(el.quoteEndDate, "Completa Fecha Finalizacion en Datos de cotizacion.");
+  if (quoteMeta?.startDate && quoteDraft.eventDate !== quoteMeta.startDate) return focusQuoteValidationTarget(el.quoteEventDate, "La Fecha evento debe coincidir con el inicio de la reservacion.");
+  if (quoteMeta?.endDate && quoteDraft.endDate !== quoteMeta.endDate) return focusQuoteValidationTarget(el.quoteEndDate, "La Fecha Finalizacion debe coincidir con el fin de la reservacion.");
   if (!quoteDraft.dueDate) return focusQuoteValidationTarget(el.quoteDueDate, "Completa Fecha Maxima Pago en Datos de cotizacion.");
   if (!quoteDraft.items.length) return focusQuoteValidationTarget(el.quoteServiceSearch, "Agrega al menos un servicio en el bloque Agregar servicio.", { openDoc: false, expandItems: true });
 
@@ -15437,6 +15599,8 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const quoteNotesBorderColor = isServiHospTemplate ? window.PDFLib.rgb(1, 1, 1) : window.PDFLib.rgb(0.72, 0.8, 0.9);
   const quoteSummaryBorderColor = isServiHospTemplate ? window.PDFLib.rgb(1, 1, 1) : window.PDFLib.rgb(0.68, 0.76, 0.86);
   const quoteSectionStrokeColor = isServiHospTemplate ? quoteSectionColor : quoteSectionBorderColor;
+  const quoteCurrency = normalizeQuoteCurrency(quote?.currency);
+  const quoteMoney = (n) => moneyQuote(n, quoteCurrency);
 
   const drawRect = (x, yTop, w, h, opts = {}) => {
     page.drawRectangle({
@@ -15589,7 +15753,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
 
   const totals = getQuoteTotals(quote);
   const { catBuckets } = aggregateQuoteBuckets(quote || {});
-  const grandTotalWords = numberToWordsEs(totals.total);
+  const grandTotalWords = numberToWordsQuoteEs(totals.total, quoteCurrency);
 
   // Header band (first page)
   drawQuotePageHeader();
@@ -15700,11 +15864,11 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
       drawServiceRow(
         String(qty),
         String(item?.name || item?.description || ""),
-        moneyGT(price),
-        moneyGT(lineTotal)
+        quoteMoney(price),
+        quoteMoney(lineTotal)
       );
     }
-    drawServiceRow("", "", `SUBTOTAL ${formatDocDate(d)}`, moneyGT(daySubtotal), {
+    drawServiceRow("", "", `SUBTOTAL ${formatDocDate(d)}`, quoteMoney(daySubtotal), {
       height: 15,
       fill: quoteLabelColor,
       bold: true,
@@ -15741,7 +15905,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const separatorY = hasDiscount ? panelY - 42 : panelY - 28;
   const totalBoxTopY = hasDiscount ? panelY - 64 : panelY - 50;
   const row3Y = hasDiscount ? panelY - 56 : panelY - 42;
-  const money = (n) => moneyGT(n);
+  const money = (n) => quoteMoney(n);
   const drawSummaryLine = (lineY, label, value, opts = {}) => {
     const labelFont = opts.bold ? fontBold : font;
     const valueFont = opts.bold ? fontBold : font;
@@ -15768,7 +15932,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const discountValue = Number(totals.discountValue || 0);
   const discountLabel = discountType === "PERCENT"
     ? `Descuento (${discountValue.toFixed(2)}%)`
-    : `Descuento (${moneyGT(discountValue)})`;
+     : `Descuento (${quoteMoney(discountValue)})`;
 
   drawRect(panelX + 10, panelY - 10, panelW - 20, 14, {
     fill: quoteLabelColor,
@@ -15883,7 +16047,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
   const totalContratado = cargoRows.reduce((acc, r) => acc + Number(r.amount || 0), 0);
   const totalAnticipos = getQuoteAdvanceTotal(quote);
   const saldoPendiente = Math.max(0, totalContratado - totalAnticipos);
-  const showMoney = (n) => (Number(n || 0) > 0 ? `Q ${Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-");
+  const showMoney = (n) => (Number(n || 0) > 0 ? quoteMoney(n) : "-");
   const formatAdvanceDatePdf = (iso) => {
     const raw = String(iso || "").trim();
     if (!raw) return "-";
@@ -16149,6 +16313,8 @@ async function openQuoteDocument(ev, quote) {
   const company = (state.companies || []).find(c => c.id === quote.companyId);
   const manager = company?.managers?.find(m => m.id === quote.managerId);
   const items = Array.isArray(quote.items) ? quote.items : [];
+  const quoteCurrency = normalizeQuoteCurrency(quote?.currency);
+  const quoteMoney = (n) => moneyQuote(n, quoteCurrency);
   const numberToWordsEs = (value) => {
     const units = ["", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
     const teens = ["DIEZ", "ONCE", "DOCE", "TRECE", "CATORCE", "QUINCE", "DIECISEIS", "DIECISIETE", "DIECIOCHO", "DIECINUEVE"];
@@ -16237,8 +16403,8 @@ async function openQuoteDocument(ev, quote) {
         <tr>
           <td style="text-align:right">${qty}</td>
           <td>${escapeHtml(item.name || item.description || "")}</td>
-          <td style="text-align:right">${moneyGT(price)}</td>
-          <td style="text-align:right">${moneyGT(lineTotal)}</td>
+          <td style="text-align:right">${quoteMoney(price)}</td>
+          <td style="text-align:right">${quoteMoney(lineTotal)}</td>
         </tr>
       `);
     }
@@ -16246,7 +16412,7 @@ async function openQuoteDocument(ev, quote) {
       <tr class="daySubtotalRow">
         <td colspan="2"></td>
         <td class="sumLabel">SUBTOTAL ${escapeHtml(formatDocDate(d))}</td>
-        <td class="sumValue">${moneyGT(daySubtotal)}</td>
+        <td class="sumValue">${quoteMoney(daySubtotal)}</td>
       </tr>
     `);
   }
@@ -16261,8 +16427,8 @@ async function openQuoteDocument(ev, quote) {
   const discountRowHtmlDoc = showDiscountRowDoc ? `
         <tr>
           <td colspan="2"></td>
-          <td class="sumLabel">DESCUENTO ${discountTypeDoc === "PERCENT" ? `(${discountValueDoc.toFixed(2)}%)` : `(${moneyGT(discountValueDoc)})`}</td>
-          <td class="sumValue">${moneyGT(discountDoc)}</td>
+          <td class="sumLabel">DESCUENTO ${discountTypeDoc === "PERCENT" ? `(${discountValueDoc.toFixed(2)}%)` : `(${quoteMoney(discountValueDoc)})`}</td>
+          <td class="sumValue">${quoteMoney(discountDoc)}</td>
         </tr>
   ` : "";
   const cargoRowsDoc = [
@@ -16281,10 +16447,8 @@ async function openQuoteDocument(ev, quote) {
   const totalContratadoDoc = cargoRowsDoc.reduce((acc, r) => acc + Number(r.amount || 0), 0);
   const totalAnticiposDoc = getQuoteAdvanceTotal(quote);
   const saldoDoc = Math.max(0, totalContratadoDoc - totalAnticiposDoc);
-  const moneyQDoc = (n) => Number(n || 0) > 0
-    ? Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : "-";
-  const grandTotalWords = numberToWordsEs(totalDoc);
+  const moneyQDoc = (n) => Number(n || 0) > 0 ? quoteMoney(n) : "-";
+  const grandTotalWords = numberToWordsQuoteEs(totalDoc, quoteCurrency);
   const isServiHospTemplate = String(quote.templateId || "").trim() === SERVIHOSP_TEMPLATE_ID;
   let appendedTemplateHtml = "";
   const builtInTemplateMeta = getBuiltInQuoteTemplateMeta(String(quote.templateId || "").trim());
@@ -16790,13 +16954,13 @@ async function openQuoteDocument(ev, quote) {
         <tr>
           <td colspan="2"></td>
           <td class="sumLabel">SUBTOTAL EVENTO</td>
-          <td class="sumValue">${moneyGT(subtotalDoc)}</td>
+          <td class="sumValue">${quoteMoney(subtotalDoc)}</td>
         </tr>
         ${discountRowHtmlDoc}
         <tr class="sumTotal">
           <td colspan="2" class="sumWords">SON: ${escapeHtml(grandTotalWords)}</td>
           <td class="sumLabel">TOTAL EVENTO</td>
-          <td class="sumValue">${moneyGT(totalDoc)}</td>
+          <td class="sumValue">${quoteMoney(totalDoc)}</td>
         </tr>
       </tfoot>
     </table>
@@ -16823,17 +16987,17 @@ async function openQuoteDocument(ev, quote) {
           ${cargoRowsDoc.map((r) => `
             <tr>
               <td class="cargoLabel">${escapeHtml(r.label)}</td>
-              <td class="cargoAmount">${Number(r.amount || 0) > 0 ? `Q ${escapeHtml(moneyQDoc(r.amount))}` : "-"}</td>
+              <td class="cargoAmount">${Number(r.amount || 0) > 0 ? escapeHtml(moneyQDoc(r.amount)) : "-"}</td>
             </tr>
           `).join("")}
           <tr class="cargoEm">
             <td class="cargoLabel">Total contratado</td>
-            <td class="cargoAmount">${totalContratadoDoc > 0 ? `Q ${escapeHtml(moneyQDoc(totalContratadoDoc))}` : "-"}</td>
+            <td class="cargoAmount">${totalContratadoDoc > 0 ? escapeHtml(moneyQDoc(totalContratadoDoc)) : "-"}</td>
           </tr>
           ${advanceRowsDoc.length ? advanceRowsDoc.map((r) => `
             <tr>
               <td class="cargoLabel">${escapeHtml(`${formatDocDate(r.date)} - ${r.paymentType || "-"}${r.description ? ` - ${r.description}` : ""}`)}</td>
-              <td class="cargoAmount">${Number(r.amount || 0) > 0 ? `Q ${escapeHtml(moneyQDoc(r.amount))}` : "-"}</td>
+              <td class="cargoAmount">${Number(r.amount || 0) > 0 ? escapeHtml(moneyQDoc(r.amount)) : "-"}</td>
             </tr>
           `).join("") : `
             <tr>
@@ -16843,11 +17007,11 @@ async function openQuoteDocument(ev, quote) {
           `}
           <tr class="cargoEm">
             <td class="cargoLabel">Total anticipos</td>
-            <td class="cargoAmount">${totalAnticiposDoc > 0 ? `Q ${escapeHtml(moneyQDoc(totalAnticiposDoc))}` : "-"}</td>
+            <td class="cargoAmount">${totalAnticiposDoc > 0 ? escapeHtml(moneyQDoc(totalAnticiposDoc)) : "-"}</td>
           </tr>
           <tr class="cargoEm cargoEmFinal">
             <td class="cargoLabel">Saldo</td>
-            <td class="cargoAmount">${saldoDoc > 0 ? `Q ${escapeHtml(moneyQDoc(saldoDoc))}` : "-"}</td>
+            <td class="cargoAmount">${saldoDoc > 0 ? escapeHtml(moneyQDoc(saldoDoc)) : "-"}</td>
           </tr>
         </tbody>
       </table>
@@ -19415,6 +19579,17 @@ function getEventsInWeek(weekStart, salon, dayCount = 7) {
       return compareTime(a.startTime, b.startTime);
     });
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
