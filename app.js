@@ -170,6 +170,7 @@ let quoteDraft = null;
 let quoteAdvanceEditingId = "";
 let companyManagersDraft = [];
 let editingCompanyId = "";
+let editingCompanyManagerId = "";
 let editingServiceId = "";
 let editingServiceCategoryId = "";
 let editingServiceSubcategoryId = "";
@@ -3581,7 +3582,7 @@ function renderSalesReportSummary(rows = []) {
     { tone: "accent", eyebrow: "Facturacion", label: "Total cotizado", value: moneyGT(totalAmount), meta: topSeller ? `Top vendedor ${topSeller[0]}` : "Sin vendedor destacado" },
   ];
   el.salesReportSummary.innerHTML = cards.map((card) => `
-    <article class="salesSummaryCard salesSummaryCard--${escapeHtml(card.tone)}">
+    <article class="salesSummaryCard salesSummaryCard--${escapeHtml(card.tone)}" title="${escapeHtml(({ Pipeline: "Pipeline = cuantos registros u oportunidades tienes activas en el flujo", Conversion: "Conversion = cuantas ya pasaron a confirmados", Capacidad: "Capacidad = volumen o PAX asociado", Facturacion: "Facturacion = cuanto dinero representa ese pipeline o lo ya cerrado" }[card.eyebrow] || ""))}">
       <span class="salesSummaryEyebrow">${escapeHtml(card.eyebrow)}</span>
       <small>${escapeHtml(card.label)}</small>
       <strong>${escapeHtml(card.value)}</strong>
@@ -4170,10 +4171,7 @@ function renderOccupancyDayCards(rows) {
         <strong>${count}</strong>
         <span>evento${count === 1 ? "" : "s"}</span>
       </div>
-      <div class="occupancyDayMeta">
-        <span>${escapeHtml(String(confirmedCount))} conf.</span>
-        <span>${escapeHtml(String(preCount))} pre</span>
-      </div>
+      <div class="occupancyDayMeta" style="display:flex; align-items:center; gap:8px; margin-top:6px;"><span class="occupancyDayStatChip occupancyDayStatChip--confirmed" style="display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:999px; border:1px solid rgba(34,197,94,.34); background:rgba(34,197,94,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.04);"><b style="color:#d9ffe7; font-size:12px; font-weight:900; line-height:1;">${escapeHtml(String(confirmedCount))}</b><small style="color:#bfe8cf; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1;">Conf.</small></span><span class="occupancyDayStatChip occupancyDayStatChip--pre" style="display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:999px; border:1px solid rgba(56,189,248,.34); background:rgba(56,189,248,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.04);"><b style="color:#def5ff; font-size:12px; font-weight:900; line-height:1;">${escapeHtml(String(preCount))}</b><small style="color:#c8ebff; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1;">Pre</small></span></div>
       <div class="occupancyDayRevenue">${escapeHtml(count ? moneyGT(revenue) : "Sin monto")}</div>
     `;
     card.addEventListener("click", () => {
@@ -5239,7 +5237,7 @@ function buildInstitutionStatusDonutHtml(data) {
     const pct = (seg.value / total) * 100;
     const tip = `${seg.label}: ${seg.value} reserva(s) (${pct.toFixed(1)}%)`;
     return `
-      <div class="institutionDonutLegendItem" tabindex="0">
+      <div class="institutionDonutLegendItem" tabindex="0" style="min-width:0; overflow-wrap:anywhere;">
         <span class="institutionDonutDot" style="background:${seg.color}"></span>
         <b>${escapeHtml(seg.label)}</b>
         <span>${escapeHtml(String(seg.value))} (${escapeHtml(pct.toFixed(1))}%)</span>
@@ -5248,14 +5246,14 @@ function buildInstitutionStatusDonutHtml(data) {
     `;
   }).join("");
   return `
-    <div class="institutionDonutWrap">
-      <div class="institutionDonut" style="background:conic-gradient(${stops});">
-        <div class="institutionDonutHole">
+    <div class="institutionDonutWrap" style="display:flex; align-items:center; justify-content:center; gap:18px; flex-wrap:wrap; min-width:0;">
+      <div class="institutionDonut" style="background:conic-gradient(${stops}); width:min(230px, 70vw); height:min(230px, 70vw); max-width:100%; flex:0 0 auto; margin:0 auto;">
+        <div class="institutionDonutHole" style="width:58%; height:58%;">
           <small>Total</small>
           <strong>${escapeHtml(String(total))}</strong>
         </div>
       </div>
-      <div class="institutionDonutLegend">${legend}</div>
+      <div class="institutionDonutLegend" style="flex:1 1 240px; min-width:0; width:100%;">${legend}</div>
     </div>
   `;
 }
@@ -5589,14 +5587,14 @@ function renderInstitutionReport() {
       el.institutionReportChartsBody.innerHTML = `<div class="dashboardEmpty">Sin datos para graficas.</div>`;
     } else {
       el.institutionReportChartsBody.innerHTML = `
-        <article class="institutionChartCard">
+        <article class="institutionChartCard" style="min-width:0; overflow:hidden; display:flex; flex-direction:column; gap:14px;">
           <header>
             <strong>Ingresos por mes</strong>
             <small>Top 8 meses del rango (hover para detalle)</small>
           </header>
           ${buildInstitutionMonthlyBarChartHtml(data.monthRows)}
         </article>
-        <article class="institutionChartCard">
+        <article class="institutionChartCard" style="min-width:0; overflow:hidden; display:flex; flex-direction:column; gap:14px;">
           <header>
             <strong>Distribucion por estado</strong>
             <small>Confirmado, pre reserva, cancelado y perdido</small>
@@ -13570,6 +13568,20 @@ function bindEvents() {
 
   el.btnAddManager.addEventListener("click", addManagerToCompanyDraft);
   el.managersBody.addEventListener("click", async (e) => {
+    const editBtn = e.target.closest(".editManagerBtn");
+    if (editBtn) {
+      const id = String(editBtn.dataset.managerId || "").trim();
+      const target = companyManagersDraft.find((x) => String(x.id || "") === id);
+      if (!target) return;
+      editingCompanyManagerId = id;
+      el.managerName.value = String(target.name || "");
+      el.managerPhone.value = String(target.phone || "");
+      el.managerEmail.value = String(target.email || "");
+      el.managerAddress.value = String(target.address || "");
+      if (el.btnAddManager) el.btnAddManager.textContent = "Actualizar encargado";
+      try { el.managerName.focus(); } catch (_) { }
+      return;
+    }
     const btn = e.target.closest(".removeManagerBtn");
     if (!btn) return;
     const id = btn.dataset.managerId;
@@ -13582,6 +13594,14 @@ function bindEvents() {
     });
     if (!ok) return;
     companyManagersDraft = companyManagersDraft.filter(x => x.id !== id);
+    if (String(editingCompanyManagerId || "") === String(id || "")) {
+      editingCompanyManagerId = "";
+      el.managerName.value = "";
+      el.managerPhone.value = "";
+      el.managerEmail.value = "";
+      el.managerAddress.value = "";
+      if (el.btnAddManager) el.btnAddManager.textContent = "+ Encargado";
+    }
     renderCompanyManagersDraft();
     toast("Encargado eliminado del borrador.");
   });
@@ -14408,6 +14428,7 @@ function resetCompanyModalState() {
     el.btnCompanyDisable.textContent = "Inhabilitar";
   }
   if (el.companyTitle) el.companyTitle.textContent = "Nueva empresa";
+  editingCompanyManagerId = "";
   companyManagersDraft = [];
   el.companyName.value = "";
   el.companyOwner.value = "";
@@ -14422,6 +14443,7 @@ function resetCompanyModalState() {
   el.managerName.value = "";
   el.managerPhone.value = "";
   el.managerEmail.value = "";
+  if (el.btnAddManager) el.btnAddManager.textContent = "+ Encargado";
   el.managerAddress.value = "";
   renderCompanyManagersDraft();
 }
@@ -14458,6 +14480,7 @@ function updateCompanyModalStateControls(companyId = "") {
 function loadCompanyInModal(companyId = "") {
   const id = String(companyId || "").trim();
   editingCompanyId = id;
+  editingCompanyManagerId = "";
   const target = id
     ? (state.companies || []).find((c) => String(c.id) === id)
     : null;
@@ -14492,6 +14515,7 @@ function loadCompanyInModal(companyId = "") {
   }
   el.managerName.value = "";
   el.managerPhone.value = "";
+  if (el.btnAddManager) el.btnAddManager.textContent = "+ Encargado";
   el.managerEmail.value = "";
   el.managerAddress.value = "";
 }
@@ -14689,7 +14713,6 @@ function saveServiceFromForm() {
       opt.textContent = `${String(service?.name || "Servicio").trim()}${isServiceDisabled(opt.value) ? " (Inhabilitado)" : ""}`;
       el.serviceEditSelect.appendChild(opt);
     }
-    el.serviceEditSelect.value = "";
   }
   if (el.serviceActive) el.serviceActive.checked = true;
   if (el.btnServiceDisable) {
@@ -14721,17 +14744,35 @@ function addManagerToCompanyDraft() {
   if (!isValidEmail(email)) {
     return toast("Correo de encargado invalido.");
   }
-  companyManagersDraft.push({
-    id: uid(),
-    name,
-    phone,
-    email,
-    address,
-  });
+  const editingId = String(editingCompanyManagerId || "").trim();
+  if (editingId) {
+    const target = companyManagersDraft.find((m) => String(m.id || "") === editingId);
+    if (!target) {
+      editingCompanyManagerId = "";
+      if (el.btnAddManager) el.btnAddManager.textContent = "+ Encargado";
+      return toast("Encargado a editar no encontrado.");
+    }
+    target.name = name;
+    target.phone = phone;
+    target.email = email;
+    target.address = address;
+    editingCompanyManagerId = "";
+    toast("Encargado actualizado.");
+  } else {
+    companyManagersDraft.push({
+      id: uid(),
+      name,
+      phone,
+      email,
+      address,
+    });
+    toast("Encargado agregado.");
+  }
   el.managerName.value = "";
   el.managerPhone.value = "";
   el.managerEmail.value = "";
   el.managerAddress.value = "";
+  if (el.btnAddManager) el.btnAddManager.textContent = "+ Encargado";
   renderCompanyManagersDraft();
 }
 
@@ -14739,13 +14780,18 @@ function renderCompanyManagersDraft() {
   if (!el.managersBody) return;
   el.managersBody.innerHTML = "";
   for (const m of companyManagersDraft) {
+    const isEditing = String(editingCompanyManagerId || "") === String(m.id || "");
     const tr = document.createElement("tr");
+    if (isEditing) tr.classList.add("isEditingRow");
     tr.innerHTML = `
       <td>${escapeHtml(m.name)}</td>
       <td>${escapeHtml(m.phone)}</td>
       <td>${escapeHtml(m.email)}</td>
       <td>${escapeHtml(m.address || "")}</td>
-      <td><button type="button" class="btnDanger removeManagerBtn" data-manager-id="${m.id}">X</button></td>
+      <td class="tableActionsCell">
+        <button type="button" class="apptIconBtn apptEdit editManagerBtn" data-manager-id="${m.id}" title="Editar encargado" aria-label="Editar encargado">&#9998;</button>
+        <button type="button" class="apptIconBtn apptDelete removeManagerBtn" data-manager-id="${m.id}" title="Eliminar encargado" aria-label="Eliminar encargado">&#8854;</button>
+      </td>
     `;
     el.managersBody.appendChild(tr);
   }
@@ -16308,8 +16354,288 @@ async function tryOpenCombinedQuotePdf(ev, quote) {
   return true;
 }
 
-async function openQuoteDocument(ev, quote) {
+function normalizeQuotePrintVariant(rawVariant) {
+  const value = String(rawVariant || "").trim().toLowerCase();
+  if (value === "with_menu" || value === "completa" || value === "full") return "with_menu";
+  if (value === "without_prices" || value === "sin_precios" || value === "commercial") return "without_prices";
+  return "standard";
+}
+
+function getQuotePrintVariantMeta(rawVariant) {
+  const variant = normalizeQuotePrintVariant(rawVariant);
+  if (variant === "with_menu") {
+    return {
+      variant,
+      title: "Cotizacion completa",
+      shortTitle: "Completa",
+      description: "Incluye precios, menu y montaje, y contrato al final.",
+      includePrices: true,
+      includeMenuMontaje: true,
+      includeContract: true,
+      modeBadge: "VERSION COMPLETA CON MENU Y MONTAJE",
+    };
+  }
+  if (variant === "without_prices") {
+    return {
+      variant,
+      title: "Cotizacion comercial sin precios",
+      shortTitle: "Sin precios",
+      description: "Oculta precios y totales. Incluye menu y montaje. No incluye contrato.",
+      includePrices: false,
+      includeMenuMontaje: true,
+      includeContract: false,
+      modeBadge: "VERSION COMERCIAL SIN PRECIOS",
+    };
+  }
+  return {
+    variant: "standard",
+    title: "Cotizacion estandar",
+    shortTitle: "Estandar",
+    description: "Mantiene el formato actual con precios y contrato.",
+    includePrices: true,
+    includeMenuMontaje: false,
+    includeContract: true,
+    modeBadge: "COTIZACION ESTANDAR",
+  };
+}
+
+async function promptQuotePrintVariant(ev, quote) {
+  const hasMenuMontaje = Array.isArray(quote?.menuMontajeEntries)
+    && quote.menuMontajeEntries.some((row) => String(row?.date || "").trim() && String(row?.salon || "").trim());
+
+  const cardOptions = [
+    {
+      value: "standard",
+      title: "Estandar",
+      description: "Cotizacion con precios y contrato, igual que el formato actual.",
+      tone: "slate",
+      disabled: false,
+    },
+    {
+      value: "with_menu",
+      title: "Completa con Menu & Montaje",
+      description: "Cotizacion con precios, luego Menu & Montaje, y al final el contrato.",
+      tone: "blue",
+      disabled: !hasMenuMontaje,
+    },
+    {
+      value: "without_prices",
+      title: "Sin precios",
+      description: "Muestra la cotizacion sin precios ni totales, y abajo agrega Menu & Montaje sin contrato.",
+      tone: "green",
+      disabled: !hasMenuMontaje,
+    },
+  ];
+
+  if (window.Swal && typeof window.Swal.fire === "function") {
+    const cardsHtml = cardOptions.map((opt) => `
+      <button
+        type="button"
+        class="quotePrintOptionCard quotePrintOptionCard--${opt.tone}${opt.value === "standard" ? " isActive" : ""}${opt.disabled ? " isDisabled" : ""}"
+        data-quote-print-value="${opt.value}"
+        ${opt.disabled ? 'disabled aria-disabled="true"' : ''}
+      >
+        <span class="quotePrintOptionTitle">${opt.title}</span>
+        <span class="quotePrintOptionText">${opt.description}</span>
+        ${opt.disabled ? '<span class="quotePrintOptionNote">Requiere Menu & Montaje guardado</span>' : ''}
+      </button>`).join('');
+
+    const result = await window.Swal.fire({
+      title: "Formato de impresion",
+      html: `
+        <style>
+          .quotePrintPicker{ display:grid; gap:12px; margin-top:10px; text-align:left; }
+          .quotePrintOptionCard{
+            width:100%;
+            border:none;
+            text-align:left;
+            padding:14px 16px;
+            border-radius:16px;
+            background:rgba(15,23,42,.88);
+            box-shadow:inset 0 0 0 1px rgba(148,163,184,.18);
+            transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+            cursor:pointer;
+            display:grid;
+            gap:6px;
+          }
+          .quotePrintOptionCard:hover:not(.isDisabled){
+            transform:translateY(-1px);
+            box-shadow:inset 0 0 0 1px rgba(191,219,254,.34), 0 10px 24px rgba(2,6,23,.22);
+          }
+          .quotePrintOptionCard.isActive{
+            box-shadow:inset 0 0 0 2px rgba(255,255,255,.14), 0 12px 28px rgba(2,6,23,.24);
+          }
+          .quotePrintOptionCard--slate.isActive{
+            background:rgba(30,41,59,.98);
+            box-shadow:inset 0 0 0 2px rgba(148,163,184,.46), 0 12px 28px rgba(2,6,23,.24);
+          }
+          .quotePrintOptionCard--blue.isActive{
+            background:rgba(22,49,92,.98);
+            box-shadow:inset 0 0 0 2px rgba(96,165,250,.56), 0 12px 28px rgba(2,6,23,.24);
+          }
+          .quotePrintOptionCard--green.isActive{
+            background:rgba(15,57,51,.98);
+            box-shadow:inset 0 0 0 2px rgba(52,211,153,.48), 0 12px 28px rgba(2,6,23,.24);
+          }
+          .quotePrintOptionCard.isDisabled{
+            opacity:.58;
+            cursor:not-allowed;
+            filter:saturate(.72);
+          }
+          .quotePrintOptionTitle{
+            display:block;
+            font-size:16px;
+            font-weight:900;
+            color:#f8fafc;
+            letter-spacing:.1px;
+          }
+          .quotePrintOptionText{
+            display:block;
+            font-size:12px;
+            line-height:1.45;
+            color:#dbe5f1;
+          }
+          .quotePrintOptionNote{
+            display:inline-flex;
+            width:max-content;
+            margin-top:2px;
+            padding:4px 8px;
+            border-radius:999px;
+            background:rgba(148,163,184,.18);
+            color:#e2e8f0;
+            font-size:11px;
+            font-weight:700;
+          }
+        </style>
+        <input type="hidden" id="quotePrintVariantInput" value="standard" />
+        <div class="quotePrintPicker">${cardsHtml}</div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: "Abrir documento",
+      cancelButtonText: "Cancelar",
+      background: "#0b1a32",
+      color: "#f8fafc",
+      confirmButtonColor: "#2563eb",
+      cancelButtonColor: "#334155",
+      didOpen: (popup) => {
+        const hidden = popup.querySelector('#quotePrintVariantInput');
+        const cards = Array.from(popup.querySelectorAll('[data-quote-print-value]'));
+        const activate = (value) => {
+          if (!hidden) return;
+          hidden.value = value;
+          cards.forEach((card) => {
+            card.classList.toggle('isActive', card.dataset.quotePrintValue === value);
+          });
+        };
+        cards.forEach((card) => {
+          card.addEventListener('click', () => {
+            if (card.disabled) return;
+            activate(card.dataset.quotePrintValue || 'standard');
+          });
+        });
+      },
+      preConfirm: () => {
+        const hidden = document.getElementById('quotePrintVariantInput');
+        const value = normalizeQuotePrintVariant(hidden?.value || '');
+        if (!value) {
+          window.Swal.showValidationMessage('Selecciona un formato.');
+          return false;
+        }
+        if ((value === 'with_menu' || value === 'without_prices') && !hasMenuMontaje) {
+          window.Swal.showValidationMessage('Esta cotizacion aun no tiene Menu & Montaje guardado.');
+          return false;
+        }
+        return value;
+      },
+    });
+    if (!result?.isConfirmed) return null;
+    return normalizeQuotePrintVariant(result.value);
+  }
+
+  let answer = window.prompt(
+    hasMenuMontaje
+      ? "Elige formato: standard, with_menu o without_prices"
+      : "Elige formato: standard (Menu & Montaje no esta disponible aun)",
+    "standard"
+  );
+  answer = normalizeQuotePrintVariant(answer);
+  if ((answer === "with_menu" || answer === "without_prices") && !hasMenuMontaje) {
+    toast("Esta cotizacion aun no tiene Menu & Montaje guardado.");
+    return null;
+  }
+  return answer;
+}
+
+function buildQuoteMenuMontajeAttachmentHtml(ev, quoteLike) {
+  const quote = quoteLike || {};
+  const entries = (Array.isArray(quote?.menuMontajeEntries) ? quote.menuMontajeEntries : [])
+    .filter((x) => String(x?.date || "").trim() && String(x?.salon || "").trim());
+  if (!entries.length) return "";
+  const company = (state.companies || []).find((c) => String(c.id || "") === String(quote.companyId || ""));
+  const institutionName = String(company?.name || quote.companyName || "-").trim() || "-";
+  const manager = company?.managers?.find((m) => String(m.id || "") === String(quote.managerId || ""));
+  const seller = (state.users || []).find((u) => String(u.id || "") === String(ev?.userId || ""));
+  const byDate = new Map();
+  for (const row of entries) {
+    if (!byDate.has(row.date)) byDate.set(row.date, []);
+    byDate.get(row.date).push(row);
+  }
+  const orderedDates = Array.from(byDate.keys()).sort((a, b) => a.localeCompare(b));
+  const cardsHtml = orderedDates.map((date) => {
+    const rows = byDate.get(date) || [];
+    rows.sort((a, b) => String(a.salon || "").localeCompare(String(b.salon || "")));
+    const blocks = rows.map((r) => `
+      <article class="quoteMmDayCard">
+        <div class="quoteMmDayHead">
+          <div class="quoteMmDayTitle">${escapeHtml(String(r.salon || "").toUpperCase())}</div>
+          <div class="quoteMmDayMeta">${escapeHtml(date)}</div>
+        </div>
+        <div class="quoteMmBlock">
+          <div class="quoteMmBlockTitle">Menu</div>
+          <div class="quoteMmBlockBody">${renderMenuMontajeRichText(String(r.menuDescription || "")) || '<p class="quoteMmEmpty">Sin detalle de menu.</p>'}</div>
+        </div>
+        <div class="quoteMmBlock">
+          <div class="quoteMmBlockTitle">Montaje</div>
+          <div class="quoteMmBlockBody">${renderMenuMontajeRichText(String(r.montajeDescription || "")) || '<p class="quoteMmEmpty">Sin detalle de montaje.</p>'}</div>
+        </div>
+      </article>`).join('');
+    return `
+      <section class="quoteMmDateSection">
+        <div class="quoteMmSectionHead">
+          <div class="quoteMmSectionTitle">Menu & Montaje - ${escapeHtml(date)}</div>
+          <div class="quoteMmSectionMeta">${escapeHtml(institutionName)}</div>
+        </div>
+        <div class="quoteMmMetaGrid">
+          <div><b>Encargado evento:</b> ${escapeHtml(String(manager?.name || quote.contact || '-'))}</div>
+          <div><b>No cotizacion:</b> ${escapeHtml(String(quote.code || '-'))}</div>
+          <div><b>Tipo evento:</b> ${escapeHtml(String(quote.eventType || ev?.name || '-'))}</div>
+          <div><b>Horario:</b> ${escapeHtml(String(quote.schedule || `${ev?.startTime || ''} a ${ev?.endTime || ''}`.trim() || '-'))}</div>
+          <div><b>No pax:</b> ${escapeHtml(String(quote.people || ev?.pax || '-'))}</div>
+          <div><b>Vendedor:</b> ${escapeHtml(String(seller?.fullName || seller?.name || '-'))}</div>
+        </div>
+        <div class="quoteMmCards">${blocks}</div>
+      </section>`;
+  }).join('');
+
+  return `
+    <section class="templateAttach quoteMenuMontajeAttach">
+      <div class="templateAttachHead">Menu y Montaje</div>
+      <div class="templateAttachBody">
+        <div class="quoteMmWrap">${cardsHtml}</div>
+      </div>
+    </section>`;
+}
+
+async function openQuoteDocument(ev, quote, printOptions = null) {
   if (!ev || !quote) return;
+  const selectedVariant = printOptions?.variant
+    ? normalizeQuotePrintVariant(printOptions.variant)
+    : await promptQuotePrintVariant(ev, quote);
+  if (!selectedVariant) return;
+  const printMeta = getQuotePrintVariantMeta(selectedVariant);
+  const showPrices = printMeta.includePrices !== false;
+  const includeMenuMontaje = printMeta.includeMenuMontaje === true;
+  const includeContract = printMeta.includeContract !== false;
   const company = (state.companies || []).find(c => c.id === quote.companyId);
   const manager = company?.managers?.find(m => m.id === quote.managerId);
   const items = Array.isArray(quote.items) ? quote.items : [];
@@ -16392,7 +16718,7 @@ async function openQuoteDocument(ev, quote) {
     const daySubtotal = dayItems.reduce((acc, x) => acc + Number(x.qty || 0) * Number(x.price || 0), 0);
     rowHtml.push(`
       <tr class="dayHeaderRow">
-        <td colspan="4">SERVICIOS DEL DIA ${escapeHtml(formatDocDate(d))}</td>
+        <td colspan="${showPrices ? 4 : 2}">SERVICIOS DEL DIA ${escapeHtml(formatDocDate(d))}</td>
       </tr>
     `);
     for (const item of dayItems) {
@@ -16403,18 +16729,20 @@ async function openQuoteDocument(ev, quote) {
         <tr>
           <td style="text-align:right">${qty}</td>
           <td>${escapeHtml(item.name || item.description || "")}</td>
-          <td style="text-align:right">${quoteMoney(price)}</td>
-          <td style="text-align:right">${quoteMoney(lineTotal)}</td>
+          <td style="text-align:right">${showPrices ? quoteMoney(price) : ""}</td>
+          <td style="text-align:right">${showPrices ? quoteMoney(lineTotal) : ""}</td>
         </tr>
       `);
     }
-    rowHtml.push(`
+    if (showPrices) {
+      rowHtml.push(`
       <tr class="daySubtotalRow">
         <td colspan="2"></td>
         <td class="sumLabel">SUBTOTAL ${escapeHtml(formatDocDate(d))}</td>
         <td class="sumValue">${quoteMoney(daySubtotal)}</td>
       </tr>
     `);
+    }
   }
   const totalsDoc = getQuoteTotals(quote);
   const { catBuckets: catBucketsDoc } = aggregateQuoteBuckets(quote || {});
@@ -16452,7 +16780,7 @@ async function openQuoteDocument(ev, quote) {
   const isServiHospTemplate = String(quote.templateId || "").trim() === SERVIHOSP_TEMPLATE_ID;
   let appendedTemplateHtml = "";
   const builtInTemplateMeta = getBuiltInQuoteTemplateMeta(String(quote.templateId || "").trim());
-  if (builtInTemplateMeta?.attachToQuote) {
+  if (includeContract && builtInTemplateMeta?.attachToQuote) {
     try {
       const res = await fetch(builtInTemplateMeta.file, { cache: "no-store" });
       if (res.ok) {
@@ -16555,8 +16883,171 @@ async function openQuoteDocument(ev, quote) {
     }
   }
 
+  const menuMontajeAttachHtml = includeMenuMontaje ? buildQuoteMenuMontajeAttachmentHtml(ev, quote) : "";
+  if (includeMenuMontaje && !menuMontajeAttachHtml) {
+    await modernAlert({
+      icon: "warning",
+      title: "Menu y montaje no disponible",
+      text: "Esta version necesita un Menu & Montaje guardado para poder imprimirse.",
+    });
+    return;
+  }
+
+  const quoteMetaRowsCompact = [
+    ["Codigo", quote.code || ""],
+    ["Fecha Doc", quote.docDate || ""],
+    ["Encargado", manager?.name || ""],
+    ["Contacto", quote.contact || manager?.name || ""],
+    ["Email", quote.email || manager?.email || ""],
+    ["Telefono", quote.phone || manager?.phone || ""],
+    ["Institucion", quote.companyName || company?.name || ""],
+    ["Facturar A", quote.billTo || company?.billTo || company?.businessName || ""],
+    ["Nit", quote.nit || company?.nit || ""],
+    ["Direccion", quote.address || company?.address || ""],
+    ["Forma de Pago", quote.paymentType || ""],
+    ["Fecha maxima pago", quote.dueDate || ""],
+    ["Salon", quote.venue || ev.salon || ""],
+    ["Horario", quote.schedule || `${ev.startTime} a ${ev.endTime}`],
+    ["No Personas", String(quote.people || "")],
+    ["Tipo de Evento", quote.eventType || ""],
+    ["Folio No", quote.folio || ""],
+    ["Fecha Inicio", quote.eventDate || ev.date || ""],
+    ["Fecha Fin", quote.endDate || ev.date || ""],
+  ];
+  const quoteMetaTableHtml = showPrices ? `
+    <table class="quoteMetaTable">
+      <colgroup>
+        <col class="metaLabel" />
+        <col class="metaValue" />
+        <col class="metaValue" />
+        <col class="metaLabel" />
+        <col class="metaValue" />
+        <col class="metaValue" />
+      </colgroup>
+      <tbody>
+        <tr>
+          <td class="metaLabel">Codigo</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.code || "")}</td>
+          <td class="metaLabel">Fecha Doc</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.docDate || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Encargado</td>
+          <td class="metaValue" colspan="2">${escapeHtml(manager?.name || "")}</td>
+          <td class="metaLabel">Contacto</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.contact || manager?.name || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Email</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.email || manager?.email || "")}</td>
+          <td class="metaLabel">Telefono</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.phone || manager?.phone || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Institucion</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.companyName || company?.name || "")}</td>
+          <td class="metaLabel">Facturar A</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.billTo || company?.billTo || company?.businessName || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Nit</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.nit || company?.nit || "")}</td>
+          <td class="metaLabel">Direccion</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.address || company?.address || "")}</td>
+        </tr>
+        <tr class="metaDivider">
+          <td class="metaLabel">Forma de Pago</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.paymentType || "")}</td>
+          <td class="metaLabel">Fecha&nbsp;maximo<br>Pago</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.dueDate || "")}</td>
+        </tr>
+        <tr class="metaGap">
+          <td colspan="6"></td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Salon</td>
+          <td class="metaValue">${escapeHtml(quote.venue || ev.salon || "")}</td>
+          <td class="metaLabel">Horario</td>
+          <td class="metaValue metaWide">${escapeHtml(quote.schedule || `${ev.startTime} a ${ev.endTime}`)}</td>
+          <td class="metaLabel">No Personas</td>
+          <td class="metaValue">${escapeHtml(String(quote.people || ""))}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Tipo de Evento</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.eventType || "")}</td>
+          <td class="metaLabel">Folio No</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.folio || "")}</td>
+        </tr>
+        <tr>
+          <td class="metaLabel">Fecha Inicio</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.eventDate || ev.date || "")}</td>
+          <td class="metaLabel">Fecha Fin</td>
+          <td class="metaValue" colspan="2">${escapeHtml(quote.endDate || ev.date || "")}</td>
+        </tr>
+      </tbody>
+    </table>` : `
+    <table class="quoteMetaTableCompact">
+      <tbody>
+        ${quoteMetaRowsCompact.map(([label, value]) => `
+          <tr>
+            <td class="metaLabelCompact">${escapeHtml(String(label || ""))}</td>
+            <td class="metaValueCompact">${escapeHtml(String(value || ""))}</td>
+          </tr>`).join("")}
+      </tbody>
+    </table>`;
+  const quoteItemsTableHtml = showPrices ? `
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align:right">Cantidad</th>
+          <th>Descripcion</th>
+          <th style="text-align:right">Precio</th>
+          <th style="text-align:right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rowHtml.join("")}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2"></td>
+          <td class="sumLabel">SUBTOTAL EVENTO</td>
+          <td class="sumValue">${quoteMoney(subtotalDoc)}</td>
+        </tr>
+        ${discountRowHtmlDoc}
+        <tr class="sumTotal">
+          <td colspan="2" class="sumWords">SON: ${escapeHtml(grandTotalWords)}</td>
+          <td class="sumLabel">TOTAL EVENTO</td>
+          <td class="sumValue">${quoteMoney(totalDoc)}</td>
+        </tr>
+      </tfoot>
+    </table>` : `
+    <table class="quoteItemsCompactTable">
+      <thead>
+        <tr>
+          <th style="width:18%; text-align:right">Cantidad</th>
+          <th>Descripcion</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${orderedDates.map((d) => {
+          const dayItems = grouped.get(d) || [];
+          const dayRows = dayItems.map((item) => `
+            <tr>
+              <td style="text-align:right">${escapeHtml(String(Number(item.qty || 0)))}</td>
+              <td>${escapeHtml(item.name || item.description || "")}</td>
+            </tr>`).join("");
+          return `
+            <tr class="dayHeaderRow">
+              <td colspan="2">SERVICIOS DEL DIA ${escapeHtml(formatDocDate(d))}</td>
+            </tr>
+            ${dayRows}`;
+        }).join("")}
+      </tbody>
+    </table>`;
   const quoteInstitutionName = escapeHtml(String(quote.companyName || company?.name || "Cotizacion").trim() || "Cotizacion");
   const quoteDocLabel = `COTIZACION ${quoteInstitutionName}`;
+  const quoteModeBadgeHtml = "";
   const quoteHeaderSrc = String(
     builtInTemplateMeta?.headerImage
     || (isServiHospTemplate ? SERVIHOSP_TEMPLATE_HEADER_IMAGE : DEFAULT_TEMPLATE_HEADER_IMAGE)
@@ -16629,7 +17120,7 @@ async function openQuoteDocument(ev, quote) {
       object-position:center top;
     }
     .head{
-      background:linear-gradient(100deg,var(--brand-deep) 0%,var(--brand) 42%,#4fc2c7 100%);
+      background:var(--brand);
       color:#ffffff;
       padding:11px 16px;
       border-top:1px solid rgba(255,255,255,0.28);
@@ -16639,6 +17130,139 @@ async function openQuoteDocument(ev, quote) {
       letter-spacing:0.42px;
       text-transform:uppercase;
       text-shadow:0 1px 0 rgba(9,48,56,0.2);
+    }
+    .quoteModeBadge{
+      margin:0 16px 12px;
+      padding:8px 12px;
+      border:1px solid rgba(17,125,143,0.22);
+      border-radius:12px;
+      background:#e6f3f6;
+      color:#11506a;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.28px;
+      text-transform:uppercase;
+    }
+    .quoteMenuMontajeAttach{
+      break-before:page;
+      page-break-before:always;
+    }
+    .quoteMmWrap{
+      display:grid;
+      gap:14px;
+      padding:2px;
+      background:#f7fbfd;
+    }
+    .quoteMmDateSection{
+      border:1px solid #cfe1ea;
+      border-radius:14px;
+      overflow:hidden;
+      background:#ffffff;
+      box-shadow:0 8px 18px rgba(15,23,42,.06);
+    }
+    .quoteMmSectionHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      background:#1d6f88;
+      color:#fff;
+    }
+    .quoteMmSectionTitle{
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.24px;
+      text-transform:uppercase;
+    }
+    .quoteMmSectionMeta{
+      font-size:11px;
+      font-weight:700;
+      opacity:.92;
+    }
+    .quoteMmMetaGrid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(220px, 1fr));
+      gap:8px 14px;
+      padding:12px 14px;
+      background:#eef7fb;
+      border-bottom:1px solid #d6e6ee;
+      font-size:12px;
+      color:#1e3a4c;
+    }
+    .quoteMmCards{
+      display:grid;
+      gap:12px;
+      padding:14px;
+    }
+    .quoteMmDayCard{
+      border:1px solid #d6e4ea;
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .quoteMmDayHead{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      padding:10px 12px;
+      background:#eaf3f7;
+      border-bottom:1px solid #d4e3ea;
+    }
+    .quoteMmDayTitle{
+      font-size:13px;
+      font-weight:900;
+      color:#0f4864;
+      letter-spacing:.2px;
+      text-transform:uppercase;
+    }
+    .quoteMmDayMeta{
+      font-size:11px;
+      font-weight:700;
+      color:#37607a;
+    }
+    .quoteMmBlock{
+      padding:12px;
+      border-top:1px solid #e1ebef;
+    }
+    .quoteMmBlock:first-of-type{
+      border-top:none;
+    }
+    .quoteMmBlockTitle{
+      margin:0 0 8px;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.24px;
+      color:#0f4f6f;
+      text-transform:uppercase;
+    }
+    .quoteMmBlockBody{
+      font-size:12px;
+      line-height:1.45;
+      color:#1f3b4d;
+    }
+    .quoteMmEmpty{
+      margin:0;
+      color:#5d7487;
+      font-style:italic;
+    }
+    .doc.quoteNoPrices tfoot,
+    .doc.quoteNoPrices .financialPolicyTitle,
+    .doc.quoteNoPrices .financialPolicyBox,
+    .doc.quoteNoPrices .financialSummaryWrap{
+      display:none;
+    }
+    .doc.quoteNoPrices .quoteContractHeader img{
+      max-height:76px;
+    }
+    .doc.quoteNoPrices .signatureSection{
+      margin-top:14px;
+    }
+    @media print{
+      .quoteModeBadge{ margin-bottom:8px; }
+      .quoteMenuMontajeAttach{ break-before:page; page-break-before:always; }
+      .quoteMmDateSection{ break-inside:avoid; page-break-inside:avoid; }
     }
     .quoteMetaTable{
       width:100%;
@@ -16662,14 +17286,49 @@ async function openQuoteDocument(ev, quote) {
       background:var(--surface);
     }
     .quoteMetaTable tr td:last-child{ border-right:none; }
-    .quoteMetaTable td.metaLabel{ background:linear-gradient(180deg,#f1fbfb 0%,#e7f5f6 100%); color:var(--title); font-weight:700; letter-spacing:0.14px; }
+    .quoteMetaTable td.metaLabel{ background:#e7f5f6; color:var(--title); font-weight:700; letter-spacing:0.14px; }
     .quoteMetaTable td.metaValue{ font-weight:600; background:var(--surface); }
     .quoteMetaTable tr.metaDivider td{ border-top:2px solid rgba(30,167,173,0.35); }
-    .quoteMetaTable tr.metaGap td{ padding:0; height:9px; border:none; background:linear-gradient(180deg,rgba(244,250,252,0.95) 0%,rgba(255,255,255,0.92) 100%); }
+    .quoteMetaTable tr.metaGap td{ padding:0; height:9px; border:none; background:#f4fafc; }
     .quoteMetaTable td.metaWide{ text-align:left; }
+    .quoteMetaTableCompact{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      margin:0 0 10px;
+      border-top:3px solid rgba(30,167,173,0.32);
+      border-left:1px solid var(--line);
+      border-right:1px solid var(--line);
+      background:var(--surface);
+    }
+    .quoteMetaTableCompact td{
+      border-bottom:1px solid var(--line);
+      border-right:1px solid var(--line);
+      padding:8px 10px;
+      font-size:12px;
+      color:#274152;
+      vertical-align:middle;
+      background:var(--surface);
+    }
+    .quoteMetaTableCompact tr td:last-child{ border-right:none; }
+    .quoteMetaTableCompact .metaLabelCompact{
+      width:24%;
+      background:#e7f5f6;
+      color:var(--title);
+      font-weight:700;
+      letter-spacing:0.14px;
+    }
+    .quoteMetaTableCompact .metaValueCompact{
+      font-weight:600;
+      background:var(--surface);
+    }
+    .quoteItemsCompactTable thead th:first-child,
+    .quoteItemsCompactTable tbody td:first-child{
+      width:18%;
+    }
     table{ width:100%; border-collapse:collapse; }
     thead th{
-      background:linear-gradient(180deg,var(--head-soft) 0%,#e5f5f6 100%);
+      background:#e5f5f6;
       border:1px solid #cddde5;
       padding:6px 8px;
       text-align:left;
@@ -16682,7 +17341,7 @@ async function openQuoteDocument(ev, quote) {
     tbody td{ border:1px solid var(--line); padding:7px 9px; font-size:12px; background:var(--surface); color:#1f3b4d; }
     tbody tr:nth-child(even):not(.dayHeaderRow):not(.daySubtotalRow) td{ background:var(--zebra); }
     .dayHeaderRow td{
-      background:linear-gradient(100deg,var(--navy) 0%,#215d78 54%,#287f93 100%);
+      background:#215d78;
       color:#ffffff !important;
       font-weight:800;
       letter-spacing:0.32px;
@@ -16695,21 +17354,21 @@ async function openQuoteDocument(ev, quote) {
     .daySubtotalRow td{
       border-top:2px solid rgba(17,125,143,0.42);
       border-bottom:1px solid #cfe1e7;
-      background:linear-gradient(180deg,var(--brand-soft) 0%,var(--brand-muted) 100%) !important;
+      background:var(--brand-muted) !important;
       color:#15516b;
       font-weight:700;
     }
-    tfoot td{ border:1px solid #c8d7e0; padding:6px 8px; font-size:11px; background:linear-gradient(180deg,#f4fbfc 0%,#e9f5f7 100%); color:#18445a; }
-    .sumLabel{ text-align:right; font-weight:700; color:#15495f; background:linear-gradient(180deg,#f0f9fa 0%,#e2f1f3 100%); }
-    .sumValue{ text-align:right; font-weight:800; color:#103b52; background:linear-gradient(180deg,#f0f9fa 0%,#e2f1f3 100%); font-variant-numeric:tabular-nums; }
+    tfoot td{ border:1px solid #c8d7e0; padding:6px 8px; font-size:11px; background:#e9f5f7; color:#18445a; }
+    .sumLabel{ text-align:right; font-weight:700; color:#15495f; background:#e2f1f3; }
+    .sumValue{ text-align:right; font-weight:800; color:#103b52; background:#e2f1f3; font-variant-numeric:tabular-nums; }
     .sumTotal .sumLabel,
-    .sumTotal .sumValue{ background:linear-gradient(100deg,var(--brand-deep) 0%,var(--brand) 100%); color:#ffffff; font-size:12.2px; border-color:rgba(16,77,89,0.4); letter-spacing:0.14px; }
-    .sumWords{ border-top:1px solid #c7dde4; background:linear-gradient(180deg,#ebf8f8 0%,#e0f2f3 100%); color:#16536d; font-weight:700; font-size:12px; text-transform:uppercase; line-height:1.35; }
+    .sumTotal .sumValue{ background:var(--brand-deep); color:#ffffff; font-size:12.2px; border-color:rgba(16,77,89,0.4); letter-spacing:0.14px; }
+    .sumWords{ border-top:1px solid #c7dde4; background:#e0f2f3; color:#16536d; font-weight:700; font-size:12px; text-transform:uppercase; line-height:1.35; }
     .notes{ border-top:1px solid var(--line); padding:11px 13px; min-height:56px; background:var(--paper); }
     .notes b{ display:block; margin-bottom:6px; }
     .policyTitle{
       margin-top:9px;
-      background:linear-gradient(95deg,var(--navy) 0%,#1f5f7a 58%,#2890a0 100%);
+      background:#1f5f7a;
       color:#fff;
       font-weight:800;
       text-align:center;
@@ -16718,7 +17377,7 @@ async function openQuoteDocument(ev, quote) {
       letter-spacing:.24px;
       text-transform:uppercase;
     }
-    .policyBox{ border:1px solid #b5cad8; border-top:none; padding:7px 9px; font-size:10.4px; line-height:1.4; background:linear-gradient(180deg,#ffffff 0%,#f9fcfd 100%); }
+    .policyBox{ border:1px solid #b5cad8; border-top:none; padding:7px 9px; font-size:10.4px; line-height:1.4; background:#f9fcfd; }
     .policyBox p{ margin:0 0 6px; }
     .policyBox p:last-child{ margin-bottom:0; }
     .cargoSummaryWrap{ margin:0 0 11px; border:1px solid #c4d7e3; border-top:none; border-radius:0 0 12px 12px; overflow:hidden; background:var(--surface); box-shadow:inset 0 1px 0 rgba(255,255,255,0.72); }
@@ -16726,7 +17385,7 @@ async function openQuoteDocument(ev, quote) {
     .cargoTable col:first-child{ width:72%; }
     .cargoTable col:last-child{ width:28%; }
     .cargoTable th,.cargoTable td{ padding:9px 10px; border-bottom:1px solid var(--line); }
-    .cargoTable thead th{ background:linear-gradient(180deg,#f1fbfb 0%,#e6f4f6 100%); color:var(--title); font-size:11px; font-weight:800; letter-spacing:.24px; text-transform:uppercase; }
+    .cargoTable thead th{ background:#e6f4f6; color:var(--title); font-size:11px; font-weight:800; letter-spacing:.24px; text-transform:uppercase; }
     .cargoTable thead th:first-child{ text-align:left; border-right:1px solid var(--line); }
     .cargoTable thead th:last-child{ text-align:right; }
     .cargoTable tbody td:first-child{ border-right:1px solid var(--line); }
@@ -16735,17 +17394,17 @@ async function openQuoteDocument(ev, quote) {
     .cargoTable tbody tr:nth-child(even):not(.cargoEm):not(.cargoEmFinal){ background:#f3f9fb; }
     .cargoLabel{ font-weight:700; color:#1c3f52; }
     .cargoAmount{ text-align:right; white-space:nowrap; font-weight:800; color:#163f55; font-variant-numeric:tabular-nums; }
-    .cargoEm{ font-weight:800; background:linear-gradient(180deg,#ebf8f9 0%,#e1f2f4 100%) !important; }
+    .cargoEm{ font-weight:800; background:#e1f2f4 !important; }
     .cargoEm td{ border-bottom-color:#c7dbe4; }
-    .cargoEmFinal{ background:linear-gradient(100deg,var(--brand-deep) 0%,#1698a4 100%) !important; }
+    .cargoEmFinal{ background:var(--brand-deep) !important; }
     .cargoEm .cargoLabel,
     .cargoEm .cargoAmount{ color:#14546e; }
     .cargoEmFinal .cargoLabel,
     .cargoEmFinal .cargoAmount{ color:#ffffff; }
-    .actions{ padding:12px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--line); background:linear-gradient(180deg,#f6fbfc 0%,#f0f7fa 100%); }
+    .actions{ padding:12px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--line); background:#f0f7fa; }
     .actions button{ border:1px solid rgba(17,125,143,0.32); background:#ffffff; color:#0f4760; border-radius:10px; padding:7px 12px; font-weight:700; cursor:pointer; }
     .actions button:hover{ background:#e9f7f8; }
-    .templateAttach{ border-top:1px solid var(--line); background:linear-gradient(180deg,#f7fcff 0%,#f3f9fc 100%); padding:12px 12px 0; }
+    .templateAttach{ border-top:1px solid var(--line); background:#f3f9fc; padding:12px 12px 0; }
     .templateAttachHead{ font-weight:800; color:#124c67; margin:0 0 8px; font-size:12.5px; letter-spacing:0.12px; text-transform:uppercase; }
     .templateAttachBody{ background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:visible; font-size:10px; line-height:1.15; page-break-inside:auto; }
     .signatureSection{
@@ -16753,7 +17412,7 @@ async function openQuoteDocument(ev, quote) {
       padding:14px 10px 8px;
       border:1px solid #c7dbe2;
       border-radius:12px;
-      background:linear-gradient(180deg,#ffffff 0%,#f6fbfc 100%);
+      background:#f6fbfc;
     }
     .signatureGrid{
       display:grid;
@@ -16861,11 +17520,12 @@ async function openQuoteDocument(ev, quote) {
   </style>
 </head>
 <body>
-  <div class="doc${isServiHospTemplate ? " serviHospClean" : ""}">
+  <div class="doc${isServiHospTemplate ? " serviHospClean" : ""}${showPrices ? "" : " quoteNoPrices"}">
     <div class="quoteContractHeader">
       <img src="${escapeHtml(quoteHeaderSrc)}" alt="Encabezado contrato" />
     </div>
     <div class="head">${quoteDocLabel}</div>
+    ${quoteModeBadgeHtml}
     <table class="quoteMetaTable">
       <colgroup>
         <col class="metaLabel" />
@@ -16965,8 +17625,8 @@ async function openQuoteDocument(ev, quote) {
       </tfoot>
     </table>
 
-    <div class="policyTitle">NOTAS</div>
-    <div class="policyBox">
+    <div class="policyTitle financialPolicyTitle">NOTAS</div>
+    <div class="policyBox financialPolicyBox">
       <p>Incrementos en menos de 24 horas de servicios y/o productos tendran cargo adicional del 10% en relacion con el excedente.</p>
       <p>El monto de anticipo para asegurar el evento depende de las clausulas de formalizacion.</p>
       <p>Estamos sujetos a pagos trimestrales. Aplicamos Clausula de No Show.</p>
@@ -16974,8 +17634,8 @@ async function openQuoteDocument(ev, quote) {
       <p>No se reembolsa el anticipo si no realiza su evento por cualquier causa.</p>
     </div>
 
-    <div class="policyTitle">RESUMEN DE CARGOS</div>
-    <div class="cargoSummaryWrap">
+    <div class="policyTitle financialPolicyTitle">RESUMEN DE CARGOS</div>
+    <div class="cargoSummaryWrap financialSummaryWrap">
       <table class="cargoTable"><colgroup><col><col></colgroup>
         <thead>
           <tr>
@@ -17017,7 +17677,6 @@ async function openQuoteDocument(ev, quote) {
       </table>
     </div>
 
-    ${appendedTemplateHtml}
     <section class="signatureSection">
       <div class="signatureGrid">
         <div class="signatureCard">
@@ -17038,6 +17697,8 @@ async function openQuoteDocument(ev, quote) {
         </div>
       </div>
     </section>
+    ${menuMontajeAttachHtml}
+    ${appendedTemplateHtml}
     <div class="actions"> 
       <button onclick="window.print()">Imprimir</button>
     </div>
@@ -19579,6 +20240,12 @@ function getEventsInWeek(weekStart, salon, dayCount = 7) {
       return compareTime(a.startTime, b.startTime);
     });
 }
+
+
+
+
+
+
 
 
 

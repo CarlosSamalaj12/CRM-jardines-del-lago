@@ -497,6 +497,79 @@
     align-items:flex-start;
   }
 }
+    .moduleCard,
+    .moduleActionBtn,
+    .settingsHubBtn{
+      transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s ease, border-color .28s ease, background-color .28s ease !important;
+      position:relative !important;
+      overflow:hidden !important;
+      isolation:isolate !important;
+    }
+    .moduleCard::before,
+    .moduleActionBtn::before,
+    .settingsHubBtn::before{
+      content:'' !important;
+      position:absolute !important;
+      inset:-35% auto auto -22% !important;
+      width:58% !important;
+      height:180% !important;
+      background:linear-gradient(115deg, rgba(120,210,255,0.20), rgba(120,210,255,0.06) 42%, rgba(255,255,255,0) 70%) !important;
+      opacity:0 !important;
+      transform:translateX(-18px) rotate(10deg) !important;
+      transition:opacity .3s ease, transform .35s ease !important;
+      pointer-events:none !important;
+      z-index:0 !important;
+    }
+    .moduleCard > *,
+    .moduleActionBtn > *,
+    .settingsHubBtn > *{
+      position:relative !important;
+      z-index:1 !important;
+    }
+    .moduleCard:hover,
+    .moduleActionBtn:hover,
+    .settingsHubBtn:hover{
+      background:#31425a !important;
+      border-color:rgba(99,204,255,0.58) !important;
+      box-shadow:0 26px 54px rgba(3,8,18,0.42), 0 0 0 1px rgba(104,205,255,0.16) inset, 0 0 34px rgba(33,150,243,0.18) !important;
+      transform:translateY(-10px) scale(1.022) !important;
+    }
+    .moduleCard:hover::before,
+    .moduleActionBtn:hover::before,
+    .settingsHubBtn:hover::before{
+      opacity:1 !important;
+      transform:translateX(16px) rotate(10deg) !important;
+    }
+    .moduleCard:hover .moduleCardTitle,
+    .moduleActionBtn:hover .actionCardLabel,
+    .settingsHubBtn:hover .actionCardLabel{
+      color:#ffffff !important;
+      letter-spacing:0.05em !important;
+      text-shadow:0 0 14px rgba(131,211,255,0.18) !important;
+    }
+    .moduleCard:hover .moduleCardText,
+    .moduleActionBtn:hover .actionCardHint,
+    .settingsHubBtn:hover .actionCardHint{
+      color:rgba(236,245,255,0.94) !important;
+    }
+    .moduleIconTile,
+    .actionCardIcon{
+      transition:transform .28s cubic-bezier(.22,1,.36,1), background-color .28s ease, box-shadow .28s ease, border-color .28s ease !important;
+    }
+    .moduleCard:hover .moduleIconTile,
+    .moduleActionBtn:hover .actionCardIcon,
+    .settingsHubBtn:hover .actionCardIcon{
+      background:#75839d !important;
+      border-color:rgba(196,232,255,0.58) !important;
+      box-shadow:0 18px 34px rgba(17,29,47,0.38), inset 0 1px 0 rgba(255,255,255,0.22), 0 0 24px rgba(76,175,255,0.28) !important;
+      transform:translateY(-5px) scale(1.08) !important;
+    }
+    .moduleCard:hover .moduleCardIconSvg,
+    .moduleActionBtn:hover .actionCardIcon svg,
+    .settingsHubBtn:hover .actionCardIcon svg{
+      transform:scale(1.09) !important;
+      filter:drop-shadow(0 0 14px rgba(143,214,255,0.34)) !important;
+    }
 </style>
 </head>
 <body>
@@ -899,7 +972,7 @@
             <div class="field">
               <span>Salones y horarios</span>
               <div class="userPick">
-                <button class="btn" type="button" id="btnAddSlot">Salon</button>
+                <button class="btn" type="button" id="btnAddSlot">Agregar salon</button>
               </div>
               <div class="quoteTableWrap">
                 <table class="quoteTable">
@@ -2815,7 +2888,7 @@
                 <strong>Graficas interactivas</strong>
                 <small>Pasa el mouse sobre barras o segmentos para ver detalle</small>
               </header>
-              <div class="institutionChartsGrid" id="institutionReportChartsBody"></div>
+              <div class="institutionChartsGrid" id="institutionReportChartsBody" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; align-items:stretch;"></div>
             </section>
 
             <section class="dashboardCard institutionDetailCard" id="institutionSectionSalons">
@@ -3062,6 +3135,10 @@
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
