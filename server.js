@@ -779,6 +779,96 @@ async function ensureMenuMontajeCatalogStructure() {
     `);
 
     await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_plato_preparacion_salsa_sugerida (
+        id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+        id_preparacion BIGINT UNSIGNED NOT NULL,
+        id_salsa BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_plato_fuerte, id_preparacion, id_salsa),
+        KEY idx_menu_pp_salsa_salsa (id_salsa),
+        CONSTRAINT fk_menu_pp_salsa_plato FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_salsa_preparacion FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_salsa_item FOREIGN KEY (id_salsa) REFERENCES menu_salsas(id) ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_plato_preparacion_postre_sugerido (
+        id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+        id_preparacion BIGINT UNSIGNED NOT NULL,
+        id_postre BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_plato_fuerte, id_preparacion, id_postre),
+        KEY idx_menu_pp_postre_postre (id_postre),
+        CONSTRAINT fk_menu_pp_postre_plato FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_postre_preparacion FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_postre_item FOREIGN KEY (id_postre) REFERENCES menu_postres(id) ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_plato_preparacion_guarnicion_sugerida (
+        id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+        id_preparacion BIGINT UNSIGNED NOT NULL,
+        id_guarnicion BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_plato_fuerte, id_preparacion, id_guarnicion),
+        KEY idx_menu_pp_guarnicion_guarnicion (id_guarnicion),
+        CONSTRAINT fk_menu_pp_guarnicion_plato FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_guarnicion_preparacion FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_guarnicion_item FOREIGN KEY (id_guarnicion) REFERENCES menu_guarniciones(id) ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_plato_preparacion_bebida_sugerida (
+        id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+        id_preparacion BIGINT UNSIGNED NOT NULL,
+        id_bebida BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_plato_fuerte, id_preparacion, id_bebida),
+        KEY idx_menu_pp_bebida_bebida (id_bebida),
+        CONSTRAINT fk_menu_pp_bebida_plato FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_bebida_preparacion FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_bebida_item FOREIGN KEY (id_bebida) REFERENCES menu_bebidas(id) ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_plato_preparacion_montaje_tipo_sugerido (
+        id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+        id_preparacion BIGINT UNSIGNED NOT NULL,
+        id_montaje_tipo BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_plato_fuerte, id_preparacion, id_montaje_tipo),
+        KEY idx_menu_pp_montaje_tipo_tipo (id_montaje_tipo),
+        CONSTRAINT fk_menu_pp_montaje_tipo_plato FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_montaje_tipo_preparacion FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_montaje_tipo_item FOREIGN KEY (id_montaje_tipo) REFERENCES montaje_tipos(id) ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS menu_plato_preparacion_montaje_adicional_sugerido (
+        id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+        id_preparacion BIGINT UNSIGNED NOT NULL,
+        id_adicional BIGINT UNSIGNED NOT NULL,
+        prioridad INT NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id_plato_fuerte, id_preparacion, id_adicional),
+        KEY idx_menu_pp_montaje_adicional_adicional (id_adicional),
+        CONSTRAINT fk_menu_pp_montaje_adicional_plato FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_montaje_adicional_preparacion FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_menu_pp_montaje_adicional_item FOREIGN KEY (id_adicional) REFERENCES montaje_adicionales(id) ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    await conn.query(`
       CREATE TABLE IF NOT EXISTS menu_guarniciones (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         nombre VARCHAR(180) NOT NULL,
@@ -1861,7 +1951,43 @@ async function readMenuSuggestionLinks({ idPlatoFuerte, idPreparacion }) {
   let conn;
   try {
     conn = await pool.getConnection();
-    const [salsas, postres, guarniciones] = await Promise.all([
+    const [salsas, postres, guarniciones, bebidas, montajeTipos, montajeAdicionales, legacySalsas, legacyPostres, legacyGuarniciones] = await Promise.all([
+      Number.isFinite(platoId) && platoId > 0 && Number.isFinite(prepId) && prepId > 0
+        ? conn.query(
+          "SELECT id_salsa FROM menu_plato_preparacion_salsa_sugerida WHERE id_plato_fuerte = ? AND id_preparacion = ? ORDER BY prioridad, id_salsa",
+          [platoId, prepId]
+        )
+        : Promise.resolve([]),
+      Number.isFinite(platoId) && platoId > 0 && Number.isFinite(prepId) && prepId > 0
+        ? conn.query(
+          "SELECT id_postre FROM menu_plato_preparacion_postre_sugerido WHERE id_plato_fuerte = ? AND id_preparacion = ? ORDER BY prioridad, id_postre",
+          [platoId, prepId]
+        )
+        : Promise.resolve([]),
+      Number.isFinite(platoId) && platoId > 0 && Number.isFinite(prepId) && prepId > 0
+        ? conn.query(
+          "SELECT id_guarnicion FROM menu_plato_preparacion_guarnicion_sugerida WHERE id_plato_fuerte = ? AND id_preparacion = ? ORDER BY prioridad, id_guarnicion",
+          [platoId, prepId]
+        )
+        : Promise.resolve([]),
+      Number.isFinite(platoId) && platoId > 0 && Number.isFinite(prepId) && prepId > 0
+        ? conn.query(
+          "SELECT id_bebida FROM menu_plato_preparacion_bebida_sugerida WHERE id_plato_fuerte = ? AND id_preparacion = ? ORDER BY prioridad, id_bebida",
+          [platoId, prepId]
+        )
+        : Promise.resolve([]),
+      Number.isFinite(platoId) && platoId > 0 && Number.isFinite(prepId) && prepId > 0
+        ? conn.query(
+          "SELECT id_montaje_tipo FROM menu_plato_preparacion_montaje_tipo_sugerido WHERE id_plato_fuerte = ? AND id_preparacion = ? ORDER BY prioridad, id_montaje_tipo",
+          [platoId, prepId]
+        )
+        : Promise.resolve([]),
+      Number.isFinite(platoId) && platoId > 0 && Number.isFinite(prepId) && prepId > 0
+        ? conn.query(
+          "SELECT id_adicional FROM menu_plato_preparacion_montaje_adicional_sugerido WHERE id_plato_fuerte = ? AND id_preparacion = ? ORDER BY prioridad, id_adicional",
+          [platoId, prepId]
+        )
+        : Promise.resolve([]),
       Number.isFinite(prepId) && prepId > 0
         ? conn.query(
           "SELECT id_salsa FROM menu_preparacion_salsa_sugerida WHERE id_preparacion = ? ORDER BY prioridad, id_salsa",
@@ -1882,16 +2008,19 @@ async function readMenuSuggestionLinks({ idPlatoFuerte, idPreparacion }) {
         : Promise.resolve([]),
     ]);
     return {
-      salsaIds: salsas.map((r) => Number(r.id_salsa)).filter((x) => Number.isFinite(x)),
-      postreIds: postres.map((r) => Number(r.id_postre)).filter((x) => Number.isFinite(x)),
-      guarnicionIds: guarniciones.map((r) => Number(r.id_guarnicion)).filter((x) => Number.isFinite(x)),
+      salsaIds: (salsas.length ? salsas : legacySalsas).map((r) => Number(r.id_salsa)).filter((x) => Number.isFinite(x)),
+      postreIds: (postres.length ? postres : legacyPostres).map((r) => Number(r.id_postre)).filter((x) => Number.isFinite(x)),
+      guarnicionIds: (guarniciones.length ? guarniciones : legacyGuarniciones).map((r) => Number(r.id_guarnicion)).filter((x) => Number.isFinite(x)),
+      bebidaIds: bebidas.map((r) => Number(r.id_bebida)).filter((x) => Number.isFinite(x)),
+      montajeTipoIds: montajeTipos.map((r) => Number(r.id_montaje_tipo)).filter((x) => Number.isFinite(x)),
+      montajeAdicionalIds: montajeAdicionales.map((r) => Number(r.id_adicional)).filter((x) => Number.isFinite(x)),
     };
   } finally {
     if (conn) conn.release();
   }
 }
 
-async function saveMenuSuggestionLinks({ idPlatoFuerte, idPreparacion, salsaIds, postreIds, guarnicionIds }) {
+async function saveMenuSuggestionLinks({ idPlatoFuerte, idPreparacion, salsaIds, postreIds, guarnicionIds, bebidaIds, montajeTipoIds, montajeAdicionalIds }) {
   const platoId = Number(idPlatoFuerte);
   const prepId = Number(idPreparacion);
   if (!Number.isFinite(platoId) || platoId <= 0) throw new Error("plato_fuerte_required");
@@ -1900,33 +2029,60 @@ async function saveMenuSuggestionLinks({ idPlatoFuerte, idPreparacion, salsaIds,
   const salsaList = normalizeIdList(salsaIds);
   const postreList = normalizeIdList(postreIds);
   const guarnicionList = normalizeIdList(guarnicionIds);
+  const bebidaList = normalizeIdList(bebidaIds);
+  const montajeTipoList = normalizeIdList(montajeTipoIds);
+  const montajeAdicionalList = normalizeIdList(montajeAdicionalIds);
 
   let conn;
   try {
     conn = await pool.getConnection();
     await conn.beginTransaction();
 
-    await conn.query("DELETE FROM menu_preparacion_salsa_sugerida WHERE id_preparacion = ?", [prepId]);
+    await conn.query("DELETE FROM menu_plato_preparacion_salsa_sugerida WHERE id_plato_fuerte = ? AND id_preparacion = ?", [platoId, prepId]);
     for (let i = 0; i < salsaList.length; i++) {
       await conn.query(
-        "INSERT INTO menu_preparacion_salsa_sugerida (id_preparacion, id_salsa, prioridad) VALUES (?, ?, ?)",
-        [prepId, salsaList[i], i + 1]
+        "INSERT INTO menu_plato_preparacion_salsa_sugerida (id_plato_fuerte, id_preparacion, id_salsa, prioridad) VALUES (?, ?, ?, ?)",
+        [platoId, prepId, salsaList[i], i + 1]
       );
     }
 
-    await conn.query("DELETE FROM menu_preparacion_postre_sugerido WHERE id_preparacion = ?", [prepId]);
+    await conn.query("DELETE FROM menu_plato_preparacion_postre_sugerido WHERE id_plato_fuerte = ? AND id_preparacion = ?", [platoId, prepId]);
     for (let i = 0; i < postreList.length; i++) {
       await conn.query(
-        "INSERT INTO menu_preparacion_postre_sugerido (id_preparacion, id_postre, prioridad) VALUES (?, ?, ?)",
-        [prepId, postreList[i], i + 1]
+        "INSERT INTO menu_plato_preparacion_postre_sugerido (id_plato_fuerte, id_preparacion, id_postre, prioridad) VALUES (?, ?, ?, ?)",
+        [platoId, prepId, postreList[i], i + 1]
       );
     }
 
-    await conn.query("DELETE FROM menu_plato_guarnicion_sugerida WHERE id_plato_fuerte = ?", [platoId]);
+    await conn.query("DELETE FROM menu_plato_preparacion_guarnicion_sugerida WHERE id_plato_fuerte = ? AND id_preparacion = ?", [platoId, prepId]);
     for (let i = 0; i < guarnicionList.length; i++) {
       await conn.query(
-        "INSERT INTO menu_plato_guarnicion_sugerida (id_plato_fuerte, id_guarnicion, prioridad) VALUES (?, ?, ?)",
-        [platoId, guarnicionList[i], i + 1]
+        "INSERT INTO menu_plato_preparacion_guarnicion_sugerida (id_plato_fuerte, id_preparacion, id_guarnicion, prioridad) VALUES (?, ?, ?, ?)",
+        [platoId, prepId, guarnicionList[i], i + 1]
+      );
+    }
+
+    await conn.query("DELETE FROM menu_plato_preparacion_bebida_sugerida WHERE id_plato_fuerte = ? AND id_preparacion = ?", [platoId, prepId]);
+    for (let i = 0; i < bebidaList.length; i++) {
+      await conn.query(
+        "INSERT INTO menu_plato_preparacion_bebida_sugerida (id_plato_fuerte, id_preparacion, id_bebida, prioridad) VALUES (?, ?, ?, ?)",
+        [platoId, prepId, bebidaList[i], i + 1]
+      );
+    }
+
+    await conn.query("DELETE FROM menu_plato_preparacion_montaje_tipo_sugerido WHERE id_plato_fuerte = ? AND id_preparacion = ?", [platoId, prepId]);
+    for (let i = 0; i < montajeTipoList.length; i++) {
+      await conn.query(
+        "INSERT INTO menu_plato_preparacion_montaje_tipo_sugerido (id_plato_fuerte, id_preparacion, id_montaje_tipo, prioridad) VALUES (?, ?, ?, ?)",
+        [platoId, prepId, montajeTipoList[i], i + 1]
+      );
+    }
+
+    await conn.query("DELETE FROM menu_plato_preparacion_montaje_adicional_sugerido WHERE id_plato_fuerte = ? AND id_preparacion = ?", [platoId, prepId]);
+    for (let i = 0; i < montajeAdicionalList.length; i++) {
+      await conn.query(
+        "INSERT INTO menu_plato_preparacion_montaje_adicional_sugerido (id_plato_fuerte, id_preparacion, id_adicional, prioridad) VALUES (?, ?, ?, ?)",
+        [platoId, prepId, montajeAdicionalList[i], i + 1]
       );
     }
 
@@ -2858,6 +3014,9 @@ app.put("/api/menu-suggestions", async (req, res) => {
       salsaIds: req.body?.salsaIds,
       postreIds: req.body?.postreIds,
       guarnicionIds: req.body?.guarnicionIds,
+      bebidaIds: req.body?.bebidaIds,
+      montajeTipoIds: req.body?.montajeTipoIds,
+      montajeAdicionalIds: req.body?.montajeAdicionalIds,
     });
     return res.json({ ok: true });
   } catch (error) {
@@ -2923,6 +3082,8 @@ async function start() {
 }
 
 start();
+
+
 
 
 

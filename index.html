@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slim-select@2.8.0/dist/slimselect.css" />
   <style>
     .statusSwitchInline{
       display:inline-flex !important;
@@ -189,7 +190,17 @@
       background-color:#243041 !important;
       background-image:none !important;
     }
-      .moduleScreen{
+    #btnLogout{
+      background-color:rgba(185, 28, 28, 0.88) !important;
+      color:#fee2e2 !important;
+      border:1px solid rgba(252, 165, 165, 0.38) !important;
+      box-shadow:0 10px 22px rgba(127, 29, 29, 0.28) !important;
+    }
+    #btnLogout:hover{
+      background-color:rgba(220, 38, 38, 0.96) !important;
+      color:#fff5f5 !important;
+    }
+    .moduleScreen{
       background:rgba(4,10,20,0.88) !important;
       -webkit-backdrop-filter:none !important;
       backdrop-filter:none !important;
@@ -570,10 +581,308 @@
       transform:scale(1.09) !important;
       filter:drop-shadow(0 0 14px rgba(143,214,255,0.34)) !important;
     }
+    /* === EVENT MODAL RESPONSIVE REFINEMENT === */
+    #modalBackdrop{
+      background:rgba(2, 8, 23, 0.96) !important;
+      -webkit-backdrop-filter:blur(8px) !important;
+      backdrop-filter:blur(8px) !important;
+      overflow:auto !important;
+      place-items:start center !important;
+      padding:12px !important;
+    }
+    #modalBackdrop .modal{
+      width:min(1240px, 98vw) !important;
+      max-height:94vh !important;
+      display:flex !important;
+      flex-direction:column !important;
+      overflow:hidden !important;
+      border-radius:24px !important;
+      background:linear-gradient(180deg, rgba(10, 17, 31, 0.995), rgba(6, 12, 24, 0.995)) !important;
+      border:1px solid rgba(108, 136, 177, 0.18) !important;
+      box-shadow:0 28px 72px rgba(2, 6, 23, 0.62) !important;
+    }
+    #modalBackdrop .modalHeader{
+      display:flex !important;
+      align-items:center !important;
+      justify-content:space-between !important;
+      gap:14px !important;
+      padding:18px 20px 16px !important;
+      border-bottom:1px solid rgba(255,255,255,0.08) !important;
+      background:linear-gradient(180deg, rgba(15,24,41,1), rgba(10,16,28,1)) !important;
+      position:relative !important;
+      isolation:isolate !important;
+      overflow:hidden !important;
+    }
+    #modalBackdrop .modalHeader::before{
+      content:"" !important;
+      position:absolute !important;
+      inset:0 !important;
+      background:linear-gradient(180deg, rgba(15,24,41,1), rgba(10,16,28,1)) !important;
+      z-index:1 !important;
+      pointer-events:none !important;
+    }
+    #modalBackdrop .modalHeaderCopy{
+      flex:1 1 auto !important;
+      min-width:0 !important;
+      padding-left:4px !important;
+      position:relative !important;
+      z-index:2 !important;
+      display:flex !important;
+      align-items:flex-start !important;
+      gap:10px !important;
+    }
+    #modalBackdrop .modalHeaderBrand{
+      width:46px !important;
+      height:46px !important;
+      flex:0 0 46px !important;
+      display:grid !important;
+      place-items:center !important;
+      overflow:hidden !important;
+      margin-top:2px !important;
+    }
+    #modalBackdrop .modalHeaderLogo{
+      width:100% !important;
+      height:100% !important;
+      max-width:46px !important;
+      max-height:46px !important;
+      object-fit:contain !important;
+      display:block !important;
+    }
+    #modalBackdrop .modalHeaderText{
+      min-width:0 !important;
+      flex:1 1 auto !important;
+    }
+    #modalBackdrop #btnClose{
+      position:absolute !important;
+      top:16px !important;
+      right:16px !important;
+      z-index:20 !important;
+      pointer-events:auto !important;
+      cursor:pointer !important;
+      flex:0 0 auto !important;
+    }
+    body.eventModalOpen .topbar{
+      opacity:0 !important;
+      pointer-events:none !important;
+      visibility:hidden !important;
+    }
+    body.eventModalOpen .topbar .logo{
+      display:none !important;
+    }
+    #modalBackdrop .modalTitle{
+      margin:0 !important;
+      font-size:30px !important;
+      line-height:1.05 !important;
+      white-space:normal !important;
+      overflow-wrap:anywhere !important;
+    }
+    #modalBackdrop .modalSubtitle{
+      margin-top:4px !important;
+      font-size:12px !important;
+      color:rgba(198,212,230,0.72) !important;
+      white-space:normal !important;
+      overflow-wrap:anywhere !important;
+    }
+    #modalBackdrop .eventModalMain{
+      display:grid !important;
+      grid-template-columns:minmax(0, 1fr) !important;
+      min-height:0 !important;
+      flex:1 1 auto !important;
+    }
+    #modalBackdrop #eventForm{
+      display:grid !important;
+      gap:14px !important;
+      min-height:0 !important;
+      overflow:auto !important;
+      padding:16px 18px 18px !important;
+    }
+    #modalBackdrop #eventForm > .eventMainRow,
+    #modalBackdrop #eventForm > .eventDatesRow,
+    #modalBackdrop #eventForm > .eventActorRow,
+    #modalBackdrop #eventForm > .eventNotesRow,
+    #modalBackdrop #eventForm > .conflictsBox{
+      margin:0 !important;
+      padding:14px !important;
+      border-radius:18px !important;
+      border:1px solid rgba(108,135,176,0.18) !important;
+      background:linear-gradient(180deg, rgba(11,18,31,0.98), rgba(8,14,24,0.98)) !important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.03) !important;
+    }
+    #modalBackdrop .eventMainRow{
+      grid-template-columns:minmax(280px, 1.02fr) minmax(420px, 1.65fr) !important;
+      align-items:start !important;
+      gap:14px !important;
+    }
+    #modalBackdrop .eventDatesRow{
+      display:grid !important;
+      grid-template-columns:repeat(2, minmax(220px, 1fr)) !important;
+      gap:12px !important;
+    }
+    #modalBackdrop .eventActorRow{
+      grid-template-columns:minmax(260px, 1.5fr) minmax(140px, 0.34fr) minmax(220px, 0.66fr) !important;
+      align-items:start !important;
+      gap:12px !important;
+    }
+    #modalBackdrop .eventNotesRow textarea{
+      min-height:92px !important;
+      resize:vertical !important;
+    }
+    #modalBackdrop .field > span{
+      margin-bottom:8px !important;
+      font-size:11px !important;
+      font-weight:800 !important;
+      letter-spacing:0.06em !important;
+      text-transform:uppercase !important;
+      color:rgba(195,211,231,0.82) !important;
+    }
+    #modalBackdrop input,
+    #modalBackdrop select,
+    #modalBackdrop textarea{
+      min-height:46px !important;
+    }
+    #modalBackdrop .userPick{
+      display:grid !important;
+      grid-template-columns:minmax(0, 1fr) auto !important;
+      gap:8px !important;
+      align-items:center !important;
+    }
+    #modalBackdrop .userPick .btn{
+      min-height:44px !important;
+      white-space:nowrap !important;
+    }
+    #modalBackdrop .quoteTableWrap{
+      margin-top:10px !important;
+      max-height:290px !important;
+      overflow:auto !important;
+      border-radius:16px !important;
+      border:1px solid rgba(102,129,169,0.16) !important;
+      background:rgba(13,20,34,0.9) !important;
+    }
+    #modalBackdrop .quoteTable thead th{
+      position:sticky !important;
+      top:0 !important;
+      z-index:1 !important;
+    }
+    #modalBackdrop .modalFooter{
+      position:sticky !important;
+      bottom:0 !important;
+      z-index:3 !important;
+      margin-top:2px !important;
+      padding:12px 0 0 !important;
+      background:linear-gradient(180deg, rgba(5,12,22,0.10), rgba(5,12,22,0.96) 38%) !important;
+      border-top:1px solid rgba(96,165,250,0.18) !important;
+      gap:12px !important;
+    }
+    #modalBackdrop .modalFooter .leftActions,
+    #modalBackdrop .modalFooter .rightActions{
+      display:flex !important;
+      flex-wrap:wrap !important;
+      gap:8px !important;
+      align-items:center !important;
+    }
+    #modalBackdrop .modalFooter .leftActions{
+      flex:1 1 auto !important;
+    }
+    #modalBackdrop .modalFooter .rightActions{
+      flex:0 0 auto !important;
+      justify-content:flex-end !important;
+    }
+    #modalBackdrop .modalFooter .btn,
+    #modalBackdrop .modalFooter .btnPrimary,
+    #modalBackdrop .modalFooter .btnDanger{
+      min-height:40px !important;
+      padding:0 14px !important;
+      border-radius:13px !important;
+    }
+    #modalBackdrop #btnSave{
+      min-width:140px !important;
+    }
+    @media (max-width: 1024px){
+      #modalBackdrop{
+        padding:0 !important;
+      }
+      #modalBackdrop .modal{
+        width:100vw !important;
+        max-height:100vh !important;
+        min-height:100vh !important;
+        border-radius:0 !important;
+      }
+      #modalBackdrop #eventForm{
+        padding:14px !important;
+      }
+      #modalBackdrop .eventMainRow,
+      #modalBackdrop .eventActorRow{
+        grid-template-columns:1fr !important;
+      }
+      #modalBackdrop .eventDatesRow{
+        grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+      }
+      #modalBackdrop .quoteTableWrap{
+        max-height:240px !important;
+      }
+    }
+    @media (max-width: 720px){
+      #modalBackdrop .modalHeader{
+        align-items:flex-start !important;
+        padding:16px 70px 14px 16px !important;
+      }
+      #modalBackdrop .modalHeaderCopy{
+        padding-left:0 !important;
+        gap:8px !important;
+      }
+      #modalBackdrop .modalHeaderBrand{
+        width:36px !important;
+        height:36px !important;
+        flex:0 0 36px !important;
+      }
+      #modalBackdrop .modalHeaderLogo{
+        max-width:36px !important;
+        max-height:36px !important;
+      }
+      #modalBackdrop .modalTitle{
+        font-size:24px !important;
+      }
+      #modalBackdrop #eventForm{
+        gap:12px !important;
+        padding:12px !important;
+      }
+      #modalBackdrop #eventForm > .eventMainRow,
+      #modalBackdrop #eventForm > .eventDatesRow,
+      #modalBackdrop #eventForm > .eventActorRow,
+      #modalBackdrop #eventForm > .eventNotesRow,
+      #modalBackdrop #eventForm > .conflictsBox{
+        padding:12px !important;
+        border-radius:16px !important;
+      }
+      #modalBackdrop .eventDatesRow{
+        grid-template-columns:1fr !important;
+      }
+      #modalBackdrop .userPick{
+        grid-template-columns:1fr !important;
+      }
+      #modalBackdrop .userPick .btn,
+      #modalBackdrop .modalFooter .btn,
+      #modalBackdrop .modalFooter .btnPrimary,
+      #modalBackdrop .modalFooter .btnDanger{
+        width:100% !important;
+      }
+      #modalBackdrop .modalFooter{
+        display:grid !important;
+        grid-template-columns:1fr !important;
+      }
+      #modalBackdrop .modalFooter .leftActions,
+      #modalBackdrop .modalFooter .rightActions{
+        width:100% !important;
+      }
+      #modalBackdrop .quoteTableWrap{
+        max-height:none !important;
+      }
+    }
+    /* === END EVENT MODAL RESPONSIVE REFINEMENT === */
 </style>
 </head>
 <body>
-  <div class="loginScreen" id="loginScreen">
+  <div class="loginScreen" id="loginScreen" hidden>
     <div class="loginCard">
       <div class="loginBrand">
         <div class="loginBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="loginLogoImg" /></div>
@@ -683,6 +992,21 @@
             <span class="actionCardText">
               <span class="actionCardLabel">Reporte Ventas</span>
               <span class="actionCardMeta">Resumen comercial y montos</span>
+            </span>
+          </span>
+        </button>
+        <button class="moduleActionBtn" id="btnReportAccounting" type="button">
+          <span class="actionCardInner">
+            <span class="actionCardIcon">
+              <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M18 18h28a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V22a4 4 0 0 1 4-4z"></path>
+                <path d="M20 30h28"></path>
+                <path d="M24 38h8M40 38h4"></path>
+              </svg>
+            </span>
+            <span class="actionCardText">
+              <span class="actionCardLabel">Reporte Contabilidad</span>
+              <span class="actionCardMeta">Ventas netas y control para Excel</span>
             </span>
           </span>
         </button>
@@ -867,6 +1191,22 @@
               </span>
             </span>
           </button>
+          <button class="moduleActionBtn settingsHubBtn" id="btnQuickOpenMenuCatalog" type="button">
+            <span class="actionCardInner">
+              <span class="actionCardIcon">
+                <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                  <path d="M18 20h28"></path>
+                  <path d="M18 32h28"></path>
+                  <path d="M18 44h20"></path>
+                  <path d="M46 18l4 4-8 8"></path>
+                </svg>
+              </span>
+              <span class="actionCardText">
+                <span class="actionCardLabel">Menu y montaje</span>
+                <span class="actionCardMeta">Proteinas, preparaciones, guarniciones, postres y bebidas</span>
+              </span>
+            </span>
+          </button>
         </div>
       </div>
     </div>
@@ -933,6 +1273,7 @@
 
         <button class="btn" id="btnFindEvent" type="button">Buscar evento</button>
         <button class="btnPrimary" id="btnNew">+ Reservar</button>
+        <button class="iconBtn" id="btnLogout" type="button" title="Cerrar sesion" aria-label="Cerrar sesion">&#x23FB;</button>
       </div>
     </header>
 
@@ -952,9 +1293,12 @@
     <div class="modalBackdrop" id="modalBackdrop" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modalHeader">
-          <div>
-            <div class="modalTitle" id="modalTitle">Reservar salon</div>
-            <div class="modalSubtitle" id="modalSubtitle">-</div>
+          <div class="modalHeaderCopy">
+            <div class="modalHeaderBrand"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="modalHeaderLogo" /></div>
+            <div class="modalHeaderText">
+              <div class="modalTitle" id="modalTitle">Reservar salon</div>
+              <div class="modalSubtitle" id="modalSubtitle">-</div>
+            </div>
           </div>
           <button class="iconBtn" id="btnClose" type="button" title="Cerrar">&#10005;</button>
         </div>
@@ -1469,6 +1813,33 @@
               </div>
               <div>Total cotizacion: <strong id="quoteTotal">Q 0.00</strong></div>
             </div>
+            <section class="quoteAccountPanel">
+              <div class="quoteAccountHeader">
+                <div>
+                  <div class="quoteCardTitle">Estado de cuenta</div>
+                  <div class="quoteAccountDocument" id="quoteAccountDocument">COTIZACION SIN CODIGO</div>
+                  <div class="quoteAccountEvent" id="quoteAccountEvent">Evento sin nombre</div>
+                  <div class="quoteAccountRange" id="quoteAccountRange">Sin rango de fechas definido</div>
+                </div>
+                <div class="quoteAccountMeta" id="quoteAccountMeta">Sin movimientos registrados</div>
+              </div>
+              <div class="quoteAccountSummary" id="quoteAccountSummary"></div>
+              <div class="quoteTableWrap quoteAccountTableWrap">
+                <table class="quoteTable quoteAccountTable">
+                  <thead>
+                    <tr>
+                      <th>Tipo</th>
+                      <th>Fecha</th>
+                      <th>Concepto</th>
+                      <th>Cargo</th>
+                      <th>Abono</th>
+                      <th>Saldo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="quoteAccountBody"></tbody>
+                </table>
+              </div>
+            </section>
             <label class="field">
               <span>Notas internas</span>
               <textarea id="quoteInternalNotes" rows="2" placeholder="Observaciones internas"></textarea>
@@ -1517,17 +1888,36 @@
               <span>Fecha</span>
               <input id="quoteAdvanceDate" type="date" required />
             </label>
+            <label class="field">
+              <span>No. boleta</span>
+              <input id="quoteAdvanceVoucherNumber" type="text" placeholder="Ej: BOL-000123" />
+            </label>
             <label class="field quoteAdvanceDescriptionField">
               <span>Descripcion</span>
               <input id="quoteAdvanceDescription" type="text" placeholder="Detalle del anticipo" required />
+            </label>
+            <label class="field">
+              <span>Evidencia (archivo)</span>
+              <input id="quoteAdvanceEvidence" type="file" accept="image/*,application/pdf" />
+              <small id="quoteAdvanceEvidenceHint" class="fieldHint">Sin archivo adjunto</small>
             </label>
             <div class="rightActions quoteAdvanceAddAction">
               <button class="btnPrimary" id="btnQuoteAdvanceAdd" type="button">Agregar anticipo</button>
             </div>
           </div>
           <div class="quoteAdvanceSummary">
-            <span>Total anticipos:</span>
-            <strong id="quoteAdvanceTotal">Q 0.00</strong>
+            <div class="quoteAdvanceMetric">
+              <span>Total anticipos</span>
+              <strong id="quoteAdvanceTotal">Q 0.00</strong>
+            </div>
+            <div class="quoteAdvanceMetric">
+              <span>Saldo pendiente</span>
+              <strong id="quoteAdvancePending">Q 0.00</strong>
+            </div>
+            <div class="quoteAdvanceMetric quoteAdvanceMetric--credit">
+              <span>Saldo a favor</span>
+              <strong id="quoteAdvanceCredit">Q 0.00</strong>
+            </div>
           </div>
           <div class="quoteTableWrap quoteAdvanceTableWrap">
             <table class="quoteTable">
@@ -1535,8 +1925,10 @@
                 <tr>
                   <th>Fecha</th>
                   <th>Tipo</th>
+                  <th>No. boleta</th>
                   <th>Descripcion</th>
                   <th>Monto</th>
+                  <th>Evidencia</th>
                   <th></th>
                 </tr>
               </thead>
@@ -2295,13 +2687,12 @@
         </div>
       </div>
     </div>
-
     <div class="modalBackdrop" id="menuSuggestionsBackdrop" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="menuSuggestionsTitle">
         <div class="modalHeader">
           <div>
-            <div class="modalTitle" id="menuSuggestionsTitle">Reglas de Menu sugerido</div>
-            <div class="modalSubtitle">Define que salsas, postres y guarniciones se sugieren por combinacion de plato y tipo de preparacion.</div>
+            <div class="modalTitle" id="menuSuggestionsTitle">Combinaciones de platillo</div>
+            <div class="modalSubtitle">Primero crea el catalogo base y luego define que puede llevar cada combinacion de plato base + preparacion.</div>
           </div>
           <button class="iconBtn" id="btnMenuSuggestionsClose" type="button" title="Cerrar">&#10005;</button>
         </div>
@@ -2309,23 +2700,23 @@
         <div class="modalBody menuSuggestBody">
           <section class="menuSuggestIntroCard">
             <div class="menuSuggestIntroEyebrow">Flujo recomendado</div>
-            <div class="menuSuggestIntroText">Un mismo platillo puede tener varias preparaciones. En esta pantalla configuras una combinacion especifica de plato + preparacion, luego marcas y ordenas las sugerencias que se mostraran automaticamente.</div>
+            <div class="menuSuggestIntroText">1. Crea primero tu catalogo base: proteinas, preparaciones, guarniciones, postres, bebidas y montaje. 2. Luego entra aqui y arma las combinaciones posibles para cada plato base. Ejemplo: Lomito + Al oregano puede llevar ciertas guarniciones, bebidas, postres y montaje.</div>
           </section>
 
           <section class="menuSuggestContextCard">
             <div class="menuSuggestSectionHead">
               <div>
-                <div class="menuSuggestSectionTitle">1. Contexto del plato</div>
-                <div class="menuSuggestSectionText">Estas reglas se guardan para este plato y esta preparacion en particular.</div>
+                <div class="menuSuggestSectionTitle">1. Plato base y preparacion</div>
+                <div class="menuSuggestSectionText">Estas reglas se guardan para una combinacion exacta de plato base + preparacion.</div>
               </div>
             </div>
             <div class="row2 menuSuggestContextGrid">
               <label class="field menuSuggestField">
-                <span>Proteina / Plato fuerte</span>
+                <span>Plato base / Proteina</span>
                 <select id="menuSuggestionsProtein"></select>
               </label>
               <label class="field menuSuggestField">
-                <span>Tipo de preparacion</span>
+                <span>Preparacion</span>
                 <select id="menuSuggestionsPreparation"></select>
               </label>
             </div>
@@ -2334,39 +2725,59 @@
           <section class="menuSuggestSelectionCard">
             <div class="menuSuggestSectionHead">
               <div>
-                <div class="menuSuggestSectionTitle">2. Seleccion y prioridad</div>
-                <div class="menuSuggestSectionText">Marca lo que se sugerira al usuario. Las opciones activas se pueden arrastrar para definir cual aparece primero.</div>
+                <div class="menuSuggestSectionTitle">2. Posibles combinaciones</div>
+                <div class="menuSuggestSectionText">Marca y ordena lo que si puede acompanar a esta combinacion. Asi construyes los platillos posibles sin duplicar productos.</div>
               </div>
             </div>
 
             <div class="row2 menuSuggestCols">
               <div class="field menuSuggestField menuSuggestFieldCard">
                 <span>Salsas / Aderezos sugeridos</span>
-                <small class="menuSuggestFieldHint">Ideal para definir acompanamientos rapidos del plato.</small>
+                <small class="menuSuggestFieldHint">Aplican a este plato base con esta preparacion.</small>
                 <div class="menuSuggestList" id="menuSuggestionsSalsas"></div>
               </div>
               <div class="field menuSuggestField menuSuggestFieldCard">
-                <span>Postres sugeridos</span>
-                <small class="menuSuggestFieldHint">Ordena primero los postres que quieres recomendar con mas frecuencia.</small>
-                <div class="menuSuggestList" id="menuSuggestionsPostres"></div>
+                <span>Guarniciones sugeridas</span>
+                <small class="menuSuggestFieldHint">Estas son las guarniciones que combinan con esta version del plato.</small>
+                <div class="menuSuggestList" id="menuSuggestionsGuarniciones"></div>
               </div>
             </div>
 
-            <div class="field menuSuggestField menuSuggestFieldCard menuSuggestWideField">
-              <span>Guarniciones sugeridas para la proteina</span>
-              <small class="menuSuggestFieldHint">Estas opciones se mostraran como apoyo natural para esta proteina.</small>
-              <div class="menuSuggestList" id="menuSuggestionsGuarniciones"></div>
+            <div class="row2 menuSuggestCols">
+              <div class="field menuSuggestField menuSuggestFieldCard">
+                <span>Postres sugeridos</span>
+                <small class="menuSuggestFieldHint">Postres que combinan con esta combinacion de plato.</small>
+                <div class="menuSuggestList" id="menuSuggestionsPostres"></div>
+              </div>
+              <div class="field menuSuggestField menuSuggestFieldCard">
+                <span>Bebidas sugeridas</span>
+                <small class="menuSuggestFieldHint">Refrescos o bebidas recomendadas para esta combinacion.</small>
+                <div class="menuSuggestList" id="menuSuggestionsBebidas"></div>
+              </div>
+            </div>
+
+            <div class="row2 menuSuggestCols">
+              <div class="field menuSuggestField menuSuggestFieldCard">
+                <span>Tipos de montaje sugeridos</span>
+                <small class="menuSuggestFieldHint">Montajes que si aplican a esta combinacion.</small>
+                <div class="menuSuggestList" id="menuSuggestionsMontajeTipos"></div>
+              </div>
+              <div class="field menuSuggestField menuSuggestFieldCard">
+                <span>Extras de montaje sugeridos</span>
+                <small class="menuSuggestFieldHint">Extras opcionales permitidos para este plato.</small>
+                <div class="menuSuggestList" id="menuSuggestionsMontajeAdicionales"></div>
+              </div>
             </div>
           </section>
         </div>
 
         <div class="modalFooter">
           <div class="leftActions">
-            <button class="btn" id="btnMenuSuggestionsManageCatalog" type="button">Gestionar catalogo</button>
+            <button class="btn" id="btnMenuSuggestionsManageCatalog" type="button">Gestionar catalogo base</button>
           </div>
           <div class="rightActions">
             <button class="btn" id="btnMenuSuggestionsDiscard" type="button">Cancelar</button>
-            <button class="btnPrimary" id="btnMenuSuggestionsSave" type="button">Guardar sugerencias</button>
+            <button class="btnPrimary" id="btnMenuSuggestionsSave" type="button">Guardar combinacion</button>
           </div>
         </div>
       </div>
@@ -2500,7 +2911,7 @@
             <div class="salesReportFilters salesReportFiltersInline">
             <label class="field">
               <span>Buscar</span>
-              <input id="salesReportSearch" type="text" placeholder="ID, vendedor, institucion, salon..." />
+              <input id="salesReportSearch" type="text" placeholder="No cotizacion, vendedor, institucion, salon..." />
             </label>
             <label class="field">
               <span>Desde</span>
@@ -2577,6 +2988,164 @@
             </table>
           </div>
           </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="accountingReportBackdrop" hidden>
+      <div class="modal salesReportModal" role="dialog" aria-modal="true" aria-labelledby="accountingReportTitle">
+        <div class="modalHeader">
+          <div class="reportBrandHeader">
+            <div class="reportBrandBadge salesReportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo salesReportBrandLogo" /></div>
+            <div class="reportBrandCopy">
+              <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
+              <div class="modalTitle" id="accountingReportTitle">Estado de cuenta contable</div>
+              <div class="modalSubtitle" id="accountingReportSubtitle">Cartera por institucion para cobro, aplicacion de pagos y control de saldo a favor</div>
+            </div>
+          </div>
+          <button class="iconBtn" id="btnAccountingReportClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody salesReportBody">
+          <section class="reportHeroPanel salesReportHeroPanel">
+            <div class="reportSectionIntro">
+              <div>
+                <div class="reportSectionEyebrow">Vision contable</div>
+                <div class="reportSectionTitle">Estado de cuenta por empresa con saldo pendiente, saldo a favor y tiempo sugerido de cobro</div>
+                <div class="reportSectionText">Ideal para cobrar por institucion, identificar vencimientos, abrir el detalle por evento y aplicar pagos sin perder trazabilidad.</div>
+              </div>
+              <div class="reportFilterMeta" id="accountingReportFiltersMeta">Sin filtros</div>
+            </div>
+            <div class="salesReportSummary" id="accountingReportSummary"></div>
+          </section>
+
+          <section class="reportDataSection salesReportDataSection">
+            <div class="reportSectionIntro reportSectionIntro--table">
+              <div>
+                <div class="reportSectionEyebrow">Detalle financiero</div>
+              </div>
+            </div>
+
+            <div class="salesReportFilters salesReportFiltersInline">
+              <label class="field">
+                <span>Buscar</span>
+                <input id="accountingReportSearch" type="text" placeholder="No cotizacion, vendedor, institucion, salon..." />
+              </label>
+              <label class="field">
+                <span>Desde</span>
+                <input id="accountingReportFrom" type="date" />
+              </label>
+              <label class="field">
+                <span>Hasta</span>
+                <input id="accountingReportTo" type="date" />
+              </label>
+              <label class="field">
+                <span>Vendedor</span>
+                <select id="accountingReportUser"></select>
+              </label>
+              <label class="field">
+                <span>Estado</span>
+                <select id="accountingReportStatus"></select>
+              </label>
+              <label class="field">
+                <span>Salon</span>
+                <select id="accountingReportSalon"></select>
+              </label>
+              <label class="field">
+                <span>Institucion</span>
+                <select id="accountingReportCompany"></select>
+              </label>
+              <div class="rightActions salesReportActions">
+                <button class="btn" id="btnAccountingReportReset" type="button">Limpiar filtros</button>
+                <button class="btnPrimary" id="btnAccountingReportExportExcel" type="button">Exportar Excel</button>
+              </div>
+            </div>
+
+            <div class="salesReportTableWrap">
+              <table class="quoteTable salesReportTable">
+                <thead>
+                  <tr>
+                    <th>Indicador</th>
+                    <th>Institucion</th>
+                    <th>Contacto cobro</th>
+                    <th>Eventos</th>
+                    <th>Venta neta</th>
+                    <th>Cobrado</th>
+                    <th>Saldo pendiente</th>
+                    <th>Saldo a favor</th>
+                    <th>Proximo cobro</th>
+                    <th>Ultimo deposito</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="accountingReportBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalBackdrop" id="accountStatementBackdrop" hidden>
+      <div class="modal accountStatementModal" role="dialog" aria-modal="true" aria-labelledby="accountStatementTitle">
+        <div class="modalHeader accountStatementHeaderBar">
+          <div>
+            <div class="modalTitle" id="accountStatementTitle">Estado de Cuenta</div>
+            <div class="modalSubtitle" id="accountStatementSubtitle">Formato formal para cargos, pagos y saldo acumulado</div>
+          </div>
+          <button class="iconBtn" id="btnAccountStatementClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+
+        <div class="modalBody accountStatementBodyShell">
+          <article class="accountStatementPaper" id="accountStatementPaper">
+            <header class="accountStatementDocHead">
+              <div class="accountStatementBrandBlock">
+                <img src="./Oficial_JDL_acua.png" alt="Logo" class="accountStatementLogo" />
+                <div>
+                  <div class="accountStatementOrg" id="accountStatementOrg">JARDINES DEL LAGO</div>
+                  <div class="accountStatementDept">Departamento de Cobros</div>
+                  <div class="accountStatementDocName">Estado de Cuenta</div>
+                </div>
+              </div>
+              <div class="accountStatementFolioBox">
+                <div><span>Fecha:</span><b id="accountStatementIssueDate">--/--/----</b></div>
+                <div><span>Hora:</span><b id="accountStatementIssueTime">--:--</b></div>
+                <div><span>Pagina:</span><b>1 / 1</b></div>
+              </div>
+            </header>
+
+            <section class="accountStatementInfoGrid">
+              <div><span>Senor (a):</span><b id="accountStatementCompany">Institucion</b></div>
+              <div><span>NIT:</span><b id="accountStatementNit">-</b></div>
+              <div><span>Representante:</span><b id="accountStatementManager">-</b></div>
+              <div><span>Telefono:</span><b id="accountStatementPhone">-</b></div>
+              <div class="accountStatementInfoWide"><span>Direccion:</span><b id="accountStatementAddress">-</b></div>
+              <div class="accountStatementInfoWide"><span>Observacion:</span><b id="accountStatementMeta">Sin datos</b></div>
+            </section>
+
+            <section class="accountStatementTotalsStrip" id="accountStatementSummary"></section>
+
+            <section class="accountStatementTableSection">
+              <table class="accountStatementTable">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>No. Cotizacion</th>
+                    <th>Concepto</th>
+                    <th>Cargo</th>
+                    <th>Pago</th>
+                    <th>Saldo</th>
+                    <th>Accion</th>
+                  </tr>
+                </thead>
+                <tbody id="accountStatementBody"></tbody>
+              </table>
+            </section>
+
+            <footer class="accountStatementFoot">
+              <div class="accountStatementSignLine">Generado por CRM Jardines del Lago - Departamento Administrativo</div>
+            </footer>
+          </article>
         </div>
       </div>
     </div>
@@ -3123,6 +3692,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slim-select@2.8.0/dist/slimselect.min.js"></script>
   <script src="./app.js"></script>
   <script>
     if ("serviceWorker" in navigator) {
@@ -3135,6 +3705,34 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

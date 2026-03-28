@@ -1027,12 +1027,15 @@
 /* === MENU SUGGESTIONS UX POLISH === */
 #menuSuggestionsBackdrop{
   overflow: auto;
-  place-items: center;
-  padding: 18px;
+  place-items: start center;
+  padding: 12px;
 }
 #menuSuggestionsBackdrop .modal{
   width: min(1080px, 96vw);
   max-height: 94vh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   border-radius: 24px;
   overflow: hidden;
   border: 1px solid rgba(118, 150, 198, 0.2);
@@ -1042,9 +1045,29 @@
   box-shadow: 0 34px 84px rgba(2, 6, 23, 0.6);
 }
 #menuSuggestionsBackdrop .modalHeader{
-  padding: 18px 22px 14px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 18px 76px 14px 22px;
   border-bottom: 1px solid rgba(97, 130, 182, 0.18);
-  background: linear-gradient(180deg, rgba(13, 21, 39, 0.96), rgba(10, 17, 31, 0.98));
+  background: linear-gradient(180deg, rgba(13, 21, 39, 0.98), rgba(10, 17, 31, 0.99));
+}
+#menuSuggestionsBackdrop .modalHeader::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(13, 21, 39, 0.99), rgba(10, 17, 31, 1));
+  z-index: 1;
+  pointer-events: none;
+}
+#menuSuggestionsBackdrop .modalHeader > *{
+  position: relative;
+  z-index: 2;
+}
+body.menuSuggestionsModalOpen .topbar{
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 #menuSuggestionsBackdrop .modalTitle{
   font-size: 33px;
@@ -1060,11 +1083,39 @@
   line-height: 1.5;
 }
 #menuSuggestionsBackdrop .menuSuggestBody{
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
+  align-content: start;
   gap: 14px;
   padding: 14px 16px 18px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96,165,250,0.92) rgba(8, 15, 35, 0.82);
   background: linear-gradient(180deg, rgba(8, 14, 28, 0.98), rgba(6, 11, 22, 0.99));
+}
+#menuSuggestionsBackdrop .menuSuggestBody::-webkit-scrollbar,
+#menuSuggestionsBackdrop .menuSuggestList::-webkit-scrollbar{
+  width: 10px;
+  height: 10px;
+}
+#menuSuggestionsBackdrop .menuSuggestBody::-webkit-scrollbar-track,
+#menuSuggestionsBackdrop .menuSuggestList::-webkit-scrollbar-track{
+  background: rgba(8, 15, 35, 0.88);
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+#menuSuggestionsBackdrop .menuSuggestBody::-webkit-scrollbar-thumb,
+#menuSuggestionsBackdrop .menuSuggestList::-webkit-scrollbar-thumb{
+  border-radius: 999px;
+  border: 2px solid rgba(8, 15, 35, 0.9);
+  background: linear-gradient(180deg, rgba(96,165,250,0.95), rgba(34,197,94,0.82));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 14px rgba(15, 23, 42, 0.32);
+}
+#menuSuggestionsBackdrop .menuSuggestBody::-webkit-scrollbar-thumb:hover,
+#menuSuggestionsBackdrop .menuSuggestList::-webkit-scrollbar-thumb:hover{
+  background: linear-gradient(180deg, rgba(125,211,252,0.98), rgba(16,185,129,0.92));
 }
 #menuSuggestionsBackdrop .menuSuggestIntroCard,
 #menuSuggestionsBackdrop .menuSuggestContextCard,
@@ -1152,6 +1203,8 @@
   max-height: 268px;
   padding-right: 4px;
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96,165,250,0.92) rgba(8, 15, 35, 0.82);
 }
 #menuSuggestionsBackdrop .menuSuggestWideField .menuSuggestList{
   max-height: 214px;
@@ -1282,9 +1335,10 @@
   transform: scale(0.99);
 }
 #menuSuggestionsBackdrop .modalFooter{
+  flex: 0 0 auto;
   position: sticky;
   bottom: 0;
-  z-index: 2;
+  z-index: 3;
   border-top: 1px solid rgba(97, 130, 182, 0.18);
   background: linear-gradient(180deg, rgba(7, 14, 28, 0.32), rgba(7, 14, 28, 0.98) 38%);
 }
@@ -1302,6 +1356,9 @@
     width: 100vw;
     max-height: 100vh;
     border-radius: 0;
+  }
+  #menuSuggestionsBackdrop .modalHeader{
+    padding: 16px 72px 14px 16px;
   }
   #menuSuggestionsBackdrop .menuSuggestCols,
   #menuSuggestionsBackdrop .menuSuggestContextGrid{
@@ -1730,3 +1787,592 @@
   white-space: normal !important;
   line-height: 1.15 !important;
 }
+
+
+
+/* === SLIMSELECT MODERN THEME === */
+.ss-main.ss-glass{
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(124,154,203,0.18);
+  background: linear-gradient(180deg, rgba(38,50,76,0.95), rgba(29,39,60,0.96));
+  color: #f3f8ff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 22px rgba(4,10,20,0.16);
+}
+.ss-main.ss-glass:focus,
+.ss-main.ss-glass.ss-focus{
+  border-color: rgba(94,168,255,0.7);
+  box-shadow: 0 0 0 3px rgba(64,140,255,0.16), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.ss-main.ss-glass .ss-values,
+.ss-main.ss-glass .ss-single,
+.ss-main.ss-glass .ss-placeholder{
+  color: #f3f8ff;
+  font-size: 13px;
+}
+.ss-main.ss-glass .ss-arrow path{
+  stroke: rgba(191,219,254,0.98);
+}
+.ss-content{
+  border-radius: 18px;
+  border: 1px solid rgba(121,150,201,0.18);
+  background: linear-gradient(180deg, rgba(13,21,38,0.99), rgba(9,16,30,0.99));
+  box-shadow: 0 24px 54px rgba(2,6,23,0.56);
+  overflow: hidden;
+}
+.ss-search{
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(18,28,47,0.96), rgba(13,21,38,0.98));
+  border-bottom: 1px solid rgba(121,150,201,0.14);
+}
+.ss-search input{
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(124,154,203,0.18);
+  background: linear-gradient(180deg, rgba(38,50,76,0.95), rgba(29,39,60,0.96));
+  color: #f3f8ff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.ss-search input::placeholder{
+  color: rgba(203,213,225,0.62);
+}
+.ss-list{
+  padding: 8px;
+}
+.ss-option,
+.ss-optgroup-label{
+  border-radius: 12px;
+  color: #e7eef8;
+}
+.ss-option{
+  margin-bottom: 4px;
+  padding: 11px 12px;
+}
+.ss-option:hover,
+.ss-option.ss-highlighted{
+  background: rgba(47,143,255,0.18);
+  color: #ffffff;
+}
+.ss-option.ss-selected{
+  background: linear-gradient(135deg, rgba(47,143,255,0.22), rgba(34,111,224,0.30));
+  color: #ffffff;
+}
+.ss-compact{
+  min-height: 38px !important;
+  border-radius: 12px !important;
+}
+.ss-compact .ss-single,
+.ss-compact .ss-values,
+.ss-compact .ss-placeholder{
+  font-size: 12px !important;
+}
+/* === END SLIMSELECT MODERN THEME === */
+
+/* === ACCOUNTING PAYMENTS UX === */
+.quoteAdvanceSummary{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:12px;
+}
+.quoteAdvanceMetric{
+  padding:14px 16px;
+  border-radius:16px;
+  border:1px solid rgba(108,136,177,0.18);
+  background:linear-gradient(180deg, rgba(18,28,47,0.94), rgba(12,20,36,0.96));
+  box-shadow:0 16px 28px rgba(5,11,21,0.18);
+}
+.quoteAdvanceMetric span{
+  display:block;
+  color:#9cb1c7;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:8px;
+}
+.quoteAdvanceMetric strong{
+  display:block;
+  color:#f7fbff;
+  font-size:24px;
+  letter-spacing:-.03em;
+}
+.quoteAdvanceMetric--credit{
+  border-color:rgba(61, 214, 140, 0.28);
+  background:linear-gradient(180deg, rgba(11,40,37,0.94), rgba(9,28,29,0.96));
+}
+.accountingActionBtn{
+  min-height:36px;
+  padding:0 14px;
+  border-radius:12px;
+  border:1px solid rgba(117,189,255,0.34);
+  background:linear-gradient(135deg, rgba(47,143,255,0.96), rgba(34,111,224,0.96));
+  color:#f8fbff;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.03em;
+  cursor:pointer;
+  box-shadow:0 12px 24px rgba(16,64,153,0.26);
+  white-space:nowrap;
+}
+.accountingActionBtn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 14px 28px rgba(16,64,153,0.32);
+}
+.accountingActionBtn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+.accountingActionBtn--secondary{
+  border-color:rgba(143, 160, 190, 0.28);
+  background:linear-gradient(180deg, rgba(74,88,117,0.9), rgba(53,66,91,0.96));
+}
+.accountingActionGroup{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.accountingIndicator{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:32px;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  border:1px solid rgba(148,163,184,0.22);
+  background:rgba(51,65,85,0.32);
+  color:#f8fbff;
+}
+.accountingIndicator--overdue{
+  background:rgba(239,68,68,0.18);
+  border-color:rgba(252,165,165,0.45);
+  color:#fecaca;
+}
+.accountingIndicator--due{
+  background:rgba(245,181,71,0.18);
+  border-color:rgba(253,224,71,0.4);
+  color:#fde68a;
+}
+.accountingIndicator--ok{
+  background:rgba(50,199,135,0.18);
+  border-color:rgba(110,231,183,0.38);
+  color:#bbf7d0;
+}
+.accountingIndicator--credit{
+  background:rgba(20,184,166,0.18);
+  border-color:rgba(94,234,212,0.36);
+  color:#99f6e4;
+}
+.accountingIndicator--neutral{
+  background:rgba(125,211,252,0.16);
+  border-color:rgba(125,211,252,0.3);
+  color:#dbeafe;
+}
+.accountingCompanyCell,
+.accountingMetaCell{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.accountingCompanyCell strong,
+.accountingMetaCell strong{
+  color:#f8fbff;
+  font-size:13px;
+}
+.accountingCompanyCell small,
+.accountingMetaCell small{
+  color:#9db2c9;
+  font-size:11px;
+  line-height:1.35;
+}
+.accountingCompanyRow td{
+  vertical-align:middle;
+}
+.accountingCompanyDetailRow td{
+  padding:0 !important;
+  background:rgba(9,16,29,0.98) !important;
+}
+.accountingDetailCard{
+  padding:16px;
+  background:linear-gradient(180deg, rgba(10,18,33,0.98), rgba(7,13,24,0.98));
+  border-top:1px solid rgba(93,117,153,0.14);
+}
+.accountingDetailHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.accountingDetailHead strong{
+  color:#eef5ff;
+  font-size:14px;
+}
+.accountingDetailHead small{
+  color:#9db2c9;
+  font-size:11px;
+}
+.accountingDetailTableWrap{
+  overflow:auto;
+  border:1px solid rgba(109,136,178,0.16);
+  border-radius:16px;
+}
+.accountingDetailTable{
+  min-width:1400px;
+  border-collapse:separate;
+  border-spacing:0;
+}
+.accountingDetailTable thead th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  background:linear-gradient(180deg, rgba(24,39,66,0.98), rgba(18,30,52,0.99));
+}
+.accountingDetailTable tbody td{
+  white-space:nowrap;
+}
+.accountingDetailMetrics{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:12px;
+}
+.accountingDetailMetrics span{
+  display:inline-flex;
+  align-items:center;
+  min-height:32px;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid rgba(117,189,255,0.18);
+  background:rgba(31,52,86,0.42);
+  color:#dbeafe;
+  font-size:11px;
+  font-weight:700;
+}
+@media (max-width: 900px){
+  .quoteAdvanceSummary{
+    grid-template-columns:1fr;
+  }
+}
+/* === END ACCOUNTING PAYMENTS UX === */
+
+/* === ACCOUNTING PAYMENT LAYER FIX === */
+#accountingReportBackdrop{
+  z-index: 9200 !important;
+}
+#quoteBackdrop{
+  z-index: 9400 !important;
+}
+#quoteAdvanceBackdrop{
+  z-index: 9500 !important;
+}
+body.accountingPaymentMode #accountingReportBackdrop{
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+/* === END ACCOUNTING PAYMENT LAYER FIX === */
+
+
+/* === QUOTE ACCOUNT STATEMENT === */
+.quoteAccountPanel{
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(108,136,177,0.18);
+  background: linear-gradient(180deg, rgba(16,25,43,0.94), rgba(11,18,32,0.97));
+  box-shadow: 0 16px 28px rgba(5,11,21,0.18);
+}
+.quoteAccountHeader{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.quoteAccountDocument{
+  margin-top: 6px;
+  color: #f4f7fb;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.quoteAccountEvent{
+  margin-top: 6px;
+  color: #d9e7f7;
+  font-size: 14px;
+  font-weight: 600;
+}
+.quoteAccountRange{
+  margin-top: 4px;
+  color: #8fb3d9;
+  font-size: 12px;
+}
+.quoteAccountMeta{
+  min-width: 220px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(125, 160, 214, 0.18);
+  background: rgba(20, 31, 53, 0.75);
+  color: #9cb1c7;
+  font-size: 11px;
+  text-align: right;
+}
+.quoteAccountSummary{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.quoteAccountCard{
+  min-height: 104px;
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+.quoteAccountCard strong{
+  font-size: 22px;
+}
+.quoteAccountTableWrap{
+  margin-top: 14px;
+}
+.quoteAccountTable tbody td{
+  white-space: normal;
+  line-height: 1.4;
+}
+.quoteAccountRow--charge td{
+  background: rgba(31,52,86,0.46) !important;
+}
+.quoteAccountRow--payment td{
+  background: rgba(18,70,58,0.34) !important;
+}
+.quoteAccountRow--pending td{
+  background: rgba(87,60,18,0.30) !important;
+}
+.quoteAccountRow--credit td{
+  background: rgba(17,79,79,0.30) !important;
+}
+@media (max-width: 1100px){
+  .quoteAccountHeader{
+    flex-direction: column;
+  }
+  .quoteAccountMeta{
+    min-width: 0;
+    width: 100%;
+    text-align: left;
+  }
+  .quoteAccountSummary{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px){
+  .quoteAccountSummary{
+    grid-template-columns: 1fr;
+  }
+  .quoteAccountDocument{
+    font-size: 17px;
+  }
+}
+/* === END QUOTE ACCOUNT STATEMENT === */
+
+/* === FORMAL ACCOUNT STATEMENT MODAL === */
+#accountStatementBackdrop{
+  z-index: 9350;
+  background: rgba(7, 12, 22, 0.82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+#accountStatementBackdrop .accountStatementModal{
+  width: min(1180px, 96vw);
+  max-height: 92vh;
+  border-radius: 16px;
+  border: 1px solid rgba(163, 181, 208, 0.35);
+  overflow: hidden;
+  background: #e7ebf0;
+  box-shadow: 0 28px 70px rgba(0,0,0,0.45);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.accountStatementHeaderBar{
+  background: linear-gradient(180deg, #0f2744, #122f52);
+  color: #f7fbff;
+  border-bottom: 1px solid rgba(255,255,255,0.14);
+}
+.accountStatementBodyShell{
+  overflow: auto;
+  padding: 18px;
+}
+.accountStatementPaper{
+  background: #f6f7f9;
+  border: 1px solid #b9c1cb;
+  color: #1d2430;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+}
+.accountStatementDocHead{
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #b8bec8;
+  padding-bottom: 10px;
+}
+.accountStatementBrandBlock{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.accountStatementLogo{
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+.accountStatementOrg{
+  font-size: 18px;
+  font-weight: 800;
+  color: #152335;
+}
+.accountStatementDept{
+  font-size: 12px;
+  color: #3a4a5f;
+}
+.accountStatementDocName{
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f1f31;
+  margin-top: 2px;
+}
+.accountStatementFolioBox{
+  min-width: 210px;
+  border: 1px solid #7f8a98;
+  background: #eef1f5;
+  padding: 8px 10px;
+  font-size: 11px;
+  display: grid;
+  gap: 4px;
+}
+.accountStatementFolioBox div{
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.accountStatementInfoGrid{
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  font-size: 12px;
+}
+.accountStatementInfoGrid div{
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+.accountStatementInfoGrid span{
+  color: #49586b;
+  font-weight: 700;
+}
+.accountStatementInfoGrid b{
+  color: #1f2d3f;
+  font-weight: 700;
+}
+.accountStatementInfoWide{
+  grid-column: 1 / -1;
+}
+.accountStatementTotalsStrip{
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.accountStatementKpi{
+  border: 1px solid #b8c2cf;
+  background: #eef2f6;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.accountStatementKpi small{
+  display: block;
+  font-size: 11px;
+  color: #445367;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.accountStatementKpi strong{
+  display: block;
+  margin-top: 4px;
+  font-size: 16px;
+  color: #0f2135;
+}
+.accountStatementTableSection{
+  margin-top: 12px;
+  border: 1px solid #b8c0ca;
+}
+.accountStatementTable{
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+.accountStatementTable thead th{
+  background: #d5dbe3;
+  color: #1c2b3d;
+  border: 1px solid #a9b2bf;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  padding: 8px 7px;
+}
+.accountStatementTable tbody td{
+  border: 1px solid #c3cad4;
+  color: #1d2938;
+  font-size: 12px;
+  padding: 7px;
+  vertical-align: top;
+}
+.accountStatementTable tbody tr:nth-child(even) td{
+  background: #f5f7fa;
+}
+.accountStatementFoot{
+  margin-top: 14px;
+  border-top: 1px solid #b7bfca;
+  padding-top: 10px;
+}
+.accountStatementSignLine{
+  font-size: 11px;
+  color: #45556b;
+}
+@media (max-width: 980px){
+  .accountStatementInfoGrid,
+  .accountStatementTotalsStrip{
+    grid-template-columns: 1fr;
+  }
+  .accountStatementInfoGrid div{
+    grid-template-columns: 95px minmax(0, 1fr);
+  }
+  .accountStatementDocHead{
+    flex-direction: column;
+  }
+  .accountStatementFolioBox{
+    min-width: 100%;
+  }
+}
+/* === END FORMAL ACCOUNT STATEMENT MODAL === */
+/* === TOAST LAYER FIX === */
+#toast,
+.toast{
+  z-index: 21000 !important;
+}
+.swal2-container,
+.swal2-top,
+.swal2-top-end,
+.swal2-top-start{
+  z-index: 22000 !important;
+}
+.swal2-popup.swal-ios-toast,
+.swal2-toast{
+  z-index: 22001 !important;
+}
+/* === END TOAST LAYER FIX === */

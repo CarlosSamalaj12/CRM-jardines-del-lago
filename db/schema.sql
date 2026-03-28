@@ -1,4 +1,4 @@
-USE crm_jdl;
+﻿USE crm_jdl;
 
 CREATE TABLE IF NOT EXISTS salones (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -314,6 +314,138 @@ CREATE TABLE IF NOT EXISTS menu_plato_guarnicion_sugerida (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS menu_plato_preparacion_salsa_sugerida (
+  id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+  id_preparacion BIGINT UNSIGNED NOT NULL,
+  id_salsa BIGINT UNSIGNED NOT NULL,
+  prioridad INT NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_plato_fuerte, id_preparacion, id_salsa),
+  KEY idx_menu_pp_salsa_salsa (id_salsa),
+  CONSTRAINT fk_menu_pp_salsa_plato
+    FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_salsa_preparacion
+    FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_salsa_item
+    FOREIGN KEY (id_salsa) REFERENCES menu_salsas(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS menu_plato_preparacion_postre_sugerido (
+  id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+  id_preparacion BIGINT UNSIGNED NOT NULL,
+  id_postre BIGINT UNSIGNED NOT NULL,
+  prioridad INT NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_plato_fuerte, id_preparacion, id_postre),
+  KEY idx_menu_pp_postre_postre (id_postre),
+  CONSTRAINT fk_menu_pp_postre_plato
+    FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_postre_preparacion
+    FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_postre_item
+    FOREIGN KEY (id_postre) REFERENCES menu_postres(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS menu_plato_preparacion_guarnicion_sugerida (
+  id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+  id_preparacion BIGINT UNSIGNED NOT NULL,
+  id_guarnicion BIGINT UNSIGNED NOT NULL,
+  prioridad INT NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_plato_fuerte, id_preparacion, id_guarnicion),
+  KEY idx_menu_pp_guarnicion_guarnicion (id_guarnicion),
+  CONSTRAINT fk_menu_pp_guarnicion_plato
+    FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_guarnicion_preparacion
+    FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_guarnicion_item
+    FOREIGN KEY (id_guarnicion) REFERENCES menu_guarniciones(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS menu_plato_preparacion_bebida_sugerida (
+  id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+  id_preparacion BIGINT UNSIGNED NOT NULL,
+  id_bebida BIGINT UNSIGNED NOT NULL,
+  prioridad INT NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_plato_fuerte, id_preparacion, id_bebida),
+  KEY idx_menu_pp_bebida_bebida (id_bebida),
+  CONSTRAINT fk_menu_pp_bebida_plato
+    FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_bebida_preparacion
+    FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_bebida_item
+    FOREIGN KEY (id_bebida) REFERENCES menu_bebidas(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS menu_plato_preparacion_montaje_tipo_sugerido (
+  id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+  id_preparacion BIGINT UNSIGNED NOT NULL,
+  id_montaje_tipo BIGINT UNSIGNED NOT NULL,
+  prioridad INT NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_plato_fuerte, id_preparacion, id_montaje_tipo),
+  KEY idx_menu_pp_montaje_tipo_tipo (id_montaje_tipo),
+  CONSTRAINT fk_menu_pp_montaje_tipo_plato
+    FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_montaje_tipo_preparacion
+    FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_montaje_tipo_item
+    FOREIGN KEY (id_montaje_tipo) REFERENCES montaje_tipos(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS menu_plato_preparacion_montaje_adicional_sugerido (
+  id_plato_fuerte BIGINT UNSIGNED NOT NULL,
+  id_preparacion BIGINT UNSIGNED NOT NULL,
+  id_adicional BIGINT UNSIGNED NOT NULL,
+  prioridad INT NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_plato_fuerte, id_preparacion, id_adicional),
+  KEY idx_menu_pp_montaje_adicional_adicional (id_adicional),
+  CONSTRAINT fk_menu_pp_montaje_adicional_plato
+    FOREIGN KEY (id_plato_fuerte) REFERENCES menu_platos_fuertes(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_montaje_adicional_preparacion
+    FOREIGN KEY (id_preparacion) REFERENCES menu_preparaciones(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_menu_pp_montaje_adicional_item
+    FOREIGN KEY (id_adicional) REFERENCES montaje_adicionales(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS menu_guarniciones (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   nombre VARCHAR(180) NOT NULL,
@@ -462,3 +594,4 @@ CREATE TABLE IF NOT EXISTS menu_montaje_plantilla_adicional (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

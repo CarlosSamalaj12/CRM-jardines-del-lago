@@ -136,6 +136,8 @@ const AUTO_SCROLL_STEP_PX = 26;
 const USE_ENHANCED_SELECTS = false;
 const SETTINGS_STORAGE_KEY = "crm_topbar_settings_v1";
 const QUICK_TEMPLATES_STORAGE_KEY = "crm_quick_templates_v1";
+const AUTH_SESSION_STORAGE_KEY = "crm_auth_session_v1";
+const ACTIVE_MODULE_SCREEN_STORAGE_KEY = "crm_active_module_screen_v1";
 const CORPORATE_TEMPLATE_ID = "tpl-corporativo";
 const CORPORATE_TEMPLATE_NAME = "Corporativo";
 const SERVIHOSP_TEMPLATE_ID = "tpl-servi-hosp";
@@ -185,7 +187,7 @@ let userModalEditingId = "";
 let userMonthlyGoalsDraft = [];
 let editingUserGoalMonth = "";
 let occupancySelectedDayIso = "";
-let authSession = { userId: "", fullName: "", username: "", avatarDataUrl: "", signatureDataUrl: "" };
+let authSession = loadPersistedAuthSession();
 let userSignatureNormalizedDataUrl = "";
 let checklistTemplateDraft = [];
 let checklistTemplateEditingId = "";
@@ -270,6 +272,7 @@ const el = {
   btnBackFromSettings: document.getElementById("btnBackFromSettings"),
   topbarWelcome: document.getElementById("topbarWelcome"),
   topbarUserAvatar: document.getElementById("topbarUserAvatar"),
+  btnLogout: document.getElementById("btnLogout"),
   weekLabel: document.getElementById("weekLabel"),
   topbarReminderWrap: document.getElementById("topbarReminderWrap"),
   btnTopbarReminders: document.getElementById("btnTopbarReminders"),
@@ -300,7 +303,9 @@ const el = {
   btnQuickAddSalon: document.getElementById("btnQuickAddSalon"),
   btnQuickAddGlobalGoal: document.getElementById("btnQuickAddGlobalGoal"),
   btnQuickAddChecklist: document.getElementById("btnQuickAddChecklist"),
+  btnQuickOpenMenuCatalog: document.getElementById("btnQuickOpenMenuCatalog"),
   btnReportSales: document.getElementById("btnReportSales"),
+  btnReportAccounting: document.getElementById("btnReportAccounting"),
   btnReportOccupancy: document.getElementById("btnReportOccupancy"),
   btnReportDashboard: document.getElementById("btnReportDashboard"),
   btnReportInstitution: document.getElementById("btnReportInstitution"),
@@ -318,6 +323,32 @@ const el = {
   salesReportFiltersMeta: document.getElementById("salesReportFiltersMeta"),
   salesReportSummary: document.getElementById("salesReportSummary"),
   salesReportBody: document.getElementById("salesReportBody"),
+  accountingReportBackdrop: document.getElementById("accountingReportBackdrop"),
+  btnAccountingReportClose: document.getElementById("btnAccountingReportClose"),
+  accountingReportSearch: document.getElementById("accountingReportSearch"),
+  accountingReportFrom: document.getElementById("accountingReportFrom"),
+  accountingReportTo: document.getElementById("accountingReportTo"),
+  accountingReportUser: document.getElementById("accountingReportUser"),
+  accountingReportStatus: document.getElementById("accountingReportStatus"),
+  accountingReportSalon: document.getElementById("accountingReportSalon"),
+  accountingReportCompany: document.getElementById("accountingReportCompany"),
+  btnAccountingReportReset: document.getElementById("btnAccountingReportReset"),
+  btnAccountingReportExportExcel: document.getElementById("btnAccountingReportExportExcel"),
+  accountingReportFiltersMeta: document.getElementById("accountingReportFiltersMeta"),
+  accountingReportSummary: document.getElementById("accountingReportSummary"),
+  accountingReportBody: document.getElementById("accountingReportBody"),
+  accountStatementBackdrop: document.getElementById("accountStatementBackdrop"),
+  btnAccountStatementClose: document.getElementById("btnAccountStatementClose"),
+  accountStatementCompany: document.getElementById("accountStatementCompany"),
+  accountStatementNit: document.getElementById("accountStatementNit"),
+  accountStatementManager: document.getElementById("accountStatementManager"),
+  accountStatementPhone: document.getElementById("accountStatementPhone"),
+  accountStatementAddress: document.getElementById("accountStatementAddress"),
+  accountStatementIssueDate: document.getElementById("accountStatementIssueDate"),
+  accountStatementIssueTime: document.getElementById("accountStatementIssueTime"),
+  accountStatementMeta: document.getElementById("accountStatementMeta"),
+  accountStatementSummary: document.getElementById("accountStatementSummary"),
+  accountStatementBody: document.getElementById("accountStatementBody"),
   occupancyReportBackdrop: document.getElementById("occupancyReportBackdrop"),
   btnOccupancyReportClose: document.getElementById("btnOccupancyReportClose"),
   occupancyReportSubtitle: document.getElementById("occupancyReportSubtitle"),
@@ -537,6 +568,12 @@ const el = {
   quoteSubtotal: document.getElementById("quoteSubtotal"),
   quoteDiscountAmount: document.getElementById("quoteDiscountAmount"),
   quoteTotal: document.getElementById("quoteTotal"),
+  quoteAccountMeta: document.getElementById("quoteAccountMeta"),
+  quoteAccountDocument: document.getElementById("quoteAccountDocument"),
+  quoteAccountEvent: document.getElementById("quoteAccountEvent"),
+  quoteAccountRange: document.getElementById("quoteAccountRange"),
+  quoteAccountSummary: document.getElementById("quoteAccountSummary"),
+  quoteAccountBody: document.getElementById("quoteAccountBody"),
   btnQuoteCurrencyGTQ: document.getElementById("btnQuoteCurrencyGTQ"),
   btnQuoteCurrencyUSD: document.getElementById("btnQuoteCurrencyUSD"),
   quoteInternalNotes: document.getElementById("quoteInternalNotes"),
@@ -550,10 +587,15 @@ const el = {
   quoteAdvanceAmount: document.getElementById("quoteAdvanceAmount"),
   quoteAdvancePaymentType: document.getElementById("quoteAdvancePaymentType"),
   quoteAdvanceDate: document.getElementById("quoteAdvanceDate"),
+  quoteAdvanceVoucherNumber: document.getElementById("quoteAdvanceVoucherNumber"),
   quoteAdvanceDescription: document.getElementById("quoteAdvanceDescription"),
+  quoteAdvanceEvidence: document.getElementById("quoteAdvanceEvidence"),
+  quoteAdvanceEvidenceHint: document.getElementById("quoteAdvanceEvidenceHint"),
   btnQuoteAdvanceAdd: document.getElementById("btnQuoteAdvanceAdd"),
   quoteAdvanceBody: document.getElementById("quoteAdvanceBody"),
   quoteAdvanceTotal: document.getElementById("quoteAdvanceTotal"),
+  quoteAdvancePending: document.getElementById("quoteAdvancePending"),
+  quoteAdvanceCredit: document.getElementById("quoteAdvanceCredit"),
 
   menuMontajeBackdrop: document.getElementById("menuMontajeBackdrop"),
   btnMenuMontajeClose: document.getElementById("btnMenuMontajeClose"),
@@ -744,6 +786,9 @@ const el = {
   menuSuggestionsSalsas: document.getElementById("menuSuggestionsSalsas"),
   menuSuggestionsPostres: document.getElementById("menuSuggestionsPostres"),
   menuSuggestionsGuarniciones: document.getElementById("menuSuggestionsGuarniciones"),
+  menuSuggestionsBebidas: document.getElementById("menuSuggestionsBebidas"),
+  menuSuggestionsMontajeTipos: document.getElementById("menuSuggestionsMontajeTipos"),
+  menuSuggestionsMontajeAdicionales: document.getElementById("menuSuggestionsMontajeAdicionales"),
 
   menuCatalogBackdrop: document.getElementById("menuCatalogBackdrop"),
   btnMenuCatalogClose: document.getElementById("btnMenuCatalogClose"),
@@ -787,6 +832,111 @@ function saveTopbarSettings() {
   try {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(topbarSettings));
   } catch (_) { }
+}
+
+function loadPersistedAuthSession() {
+  try {
+    const raw = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+    if (!raw) return { userId: "", fullName: "", username: "", avatarDataUrl: "", signatureDataUrl: "" };
+    const parsed = JSON.parse(raw);
+    return {
+      userId: String(parsed?.userId || "").trim(),
+      fullName: String(parsed?.fullName || "").trim(),
+      username: String(parsed?.username || "").trim(),
+      avatarDataUrl: String(parsed?.avatarDataUrl || "").trim(),
+      signatureDataUrl: String(parsed?.signatureDataUrl || "").trim(),
+    };
+  } catch (_) {
+    return { userId: "", fullName: "", username: "", avatarDataUrl: "", signatureDataUrl: "" };
+  }
+}
+
+function savePersistedAuthSession() {
+  try {
+    if (!String(authSession.userId || "").trim()) {
+      localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify({
+      userId: String(authSession.userId || "").trim(),
+      fullName: String(authSession.fullName || "").trim(),
+      username: String(authSession.username || "").trim(),
+      avatarDataUrl: String(authSession.avatarDataUrl || "").trim(),
+      signatureDataUrl: String(authSession.signatureDataUrl || "").trim(),
+    }));
+  } catch (_) { }
+}
+
+function clearPersistedAuthSession() {
+  try {
+    localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+  } catch (_) { }
+}
+
+function logoutCurrentSession() {
+  authSession = { userId: "", fullName: "", username: "", avatarDataUrl: "", signatureDataUrl: "" };
+  clearPersistedAuthSession();
+  renderTopbarWelcome();
+  refreshTopbarReminders();
+  if (el.topbarReminderPanel) el.topbarReminderPanel.hidden = true;
+  if (el.btnTopbarReminders) el.btnTopbarReminders.setAttribute("aria-expanded", "false");
+  if (el.loginPassword) el.loginPassword.value = "";
+  setLoginError("");
+  showCalendarModule();
+  if (el.loginScreen) el.loginScreen.hidden = false;
+  toast("Sesion cerrada.");
+}
+
+function loadPersistedModuleScreen() {
+  try {
+    return String(localStorage.getItem(ACTIVE_MODULE_SCREEN_STORAGE_KEY) || "").trim();
+  } catch (_) {
+    return "";
+  }
+}
+
+function savePersistedModuleScreen(screen = getActiveModuleScreenName()) {
+  try {
+    localStorage.setItem(ACTIVE_MODULE_SCREEN_STORAGE_KEY, String(screen || "").trim());
+  } catch (_) { }
+}
+
+function restorePersistedAppSession() {
+  const persisted = loadPersistedAuthSession();
+  const persistedUserId = String(persisted.userId || "").trim();
+  if (!persistedUserId) return false;
+  const activeUsers = (state.users || []).map(normalizeUserRecord).filter((user) => user.active !== false);
+  const matchedUser = activeUsers.find((user) => String(user.id || "") === persistedUserId);
+  if (!matchedUser) {
+    authSession = { userId: "", fullName: "", username: "", avatarDataUrl: "", signatureDataUrl: "" };
+    clearPersistedAuthSession();
+    return false;
+  }
+  authSession = {
+    userId: String(matchedUser.id || persistedUserId),
+    fullName: String(matchedUser.fullName || matchedUser.name || persisted.fullName || "").trim(),
+    username: String(matchedUser.username || persisted.username || "").trim(),
+    avatarDataUrl: String(matchedUser.avatarDataUrl || persisted.avatarDataUrl || "").trim(),
+    signatureDataUrl: String(matchedUser.signatureDataUrl || persisted.signatureDataUrl || "").trim(),
+  };
+  savePersistedAuthSession();
+  renderTopbarWelcome();
+  refreshTopbarReminders();
+  if (el.loginScreen) el.loginScreen.hidden = true;
+  if (el.eventUser && authSession.userId) {
+    syncEnhancedSelectValue(el.eventUser, authSession.userId);
+  }
+  const targetScreen = loadPersistedModuleScreen();
+  if (targetScreen === "settings") {
+    showSettingsHub();
+  } else if (targetScreen === "reports") {
+    showReportsHub();
+  } else if (targetScreen === "hub") {
+    showModuleHub();
+  } else {
+    showCalendarModule();
+  }
+  return true;
 }
 
 function normalizeTemplateRecord(candidate) {
@@ -2390,18 +2540,27 @@ async function refreshMenuSuggestionsModalData() {
     renderMenuSuggestionCheckboxList(el.menuSuggestionsSalsas, [], []);
     renderMenuSuggestionCheckboxList(el.menuSuggestionsPostres, [], []);
     renderMenuSuggestionCheckboxList(el.menuSuggestionsGuarniciones, [], []);
+    renderMenuSuggestionCheckboxList(el.menuSuggestionsBebidas, [], []);
+    renderMenuSuggestionCheckboxList(el.menuSuggestionsMontajeTipos, [], []);
+    renderMenuSuggestionCheckboxList(el.menuSuggestionsMontajeAdicionales, [], []);
     return;
   }
 
-  const [salsas, postres, guarniciones, links] = await Promise.all([
+  const [salsas, postres, guarniciones, bebidas, montajeTipos, montajeAdicionales, links] = await Promise.all([
     readMenuCatalog("salsa"),
     readMenuCatalog("postre"),
     readMenuCatalog("guarnicion"),
+    readMenuCatalog("bebida"),
+    readMenuCatalog("montaje_tipo"),
+    readMenuCatalog("montaje_adicional"),
     readMenuSuggestions({ platoId, preparacionId }),
   ]);
   renderMenuSuggestionCheckboxList(el.menuSuggestionsSalsas, salsas, links?.salsaIds || []);
   renderMenuSuggestionCheckboxList(el.menuSuggestionsPostres, postres, links?.postreIds || []);
   renderMenuSuggestionCheckboxList(el.menuSuggestionsGuarniciones, guarniciones, links?.guarnicionIds || []);
+  renderMenuSuggestionCheckboxList(el.menuSuggestionsBebidas, bebidas, links?.bebidaIds || []);
+  renderMenuSuggestionCheckboxList(el.menuSuggestionsMontajeTipos, montajeTipos, links?.montajeTipoIds || []);
+  renderMenuSuggestionCheckboxList(el.menuSuggestionsMontajeAdicionales, montajeAdicionales, links?.montajeAdicionalIds || []);
 }
 
 async function openMenuSuggestionsModal() {
@@ -2421,6 +2580,7 @@ async function openMenuSuggestionsModal() {
     renderMenuSuggestionCheckboxList(el.menuSuggestionsPostres, [], []);
     renderMenuSuggestionCheckboxList(el.menuSuggestionsGuarniciones, [], []);
     el.menuSuggestionsBackdrop.hidden = false;
+    document.body.classList.add("menuSuggestionsModalOpen");
     return;
   }
 
@@ -2439,11 +2599,13 @@ async function openMenuSuggestionsModal() {
 
   await refreshMenuSuggestionsModalData();
   el.menuSuggestionsBackdrop.hidden = false;
+  document.body.classList.add("menuSuggestionsModalOpen");
 }
 
 function closeMenuSuggestionsModal() {
   if (!el.menuSuggestionsBackdrop) return;
   el.menuSuggestionsBackdrop.hidden = true;
+  document.body.classList.remove("menuSuggestionsModalOpen");
 }
 
 async function manageMenuMontajeCatalogFromQuickMenu() {
@@ -3238,6 +3400,7 @@ function setActiveModuleScreen(screen) {
   if (el.moduleHubScreen) el.moduleHubScreen.hidden = target !== "hub";
   if (el.reportsHubScreen) el.reportsHubScreen.hidden = target !== "reports";
   if (el.settingsScreen) el.settingsScreen.hidden = target !== "settings";
+  savePersistedModuleScreen(target);
 }
 
 function showModuleHub() {
@@ -3478,6 +3641,7 @@ function buildSalesReportRows() {
     const { subcatBuckets, catBuckets } = aggregateQuoteBuckets(quote || {});
     rows.push({
       event: ev,
+      companyId: String(quote?.companyId || company?.id || ""),
       status: String(ev.status || ""),
       statusColor: statusColor(ev.status),
       refId: String(quote?.code || reservationKeyFromEvent(ev) || ev.id || ""),
@@ -3490,6 +3654,12 @@ function buildSalesReportRows() {
       company: String(company?.name || quote?.companyName || ""),
       manager: String(manager?.phone || quote?.managerPhone || ""),
       pax: Number(ev.pax || quote?.people || 0),
+      paymentType: String(quote?.paymentType || "").trim(),
+      dueDate: String(quote?.dueDate || "").trim(),
+      docDate: String(quote?.docDate || "").trim(),
+      advances: normalizeQuoteAdvancesForSnapshot(quote?.advances),
+      subtotal: Number(totals.subtotal || 0),
+      total: Number(totals.total || 0),
       subcatBuckets,
       catBuckets,
       discount: Number(totals.discountAmount || 0),
@@ -3508,7 +3678,7 @@ function getSalesReportFilteredRows() {
   const salon = String(el.salesReportSalon?.value || "").trim();
   const company = String(el.salesReportCompany?.value || "").trim();
 
-  return buildSalesReportRows().filter((r) => {
+  return enrichAccountingReportRows(buildSalesReportRows()).filter((r) => {
     if (from && r.eventDate && r.eventDate < from) return false;
     if (to && r.eventDate && r.eventDate > to) return false;
     if (userId && String(r.event?.userId || "") !== userId) return false;
@@ -3550,6 +3720,7 @@ function renderSalesReportFilters() {
       node.appendChild(opt);
     }
     if (previous && rows.some((r) => String(r.value) === previous)) node.value = previous;
+    enhanceSelectControl(node, true);
   };
 
   fillSelect(el.salesReportUser, users.map((u) => ({ value: u.id, label: u.fullName || u.name })), "Todos vendedores");
@@ -3716,7 +3887,6 @@ function exportSalesReportToExcel() {
       <td>${escapeHtml(r.updatedAt || "-")}</td>
     </tr>
   `).join("");
-
   const html = `<!doctype html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
@@ -3806,6 +3976,684 @@ function closeSalesReportModal() {
   restoreModuleScreenAfterModal();
 }
 
+function accountingReportFiltersSummaryText() {
+  const parts = [];
+  const from = String(el.accountingReportFrom?.value || "").trim();
+  const to = String(el.accountingReportTo?.value || "").trim();
+  const sellerOpt = el.accountingReportUser?.selectedOptions?.[0]?.textContent || "";
+  const statusOpt = el.accountingReportStatus?.selectedOptions?.[0]?.textContent || "";
+  const salonOpt = el.accountingReportSalon?.selectedOptions?.[0]?.textContent || "";
+  const companyOpt = el.accountingReportCompany?.selectedOptions?.[0]?.textContent || "";
+  const search = String(el.accountingReportSearch?.value || "").trim();
+  if (from || to) parts.push(`Rango: ${from || "..."} a ${to || "..."}`);
+  if (sellerOpt && !/^todos/i.test(sellerOpt)) parts.push(`Vendedor: ${sellerOpt}`);
+  if (statusOpt && !/^todos/i.test(statusOpt)) parts.push(`Estado: ${statusOpt}`);
+  if (salonOpt && !/^todos/i.test(salonOpt)) parts.push(`Salon: ${salonOpt}`);
+  if (companyOpt && !/^todas/i.test(companyOpt)) parts.push(`Institucion: ${companyOpt}`);
+  if (search) parts.push(`Buscar: ${search}`);
+  return parts.length ? parts.join(" | ") : "Sin filtros";
+}
+
+const accountingReportExpandedAccounts = new Set();
+let accountingReportReturnAfterPayment = false;
+let accountingStatementActiveCompanyKey = "";
+
+function summarizeAccountingCollectionState(account) {
+  const pending = Math.max(0, Number(account?.pendingAmount || 0));
+  const credit = Math.max(0, Number(account?.creditAmount || 0));
+  const due = parseQuoteDate(String(account?.nextDueDate || "").trim());
+  if (credit > 0 && pending <= 0) {
+    return { label: "Saldo a favor", tone: "credit", eta: "Disponible para compensar en otro evento", dueLabel: "Sin cobro urgente", sortWeight: 4 };
+  }
+  if (pending <= 0) {
+    return { label: "Saldado", tone: "ok", eta: "Sin gestion pendiente", dueLabel: "Cuenta al dia", sortWeight: 5 };
+  }
+  if (!due) {
+    return { label: "Sin fecha limite", tone: "neutral", eta: "Definir fecha maxima de pago", dueLabel: "Cobro sin programar", sortWeight: 3 };
+  }
+  const today = stripTime(new Date());
+  const diffDays = Math.round((due.getTime() - today.getTime()) / 86400000);
+  if (diffDays < 0) {
+    const days = Math.abs(diffDays);
+    return { label: `Vencido ${days} ${days === 1 ? "dia" : "dias"}`, tone: "overdue", eta: "Solicitar pago hoy", dueLabel: fmtDateShort(due), sortWeight: 0 };
+  }
+  if (diffDays === 0) {
+    return { label: "Cobro hoy", tone: "due", eta: "Solicitar pago hoy", dueLabel: fmtDateShort(due), sortWeight: 1 };
+  }
+  if (diffDays <= 3) {
+    return { label: `Por vencer ${diffDays} ${diffDays === 1 ? "dia" : "dias"}`, tone: "due", eta: `Solicitar en ${diffDays} ${diffDays === 1 ? "dia" : "dias"}`, dueLabel: fmtDateShort(due), sortWeight: 2 };
+  }
+  return { label: "En tiempo", tone: "ok", eta: `Solicitar en ${diffDays} dias`, dueLabel: fmtDateShort(due), sortWeight: 3 };
+}
+
+function getAccountingCompanyAccounts(rows = []) {
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  const groups = new Map();
+  const pickActionRow = (list) => list.slice().sort((a, b) => {
+    const aPending = Number(a?.balancePending || 0) > 0 ? 0 : 1;
+    const bPending = Number(b?.balancePending || 0) > 0 ? 0 : 1;
+    if (aPending !== bPending) return aPending - bPending;
+    const dueCmp = String(a?.dueDate || "9999-12-31").localeCompare(String(b?.dueDate || "9999-12-31"));
+    if (dueCmp !== 0) return dueCmp;
+    return String(b?.eventDate || "").localeCompare(String(a?.eventDate || ""));
+  })[0] || null;
+
+  for (const row of sourceRows) {
+    const key = String(row?.companyId || row?.company || row?.refId || row?.event?.id || `sin_empresa_${groups.size + 1}`);
+    const account = groups.get(key) || {
+      key,
+      companyId: String(row?.companyId || ""),
+      companyName: String(row?.company || "Sin institucion").trim() || "Sin institucion",
+      contactPhone: String(row?.manager || "").trim(),
+      rows: [],
+      netAmount: 0,
+      collectedAmount: 0,
+      pendingAmount: 0,
+      creditAmount: 0,
+      eventsCount: 0,
+      pendingEventsCount: 0,
+      paidEventsCount: 0,
+      advancesCount: 0,
+      sellerMap: new Map(),
+      lastAdvanceDate: "",
+      nextDueDate: "",
+    };
+    account.rows.push(row);
+    account.netAmount += Math.max(0, Number(row?.total || 0));
+    account.collectedAmount += Math.max(0, Number(row?.advancesTotal || 0));
+    account.pendingAmount += Math.max(0, Number(row?.balancePending || 0));
+    account.creditAmount += Math.max(0, Number(row?.creditBalance || 0));
+    account.eventsCount += 1;
+    account.advancesCount += Math.max(0, Number(row?.advancesCount || 0));
+    if (Number(row?.balancePending || 0) > 0) account.pendingEventsCount += 1;
+    else account.paidEventsCount += 1;
+    if (row?.seller) {
+      const seller = String(row.seller).trim();
+      account.sellerMap.set(seller, Number(account.sellerMap.get(seller) || 0) + Math.max(0, Number(row?.total || 0)));
+    }
+    if (row?.lastAdvanceDate && (!account.lastAdvanceDate || String(row.lastAdvanceDate).localeCompare(account.lastAdvanceDate) > 0)) {
+      account.lastAdvanceDate = String(row.lastAdvanceDate);
+    }
+    if (Number(row?.balancePending || 0) > 0 && row?.dueDate && (!account.nextDueDate || String(row.dueDate).localeCompare(account.nextDueDate) < 0)) {
+      account.nextDueDate = String(row.dueDate);
+    }
+    groups.set(key, account);
+  }
+
+  return Array.from(groups.values()).map((account) => {
+    const sellerEntry = Array.from(account.sellerMap.entries()).sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))[0];
+    const collection = summarizeAccountingCollectionState(account);
+    const actionRow = pickActionRow(account.rows);
+    return {
+      ...account,
+      primarySeller: sellerEntry?.[0] || "",
+      collectionLabel: collection.label,
+      collectionTone: collection.tone,
+      collectionEta: collection.eta,
+      collectionDueLabel: collection.dueLabel,
+      collectionSortWeight: collection.sortWeight,
+      actionEventId: String(actionRow?.event?.id || ""),
+      actionHasCredit: Math.max(0, Number(account.creditAmount || 0)) > 0,
+    };
+  }).sort((a, b) => {
+    if (a.collectionSortWeight !== b.collectionSortWeight) return a.collectionSortWeight - b.collectionSortWeight;
+    if (Number(b.pendingAmount || 0) !== Number(a.pendingAmount || 0)) return Number(b.pendingAmount || 0) - Number(a.pendingAmount || 0);
+    return String(a.companyName || "").localeCompare(String(b.companyName || ""));
+  });
+}
+
+function enrichAccountingReportRows(rows = []) {
+  return (Array.isArray(rows) ? rows : []).map((row) => {
+    const advances = normalizeQuoteAdvancesForSnapshot(row?.advances);
+    const advancesSorted = advances.slice().sort((a, b) => {
+      const d = String(a.date || "").localeCompare(String(b.date || ""));
+      if (d !== 0) return d;
+      return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
+    });
+    const lastAdvance = advancesSorted.length ? advancesSorted[advancesSorted.length - 1] : null;
+    const advancesTotal = advancesSorted.reduce((acc, item) => acc + Math.max(0, Number(item.amount || 0)), 0);
+    const total = Math.max(0, Number(row?.total || 0));
+    const delta = total - advancesTotal;
+    return {
+      ...row,
+      advances: advancesSorted,
+      advancesCount: advancesSorted.length,
+      advancesTotal,
+      balancePending: Math.max(0, delta),
+      creditBalance: Math.max(0, -delta),
+      lastAdvanceDate: String(lastAdvance?.date || "").trim(),
+      lastAdvancePaymentType: String(lastAdvance?.paymentType || "").trim(),
+      lastAdvanceDescription: String(lastAdvance?.description || "").trim(),
+    };
+  });
+}
+
+function buildAccountingLedgerEntries(account) {
+  const rows = Array.isArray(account?.rows) ? account.rows : [];
+  const entries = [];
+  for (const row of rows) {
+    const eventId = String(row?.event?.id || "").trim();
+    const ref = String(row?.refId || eventId || "-").trim() || "-";
+    const company = String(account?.companyName || row?.company || "").trim();
+    const eventDate = String(row?.eventDate || "").trim();
+    const docDate = String(row?.docDate || "").trim();
+    const baseDate = docDate || eventDate;
+    const total = Math.max(0, Number(row?.total || 0));
+    if (total > 0) {
+      entries.push({
+        date: baseDate,
+        type: "Cargo",
+        eventId,
+        refId: ref,
+        concept: `Cotizacion ${ref}${company ? ` | ${company}` : ""}`,
+        debit: total,
+        credit: 0,
+        sortBucket: 0,
+      });
+    }
+    const advances = Array.isArray(row?.advances) ? row.advances : [];
+    for (const adv of advances) {
+      const amount = Math.max(0, Number(adv?.amount || 0));
+      if (amount <= 0) continue;
+      const advDate = String(adv?.date || baseDate || "").trim();
+      const paymentType = String(adv?.paymentType || "").trim();
+      const description = String(adv?.description || "").trim();
+      const notes = [paymentType, description].filter(Boolean).join(" | ");
+      entries.push({
+        date: advDate,
+        type: "Abono",
+        eventId,
+        refId: ref,
+        concept: notes || `Pago aplicado a ${ref}`,
+        debit: 0,
+        credit: amount,
+        sortBucket: 1,
+      });
+    }
+  }
+
+  const normalized = entries.slice().sort((a, b) => {
+    const d = String(a.date || "9999-12-31").localeCompare(String(b.date || "9999-12-31"));
+    if (d !== 0) return d;
+    if (a.sortBucket !== b.sortBucket) return a.sortBucket - b.sortBucket;
+    return String(a.refId || "").localeCompare(String(b.refId || ""));
+  });
+  let runningBalance = 0;
+  return normalized.map((entry) => {
+    runningBalance += Math.max(0, Number(entry.debit || 0));
+    runningBalance -= Math.max(0, Number(entry.credit || 0));
+    return { ...entry, runningBalance };
+  });
+}
+function getAccountingReportFilteredRows() {
+  const search = String(el.accountingReportSearch?.value || "").trim().toLowerCase();
+  const from = String(el.accountingReportFrom?.value || "").trim();
+  const to = String(el.accountingReportTo?.value || "").trim();
+  const userId = String(el.accountingReportUser?.value || "").trim();
+  const status = String(el.accountingReportStatus?.value || "").trim();
+  const salon = String(el.accountingReportSalon?.value || "").trim();
+  const company = String(el.accountingReportCompany?.value || "").trim();
+
+  return enrichAccountingReportRows(buildSalesReportRows()).filter((r) => {
+    if (from && r.eventDate && r.eventDate < from) return false;
+    if (to && r.eventDate && r.eventDate > to) return false;
+    if (userId && String(r.event?.userId || "") !== userId) return false;
+    if (status && r.status !== status) return false;
+    if (salon && r.salon !== salon) return false;
+    if (company && String(r.event?.quote?.companyId || "") !== company) return false;
+    if (search) {
+      const blob = [r.refId, r.seller, r.eventType, r.salon, r.company, r.manager, r.status, r.paymentType, r.lastAdvancePaymentType, r.lastAdvanceDescription].join(" ");
+      if (!matchesLikeSearch(blob, search)) return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    const d = String(a.eventDate || "").localeCompare(String(b.eventDate || ""));
+    if (d !== 0) return d;
+    return String(a.startTime || "").localeCompare(String(b.startTime || ""));
+  });
+}
+
+function renderAccountingReportFilters() {
+  const users = (state.users || []).filter((u) => u.active !== false);
+  const statuses = Array.from(new Set((state.events || []).map((e) => String(e.status || "")).filter(Boolean))).sort();
+  const salones = Array.from(new Set((state.events || []).map((e) => String(e.salon || "")).filter(Boolean))).sort();
+  const companies = (state.companies || []).filter((c) => !isCompanyDisabled(c.id));
+
+  const fillSelect = (node, rows, allLabel) => {
+    if (!node) return;
+    const previous = String(node.value || "");
+    node.innerHTML = "";
+    const all = document.createElement("option");
+    all.value = "";
+    all.textContent = allLabel;
+    node.appendChild(all);
+    for (const row of rows) {
+      const opt = document.createElement("option");
+      opt.value = String(row.value);
+      opt.textContent = String(row.label);
+      node.appendChild(opt);
+    }
+    if (previous && rows.some((r) => String(r.value) === previous)) node.value = previous;
+    enhanceSelectControl(node, true);
+  };
+
+  fillSelect(el.accountingReportUser, users.map((u) => ({ value: u.id, label: u.fullName || u.name })), "Todos vendedores");
+  fillSelect(el.accountingReportStatus, statuses.map((s) => ({ value: s, label: s })), "Todos estados");
+  fillSelect(el.accountingReportSalon, salones.map((s) => ({ value: s, label: s })), "Todos salones");
+  fillSelect(el.accountingReportCompany, companies.map((c) => ({ value: c.id, label: c.name })), "Todas instituciones");
+}
+
+function renderAccountingReportSummary(rows = []) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const accounts = getAccountingCompanyAccounts(safeRows);
+  if (el.accountingReportFiltersMeta) {
+    el.accountingReportFiltersMeta.textContent = accountingReportFiltersSummaryText();
+  }
+  if (!el.accountingReportSummary) return;
+  const discountAmount = safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.discount || 0)), 0);
+  const netAmount = safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.total || 0)), 0);
+  const collectedAmount = safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.advancesTotal || 0)), 0);
+  const pendingAmount = safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.balancePending || 0)), 0);
+  const creditAmount = safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.creditBalance || 0)), 0);
+  const overdueCount = accounts.filter((account) => account.collectionTone === "overdue").length;
+  const nextCollection = accounts.find((account) => account.nextDueDate);
+  const cards = [
+    { tone: "primary", eyebrow: "Cartera", label: "Empresas visibles", value: String(accounts.length), meta: accounts.length ? `${safeRows.length} eventos | Venta neta ${moneyGT(netAmount)}` : "No hay resultados para el filtro actual" },
+    { tone: "info", eyebrow: "Cobrado", label: "Anticipos cobrados", value: moneyGT(collectedAmount), meta: `${safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.advancesCount || 0)), 0)} pago(s) registrados` },
+    { tone: "accent", eyebrow: "Pendiente", label: "Saldo por cobrar", value: moneyGT(pendingAmount), meta: `Saldo a favor ${moneyGT(creditAmount)} | Descuentos ${moneyGT(discountAmount)}` },
+    { tone: overdueCount ? "accent" : "success", eyebrow: "Gestion", label: "Cobro sugerido", value: overdueCount ? `${overdueCount} vencida(s)` : "Al dia", meta: nextCollection ? `${nextCollection.companyName}: ${nextCollection.collectionEta}` : "Sin cobros pendientes programados" },
+  ];
+  el.accountingReportSummary.innerHTML = cards.map((card) => `
+    <article class="salesSummaryCard salesSummaryCard--${escapeHtml(card.tone)}">
+      <span class="salesSummaryEyebrow">${escapeHtml(card.eyebrow)}</span>
+      <small>${escapeHtml(card.label)}</small>
+      <strong>${escapeHtml(card.value)}</strong>
+      <div class="salesSummaryMeta">${escapeHtml(card.meta)}</div>
+    </article>
+  `).join("");
+}
+function renderAccountingReportTable() {
+  if (!el.accountingReportBody) return;
+  const rows = getAccountingReportFilteredRows();
+  renderAccountingReportSummary(rows);
+  el.accountingReportBody.innerHTML = "";
+  const accounts = getAccountingCompanyAccounts(rows);
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="11">Sin resultados para los filtros seleccionados.</td>`;
+    el.accountingReportBody.appendChild(tr);
+    return;
+  }
+  const pick = (obj, key) => obj?.[key] || { qty: 0, amount: 0 };
+  for (const account of accounts) {
+    const expanded = accountingReportExpandedAccounts.has(account.key);
+    const canApplyPayment = !!String(account.actionEventId || "").trim();
+    const tr = document.createElement("tr");
+    tr.className = "accountingCompanyRow";
+    tr.innerHTML = `
+      <td><span class="accountingIndicator accountingIndicator--${escapeHtml(account.collectionTone)}">${escapeHtml(account.collectionLabel)}</span></td>
+      <td>
+        <div class="accountingCompanyCell">
+          <strong>${escapeHtml(account.companyName)}</strong>
+          <small>${escapeHtml(account.primarySeller ? `Principal: ${account.primarySeller}` : "Sin vendedor asignado")}</small>
+        </div>
+      </td>
+      <td>
+        <div class="accountingMetaCell">
+          <strong>${escapeHtml(account.contactPhone || "-")}</strong>
+          <small>${escapeHtml(`${account.pendingEventsCount} pendiente(s) | ${account.paidEventsCount} al dia`)}</small>
+        </div>
+      </td>
+      <td>${escapeHtml(String(account.eventsCount || 0))}</td>
+      <td>${escapeHtml(moneyGT(account.netAmount || 0))}</td>
+      <td>${escapeHtml(moneyGT(account.collectedAmount || 0))}</td>
+      <td>${escapeHtml(moneyGT(account.pendingAmount || 0))}</td>
+      <td>${escapeHtml(moneyGT(account.creditAmount || 0))}</td>
+      <td>
+        <div class="accountingMetaCell">
+          <strong>${escapeHtml(account.collectionDueLabel || "-")}</strong>
+          <small>${escapeHtml(account.collectionEta || "Sin gestion pendiente")}</small>
+        </div>
+      </td>
+      <td>${escapeHtml(account.lastAdvanceDate || "-")}</td>
+      <td>
+        <div class="accountingActionGroup">
+          <button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-toggle-company="${escapeHtml(account.key)}">${escapeHtml(expanded ? "Ocultar detalle" : "Ver detalle")}</button>
+          <button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-open-statement="${escapeHtml(account.key)}">Estado de cuenta</button>
+          <button class="accountingActionBtn" type="button" data-accounting-apply-payment="${escapeHtml(account.actionEventId || "")}" ${canApplyPayment ? "" : "disabled"}>${escapeHtml(account.actionHasCredit ? "Ajustar saldo" : "Aplicar pago")}</button>
+        </div>
+      </td>
+    `;
+    el.accountingReportBody.appendChild(tr);
+
+    if (!expanded) continue;
+    const ledgerEntries = buildAccountingLedgerEntries(account);
+    const detailTr = document.createElement("tr");
+    detailTr.className = "accountingCompanyDetailRow";
+    detailTr.innerHTML = `
+      <td colspan="11">
+        <div class="accountingDetailCard">
+          <div class="accountingDetailHead">
+            <strong>Estado de cuenta por evento</strong>
+            <small>${escapeHtml(`${account.companyName} | ${account.eventsCount} evento(s) | ${account.advancesCount} pago(s)`)}</small>
+          </div>
+          <div class="accountingDetailTableWrap">
+            <table class="quoteTable accountingDetailTable">
+              <thead>
+                <tr>
+                  <th>Estado</th>
+                  <th>No cotizacion</th>
+                  <th>Fecha evento</th>
+                  <th>Fecha maxima pago</th>
+                  <th>Vendedor</th>
+                  <th>Forma pago</th>
+                  <th>Total neto</th>
+                  <th>Cobrado</th>
+                  <th>Pendiente</th>
+                  <th>Saldo a favor</th>
+                  <th>Ultimo deposito</th>
+                  <th>Detalle</th>
+                  <th>Accion</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${account.rows.map((r) => `
+                  <tr>
+                    <td><span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.25))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.6))}">${escapeHtml(r.status || "-")}</span></td>
+                    <td>${escapeHtml(r.refId || "-")}</td>
+                    <td>${escapeHtml(r.eventDate || "-")}</td>
+                    <td>${escapeHtml(r.dueDate || "-")}</td>
+                    <td>${escapeHtml(r.seller || "-")}</td>
+                    <td>${escapeHtml(r.paymentType || "-")}</td>
+                    <td>${escapeHtml(moneyGT(r.total || 0))}</td>
+                    <td>${escapeHtml(moneyGT(r.advancesTotal || 0))}</td>
+                    <td>${escapeHtml(moneyGT(r.balancePending || 0))}</td>
+                    <td>${escapeHtml(moneyGT(r.creditBalance || 0))}</td>
+                    <td>${escapeHtml(r.lastAdvanceDate || "-")}</td>
+                    <td>
+                      <div class="accountingMetaCell">
+                        <strong>${escapeHtml(r.lastAdvancePaymentType || "-")}</strong>
+                        <small>${escapeHtml(r.lastAdvanceDescription || "Sin anticipo registrado")}</small>
+                      </div>
+                    </td>
+                    <td><button class="accountingActionBtn" type="button" data-accounting-apply-payment="${escapeHtml(String(r?.event?.id || ""))}" ${String(r?.event?.id || "").trim() ? "" : "disabled"}>${escapeHtml(r.creditBalance > 0 ? "Ajustar saldo" : "Aplicar pago")}</button></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+          <div class="accountingDetailMetrics">
+            <span>Total A&B ${escapeHtml(moneyGT(account.rows.reduce((acc, row) => acc + Math.max(0, Number(pick(row.catBuckets, "alimentosBebidas").amount || 0)), 0)))}</span>
+            <span>Hospedaje JDL ${escapeHtml(moneyGT(account.rows.reduce((acc, row) => acc + Math.max(0, Number(pick(row.catBuckets, "hospedajeJdl").amount || 0)), 0)))}</span>
+            <span>Hospedaje terceros ${escapeHtml(moneyGT(account.rows.reduce((acc, row) => acc + Math.max(0, Number(pick(row.catBuckets, "hospedajeTerceros").amount || 0)), 0)))}</span>
+            <span>Miscelaneos ${escapeHtml(moneyGT(account.rows.reduce((acc, row) => acc + Math.max(0, Number(pick(row.catBuckets, "miscelaneos").amount || 0)), 0)))}</span>
+          </div>
+          <div class="accountingDetailTableWrap">
+            <table class="quoteTable accountingDetailTable">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>No cotizacion</th>
+                  <th>Concepto</th>
+                  <th>Cargo</th>
+                  <th>Abono</th>
+                  <th>Saldo acumulado</th>
+                  <th>Accion</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ledgerEntries.length ? ledgerEntries.map((entry) => `
+                  <tr>
+                    <td>${escapeHtml(entry.date || "-")}</td>
+                    <td>${escapeHtml(entry.type || "-")}</td>
+                    <td>${escapeHtml(entry.refId || "-")}</td>
+                    <td>${escapeHtml(entry.concept || "-")}</td>
+                    <td>${escapeHtml(entry.debit > 0 ? moneyGT(entry.debit) : "-")}</td>
+                    <td>${escapeHtml(entry.credit > 0 ? moneyGT(entry.credit) : "-")}</td>
+                    <td>${escapeHtml(moneyGT(entry.runningBalance || 0))}</td>
+                    <td><button class="accountingActionBtn" type="button" data-accounting-apply-payment="${escapeHtml(String(entry.eventId || ""))}" ${String(entry.eventId || "").trim() ? "" : "disabled"}>${escapeHtml(entry.runningBalance > 0 ? "Aplicar pago" : "Ajustar saldo")}</button></td>
+                  </tr>
+                `).join("") : `<tr><td colspan="8">Sin movimientos para esta institucion.</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </td>
+    `;
+    el.accountingReportBody.appendChild(detailTr);
+  }
+}
+
+function renderAccountingStatementModal(account) {
+  if (!el.accountStatementCompany || !el.accountStatementMeta || !el.accountStatementSummary || !el.accountStatementBody) return;
+  const safe = account || null;
+  const rows = Array.isArray(safe?.rows) ? safe.rows : [];
+  const ledgerEntries = buildAccountingLedgerEntries(safe);
+  const now = new Date();
+  const issueDate = now.toLocaleDateString("es-GT", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const issueTime = now.toLocaleTimeString("es-GT", { hour: "2-digit", minute: "2-digit" });
+  const company = String(safe?.companyName || "Institucion").trim() || "Institucion";
+  const pending = Math.max(0, Number(safe?.pendingAmount || 0));
+  const credit = Math.max(0, Number(safe?.creditAmount || 0));
+  const total = Math.max(0, Number(safe?.netAmount || 0));
+  const collected = Math.max(0, Number(safe?.collectedAmount || 0));
+
+  const firstRow = rows[0] || {};
+  const firstEvent = firstRow?.event || {};
+  const quote = firstEvent?.quote || {};
+  const managerName = String(quote?.contact || "-").trim() || "-";
+  const phone = String(quote?.phone || firstRow?.manager || "-").trim() || "-";
+  const address = String(quote?.address || "-").trim() || "-";
+  const nit = String(quote?.nit || "-").trim() || "-";
+
+  el.accountStatementCompany.textContent = company;
+  if (el.accountStatementNit) el.accountStatementNit.textContent = nit;
+  if (el.accountStatementManager) el.accountStatementManager.textContent = managerName;
+  if (el.accountStatementPhone) el.accountStatementPhone.textContent = phone;
+  if (el.accountStatementAddress) el.accountStatementAddress.textContent = address;
+  if (el.accountStatementIssueDate) el.accountStatementIssueDate.textContent = issueDate;
+  if (el.accountStatementIssueTime) el.accountStatementIssueTime.textContent = issueTime;
+
+  el.accountStatementMeta.textContent = `${rows.length} cotizacion(es) | ${ledgerEntries.length} movimiento(s)`;
+  el.accountStatementSummary.innerHTML = `
+    <article class="accountStatementKpi"><small>Total neto</small><strong>${escapeHtml(moneyGT(total))}</strong></article>
+    <article class="accountStatementKpi"><small>Total pagado</small><strong>${escapeHtml(moneyGT(collected))}</strong></article>
+    <article class="accountStatementKpi"><small>Saldo pendiente</small><strong>${escapeHtml(moneyGT(pending))}</strong></article>
+    <article class="accountStatementKpi"><small>Saldo a favor</small><strong>${escapeHtml(moneyGT(credit))}</strong></article>
+  `;
+
+  if (!ledgerEntries.length) {
+    el.accountStatementBody.innerHTML = '<tr><td colspan="7">Sin movimientos para esta empresa.</td></tr>';
+    return;
+  }
+
+  el.accountStatementBody.innerHTML = ledgerEntries.map((entry) => `
+    <tr>
+      <td>${escapeHtml(entry.date || "-")}</td>
+      <td>${escapeHtml(entry.refId || "-")}</td>
+      <td>${escapeHtml(entry.concept || "-")}</td>
+      <td>${escapeHtml(entry.debit > 0 ? moneyGT(entry.debit) : "-")}</td>
+      <td>${escapeHtml(entry.credit > 0 ? moneyGT(entry.credit) : "-")}</td>
+      <td>${escapeHtml(moneyGT(entry.runningBalance || 0))}</td>
+      <td><button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-apply-payment="${escapeHtml(String(entry.eventId || ""))}" ${String(entry.eventId || "").trim() ? "" : "disabled"}>${escapeHtml(entry.runningBalance > 0 ? "Aplicar pago" : "Ajustar")}</button></td>
+    </tr>
+  `).join("");
+}
+
+function openAccountingStatementModal(companyKey) {
+  if (!el.accountStatementBackdrop) return;
+  const key = String(companyKey || "").trim();
+  if (!key) return toast("No se pudo identificar la empresa.");
+  const rows = getAccountingReportFilteredRows();
+  const accounts = getAccountingCompanyAccounts(rows);
+  const account = accounts.find((x) => String(x.key || "") === key);
+  if (!account) return toast("No se encontro estado de cuenta para esa empresa.");
+  accountingStatementActiveCompanyKey = key;
+  renderAccountingStatementModal(account);
+  el.accountStatementBackdrop.hidden = false;
+}
+
+function closeAccountingStatementModal() {
+  if (!el.accountStatementBackdrop) return;
+  el.accountStatementBackdrop.hidden = true;
+}
+function exportAccountingReportToExcel() {
+  const rows = getAccountingReportFilteredRows();
+  if (!rows.length) return toast("No hay datos para exportar.");
+  const accounts = getAccountingCompanyAccounts(rows);
+  const generatedAt = new Date().toLocaleString("es-GT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const emittedBy = String(authSession.fullName || authSession.username || "Sistema").trim();
+  const netAmount = rows.reduce((acc, row) => acc + Math.max(0, Number(row?.total || 0)), 0);
+  const collectedAmount = rows.reduce((acc, row) => acc + Math.max(0, Number(row?.advancesTotal || 0)), 0);
+  const pendingAmount = rows.reduce((acc, row) => acc + Math.max(0, Number(row?.balancePending || 0)), 0);
+  const creditAmount = rows.reduce((acc, row) => acc + Math.max(0, Number(row?.creditBalance || 0)), 0);
+  const overdueCount = accounts.filter((account) => account.collectionTone === "overdue").length;
+
+  const htmlRows = accounts.map((account) => `
+    <tr>
+      <td>${escapeHtml(account.collectionLabel || "-")}</td>
+      <td>${escapeHtml(account.companyName || "-")}</td>
+      <td>${escapeHtml(account.contactPhone || "-")}</td>
+      <td>${escapeHtml(account.primarySeller || "-")}</td>
+      <td>${escapeHtml(String(account.eventsCount || 0))}</td>
+      <td>${escapeHtml(String(account.pendingEventsCount || 0))}</td>
+      <td>${escapeHtml(moneyGT(account.netAmount || 0))}</td>
+      <td>${escapeHtml(moneyGT(account.collectedAmount || 0))}</td>
+      <td>${escapeHtml(moneyGT(account.pendingAmount || 0))}</td>
+      <td>${escapeHtml(moneyGT(account.creditAmount || 0))}</td>
+      <td>${escapeHtml(account.collectionDueLabel || "-")}</td>
+      <td>${escapeHtml(account.collectionEta || "-")}</td>
+      <td>${escapeHtml(account.lastAdvanceDate || "-")}</td>
+    </tr>
+  `).join("");
+
+  const htmlDetailRows = rows.slice().sort((a, b) => {
+    const c = String(a.company || "").localeCompare(String(b.company || ""));
+    if (c !== 0) return c;
+    const d = String(a.refId || "").localeCompare(String(b.refId || ""));
+    if (d !== 0) return d;
+    return String(a.eventDate || "").localeCompare(String(b.eventDate || ""));
+  }).map((row) => `
+    <tr>
+      <td>${escapeHtml(row.company || "-")}</td>
+      <td>${escapeHtml(row.refId || "-")}</td>
+      <td>${escapeHtml(row.eventDate || "-")}</td>
+      <td>${escapeHtml(row.dueDate || "-")}</td>
+      <td>${escapeHtml(row.seller || "-")}</td>
+      <td>${escapeHtml(moneyGT(row.total || 0))}</td>
+      <td>${escapeHtml(moneyGT(row.advancesTotal || 0))}</td>
+      <td>${escapeHtml(moneyGT(row.balancePending || 0))}</td>
+      <td>${escapeHtml(moneyGT(row.creditBalance || 0))}</td>
+      <td>${escapeHtml(row.lastAdvanceDate || "-")}</td>
+    </tr>
+  `).join("");
+
+  const html = `<!doctype html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8" />
+  <meta name="ProgId" content="Excel.Sheet" />
+  <meta name="Generator" content="CRM Jardines" />
+  <style>
+    body{ font-family: Calibri, Arial, sans-serif; background:#eef3fb; margin:0; padding:16px; color:#0f172a; }
+    .card{ background:#ffffff; border:1px solid #c5d4ea; border-radius:10px; overflow:hidden; }
+    .meta{ padding:10px 14px; border-top:1px solid #bfd3ee; border-bottom:1px solid #bfd3ee; background:#eaf3ff; font-size:12px; }
+    .meta div{ margin:2px 0; }
+    table{ width:100%; border-collapse:collapse; }
+    th,td{ border:1px solid #c7d5ea; padding:6px 7px; font-size:10.5px; white-space:nowrap; }
+    thead th{ background:#0f3c67; color:#fff; font-weight:700; text-transform:uppercase; }
+    .titleTable{ width:100%; border-collapse:collapse; }
+    .titleCell{ border:1px solid #c7d5ea; background:#d8e3f3; color:#000; font-weight:800; font-size:20px; letter-spacing:.3px; padding:12px 14px; text-transform:uppercase; }
+    .sectionTitle{ background:#f1f6ff; color:#0f3c67; font-weight:700; border:1px solid #c7d5ea; padding:8px 10px; margin-top:14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <table class="titleTable">
+      <tr><td class="titleCell">CRM JARDINES - ESTADO DE CUENTA POR INSTITUCION</td></tr>
+    </table>
+    <div class="meta">
+      <div><b>Fecha:</b> ${escapeHtml(generatedAt)}</div>
+      <div><b>Quien emitio el reporte:</b> ${escapeHtml(emittedBy)}</div>
+      <div><b>Filtros aplicados:</b> ${escapeHtml(accountingReportFiltersSummaryText())}</div>
+      <div><b>Total empresas:</b> ${accounts.length}</div>
+      <div><b>Total eventos:</b> ${rows.length}</div>
+      <div><b>Anticipos cobrados:</b> ${escapeHtml(moneyGT(collectedAmount))}</div>
+      <div><b>Saldo pendiente:</b> ${escapeHtml(moneyGT(pendingAmount))}</div>
+      <div><b>Saldo a favor:</b> ${escapeHtml(moneyGT(creditAmount))}</div>
+      <div><b>Venta neta:</b> ${escapeHtml(moneyGT(netAmount))}</div>
+      <div><b>Empresas vencidas:</b> ${overdueCount}</div>
+    </div>
+    <div class="sectionTitle">Resumen por institucion</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Indicador</th><th>Institucion</th><th>Contacto cobro</th><th>Vendedor principal</th><th>Eventos</th><th>Eventos pendientes</th><th>Venta neta</th><th>Cobrado</th><th>Saldo pendiente</th><th>Saldo a favor</th><th>Proximo cobro</th><th>Tiempo sugerido</th><th>Ultimo deposito</th>
+        </tr>
+      </thead>
+      <tbody>${htmlRows}</tbody>
+    </table>
+    <div class="sectionTitle">Detalle por numero de cotizacion</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Institucion</th><th>No cotizacion</th><th>Fecha evento</th><th>Fecha maxima pago</th><th>Vendedor</th><th>Total neto</th><th>Cobrado</th><th>Saldo pendiente</th><th>Saldo a favor</th><th>Ultimo deposito</th>
+        </tr>
+      </thead>
+      <tbody>${htmlDetailRows}</tbody>
+    </table>
+  </div>
+</body>
+</html>`;
+
+  const blob = new Blob([`﻿${html}`], { type: "application/vnd.ms-excel;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `estado_cuenta_instituciones_${stamp}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function resetAccountingReportFilters() {
+  if (el.accountingReportSearch) el.accountingReportSearch.value = "";
+  if (el.accountingReportFrom) el.accountingReportFrom.value = "";
+  if (el.accountingReportTo) el.accountingReportTo.value = "";
+  if (el.accountingReportUser) el.accountingReportUser.value = "";
+  if (el.accountingReportStatus) el.accountingReportStatus.value = "";
+  if (el.accountingReportSalon) el.accountingReportSalon.value = "";
+  if (el.accountingReportCompany) el.accountingReportCompany.value = "";
+}
+
+function openAccountingReportModal() {
+  if (!el.accountingReportBackdrop) return;
+  if (el.salesReportBackdrop) el.salesReportBackdrop.hidden = true;
+  if (el.occupancyReportBackdrop) el.occupancyReportBackdrop.hidden = true;
+  if (el.dashboardReportBackdrop) el.dashboardReportBackdrop.hidden = true;
+  if (el.institutionReportBackdrop) el.institutionReportBackdrop.hidden = true;
+  renderAccountingReportFilters();
+  resetAccountingReportFilters();
+  renderAccountingReportTable();
+  el.accountingReportBackdrop.hidden = false;
+}
+
+function closeAccountingReportModal() {
+  if (!el.accountingReportBackdrop) return;
+  accountingReportReturnAfterPayment = false;
+  document.body.classList.remove("accountingPaymentMode");
+  el.accountingReportBackdrop.hidden = true;
+  closeAccountingStatementModal();
+  restoreModuleScreenAfterModal();
+}
 function weekInputFromDate(date) {
   return toISODate(startOfWeek(date));
 }
@@ -4345,7 +5193,6 @@ function exportOccupancyReportToExcel() {
       <td>${escapeHtml(r.updatedAt || "-")}</td>
     </tr>
   `).join("");
-
   const html = `<!doctype html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
@@ -6319,6 +7166,7 @@ function initCustomTopbarSelects() {
 function enhanceSelectControl(select, force = false) {
   if (!USE_ENHANCED_SELECTS) return;
   if (!select || typeof window.SlimSelect !== "function") return;
+  if (select === el.navMode || select === el.roomSelect || select.closest?.(".topbar")) return;
   const existing = uiEnhancers.selectChoices.get(select);
   if (existing && !force) return;
   if (existing) {
@@ -6330,12 +7178,14 @@ function enhanceSelectControl(select, force = false) {
     const choices = new window.SlimSelect({
       select,
       settings: {
-        showSearch: false,
+        showSearch: true,
         openPosition: "auto",
         contentPosition: "fixed",
         contentLocation: document.body,
         closeOnSelect: true,
         placeholderText: "Selecciona opcion",
+        searchPlaceholder: "Escribe para buscar...",
+        searchText: "Sin resultados",
       },
     });
     const ssMain = select.nextElementSibling;
@@ -6425,6 +7275,7 @@ function initEnhancedSelects() {
       enhanceSelectControl(s, true);
     } catch (_) { }
   }
+  ensureSelectEnhancerObserver();
 }
 
 function getVisibleDayCount() {
@@ -6461,7 +7312,8 @@ try {
     .finally(() => {
       loadLoginUsers()
         .then(() => {
-          if (el.loginScreen) el.loginScreen.hidden = false;
+          const restored = restorePersistedAppSession();
+          if (!restored && el.loginScreen) el.loginScreen.hidden = false;
         })
         .catch(() => {
           if (el.loginScreen) el.loginScreen.hidden = false;
@@ -6734,6 +7586,7 @@ async function doLogin() {
     avatarDataUrl: String(payload?.user?.avatarDataUrl || "").trim(),
     signatureDataUrl: String(payload?.user?.signatureDataUrl || "").trim(),
   };
+  savePersistedAuthSession();
   renderTopbarWelcome();
   refreshTopbarReminders();
   el.loginScreen.hidden = true;
@@ -9863,7 +10716,7 @@ function renderMmsComandaTag(container, label, removeKind, removeId, { qty = nul
   tag.dataset.mmsTagKind = String(removeKind || "");
   tag.dataset.mmsTagId = String(removeId || "");
   const qtyHtml = allowQty && Number.isFinite(Number(qty))
-    ? ` x${Math.max(1, Math.floor(Number(qty)))} <button type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="dec" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Disminuir">-</button><button type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="inc" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Aumentar">+</button>`
+    ? ` | Cant: ${Math.max(1, Math.floor(Number(qty)))} <button type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="dec" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Disminuir">-</button><button type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="inc" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Aumentar">+</button>`
     : "";
   tag.innerHTML = `${escapeHtml(label)}${qtyHtml} <button type="button" data-mms-remove-kind="${escapeHtml(removeKind)}" data-mms-remove-id="${escapeHtml(String(removeId))}" title="Quitar">x</button>`;
   container.appendChild(tag);
@@ -10069,7 +10922,7 @@ function renderMmsSelectionSummary() {
   ensureMmsCatalogDefaults();
   const cache = menuMontajeSelectableCatalogCache;
   const platoItems = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : [])
-    .map((item) => `${getMmsPlatoItemLabel(item)} x${Math.max(1, Math.floor(Number(item?.qty || 1)))}`);
+    .map((item) => `${getMmsPlatoItemLabel(item)} | Cant: ${Math.max(1, Math.floor(Number(item?.qty || 1)))}`);
   const guarnicionIds = selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll);
   const postreIds = selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll);
   const guarniciones = guarnicionIds.map((id) => {
@@ -10290,7 +11143,7 @@ function buildMmsMenuDescriptionFromForm() {
   const mapItemsWithQtyFromMap = (rows, ids, qtyMap) => ids.map((itemId) => {
     const name = namesFromIds(rows, [itemId])[0] || "";
     const qty = Math.max(1, Math.floor(Number(qtyMap?.[itemId] || 1)));
-    return name ? `${name} x${qty}` : "";
+    return name ? `${name} | Cant: ${qty}` : "";
   }).filter(Boolean);
   const lines = [];
   if (!lineItems.length) {
@@ -10387,7 +11240,7 @@ async function refreshMmsByProteinPreparation({ preserveSelection = true } = {})
     }
   }
   const prepId = Number(el.mmsPreparation?.value || 0);
-  let links = { salsaIds: [], postreIds: [], guarnicionIds: [] };
+  let links = { salsaIds: [], postreIds: [], guarnicionIds: [], bebidaIds: [], montajeTipoIds: [], montajeAdicionalIds: [] };
   if (platoId > 0 && prepId > 0) {
     try {
       links = await readMenuSuggestions({ platoId, preparacionId: prepId });
@@ -10396,16 +11249,50 @@ async function refreshMmsByProteinPreparation({ preserveSelection = true } = {})
 
   const selectedGuarniciones = selectedIdsUnionFromTwoLists(el.mmsGuarnicionesSuggested, el.mmsGuarnicionesAll);
   const selectedPostres = selectedIdsUnionFromTwoLists(el.mmsPostresSuggested, el.mmsPostresAll);
-  cache.suggestedSalsaIds = Array.isArray(links.salsaIds) ? links.salsaIds.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0) : [];
-  const guarnicionSet = new Set([...(Array.isArray(links.guarnicionIds) ? links.guarnicionIds : []), ...selectedGuarniciones].map((x) => Number(x)));
-  const postreSet = new Set([...(Array.isArray(links.postreIds) ? links.postreIds : []), ...selectedPostres].map((x) => Number(x)));
+  const selectedBebidas = (Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : [])
+    .map((x) => Number(x))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  const selectedMontajeAdicionales = selectedIdsFromChecklist(el.mmsMontajeAdicionales)
+    .map((x) => Number(x))
+    .filter((n) => Number.isFinite(n) && n > 0);
+
+  cache.suggestedSalsaIds = Array.isArray(links.salsaIds)
+    ? links.salsaIds.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0)
+    : [];
+
+  const guarnicionSet = new Set([...(Array.isArray(links.guarnicionIds) ? links.guarnicionIds : []), ...selectedGuarniciones].map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
+  const postreSet = new Set([...(Array.isArray(links.postreIds) ? links.postreIds : []), ...selectedPostres].map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
+  const bebidaSet = new Set([...(Array.isArray(links.bebidaIds) ? links.bebidaIds : []), ...selectedBebidas].map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
+  const montajeAdicionalSet = new Set([...(Array.isArray(links.montajeAdicionalIds) ? links.montajeAdicionalIds : []), ...selectedMontajeAdicionales].map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
+
+  const guarnicionIds = Array.from(guarnicionSet.values());
+  const postreIds = Array.from(postreSet.values());
+  const bebidaIds = Array.from(bebidaSet.values());
 
   const guarnicionesSuggested = cache.guarniciones.filter((x) => guarnicionSet.has(Number(x.id || 0)));
   const postresSuggested = cache.postres.filter((x) => postreSet.has(Number(x.id || 0)));
-  renderMenuSuggestionCheckboxList(el.mmsGuarnicionesSuggested, guarnicionesSuggested, Array.from(guarnicionSet.values()));
-  renderMenuSuggestionCheckboxList(el.mmsGuarnicionesAll, cache.guarniciones, Array.from(guarnicionSet.values()));
-  renderMenuSuggestionCheckboxList(el.mmsPostresSuggested, postresSuggested, Array.from(postreSet.values()));
-  renderMenuSuggestionCheckboxList(el.mmsPostresAll, cache.postres, Array.from(postreSet.values()));
+  renderMenuSuggestionCheckboxList(el.mmsGuarnicionesSuggested, guarnicionesSuggested, guarnicionIds);
+  renderMenuSuggestionCheckboxList(el.mmsGuarnicionesAll, cache.guarniciones, guarnicionIds);
+  renderMenuSuggestionCheckboxList(el.mmsPostresSuggested, postresSuggested, postreIds);
+  renderMenuSuggestionCheckboxList(el.mmsPostresAll, cache.postres, postreIds);
+
+  mmsSelectedBebidaIds = bebidaIds;
+  mmsBebidaQtyById = syncMmsQtyMapWithSelection(mmsSelectedBebidaIds, mmsBebidaQtyById);
+  setChecklistCheckedByIds(el.mmsMontajeAdicionales, montajeAdicionalSet);
+
+  const suggestedMontajeTipoId = Array.isArray(links.montajeTipoIds)
+    ? Number(links.montajeTipoIds[0] || 0)
+    : 0;
+  if (suggestedMontajeTipoId > 0 && el.mmsMontajeTipo && Array.from(el.mmsMontajeTipo.options).some((o) => Number(o.value || 0) === suggestedMontajeTipoId)) {
+    const currentMontajeTipoId = Number(el.mmsMontajeTipo.value || 0);
+    if (!currentMontajeTipoId || !preserveSelection) {
+      el.mmsMontajeTipo.value = String(suggestedMontajeTipoId);
+    }
+  }
+
+  syncMmsGuarnicionQtyWithSelection();
+  syncMmsPostreQtyWithSelection();
+  syncMmsBebidaQtyWithSelection();
   renderMmsQuickSelectors();
   renderMmsStageOptions();
   maybeAutofillMmsTitle();
@@ -11292,6 +12179,11 @@ function bindEvents() {
       showModuleHub();
     });
   }
+  if (el.btnLogout) {
+    el.btnLogout.addEventListener("click", () => {
+      logoutCurrentSession();
+    });
+  }
   if (el.btnModuleCalendar) {
     el.btnModuleCalendar.addEventListener("click", () => {
       showCalendarModule();
@@ -11466,10 +12358,24 @@ function bindEvents() {
       });
     }
 
+    if (el.btnQuickOpenMenuCatalog) {
+      el.btnQuickOpenMenuCatalog.addEventListener("click", async () => {
+        prepareModuleModalOpen("settings");
+        closeSettingsPanel();
+        await openMenuCatalogManagerModal("plato_fuerte");
+      });
+    }
+
     if (el.btnReportSales) {
       el.btnReportSales.addEventListener("click", () => {
         prepareModuleModalOpen("reports");
         openSalesReportModal();
+      });
+    }
+    if (el.btnReportAccounting) {
+      el.btnReportAccounting.addEventListener("click", () => {
+        prepareModuleModalOpen("reports");
+        openAccountingReportModal();
       });
     }
     if (el.btnReportOccupancy) {
@@ -11556,7 +12462,13 @@ function bindEvents() {
     });
   }
 
-  el.btnClose.addEventListener("click", closeModal);
+  const handleCloseModalClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  };
+  el.btnClose.addEventListener("click", handleCloseModalClick);
+  el.btnClose.addEventListener("pointerdown", handleCloseModalClick);
   if (el.btnDiscard) el.btnDiscard.addEventListener("click", closeModal);
   bindSafeBackdropClose(el.modalBackdrop, closeModal);
 
@@ -11810,11 +12722,22 @@ function bindEvents() {
     el.btnQuoteAdvanceClose.addEventListener("click", closeQuoteAdvanceModal);
   }
   if (el.btnQuoteAdvanceDone) {
-    el.btnQuoteAdvanceDone.addEventListener("click", closeQuoteAdvanceModal);
+    el.btnQuoteAdvanceDone.addEventListener("click", () => {
+      if (el.accountingReportBackdrop && !el.accountingReportBackdrop.hidden) renderAccountingReportTable();
+      closeQuoteAdvanceModal();
+    });
   }
   if (el.btnQuoteAdvanceAdd) {
     el.btnQuoteAdvanceAdd.addEventListener("click", () => {
       addQuoteAdvanceFromForm();
+    });
+  }
+  if (el.quoteAdvanceEvidence) {
+    el.quoteAdvanceEvidence.addEventListener("change", () => {
+      const file = el.quoteAdvanceEvidence.files?.[0] || null;
+      if (el.quoteAdvanceEvidenceHint) {
+        el.quoteAdvanceEvidenceHint.textContent = file ? `Archivo seleccionado: ${file.name}` : "Sin archivo adjunto";
+      }
     });
   }
   if (el.quoteAdvanceBody) {
@@ -11829,7 +12752,38 @@ function bindEvents() {
       removeQuoteAdvanceById(btn.dataset.advanceId);
     });
   }
-  if (el.quoteAdvanceBackdrop) {
+  if (el.accountingReportBody) {
+    el.accountingReportBody.addEventListener("click", (e) => {
+      const toggleBtn = e.target.closest("[data-accounting-toggle-company]");
+      if (toggleBtn) {
+        const key = String(toggleBtn.dataset.accountingToggleCompany || "").trim();
+        if (!key) return;
+        if (accountingReportExpandedAccounts.has(key)) accountingReportExpandedAccounts.delete(key);
+        else accountingReportExpandedAccounts.add(key);
+        renderAccountingReportTable();
+        return;
+      }
+      const statementBtn = e.target.closest("[data-accounting-open-statement]");
+      if (statementBtn) {
+        openAccountingStatementModal(statementBtn.dataset.accountingOpenStatement);
+        return;
+      }
+      const btn = e.target.closest("[data-accounting-apply-payment]");
+      if (!btn) return;
+      applyPaymentFromAccountingReport(btn.dataset.accountingApplyPayment).catch(() => {
+        toast("No se pudo abrir la venta para aplicar pagos.");
+      });
+    });
+  }
+  if (el.accountStatementBody) {
+    el.accountStatementBody.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-accounting-apply-payment]");
+      if (!btn) return;
+      applyPaymentFromAccountingReport(btn.dataset.accountingApplyPayment).catch(() => {
+        toast("No se pudo abrir la venta para aplicar pagos.");
+      });
+    });
+  }  if (el.quoteAdvanceBackdrop) {
     bindSafeBackdropClose(el.quoteAdvanceBackdrop, closeQuoteAdvanceModal);
   }
   if (el.btnMenuMontajeClose) {
@@ -12676,7 +13630,7 @@ function bindEvents() {
     el.btnMenuSuggestionsSave.addEventListener("click", async () => {
       const platoId = Number(el.menuSuggestionsProtein?.value || 0);
       const preparacionId = Number(el.menuSuggestionsPreparation?.value || 0);
-      if (!Number.isFinite(platoId) || platoId <= 0) return toast("Selecciona una proteina.");
+      if (!Number.isFinite(platoId) || platoId <= 0) return toast("Selecciona un plato base.");
       if (!Number.isFinite(preparacionId) || preparacionId <= 0) return toast("Selecciona una preparacion.");
       await saveMenuSuggestions({
         id_plato_fuerte: platoId,
@@ -12684,8 +13638,11 @@ function bindEvents() {
         salsaIds: selectedIdsFromChecklist(el.menuSuggestionsSalsas),
         postreIds: selectedIdsFromChecklist(el.menuSuggestionsPostres),
         guarnicionIds: selectedIdsFromChecklist(el.menuSuggestionsGuarniciones),
+        bebidaIds: selectedIdsFromChecklist(el.menuSuggestionsBebidas),
+        montajeTipoIds: selectedIdsFromChecklist(el.menuSuggestionsMontajeTipos),
+        montajeAdicionalIds: selectedIdsFromChecklist(el.menuSuggestionsMontajeAdicionales),
       });
-      toast("Sugerencias de menu actualizadas.");
+      toast("Combinacion de platillo actualizada.");
     });
   }
   if (el.btnMenuSuggestionsManageCatalog) {
@@ -12883,8 +13840,16 @@ function bindEvents() {
 
   if (el.btnAppointmentClose) el.btnAppointmentClose.addEventListener("click", closeAppointmentModal);
   if (el.btnSalesReportClose) el.btnSalesReportClose.addEventListener("click", closeSalesReportModal);
+  if (el.btnAccountingReportClose) el.btnAccountingReportClose.addEventListener("click", closeAccountingReportModal);
+  if (el.btnAccountStatementClose) el.btnAccountStatementClose.addEventListener("click", closeAccountingStatementModal);
   if (el.salesReportBackdrop) {
     bindSafeBackdropClose(el.salesReportBackdrop, closeSalesReportModal);
+  }
+  if (el.accountingReportBackdrop) {
+    bindSafeBackdropClose(el.accountingReportBackdrop, closeAccountingReportModal);
+  }
+  if (el.accountStatementBackdrop) {
+    bindSafeBackdropClose(el.accountStatementBackdrop, closeAccountingStatementModal);
   }
   [
     el.salesReportFrom,
@@ -12917,6 +13882,39 @@ function bindEvents() {
   if (el.btnSalesReportExportExcel) {
     el.btnSalesReportExportExcel.addEventListener("click", () => {
       exportSalesReportToExcel();
+    });
+  }
+  [
+    el.accountingReportFrom,
+    el.accountingReportTo,
+    el.accountingReportUser,
+    el.accountingReportStatus,
+    el.accountingReportSalon,
+    el.accountingReportCompany,
+  ].forEach((node) => {
+    if (!node) return;
+    const evt = node.tagName === "INPUT" ? "input" : "change";
+    node.addEventListener(evt, () => renderAccountingReportTable());
+  });
+  if (el.accountingReportSearch) {
+    el.accountingReportSearch.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      renderAccountingReportTable();
+    });
+    el.accountingReportSearch.addEventListener("change", () => {
+      renderAccountingReportTable();
+    });
+  }
+  if (el.btnAccountingReportReset) {
+    el.btnAccountingReportReset.addEventListener("click", () => {
+      resetAccountingReportFilters();
+      renderAccountingReportTable();
+    });
+  }
+  if (el.btnAccountingReportExportExcel) {
+    el.btnAccountingReportExportExcel.addEventListener("click", () => {
+      exportAccountingReportToExcel();
     });
   }
   if (el.btnOccupancyReportClose) el.btnOccupancyReportClose.addEventListener("click", closeOccupancyReportModal);
@@ -13629,7 +14627,9 @@ function bindEvents() {
     if (e.key === "Escape") closeTopbarReminderPanel();
     if (e.key === "Escape") {
       if (!el.userBackdrop.hidden) closeUserModal();
+      else if (el.accountStatementBackdrop && !el.accountStatementBackdrop.hidden) closeAccountingStatementModal();
       else if (el.salesReportBackdrop && !el.salesReportBackdrop.hidden) closeSalesReportModal();
+      else if (el.accountingReportBackdrop && !el.accountingReportBackdrop.hidden) closeAccountingReportModal();
       else if (el.occupancyReportBackdrop && !el.occupancyReportBackdrop.hidden) closeOccupancyReportModal();
       else if (el.dashboardReportBackdrop && !el.dashboardReportBackdrop.hidden) closeDashboardReportModal();
       else if (el.institutionReportBackdrop && !el.institutionReportBackdrop.hidden) closeInstitutionReportModal();
@@ -13770,6 +14770,7 @@ async function openModalForEdit(id) {
 
 function showModal() {
   el.modalBackdrop.hidden = false;
+  document.body.classList.add("eventModalOpen");
   // focus
   setTimeout(() => el.eventName.focus(), 0);
 }
@@ -13790,6 +14791,7 @@ function setQuoteItemsExpanded(expanded) {
 
 function closeModal() {
   el.modalBackdrop.hidden = true;
+  document.body.classList.remove("eventModalOpen");
   el.conflictsBox.hidden = true;
   el.statusHint.textContent = "";
   historyTargetEventId = null;
@@ -14049,6 +15051,59 @@ function closeQuoteModal() {
   closeMenuMontajeSelectableModal();
   closeServiceModal();
   quoteDraft = null;
+  if (accountingReportReturnAfterPayment && el.accountingReportBackdrop) {
+    renderAccountingReportTable();
+    document.body.classList.remove("accountingPaymentMode");
+    el.accountingReportBackdrop.hidden = false;
+    accountingReportReturnAfterPayment = false;
+  }
+}
+
+function persistQuoteDraftFinancials({ showToast = false } = {}) {
+  if (!quoteDraft) return false;
+  const eventId = String(el.quoteEventId?.value || "").trim();
+  const ev = (state.events || []).find((item) => String(item.id || "") === eventId);
+  if (!ev || !ev.quote) return false;
+  const savedQuote = cloneQuoteSnapshot(quoteDraft, Math.max(1, Number(quoteDraft.version || ev.quote?.version || 1)));
+  savedQuote.paymentType = quotePaymentTypesToStorage(savedQuote.paymentType || "");
+  savedQuote.advances = normalizeQuoteAdvancesForSnapshot(savedQuote.advances);
+  savedQuote.currency = normalizeQuoteCurrency(savedQuote.currency);
+  savedQuote.companyName = savedQuote.companyName || ev.quote?.companyName || "";
+  savedQuote.managerName = savedQuote.managerName || ev.quote?.managerName || "";
+  savedQuote.managerPhone = savedQuote.managerPhone || ev.quote?.managerPhone || "";
+  savedQuote.quotedAt = savedQuote.quotedAt || ev.quote?.quotedAt || new Date().toISOString();
+  savedQuote.versions = normalizeQuoteVersionHistory(ev.quote?.versions || quoteDraft.versions);
+  const totals = getQuoteTotals(savedQuote);
+  savedQuote.subtotal = totals.subtotal;
+  savedQuote.discountAmount = totals.discountAmount;
+  savedQuote.total = totals.total;
+  for (const item of getEventSeries(ev)) {
+    item.quote = deepClone(savedQuote);
+  }
+  quoteDraft = deepClone(savedQuote);
+  persist();
+  render();
+  if (el.accountingReportBackdrop && !el.accountingReportBackdrop.hidden) {
+    renderAccountingReportTable();
+  }
+  if (showToast) toast("Pagos actualizados.");
+  return true;
+}
+
+async function applyPaymentFromAccountingReport(eventId) {
+  const id = String(eventId || "").trim();
+  if (!id) return;
+  accountingReportReturnAfterPayment = !!(el.accountingReportBackdrop && !el.accountingReportBackdrop.hidden);
+  if (accountingReportReturnAfterPayment && el.accountingReportBackdrop) {
+    document.body.classList.add("accountingPaymentMode");
+    el.accountingReportBackdrop.hidden = true;
+  closeAccountingStatementModal();
+  }
+  await openQuoteModal(id);
+  if (el.quoteBackdrop) el.quoteBackdrop.hidden = false;
+  openQuoteAdvanceModal();
+  if (el.quoteAdvanceBackdrop) el.quoteAdvanceBackdrop.hidden = false;
+  setTimeout(() => el.quoteAdvanceAmount?.focus(), 30);
 }
 
 function renderQuoteAdvancesModal() {
@@ -14060,19 +15115,25 @@ function renderQuoteAdvancesModal() {
       if (d !== 0) return d;
       return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
     });
+  const balance = getQuoteAdvanceBalanceSummary(quoteDraft || {});
   el.quoteAdvanceBody.innerHTML = "";
   if (!advances.length) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="5">Sin anticipos registrados.</td>`;
+    tr.innerHTML = `<td colspan="7">Sin anticipos registrados.</td>`;
     el.quoteAdvanceBody.appendChild(tr);
   } else {
     for (const row of advances) {
       const tr = document.createElement("tr");
+      const evidenceAnchor = row.evidenceDataUrl
+        ? `<a class="btn" href="${escapeHtml(row.evidenceDataUrl)}" download="${escapeHtml(row.evidenceName || `evidencia_${row.id}.pdf`)}" target="_blank" rel="noopener">Ver</a>`
+        : "-";
       tr.innerHTML = `
         <td>${escapeHtml(row.date || "-")}</td>
         <td>${escapeHtml(row.paymentType || "-")}</td>
+        <td>${escapeHtml(row.voucherNumber || "-")}</td>
         <td>${escapeHtml(row.description || "-")}</td>
         <td>${moneyGT(row.amount || 0)}</td>
+        <td>${evidenceAnchor}</td>
         <td class="appointmentActions">
           <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar" aria-label="Editar">&#9998;</button>
           <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar" aria-label="Eliminar">&#128465;</button>
@@ -14081,7 +15142,9 @@ function renderQuoteAdvancesModal() {
       el.quoteAdvanceBody.appendChild(tr);
     }
   }
-  el.quoteAdvanceTotal.textContent = moneyGT(getQuoteAdvanceTotal(quoteDraft));
+  el.quoteAdvanceTotal.textContent = moneyGT(balance.advancesTotal || 0);
+  if (el.quoteAdvancePending) el.quoteAdvancePending.textContent = moneyGT(balance.balancePending || 0);
+  if (el.quoteAdvanceCredit) el.quoteAdvanceCredit.textContent = moneyGT(balance.creditBalance || 0);
 }
 
 function resetQuoteAdvanceForm() {
@@ -14089,7 +15152,10 @@ function resetQuoteAdvanceForm() {
   if (el.quoteAdvanceAmount) el.quoteAdvanceAmount.value = "";
   if (el.quoteAdvancePaymentType) el.quoteAdvancePaymentType.value = "Efectivo";
   if (el.quoteAdvanceDate) el.quoteAdvanceDate.value = quoteDraft?.docDate || toISODate(new Date());
+  if (el.quoteAdvanceVoucherNumber) el.quoteAdvanceVoucherNumber.value = "";
   if (el.quoteAdvanceDescription) el.quoteAdvanceDescription.value = "";
+  if (el.quoteAdvanceEvidence) el.quoteAdvanceEvidence.value = "";
+  if (el.quoteAdvanceEvidenceHint) el.quoteAdvanceEvidenceHint.textContent = "Sin archivo adjunto";
   if (el.btnQuoteAdvanceAdd) el.btnQuoteAdvanceAdd.textContent = "Agregar anticipo";
 }
 
@@ -14103,39 +15169,66 @@ function startEditQuoteAdvance(advanceId) {
   if (el.quoteAdvanceAmount) el.quoteAdvanceAmount.value = String(Number(item.amount || 0).toFixed(2));
   if (el.quoteAdvancePaymentType) el.quoteAdvancePaymentType.value = normalizeAdvancePaymentType(item.paymentType);
   if (el.quoteAdvanceDate) el.quoteAdvanceDate.value = String(item.date || "");
+  if (el.quoteAdvanceVoucherNumber) el.quoteAdvanceVoucherNumber.value = String(item.voucherNumber || "");
   if (el.quoteAdvanceDescription) el.quoteAdvanceDescription.value = String(item.description || "");
+  if (el.quoteAdvanceEvidence) el.quoteAdvanceEvidence.value = "";
+  if (el.quoteAdvanceEvidenceHint) {
+    el.quoteAdvanceEvidenceHint.textContent = item.evidenceName ? `Archivo actual: ${item.evidenceName}` : "Sin archivo adjunto";
+  }
   if (el.btnQuoteAdvanceAdd) el.btnQuoteAdvanceAdd.textContent = "Guardar cambios";
 }
 
-function addQuoteAdvanceFromForm() {
+async function addQuoteAdvanceFromForm() {
   if (!quoteDraft) return toast("Primero abre una cotizacion.");
   const amountRaw = String(el.quoteAdvanceAmount?.value || "").trim();
   const amount = Math.max(0, Number(amountRaw || 0));
   const paymentType = normalizeAdvancePaymentType(el.quoteAdvancePaymentType?.value || "");
   const date = String(el.quoteAdvanceDate?.value || "").trim();
+  const voucherNumber = String(el.quoteAdvanceVoucherNumber?.value || "").trim();
   const description = String(el.quoteAdvanceDescription?.value || "").trim();
+  const evidenceFile = el.quoteAdvanceEvidence?.files?.[0] || null;
   if (!amountRaw || Number.isNaN(Number(amountRaw)) || amount <= 0) return toast("Anticipo: el monto es obligatorio y debe ser mayor a 0.");
   if (!String(el.quoteAdvancePaymentType?.value || "").trim()) return toast("Anticipo: la forma de pago es obligatoria.");
   if (!date) return toast("Anticipo: la fecha es obligatoria.");
   if (!description) return toast("Anticipo: la descripcion es obligatoria.");
+  if (paymentType !== "Efectivo" && !voucherNumber) return toast("Anticipo: el No. de boleta es obligatorio para este tipo de pago.");
   if (!Array.isArray(quoteDraft.advances)) quoteDraft.advances = [];
+
+  let evidenceDataUrl = "";
+  let evidenceName = "";
+  let evidenceType = "";
+  if (evidenceFile) {
+    const maxBytes = 6 * 1024 * 1024;
+    if (Number(evidenceFile.size || 0) > maxBytes) {
+      return toast("Evidencia: el archivo supera 6 MB.");
+    }
+    evidenceDataUrl = await readImageFileAsDataUrl(evidenceFile);
+    if (!evidenceDataUrl) return toast("No se pudo leer el archivo de evidencia.");
+    evidenceName = String(evidenceFile.name || "evidencia").trim();
+    evidenceType = String(evidenceFile.type || "").trim();
+  }
+
   const ctx = getCurrentQuoteHistoryContext();
   if (quoteAdvanceEditingId) {
     const idx = quoteDraft.advances.findIndex((x) => String(x?.id || "") === quoteAdvanceEditingId);
     if (idx >= 0) {
-      const prev = quoteDraft.advances[idx];
+      const prev = normalizeQuoteAdvanceForSnapshot(quoteDraft.advances[idx]);
       quoteDraft.advances[idx] = {
         ...quoteDraft.advances[idx],
         amount,
         paymentType,
         date,
+        voucherNumber,
         description,
+        evidenceDataUrl: evidenceDataUrl || String(prev.evidenceDataUrl || ""),
+        evidenceName: evidenceName || String(prev.evidenceName || ""),
+        evidenceType: evidenceType || String(prev.evidenceType || ""),
       };
       if (ctx) {
         appendHistoryByKey(
           ctx.key,
           authSession.userId || ctx.ev.userId || "",
-          `Anticipo editado: ${String(prev?.date || "")} ${String(prev?.paymentType || "")} ${moneyGT(prev?.amount || 0)} -> ${date} ${paymentType} ${moneyGT(amount || 0)}`
+          `Anticipo editado: ${String(prev?.date || "")} ${formatQuoteAdvanceDetail(prev)} ${moneyGT(prev?.amount || 0)} -> ${date} ${formatQuoteAdvanceDetail({ paymentType, voucherNumber, description })} ${moneyGT(amount || 0)}`
         );
       }
       toast("Anticipo actualizado.");
@@ -14146,20 +15239,25 @@ function addQuoteAdvanceFromForm() {
       amount,
       paymentType,
       date,
+      voucherNumber,
       description,
+      evidenceDataUrl,
+      evidenceName,
+      evidenceType,
       createdAt: new Date().toISOString(),
     });
     if (ctx) {
       appendHistoryByKey(
         ctx.key,
         authSession.userId || ctx.ev.userId || "",
-        `Anticipo agregado: ${date} ${paymentType} ${moneyGT(amount || 0)}${description ? ` (${description})` : ""}`
+        `Anticipo agregado: ${date} ${formatQuoteAdvanceDetail({ paymentType, voucherNumber, description })} ${moneyGT(amount || 0)}`
       );
     }
     toast("Anticipo agregado.");
   }
   resetQuoteAdvanceForm();
   renderQuoteAdvancesModal();
+  persistQuoteDraftFinancials();
 }
 
 function removeQuoteAdvanceById(advanceId) {
@@ -14172,12 +15270,13 @@ function removeQuoteAdvanceById(advanceId) {
     resetQuoteAdvanceForm();
   }
   renderQuoteAdvancesModal();
+  persistQuoteDraftFinancials();
   const ctx = getCurrentQuoteHistoryContext();
   if (ctx && removed) {
     appendHistoryByKey(
       ctx.key,
       authSession.userId || ctx.ev.userId || "",
-      `Anticipo eliminado: ${String(removed.date || "")} ${String(removed.paymentType || "")} ${moneyGT(removed.amount || 0)}${removed.description ? ` (${removed.description})` : ""}`
+      `Anticipo eliminado: ${String(removed.date || "")} ${formatQuoteAdvanceDetail(removed)} ${moneyGT(removed.amount || 0)}`
     );
   }
   toast("Anticipo eliminado.");
@@ -14869,14 +15968,26 @@ function normalizeAdvancePaymentType(rawType) {
 
 function normalizeQuoteAdvanceForSnapshot(rawAdvance, index = 0) {
   const amountRaw = Number(rawAdvance?.amount || 0);
+  const evidenceDataUrl = String(rawAdvance?.evidenceDataUrl || rawAdvance?.evidence?.dataUrl || "").trim();
   return {
     id: String(rawAdvance?.id || `adv_${index + 1}`).trim() || `adv_${index + 1}`,
     amount: Number.isFinite(amountRaw) ? Math.max(0, amountRaw) : 0,
     paymentType: normalizeAdvancePaymentType(rawAdvance?.paymentType),
     date: String(rawAdvance?.date || "").trim(),
+    voucherNumber: String(rawAdvance?.voucherNumber || rawAdvance?.boleta || "").trim(),
     description: String(rawAdvance?.description || "").trim(),
+    evidenceName: String(rawAdvance?.evidenceName || rawAdvance?.evidence?.name || "").trim(),
+    evidenceType: String(rawAdvance?.evidenceType || rawAdvance?.evidence?.type || "").trim(),
+    evidenceDataUrl,
     createdAt: String(rawAdvance?.createdAt || "").trim(),
   };
+}
+
+function formatQuoteAdvanceDetail(advanceLike) {
+  const paymentType = String(advanceLike?.paymentType || "Anticipo").trim() || "Anticipo";
+  const voucher = String(advanceLike?.voucherNumber || "").trim();
+  const description = String(advanceLike?.description || "").trim();
+  return [paymentType, voucher ? `Boleta ${voucher}` : "", description].filter(Boolean).join(" | ");
 }
 
 function normalizeQuoteAdvancesForSnapshot(rawAdvances) {
@@ -14889,6 +16000,139 @@ function normalizeQuoteAdvancesForSnapshot(rawAdvances) {
 function getQuoteAdvanceTotal(quoteLike) {
   const advances = normalizeQuoteAdvancesForSnapshot(quoteLike?.advances);
   return advances.reduce((acc, item) => acc + Number(item.amount || 0), 0);
+}
+
+function getQuoteAdvanceBalanceSummary(quoteLike) {
+  const advancesTotal = getQuoteAdvanceTotal(quoteLike);
+  const totals = getQuoteTotals(quoteLike || {});
+  const total = Math.max(0, Number(totals?.total ?? quoteLike?.total ?? 0));
+  const delta = total - advancesTotal;
+  return {
+    total,
+    advancesTotal,
+    balancePending: Math.max(0, delta),
+    creditBalance: Math.max(0, -delta),
+  };
+}
+
+function renderQuoteAccountStatement() {
+  if (!el.quoteAccountSummary || !el.quoteAccountBody) return;
+  const quoteLike = quoteDraft || {};
+  const totals = getQuoteTotals(quoteLike);
+  const balance = getQuoteAdvanceBalanceSummary(quoteLike);
+  const currency = quoteDraft?.currency || "GTQ";
+  const money = (n) => moneyQuote(n, currency);
+  const eventId = String(el.quoteEventId?.value || "").trim();
+  const ev = eventId ? (state.events || []).find((x) => String(x.id || "") === eventId) : null;
+  const advances = normalizeQuoteAdvancesForSnapshot(quoteLike.advances)
+    .slice()
+    .sort((a, b) => {
+      const d = String(a.date || "").localeCompare(String(b.date || ""));
+      if (d !== 0) return d;
+      return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
+    });
+  const dueDate = String(quoteLike?.dueDate || "").trim();
+  const docDate = String(quoteLike?.docDate || "").trim();
+  const startDate = String(quoteLike?.eventDate || ev?.date || "").trim();
+  const endDate = String(quoteLike?.endDate || startDate || ev?.date || "").trim();
+  const eventName = String(ev?.name || quoteLike?.eventName || "Evento sin nombre").trim() || "Evento sin nombre";
+  const eventSalon = String(ev?.salon || quoteLike?.salon || "").trim();
+  const due = parseQuoteDate(dueDate);
+  const today = stripTime(new Date());
+  let dueMeta = "Sin fecha maxima de pago";
+  if (due) {
+    const diffDays = Math.round((due.getTime() - today.getTime()) / 86400000);
+    if (diffDays < 0) dueMeta = `Vencido hace ${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? "dia" : "dias"}`;
+    else if (diffDays === 0) dueMeta = "Vence hoy";
+    else dueMeta = `Vence en ${diffDays} ${diffDays === 1 ? "dia" : "dias"}`;
+  }
+
+  if (el.quoteAccountDocument) {
+    const code = String(quoteLike?.code || el.quoteCode?.value || "").trim();
+    el.quoteAccountDocument.textContent = code ? `Estado de cuenta ${code}` : "Estado de cuenta sin codigo";
+  }
+  if (el.quoteAccountEvent) {
+    el.quoteAccountEvent.textContent = eventSalon ? `${eventName} | ${eventSalon}` : eventName;
+  }
+  if (el.quoteAccountRange) {
+    if (startDate && endDate) {
+      el.quoteAccountRange.textContent = startDate === endDate
+        ? `Fecha del evento: ${startDate}`
+        : `Periodo del evento: ${startDate} al ${endDate}`;
+    } else if (startDate) {
+      el.quoteAccountRange.textContent = `Fecha del evento: ${startDate}`;
+    } else {
+      el.quoteAccountRange.textContent = "Sin rango de fechas definido";
+    }
+  }
+
+  const cards = [
+    { tone: "primary", label: "Cargo total", value: money(totals.total), meta: `Subtotal ${money(totals.subtotal)}` },
+    { tone: "info", label: "Abonos recibidos", value: money(balance.advancesTotal), meta: `${advances.length} movimiento(s)` },
+    { tone: "accent", label: "Pendiente por cobrar", value: money(balance.balancePending), meta: dueMeta },
+    { tone: "success", label: "Saldo a favor", value: money(balance.creditBalance), meta: dueDate ? `Fecha maxima ${dueDate}` : "Sin fecha maxima" },
+  ];
+  el.quoteAccountSummary.innerHTML = cards.map((card) => `
+    <article class="salesSummaryCard salesSummaryCard--${escapeHtml(card.tone)} quoteAccountCard">
+      <small>${escapeHtml(card.label)}</small>
+      <strong>${escapeHtml(card.value)}</strong>
+      <div class="salesSummaryMeta">${escapeHtml(card.meta)}</div>
+    </article>
+  `).join("");
+
+  let runningBalance = totals.total;
+  const rows = [
+    {
+      type: "Cargo",
+      date: docDate || startDate || "-",
+      detail: `Cotizacion emitida${dueDate ? ` | Fecha maxima pago ${dueDate}` : ""}`,
+      charge: totals.total,
+      payment: 0,
+      balance: runningBalance,
+      tone: "charge",
+    },
+    ...advances.map((advance) => {
+      runningBalance -= Number(advance.amount || 0);
+      return {
+        type: "Abono",
+        date: advance.date || "-",
+        detail: formatQuoteAdvanceDetail(advance),
+        charge: 0,
+        payment: Number(advance.amount || 0),
+        balance: runningBalance,
+        tone: "payment",
+      };
+    }),
+    {
+      type: balance.creditBalance > 0 ? "Saldo a favor" : "Pendiente",
+      date: dueDate || endDate || startDate || "-",
+      detail: balance.creditBalance > 0 ? "Disponible para aplicar en futuras reservas" : "Monto pendiente de cobro",
+      charge: 0,
+      payment: 0,
+      balance: balance.creditBalance > 0 ? -balance.creditBalance : balance.balancePending,
+      tone: balance.creditBalance > 0 ? "credit" : "pending",
+    },
+  ];
+
+  el.quoteAccountBody.innerHTML = rows.map((row) => {
+    const saldoTexto = row.balance < 0 ? `${money(Math.abs(row.balance))} a favor` : money(row.balance);
+    return `
+      <tr class="quoteAccountRow quoteAccountRow--${escapeHtml(row.tone)}">
+        <td>${escapeHtml(row.type)}</td>
+        <td>${escapeHtml(row.date)}</td>
+        <td>${escapeHtml(row.detail)}</td>
+        <td>${row.charge > 0 ? escapeHtml(money(row.charge)) : "-"}</td>
+        <td>${row.payment > 0 ? escapeHtml(money(row.payment)) : "-"}</td>
+        <td>${escapeHtml(saldoTexto)}</td>
+      </tr>
+    `;
+  }).join("");
+
+  if (el.quoteAccountMeta) {
+    el.quoteAccountMeta.textContent = advances.length
+      ? `Ultimo abono ${advances[advances.length - 1]?.date || '-'} | Saldo actual ${balance.creditBalance > 0 ? `${money(balance.creditBalance)} a favor` : money(balance.balancePending)}`
+      : `Sin abonos registrados | Saldo actual ${balance.creditBalance > 0 ? `${money(balance.creditBalance)} a favor` : money(balance.balancePending)}`;
+  }
 }
 
 // Calcula subtotal, descuento, impuestos y total final de una cotizacion.
@@ -15092,6 +16336,7 @@ function renderQuoteItems() {
   if (el.quoteSubtotal) el.quoteSubtotal.textContent = money(totals.subtotal);
   if (el.quoteDiscountAmount) el.quoteDiscountAmount.textContent = money(totals.discountAmount);
   el.quoteTotal.textContent = money(totals.total);
+  renderQuoteAccountStatement();
   syncQuoteServiceDateRequired();
 }
 
@@ -16111,7 +17356,7 @@ async function buildQuotePdfDocument(ev, quote, company, manager) {
     ...(
       advanceRows.length
         ? advanceRows.map((r) => ({
-          label: `${formatAdvanceDatePdf(r.date)} - ${r.paymentType || "-"}${r.description ? ` - ${r.description}` : ""}`,
+          label: `${formatAdvanceDatePdf(r.date)} - ${formatQuoteAdvanceDetail(r)}`,
           amount: Number(r.amount || 0),
           tone: "advance",
           bold: false,
@@ -17064,7 +18309,6 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
   const eventManagerNameDoc = String(quote?.contact || manager?.name || "").trim();
   const eventManagerEmailDoc = String(quote?.email || manager?.email || "").trim();
   const eventManagerPhoneDoc = String(quote?.phone || manager?.phone || "").trim();
-
   const html = `<!doctype html>
 <html lang="es">
 <head>
@@ -17656,7 +18900,7 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
           </tr>
           ${advanceRowsDoc.length ? advanceRowsDoc.map((r) => `
             <tr>
-              <td class="cargoLabel">${escapeHtml(`${formatDocDate(r.date)} - ${r.paymentType || "-"}${r.description ? ` - ${r.description}` : ""}`)}</td>
+              <td class="cargoLabel">${escapeHtml(`${formatDocDate(r.date)} - ${formatQuoteAdvanceDetail(r)}`)}</td>
               <td class="cargoAmount">${Number(r.amount || 0) > 0 ? escapeHtml(moneyQDoc(r.amount)) : "-"}</td>
             </tr>
           `).join("") : `
@@ -19611,7 +20855,7 @@ async function syncWithServerState() {
       pendingPersistAfterSync = false;
       schedulePersistToServer();
     }
-    toast("Datos cargados desde MariaDB");
+    toast("Datos cargados");
   } catch (_) {
     serverStateReady = false;
     toast("Sin conexion con servidor.");
@@ -20240,6 +21484,34 @@ function getEventsInWeek(weekStart, salon, dayCount = 7) {
       return compareTime(a.startTime, b.startTime);
     });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
