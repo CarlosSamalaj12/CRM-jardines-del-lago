@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -767,35 +767,88 @@
       position:sticky !important;
       bottom:0 !important;
       z-index:3 !important;
-      margin-top:2px !important;
-      padding:12px 0 0 !important;
-      background:linear-gradient(180deg, rgba(5,12,22,0.10), rgba(5,12,22,0.96) 38%) !important;
-      border-top:1px solid rgba(96,165,250,0.18) !important;
-      gap:12px !important;
+      display:flex !important;
+      justify-content:space-between !important;
+      align-items:flex-end !important;
+      flex-wrap:nowrap !important;
+      margin-top:8px !important;
+      padding:16px 0 0 !important;
+      background:
+        linear-gradient(180deg, rgba(5,12,22,0.06), rgba(5,12,22,0.84) 34%, rgba(5,12,22,0.98) 100%) !important;
+      border-top:1px solid rgba(96,165,250,0.14) !important;
+      gap:18px !important;
     }
     #modalBackdrop .modalFooter .leftActions,
     #modalBackdrop .modalFooter .rightActions{
       display:flex !important;
       flex-wrap:wrap !important;
-      gap:8px !important;
+      gap:10px !important;
       align-items:center !important;
+      width:auto !important;
+      max-width:100% !important;
     }
     #modalBackdrop .modalFooter .leftActions{
       flex:1 1 auto !important;
+      justify-content:flex-start !important;
+      align-items:flex-start !important;
+      padding:10px 12px 0 0 !important;
+      border-top:1px solid rgba(255,255,255,0.04) !important;
     }
     #modalBackdrop .modalFooter .rightActions{
       flex:0 0 auto !important;
       justify-content:flex-end !important;
+      margin-left:auto !important;
+      padding-left:18px !important;
     }
     #modalBackdrop .modalFooter .btn,
     #modalBackdrop .modalFooter .btnPrimary,
     #modalBackdrop .modalFooter .btnDanger{
-      min-height:40px !important;
-      padding:0 14px !important;
-      border-radius:13px !important;
+      min-height:44px !important;
+      padding:0 16px !important;
+      border-radius:15px !important;
+      font-weight:800 !important;
+      letter-spacing:.01em !important;
+      box-shadow:0 10px 22px rgba(4, 10, 22, 0.22) !important;
+    }
+    #modalBackdrop .modalFooter .leftActions .btn,
+    #modalBackdrop .modalFooter .leftActions .btnDanger{
+      min-width:0 !important;
+      background:linear-gradient(180deg, rgba(70,84,112,0.88), rgba(49,61,85,0.96)) !important;
+      border:1px solid rgba(163,184,214,0.16) !important;
+      color:#edf4ff !important;
+    }
+    #modalBackdrop .modalFooter .leftActions .btn:hover,
+    #modalBackdrop .modalFooter .leftActions .btnDanger:hover{
+      transform:translateY(-1px) !important;
+      border-color:rgba(125,211,252,0.24) !important;
+      box-shadow:0 14px 28px rgba(8, 16, 32, 0.28) !important;
+    }
+    #modalBackdrop #btnSetMaintenance{
+      background:linear-gradient(180deg, rgba(95,111,141,0.92), rgba(64,78,103,0.98)) !important;
+      border-color:rgba(191,219,254,0.18) !important;
+    }
+    #modalBackdrop #btnCancelEvent{
+      background:linear-gradient(135deg, rgba(239,68,68,0.96), rgba(220,38,38,0.96)) !important;
+      border:1px solid rgba(254,202,202,0.26) !important;
+      color:#fff7f7 !important;
+    }
+    #modalBackdrop #btnQuoteEvent,
+    #modalBackdrop #btnAddAppointment,
+    #modalBackdrop #btnToggleHistory,
+    #modalBackdrop #btnToggleAppointments{
+      background:linear-gradient(180deg, rgba(78,92,121,0.9), rgba(54,66,91,0.96)) !important;
+    }
+    #modalBackdrop #btnDelete{
+      min-width:168px !important;
+      background:linear-gradient(180deg, rgba(86,99,124,0.86), rgba(60,72,95,0.94)) !important;
+      border:1px solid rgba(189,201,221,0.14) !important;
+      color:#f2f7ff !important;
     }
     #modalBackdrop #btnSave{
-      min-width:140px !important;
+      min-width:172px !important;
+      background:linear-gradient(135deg, rgba(43,152,255,0.98), rgba(38,102,230,0.98)) !important;
+      border:1px solid rgba(147,197,253,0.34) !important;
+      box-shadow:0 16px 30px rgba(19, 84, 190, 0.34) !important;
     }
     @media (max-width: 1024px){
       #modalBackdrop{
@@ -879,6 +932,271 @@
       }
     }
     /* === END EVENT MODAL RESPONSIVE REFINEMENT === */
+    /* === UI POLISH: SPACING, ALIGNMENT, BUTTON CONSISTENCY === */
+    .app{
+      gap: 16px !important;
+      padding: 18px !important;
+    }
+    .topbar{
+      gap: 18px !important;
+      align-items: stretch !important;
+      padding: 18px 20px !important;
+      border-radius: 24px !important;
+    }
+    .brand{
+      flex: 1 1 320px !important;
+      min-width: 0 !important;
+      align-items: center !important;
+    }
+    .brandText{
+      min-width: 0 !important;
+    }
+    .brandText .title{
+      font-size: 18px !important;
+      letter-spacing: .02em !important;
+    }
+    .brandMeta{
+      gap: 12px !important;
+      margin-top: 6px !important;
+    }
+    .toolbar{
+      flex: 1 1 780px !important;
+      justify-content: flex-end !important;
+      align-items: end !important;
+      gap: 12px !important;
+    }
+    .toolbar .btn,
+    .toolbar .btnPrimary,
+    .toolbar .iconBtn,
+    .toolbar .topbarReminderBtn,
+    .toolbar .weekLabel,
+    .toolbar .select select{
+      min-height: 48px !important;
+      height: 48px !important;
+      border-radius: 14px !important;
+      font-size: 14px !important;
+    }
+    .toolbar .btn,
+    .toolbar .btnPrimary{
+      min-width: 136px !important;
+      padding: 0 18px !important;
+      justify-content: center !important;
+      font-weight: 800 !important;
+    }
+    .toolbar .iconBtn,
+    .toolbar .topbarReminderBtn{
+      width: 48px !important;
+      min-width: 48px !important;
+      padding: 0 !important;
+    }
+    .toolbar .topbarReminderBtn .bellGlyph{
+      width: 18px !important;
+      height: 18px !important;
+    }
+    .nav{
+      display: grid !important;
+      grid-template-columns: 48px minmax(220px, 1fr) 48px !important;
+      align-items: stretch !important;
+      gap: 10px !important;
+      min-width: 340px !important;
+    }
+    .toolbar .weekLabel{
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-width: 220px !important;
+      padding: 0 18px !important;
+      text-align: center !important;
+      font-weight: 700 !important;
+    }
+    .toolbar .select{
+      display: grid !important;
+      gap: 6px !important;
+      min-width: 150px !important;
+    }
+    .toolbar .select span{
+      padding-left: 2px !important;
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      letter-spacing: .08em !important;
+      text-transform: uppercase !important;
+      color: #c8d5e6 !important;
+    }
+    .toolbar .select select{
+      min-width: 150px !important;
+      padding: 0 40px 0 14px !important;
+    }
+    .legend{
+      padding: 14px 16px !important;
+      min-height: 62px !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      flex-wrap: wrap !important;
+    }
+    .calendar{
+      gap: 16px !important;
+      padding: 16px !important;
+      min-height: 0 !important;
+    }
+    .timeCol{
+      min-width: 84px !important;
+      padding: 12px 10px !important;
+    }
+    .gridWrap{
+      min-width: 0 !important;
+    }
+    .btn,
+    .btnPrimary,
+    .btnDanger{
+      min-height: 46px !important;
+      height: 46px !important;
+      padding: 0 18px !important;
+      border-radius: 14px !important;
+      font-size: 14px !important;
+      font-weight: 800 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      white-space: nowrap !important;
+    }
+    .modalHeader .iconBtn,
+    .modalFooter .iconBtn{
+      width: 46px !important;
+      min-width: 46px !important;
+      height: 46px !important;
+      border-radius: 14px !important;
+    }
+    .row1,
+    .row2,
+    .row3,
+    .row4{
+      gap: 16px !important;
+      align-items: start !important;
+    }
+    .field{
+      display: grid !important;
+      gap: 8px !important;
+      min-width: 0 !important;
+    }
+    .field > span{
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      letter-spacing: .08em !important;
+      text-transform: uppercase !important;
+      color: #bfd0e4 !important;
+    }
+    .field input,
+    .field select,
+    .field textarea{
+      width: 100% !important;
+      border-radius: 14px !important;
+      font-size: 14px !important;
+    }
+    .field input,
+    .field select{
+      min-height: 46px !important;
+      height: 46px !important;
+    }
+    .field textarea{
+      min-height: 110px !important;
+      padding-top: 12px !important;
+      padding-bottom: 12px !important;
+    }
+    .rightActions{
+      display: flex !important;
+      align-items: stretch !important;
+      justify-content: flex-end !important;
+      gap: 12px !important;
+      flex-wrap: wrap !important;
+      width: 100% !important;
+    }
+    .rightActions .btn,
+    .rightActions .btnPrimary,
+    .rightActions .btnDanger{
+      min-width: 168px !important;
+      flex: 0 0 auto !important;
+    }
+    .modalFooter{
+      gap: 16px !important;
+      align-items: center !important;
+    }
+    .modalFooter .rightActions{
+      justify-content: flex-end !important;
+    }
+    @media (max-width: 1180px){
+      .topbar{
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+      .toolbar{
+        justify-content: flex-start !important;
+      }
+    }
+    @media (max-width: 900px){
+      .app{
+        padding: 12px !important;
+      }
+      .topbar{
+        padding: 16px !important;
+      }
+      .toolbar{
+        gap: 10px !important;
+      }
+      .nav{
+        min-width: 100% !important;
+        grid-template-columns: 48px minmax(0, 1fr) 48px !important;
+      }
+      .toolbar .select{
+        min-width: min(220px, 100%) !important;
+        flex: 1 1 220px !important;
+      }
+      .toolbar .btn,
+      .toolbar .btnPrimary{
+        min-width: 120px !important;
+      }
+      .rightActions .btn,
+      .rightActions .btnPrimary,
+      .rightActions .btnDanger{
+        min-width: 144px !important;
+        flex: 1 1 180px !important;
+      }
+      .calendar{
+        gap: 12px !important;
+        padding: 12px !important;
+      }
+    }
+    @media (max-width: 640px){
+      .brand{
+        align-items: flex-start !important;
+      }
+      .brandMeta{
+        align-items: flex-start !important;
+      }
+      .toolbar > .btn,
+      .toolbar > .btnPrimary,
+      .toolbar > label.select,
+      .toolbar > .nav{
+        width: 100% !important;
+      }
+      .toolbar .btn,
+      .toolbar .btnPrimary{
+        width: 100% !important;
+      }
+      .toolbar .select{
+        min-width: 100% !important;
+      }
+      .toolbar .select select{
+        width: 100% !important;
+      }
+      .rightActions .btn,
+      .rightActions .btnPrimary,
+      .rightActions .btnDanger{
+        width: 100% !important;
+      }
+    }
+    /* === END UI POLISH === */
 </style>
 </head>
 <body>
@@ -1681,8 +1999,10 @@
                   <div class="quoteDocRow">
                     <span>Institucion:</span>
                     <div class="quoteDocInline">
-                      <input id="quoteCompanySearch" list="companiesList" type="text" placeholder="Buscar institucion..." required />
-                      <datalist id="companiesList"></datalist>
+                      <div class="quoteCompanySearchWrap">
+                        <input id="quoteCompanySearch" type="text" placeholder="Buscar institucion, contacto, correo, telefono o NIT..." autocomplete="off" required />
+                        <div class="quoteCompanyResults" id="quoteCompanyResults"></div>
+                      </div>
                       <select id="quoteCompany" required hidden></select>
                       <button class="btn" type="button" id="btnAddCompany">+ Empresa</button>
                     </div>
@@ -1934,6 +2254,21 @@
               </thead>
               <tbody id="quoteAdvanceBody"></tbody>
             </table>
+          </div>
+          <div class="quoteAdvanceLogCard">
+            <div class="quoteCardTitle">Log de pagos y movimientos</div>
+            <div class="quoteTableWrap quoteAdvanceLogWrap">
+              <table class="quoteTable">
+                <thead>
+                  <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Usuario</th>
+                    <th>Movimiento</th>
+                  </tr>
+                </thead>
+                <tbody id="quoteAdvanceHistoryBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
         <div class="modalFooter">
@@ -3705,6 +4040,11 @@
   </script>
 </body>
 </html>
+
+
+
+
+
 
 
 

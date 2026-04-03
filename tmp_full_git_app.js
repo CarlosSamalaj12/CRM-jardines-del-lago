@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    CRM Reservas - Calendario tipo Google Calendar (frontend)
    - Salones
    - Estados con colores
@@ -532,7 +532,6 @@ const el = {
   btnQuoteServiceTemplateUpdate: document.getElementById("btnQuoteServiceTemplateUpdate"),
   btnQuoteServiceTemplateDelete: document.getElementById("btnQuoteServiceTemplateDelete"),
   quoteCompanySearch: document.getElementById("quoteCompanySearch"),
-  quoteCompanyResults: document.getElementById("quoteCompanyResults"),
   companiesList: document.getElementById("companiesList"),
   quoteCompany: document.getElementById("quoteCompany"),
   quoteManagerSelect: document.getElementById("quoteManagerSelect"),
@@ -597,7 +596,6 @@ const el = {
   quoteAdvanceTotal: document.getElementById("quoteAdvanceTotal"),
   quoteAdvancePending: document.getElementById("quoteAdvancePending"),
   quoteAdvanceCredit: document.getElementById("quoteAdvanceCredit"),
-  quoteAdvanceHistoryBody: document.getElementById("quoteAdvanceHistoryBody"),
 
   menuMontajeBackdrop: document.getElementById("menuMontajeBackdrop"),
   btnMenuMontajeClose: document.getElementById("btnMenuMontajeClose"),
@@ -3634,41 +3632,28 @@ function aggregateQuoteBuckets(quote) {
 
 function buildSalesReportRows() {
   const rows = [];
-  const seenReservations = new Set();
   for (const ev of state.events || []) {
-    const reservationKey = String(reservationKeyFromEvent(ev) || ev?.id || "").trim();
-    if (reservationKey) {
-      if (seenReservations.has(reservationKey)) continue;
-      seenReservations.add(reservationKey);
-    }
-    const financialMeta = getEventSeriesFinancialMeta(ev);
-    const primaryEvent = financialMeta.primaryEvent || ev;
-    const quote = primaryEvent?.quote || ev?.quote || null;
-    const user = (state.users || []).find((u) => String(u.id) === String(primaryEvent?.userId || ev?.userId));
+    const quote = ev?.quote || null;
+    const user = (state.users || []).find((u) => String(u.id) === String(ev.userId));
     const company = quote?.companyId ? (state.companies || []).find((c) => String(c.id) === String(quote.companyId)) : null;
     const manager = company?.managers?.find((m) => String(m.id) === String(quote?.managerId));
     const totals = getQuoteTotals(quote || {});
     const { subcatBuckets, catBuckets } = aggregateQuoteBuckets(quote || {});
     rows.push({
-      event: primaryEvent,
-      reservationKey,
-      actionEventId: String(primaryEvent?.id || ev?.id || ""),
+      event: ev,
       companyId: String(quote?.companyId || company?.id || ""),
-      status: String(primaryEvent?.status || ev?.status || ""),
-      statusColor: statusColor(primaryEvent?.status || ev?.status),
-      refId: String(quote?.code || reservationKey || primaryEvent?.id || ev?.id || ""),
+      status: String(ev.status || ""),
+      statusColor: statusColor(ev.status),
+      refId: String(quote?.code || reservationKeyFromEvent(ev) || ev.id || ""),
       seller: String(user?.fullName || user?.name || ""),
-      eventDate: String(financialMeta.startDate || primaryEvent?.date || ev?.date || ""),
-      eventType: String(quote?.eventType || primaryEvent?.name || ev?.name || ""),
-      startTime: String(financialMeta.startTime || primaryEvent?.startTime || ev?.startTime || ""),
-      endTime: String(financialMeta.endTime || primaryEvent?.endTime || ev?.endTime || ""),
-      salon: String(financialMeta.mainSalon || primaryEvent?.salon || ev?.salon || ""),
-      mainSalon: String(financialMeta.mainSalon || primaryEvent?.salon || ev?.salon || ""),
-      salones: Array.isArray(financialMeta.salones) ? financialMeta.salones.slice() : [],
-      salonesLabel: Array.isArray(financialMeta.salones) ? financialMeta.salones.join(", ") : "",
+      eventDate: String(ev.date || ""),
+      eventType: String(quote?.eventType || ev.name || ""),
+      startTime: String(ev.startTime || ""),
+      endTime: String(ev.endTime || ""),
+      salon: String(ev.salon || ""),
       company: String(company?.name || quote?.companyName || ""),
       manager: String(manager?.phone || quote?.managerPhone || ""),
-      pax: Number(primaryEvent?.pax || ev?.pax || quote?.people || 0),
+      pax: Number(ev.pax || quote?.people || 0),
       paymentType: String(quote?.paymentType || "").trim(),
       dueDate: String(quote?.dueDate || "").trim(),
       docDate: String(quote?.docDate || "").trim(),
@@ -3678,7 +3663,7 @@ function buildSalesReportRows() {
       subcatBuckets,
       catBuckets,
       discount: Number(totals.discountAmount || 0),
-      updatedAt: getEventLastUpdatedLabel(primaryEvent || ev),
+      updatedAt: getEventLastUpdatedLabel(ev),
     });
   }
   return rows;
@@ -3698,14 +3683,11 @@ function getSalesReportFilteredRows() {
     if (to && r.eventDate && r.eventDate > to) return false;
     if (userId && String(r.event?.userId || "") !== userId) return false;
     if (status && r.status !== status) return false;
-    if (salon) {
-      const eventSalones = Array.isArray(r.salones) ? r.salones : [];
-      if (r.salon !== salon && !eventSalones.includes(salon)) return false;
-    }
+    if (salon && r.salon !== salon) return false;
     if (company && String(r.event?.quote?.companyId || "") !== company) return false;
     if (search) {
       const blob = [
-        r.refId, r.seller, r.eventType, r.salon, r.salonesLabel, r.company, r.manager, r.status,
+        r.refId, r.seller, r.eventType, r.salon, r.company, r.manager, r.status,
       ].join(" ");
       if (!matchesLikeSearch(blob, search)) return false;
     }
@@ -3720,7 +3702,7 @@ function getSalesReportFilteredRows() {
 function renderSalesReportFilters() {
   const users = (state.users || []).filter((u) => u.active !== false);
   const statuses = Array.from(new Set((state.events || []).map((e) => String(e.status || "")).filter(Boolean))).sort();
-  const salones = getUsedSalonesForReports();
+  const salones = Array.from(new Set((state.events || []).map((e) => String(e.salon || "")).filter(Boolean))).sort();
   const companies = (state.companies || []).filter((c) => !isCompanyDisabled(c.id));
 
   const fillSelect = (node, rows, allLabel) => {
@@ -4110,7 +4092,7 @@ function getAccountingCompanyAccounts(rows = []) {
       collectionEta: collection.eta,
       collectionDueLabel: collection.dueLabel,
       collectionSortWeight: collection.sortWeight,
-      actionEventId: String(actionRow?.actionEventId || actionRow?.event?.id || ""),
+      actionEventId: String(actionRow?.event?.id || ""),
       actionHasCredit: Math.max(0, Number(account.creditAmount || 0)) > 0,
     };
   }).sort((a, b) => {
@@ -4150,27 +4132,20 @@ function buildAccountingLedgerEntries(account) {
   const rows = Array.isArray(account?.rows) ? account.rows : [];
   const entries = [];
   for (const row of rows) {
-    const eventId = String(row?.actionEventId || row?.event?.id || "").trim();
+    const eventId = String(row?.event?.id || "").trim();
     const ref = String(row?.refId || eventId || "-").trim() || "-";
     const company = String(account?.companyName || row?.company || "").trim();
     const eventDate = String(row?.eventDate || "").trim();
     const docDate = String(row?.docDate || "").trim();
     const baseDate = docDate || eventDate;
     const total = Math.max(0, Number(row?.total || 0));
-    const mainSalon = String(row?.mainSalon || row?.salon || "").trim();
-    const salones = Array.isArray(row?.salones) ? row.salones.map((item) => String(item || "").trim()).filter(Boolean) : [];
-    const otherSalones = salones.filter((item) => item !== mainSalon);
-    const salonContext = [
-      mainSalon ? `Salon principal: ${mainSalon}` : "",
-      otherSalones.length ? `Salones del evento: ${otherSalones.join(", ")}` : "",
-    ].filter(Boolean).join(" | ");
     if (total > 0) {
       entries.push({
         date: baseDate,
         type: "Cargo",
         eventId,
         refId: ref,
-        concept: `Cotizacion ${ref}${company ? ` | ${company}` : ""}${salonContext ? ` | ${salonContext}` : ""}`,
+        concept: `Cotizacion ${ref}${company ? ` | ${company}` : ""}`,
         debit: total,
         credit: 0,
         sortBucket: 0,
@@ -4189,7 +4164,7 @@ function buildAccountingLedgerEntries(account) {
         type: "Abono",
         eventId,
         refId: ref,
-        concept: `${notes || `Pago aplicado a ${ref}`}${salonContext ? ` | ${salonContext}` : ""}`,
+        concept: notes || `Pago aplicado a ${ref}`,
         debit: 0,
         credit: amount,
         sortBucket: 1,
@@ -4224,13 +4199,10 @@ function getAccountingReportFilteredRows() {
     if (to && r.eventDate && r.eventDate > to) return false;
     if (userId && String(r.event?.userId || "") !== userId) return false;
     if (status && r.status !== status) return false;
-    if (salon) {
-      const eventSalones = Array.isArray(r.salones) ? r.salones : [];
-      if (r.salon !== salon && !eventSalones.includes(salon)) return false;
-    }
+    if (salon && r.salon !== salon) return false;
     if (company && String(r.event?.quote?.companyId || "") !== company) return false;
     if (search) {
-      const blob = [r.refId, r.seller, r.eventType, r.salon, r.salonesLabel, r.company, r.manager, r.status, r.paymentType, r.lastAdvancePaymentType, r.lastAdvanceDescription].join(" ");
+      const blob = [r.refId, r.seller, r.eventType, r.salon, r.company, r.manager, r.status, r.paymentType, r.lastAdvancePaymentType, r.lastAdvanceDescription].join(" ");
       if (!matchesLikeSearch(blob, search)) return false;
     }
     return true;
@@ -4244,7 +4216,7 @@ function getAccountingReportFilteredRows() {
 function renderAccountingReportFilters() {
   const users = (state.users || []).filter((u) => u.active !== false);
   const statuses = Array.from(new Set((state.events || []).map((e) => String(e.status || "")).filter(Boolean))).sort();
-  const salones = getUsedSalonesForReports();
+  const salones = Array.from(new Set((state.events || []).map((e) => String(e.salon || "")).filter(Boolean))).sort();
   const companies = (state.companies || []).filter((c) => !isCompanyDisabled(c.id));
 
   const fillSelect = (node, rows, allLabel) => {
@@ -4348,7 +4320,6 @@ function renderAccountingReportTable() {
         <div class="accountingActionGroup">
           <button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-toggle-company="${escapeHtml(account.key)}">${escapeHtml(expanded ? "Ocultar detalle" : "Ver detalle")}</button>
           <button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-open-statement="${escapeHtml(account.key)}">Estado de cuenta</button>
-          <button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-open-quote="${escapeHtml(account.actionEventId || "")}" ${canApplyPayment ? "" : "disabled"}>Ver cotizacion</button>
           <button class="accountingActionBtn" type="button" data-accounting-apply-payment="${escapeHtml(account.actionEventId || "")}" ${canApplyPayment ? "" : "disabled"}>${escapeHtml(account.actionHasCredit ? "Ajustar saldo" : "Aplicar pago")}</button>
         </div>
       </td>
@@ -4374,8 +4345,6 @@ function renderAccountingReportTable() {
                   <th>No cotizacion</th>
                   <th>Fecha evento</th>
                   <th>Fecha maxima pago</th>
-                  <th>Salon principal</th>
-                  <th>Salones del evento</th>
                   <th>Vendedor</th>
                   <th>Forma pago</th>
                   <th>Total neto</th>
@@ -4394,8 +4363,6 @@ function renderAccountingReportTable() {
                     <td>${escapeHtml(r.refId || "-")}</td>
                     <td>${escapeHtml(r.eventDate || "-")}</td>
                     <td>${escapeHtml(r.dueDate || "-")}</td>
-                    <td>${escapeHtml(r.mainSalon || r.salon || "-")}</td>
-                    <td>${escapeHtml(r.salonesLabel || r.salon || "-")}</td>
                     <td>${escapeHtml(r.seller || "-")}</td>
                     <td>${escapeHtml(r.paymentType || "-")}</td>
                     <td>${escapeHtml(moneyGT(r.total || 0))}</td>
@@ -4409,7 +4376,7 @@ function renderAccountingReportTable() {
                         <small>${escapeHtml(r.lastAdvanceDescription || "Sin anticipo registrado")}</small>
                       </div>
                     </td>
-                    <td><div class="accountingActionGroup"><button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-open-quote="${escapeHtml(String(r?.actionEventId || r?.event?.id || ""))}" ${String(r?.actionEventId || r?.event?.id || "").trim() ? "" : "disabled"}>Ver cotizacion</button><button class="accountingActionBtn" type="button" data-accounting-apply-payment="${escapeHtml(String(r?.actionEventId || r?.event?.id || ""))}" ${String(r?.actionEventId || r?.event?.id || "").trim() ? "" : "disabled"}>${escapeHtml(r.creditBalance > 0 ? "Ajustar saldo" : "Aplicar pago")}</button></div></td>
+                    <td><button class="accountingActionBtn" type="button" data-accounting-apply-payment="${escapeHtml(String(r?.event?.id || ""))}" ${String(r?.event?.id || "").trim() ? "" : "disabled"}>${escapeHtml(r.creditBalance > 0 ? "Ajustar saldo" : "Aplicar pago")}</button></td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -4445,7 +4412,7 @@ function renderAccountingReportTable() {
                     <td>${escapeHtml(entry.debit > 0 ? moneyGT(entry.debit) : "-")}</td>
                     <td>${escapeHtml(entry.credit > 0 ? moneyGT(entry.credit) : "-")}</td>
                     <td>${escapeHtml(moneyGT(entry.runningBalance || 0))}</td>
-                    <td><div class="accountingActionGroup"><button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-open-quote="${escapeHtml(String(entry.eventId || ""))}" ${String(entry.eventId || "").trim() ? "" : "disabled"}>Ver cotizacion</button><button class="accountingActionBtn" type="button" data-accounting-apply-payment="${escapeHtml(String(entry.eventId || ""))}" ${String(entry.eventId || "").trim() ? "" : "disabled"}>${escapeHtml(entry.runningBalance > 0 ? "Aplicar pago" : "Ajustar saldo")}</button></div></td>
+                    <td><button class="accountingActionBtn" type="button" data-accounting-apply-payment="${escapeHtml(String(entry.eventId || ""))}" ${String(entry.eventId || "").trim() ? "" : "disabled"}>${escapeHtml(entry.runningBalance > 0 ? "Aplicar pago" : "Ajustar saldo")}</button></td>
                   </tr>
                 `).join("") : `<tr><td colspan="8">Sin movimientos para esta institucion.</td></tr>`}
               </tbody>
@@ -4488,7 +4455,7 @@ function renderAccountingStatementModal(account) {
   if (el.accountStatementIssueDate) el.accountStatementIssueDate.textContent = issueDate;
   if (el.accountStatementIssueTime) el.accountStatementIssueTime.textContent = issueTime;
 
-  el.accountStatementMeta.textContent = `${rows.length} evento(s) financiero(s) | ${ledgerEntries.length} movimiento(s)`;
+  el.accountStatementMeta.textContent = `${rows.length} cotizacion(es) | ${ledgerEntries.length} movimiento(s)`;
   el.accountStatementSummary.innerHTML = `
     <article class="accountStatementKpi"><small>Total neto</small><strong>${escapeHtml(moneyGT(total))}</strong></article>
     <article class="accountStatementKpi"><small>Total pagado</small><strong>${escapeHtml(moneyGT(collected))}</strong></article>
@@ -4509,7 +4476,7 @@ function renderAccountingStatementModal(account) {
       <td>${escapeHtml(entry.debit > 0 ? moneyGT(entry.debit) : "-")}</td>
       <td>${escapeHtml(entry.credit > 0 ? moneyGT(entry.credit) : "-")}</td>
       <td>${escapeHtml(moneyGT(entry.runningBalance || 0))}</td>
-      <td><div class="accountingActionGroup"><button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-open-quote="${escapeHtml(String(entry.eventId || ""))}" ${String(entry.eventId || "").trim() ? "" : "disabled"}>Ver cotizacion</button><button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-apply-payment="${escapeHtml(String(entry.eventId || ""))}" ${String(entry.eventId || "").trim() ? "" : "disabled"}>${escapeHtml(entry.runningBalance > 0 ? "Aplicar pago" : "Ajustar")}</button></div></td>
+      <td><button class="accountingActionBtn accountingActionBtn--secondary" type="button" data-accounting-apply-payment="${escapeHtml(String(entry.eventId || ""))}" ${String(entry.eventId || "").trim() ? "" : "disabled"}>${escapeHtml(entry.runningBalance > 0 ? "Aplicar pago" : "Ajustar")}</button></td>
     </tr>
   `).join("");
 }
@@ -7764,10 +7731,8 @@ function addSlotRow(slot = null) {
     <td><button type="button" class="btnDanger slotRemoveBtn">X</button></td>
   `;
   el.slotsBody.appendChild(row);
-  const slotRoomSelect = row.querySelector(".slotRoom");
   initModernTimePicker(row.querySelector(".slotStart"));
   initModernTimePicker(row.querySelector(".slotEnd"));
-  queueSelectEnhancement(slotRoomSelect, true);
 }
 
 function rerenderSlotRoomOptions() {
@@ -7778,8 +7743,6 @@ function rerenderSlotRoomOptions() {
     const current = select.value;
     select.innerHTML = salonOptionsHtml(current, true);
     if (!select.value && select.options.length) select.value = select.options[0].value;
-    queueSelectEnhancement(select, true);
-    syncEnhancedSelectValue(select, select.value || "");
   }
 }
 
@@ -7806,65 +7769,6 @@ function syncHiddenTimesFromFirstSlot() {
   el.endTime.value = first?.endTime || "";
 }
 
-function getQuoteFilteredCompanies(rawTerm = "") {
-  const term = String(rawTerm || "").trim();
-  const disabledCompanies = new Set((state.disabledCompanies || []).map((x) => String(x)));
-  return (state.companies || [])
-    .filter((c) => {
-      if (!String(c?.id || "").trim() || disabledCompanies.has(String(c.id))) return false;
-      if (!term) return true;
-      const haystack = [
-        c?.name,
-        c?.businessName,
-        c?.billTo,
-        c?.owner,
-        c?.email,
-        c?.phone,
-        c?.nit,
-      ].filter(Boolean).join(" ");
-      return matchesLikeSearch(haystack, term);
-    })
-    .slice()
-    .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity: "base" }));
-}
-
-function hideQuoteCompanyResults() {
-  if (!el.quoteCompanyResults) return;
-  el.quoteCompanyResults.innerHTML = "";
-  el.quoteCompanyResults.classList.remove("isVisible");
-}
-
-function renderQuoteCompanyResults(companies = []) {
-  if (!el.quoteCompanyResults) return;
-  const selectedId = String(el.quoteCompany?.value || "").trim();
-  const search = String(el.quoteCompanySearch?.value || "").trim();
-  if (!companies.length) {
-    if (search) {
-      el.quoteCompanyResults.innerHTML = '<div class="quoteCompanyEmpty">No se encontraron instituciones con ese criterio.</div>';
-      el.quoteCompanyResults.classList.add("isVisible");
-    } else {
-      hideQuoteCompanyResults();
-    }
-    return;
-  }
-  el.quoteCompanyResults.innerHTML = companies.slice(0, 7).map((company) => {
-    const companyId = String(company.id || "").trim();
-    const metaPrimary = String(company.businessName || company.owner || company.email || "Sin razon social").trim();
-    const metaSecondary = [company.phone, company.email, company.nit ? `NIT ${company.nit}` : ""]
-      .filter(Boolean)
-      .join(" | ");
-    const activeClass = companyId === selectedId ? " isActive" : "";
-    return `
-      <button class="quoteCompanyCard${activeClass}" type="button" data-quote-company-pick="${escapeHtml(companyId)}">
-        <span class="quoteCompanyCardTitle">${escapeHtml(String(company.name || "Institucion").trim())}</span>
-        <span class="quoteCompanyCardMeta">${escapeHtml(metaPrimary)}</span>
-        <span class="quoteCompanyCardSub">${escapeHtml(metaSecondary || "Sin telefono o correo")}</span>
-      </button>
-    `;
-  }).join("");
-  el.quoteCompanyResults.classList.add("isVisible");
-}
-
 function renderCompaniesSelect(selectedId = null) {
   if (!el.quoteCompany) return;
   const previousValue = String(el.quoteCompany.value || "").trim();
@@ -7887,18 +7791,36 @@ function renderCompaniesSelect(selectedId = null) {
   const finalCompanyId = String(el.quoteCompany.value || (keepId ? "" : previousValue) || "").trim();
   enhanceSelectControl(el.quoteCompany, true);
   syncEnhancedSelectValue(el.quoteCompany, finalCompanyId);
-  const selectedCompany = (state.companies || []).find((c) => c.id === el.quoteCompany.value);
+  const selectedCompany = (state.companies || []).find(c => c.id === el.quoteCompany.value);
   if (el.quoteCompanySearch) {
     el.quoteCompanySearch.value = selectedCompany?.name || "";
+    refreshCompanySuggestions(el.quoteCompanySearch.value);
   }
-  hideQuoteCompanyResults();
   renderQuoteManagerSelect(el.quoteCompany.value, quoteDraft?.managerId || null);
 }
 
 function refreshCompanySuggestions(rawTerm = "") {
-  if (el.companiesList) el.companiesList.innerHTML = "";
-  const companies = getQuoteFilteredCompanies(rawTerm);
-  renderQuoteCompanyResults(companies);
+  if (!el.companiesList) return;
+  const term = String(rawTerm || "").trim().toLowerCase();
+  const disabledCompanies = new Set((state.disabledCompanies || []).map((x) => String(x)));
+  const companies = (state.companies || []).filter((c) => !disabledCompanies.has(String(c.id)));
+  let source = companies;
+  if (term) {
+    source = findCompanyMatches(term);
+  }
+  const seen = new Set();
+  el.companiesList.innerHTML = "";
+  for (const c of source.slice(0, 20)) {
+    const name = String(c.name || "").trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = c.businessName ? `${name} - ${c.businessName}` : name;
+    el.companiesList.appendChild(opt);
+  }
 }
 
 function renderServicesList() {
@@ -7980,7 +7902,6 @@ function selectCompanyInQuote(companyId) {
   if (quoteDraft) quoteDraft.managerId = String(el.quoteManagerSelect.value || "").trim();
   applyQuoteCompanyDefaults();
   fillQuoteHeaderFields(true, false);
-  hideQuoteCompanyResults();
 }
 
 function findServiceMatches(rawTerm) {
@@ -12847,13 +12768,6 @@ function bindEvents() {
         openAccountingStatementModal(statementBtn.dataset.accountingOpenStatement);
         return;
       }
-      const quoteBtn = e.target.closest("[data-accounting-open-quote]");
-      if (quoteBtn) {
-        openLatestQuoteFromAccounting(quoteBtn.dataset.accountingOpenQuote).catch(() => {
-          toast("No se pudo abrir la cotizacion.");
-        });
-        return;
-      }
       const btn = e.target.closest("[data-accounting-apply-payment]");
       if (!btn) return;
       applyPaymentFromAccountingReport(btn.dataset.accountingApplyPayment).catch(() => {
@@ -12863,13 +12777,6 @@ function bindEvents() {
   }
   if (el.accountStatementBody) {
     el.accountStatementBody.addEventListener("click", (e) => {
-      const quoteBtn = e.target.closest("[data-accounting-open-quote]");
-      if (quoteBtn) {
-        openLatestQuoteFromAccounting(quoteBtn.dataset.accountingOpenQuote).catch(() => {
-          toast("No se pudo abrir la cotizacion.");
-        });
-        return;
-      }
       const btn = e.target.closest("[data-accounting-apply-payment]");
       if (!btn) return;
       applyPaymentFromAccountingReport(btn.dataset.accountingApplyPayment).catch(() => {
@@ -14533,15 +14440,13 @@ function bindEvents() {
       setQuoteItemsExpanded(!quoteItemsExpanded);
     });
   }
-    el.quoteCompany.addEventListener("change", () => {
+  el.quoteCompany.addEventListener("change", () => {
     selectCompanyInQuote(el.quoteCompany.value);
   });
   if (el.quoteCompanySearch) {
-    el.quoteCompanySearch.addEventListener("focus", () => {
-      refreshCompanySuggestions(el.quoteCompanySearch.value);
-    });
     el.quoteCompanySearch.addEventListener("input", () => {
       refreshCompanySuggestions(el.quoteCompanySearch.value);
+      // No autoseleccionar al teclear: permite borrar/escribir libremente.
     });
     el.quoteCompanySearch.addEventListener("change", () => {
       const matched = resolveCompanyFromSearch(el.quoteCompanySearch.value);
@@ -14549,33 +14454,16 @@ function bindEvents() {
         selectCompanyInQuote(matched.id);
         return;
       }
-      if (!String(el.quoteCompanySearch.value || "").trim()) {
-        if (el.quoteCompany) syncEnhancedSelectValue(el.quoteCompany, "");
-        hideQuoteCompanyResults();
+      if (String(el.quoteCompanySearch.value || "").trim()) {
+        toast("Institucion no encontrada en el catalogo.");
       }
-    });
-    el.quoteCompanySearch.addEventListener("blur", () => {
-      setTimeout(() => hideQuoteCompanyResults(), 140);
     });
     el.quoteCompanySearch.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        hideQuoteCompanyResults();
-        return;
-      }
       if (e.key !== "Enter") return;
       const matched = resolveCompanyFromSearch(el.quoteCompanySearch.value);
       if (!matched) return;
       e.preventDefault();
       selectCompanyInQuote(matched.id);
-    });
-  }
-  if (el.quoteCompanyResults) {
-    el.quoteCompanyResults.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-quote-company-pick]");
-      if (!btn) return;
-      const companyId = String(btn.dataset.quoteCompanyPick || "").trim();
-      if (!companyId) return;
-      selectCompanyInQuote(companyId);
     });
   }
   el.quoteManagerSelect.addEventListener("change", () => {
@@ -15209,7 +15097,7 @@ async function applyPaymentFromAccountingReport(eventId) {
   if (accountingReportReturnAfterPayment && el.accountingReportBackdrop) {
     document.body.classList.add("accountingPaymentMode");
     el.accountingReportBackdrop.hidden = true;
-    closeAccountingStatementModal();
+  closeAccountingStatementModal();
   }
   await openQuoteModal(id);
   if (el.quoteBackdrop) el.quoteBackdrop.hidden = false;
@@ -15218,100 +15106,8 @@ async function applyPaymentFromAccountingReport(eventId) {
   setTimeout(() => el.quoteAdvanceAmount?.focus(), 30);
 }
 
-async function openLatestQuoteFromAccounting(eventId) {
-  const id = String(eventId || "").trim();
-  if (!id) return;
-  const ev = (state.events || []).find((item) => String(item.id || "") === id);
-  if (!ev?.quote) return toast("Este evento no tiene cotizacion registrada.");
-  accountingReportReturnAfterPayment = !!(el.accountingReportBackdrop && !el.accountingReportBackdrop.hidden);
-  if (el.accountStatementBackdrop && !el.accountStatementBackdrop.hidden) {
-    closeAccountingStatementModal();
-  }
-  if (accountingReportReturnAfterPayment && el.accountingReportBackdrop) {
-    document.body.classList.add("accountingPaymentMode");
-    el.accountingReportBackdrop.hidden = true;
-  }
-  await openQuoteModal(id);
-  if (el.quoteBackdrop) el.quoteBackdrop.hidden = false;
-  if (el.quoteDocFold) el.quoteDocFold.open = true;
-  setQuoteItemsExpanded(true);
-  setTimeout(() => el.quoteItemsPanel?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
-}
-
-function renderQuoteAdvanceHistoryLog() {
-  if (!el.quoteAdvanceHistoryBody) return;
-  const ctx = getCurrentQuoteHistoryContext();
-  const inferAdvanceLogTone = (text = "") => {
-    const lower = String(text || "").toLowerCase();
-    if (lower.includes("eliminado")) return { key: "deleted", label: "Eliminado" };
-    if (lower.includes("editado") || lower.includes("ajustado")) return { key: "edited", label: "Editado" };
-    if (lower.includes("favor")) return { key: "credit", label: "Saldo a favor" };
-    return { key: "added", label: "Agregado" };
-  };
-
-  let html = "";
-  if (ctx) {
-    ensureHistoryStore();
-    const historyRows = (Array.isArray(state.changeHistory?.[ctx.key]) ? state.changeHistory[ctx.key] : [])
-      .filter((row) => /(anticipo|abono|pago|saldo a favor)/i.test(String(row?.change || "")));
-    html = historyRows.map((row) => {
-      const tone = inferAdvanceLogTone(row?.change);
-      return `
-        <tr class="quoteAdvanceLogRow quoteAdvanceLogRow--${escapeHtml(tone.key)}">
-          <td>${escapeHtml(formatDateTime(row.at))}</td>
-          <td>${escapeHtml(row.actorName || "Sistema")}</td>
-          <td>
-            <div class="quoteAdvanceLogEntry">
-              <span class="quoteAdvanceLogTag quoteAdvanceLogTag--${escapeHtml(tone.key)}">${escapeHtml(tone.label)}</span>
-              <span>${escapeHtml(row.change || "")}</span>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  if (!html) {
-    const advances = normalizeQuoteAdvancesForSnapshot(quoteDraft?.advances)
-      .slice()
-      .sort((a, b) => {
-        const createdCmp = String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
-        if (createdCmp !== 0) return createdCmp;
-        return String(b.date || "").localeCompare(String(a.date || ""));
-      });
-    html = advances.map((advance) => {
-      const stamp = String(advance.createdAt || "").trim();
-      const fallbackDate = String(advance.date || "").trim();
-      const detail = [
-        `Abono registrado: ${fallbackDate || "sin fecha"}`,
-        formatQuoteAdvanceDetail(advance),
-        moneyGT(advance.amount || 0),
-      ].filter(Boolean).join(" | ");
-      return `
-        <tr class="quoteAdvanceLogRow quoteAdvanceLogRow--added">
-          <td>${escapeHtml(stamp ? formatDateTime(stamp) : (fallbackDate || "-"))}</td>
-          <td>${escapeHtml(advance.createdByName || "Sistema")}</td>
-          <td>
-            <div class="quoteAdvanceLogEntry">
-              <span class="quoteAdvanceLogTag quoteAdvanceLogTag--added">Agregado</span>
-              <span>${escapeHtml(detail)}</span>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  el.quoteAdvanceHistoryBody.innerHTML = html || `
-    <tr class="quoteAdvanceLogEmptyRow">
-      <td colspan="3">Sin movimientos de pagos registrados.</td>
-    </tr>
-  `;
-}
-
 function renderQuoteAdvancesModal() {
-  const advanceWrap = document.querySelector("#quoteAdvanceBackdrop .quoteAdvanceTableWrap");
-  if (!advanceWrap || !el.quoteAdvanceTotal) return;
+  if (!el.quoteAdvanceBody || !el.quoteAdvanceTotal) return;
   const advances = normalizeQuoteAdvancesForSnapshot(quoteDraft?.advances)
     .slice()
     .sort((a, b) => {
@@ -15320,50 +15116,37 @@ function renderQuoteAdvancesModal() {
       return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
     });
   const balance = getQuoteAdvanceBalanceSummary(quoteDraft || {});
-  const rowsHtml = !advances.length
-    ? `<tr><td colspan="7">Sin anticipos registrados.</td></tr>`
-    : advances.map((row) => {
+  el.quoteAdvanceBody.innerHTML = "";
+  if (!advances.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="7">Sin anticipos registrados.</td>`;
+    el.quoteAdvanceBody.appendChild(tr);
+  } else {
+    for (const row of advances) {
+      const tr = document.createElement("tr");
       const evidenceAnchor = row.evidenceDataUrl
         ? `<a class="btn" href="${escapeHtml(row.evidenceDataUrl)}" download="${escapeHtml(row.evidenceName || `evidencia_${row.id}.pdf`)}" target="_blank" rel="noopener">Ver</a>`
         : "-";
-      return `
-        <tr>
-          <td>${escapeHtml(row.date || "-")}</td>
-          <td>${escapeHtml(row.paymentType || "-")}</td>
-          <td>${escapeHtml(row.voucherNumber || "-")}</td>
-          <td>${escapeHtml(row.description || "-")}</td>
-          <td>${moneyGT(row.amount || 0)}</td>
-          <td>${evidenceAnchor}</td>
-          <td class="appointmentActions">
-            <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar" aria-label="Editar">&#9998;</button>
-            <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar" aria-label="Eliminar">&#128465;</button>
-          </td>
-        </tr>
+      tr.innerHTML = `
+        <td>${escapeHtml(row.date || "-")}</td>
+        <td>${escapeHtml(row.paymentType || "-")}</td>
+        <td>${escapeHtml(row.voucherNumber || "-")}</td>
+        <td>${escapeHtml(row.description || "-")}</td>
+        <td>${moneyGT(row.amount || 0)}</td>
+        <td>${evidenceAnchor}</td>
+        <td class="appointmentActions">
+          <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar" aria-label="Editar">&#9998;</button>
+          <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar" aria-label="Eliminar">&#128465;</button>
+        </td>
       `;
-    }).join("");
-
-  advanceWrap.innerHTML = `
-    <table class="quoteTable">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Tipo</th>
-          <th>No. boleta</th>
-          <th>Descripcion</th>
-          <th>Monto</th>
-          <th>Evidencia</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="quoteAdvanceBody">${rowsHtml}</tbody>
-    </table>
-  `;
-  el.quoteAdvanceBody = document.getElementById("quoteAdvanceBody");
+      el.quoteAdvanceBody.appendChild(tr);
+    }
+  }
   el.quoteAdvanceTotal.textContent = moneyGT(balance.advancesTotal || 0);
   if (el.quoteAdvancePending) el.quoteAdvancePending.textContent = moneyGT(balance.balancePending || 0);
   if (el.quoteAdvanceCredit) el.quoteAdvanceCredit.textContent = moneyGT(balance.creditBalance || 0);
-  renderQuoteAdvanceHistoryLog();
 }
+
 function resetQuoteAdvanceForm() {
   quoteAdvanceEditingId = "";
   if (el.quoteAdvanceAmount) el.quoteAdvanceAmount.value = "";
@@ -15462,8 +15245,6 @@ async function addQuoteAdvanceFromForm() {
       evidenceName,
       evidenceType,
       createdAt: new Date().toISOString(),
-      createdByUserId: String(authSession.userId || ctx?.ev?.userId || "").trim(),
-      createdByName: String(authSession.fullName || authSession.username || getUserNameById(authSession.userId || ctx?.ev?.userId || "") || "Sistema").trim(),
     });
     if (ctx) {
       appendHistoryByKey(
@@ -19234,8 +19015,6 @@ function saveEventFromForm() {
   const resultingGroupId = needsGroup ? (currentGroupId || `grp_${uid()}`) : null;
   const existingByKey = new Map(replaceEvents.map(e => [`${e.date}|${e.salon}|${e.startTime}|${e.endTime}`, e]));
 
-  const principalSalon = String(slots[0]?.salon || "").trim();
-  const reservationSalones = Array.from(new Set(slots.map((slot) => String(slot?.salon || "").trim()).filter(Boolean)));
   const drafts = [];
   for (const d of targetDates) {
     for (const s of slots) {
@@ -19245,8 +19024,6 @@ function saveEventFromForm() {
         id: existing?.id || uid(),
         name,
         salon: s.salon,
-        mainSalon: String(existing?.mainSalon || principalSalon || s.salon || "").trim(),
-        salones: reservationSalones.slice(),
         date: d,
         groupId: resultingGroupId,
         status,
@@ -19363,62 +19140,6 @@ function getEventSeries(ev) {
   if (!ev) return [];
   if (!ev.groupId) return [ev];
   return state.events.filter(x => x.groupId === ev.groupId);
-}
-
-function getEventSeriesFinancialMeta(ev) {
-  const series = getEventSeries(ev)
-    .slice()
-    .sort((a, b) => {
-      const byDate = String(a?.date || "").localeCompare(String(b?.date || ""));
-      if (byDate !== 0) return byDate;
-      const byStart = String(a?.startTime || "").localeCompare(String(b?.startTime || ""));
-      if (byStart !== 0) return byStart;
-      return String(a?.salon || "").localeCompare(String(b?.salon || ""));
-    });
-  const salones = [];
-  for (const item of series) {
-    const eventSalones = Array.isArray(item?.salones) ? item.salones : [];
-    for (const salon of [...eventSalones, item?.salon]) {
-      const label = String(salon || "").trim();
-      if (label) salones.push(label);
-    }
-  }
-  const uniqueSalones = Array.from(new Set(salones));
-  const explicitMainSalon = series.map((item) => String(item?.mainSalon || "").trim()).find(Boolean) || "";
-  const mainSalon = explicitMainSalon || uniqueSalones[0] || String(ev?.salon || "").trim();
-  const primaryEvent = series.find((item) => String(item?.salon || "").trim() === mainSalon)
-    || series.find((item) => String(item?.id || "").trim() === String(ev?.id || "").trim())
-    || series[0]
-    || ev
-    || null;
-  const firstEvent = series[0] || ev || null;
-  const lastEvent = series[series.length - 1] || ev || null;
-  return {
-    series,
-    salones: uniqueSalones,
-    mainSalon,
-    primaryEvent,
-    startDate: String(firstEvent?.date || "").trim(),
-    endDate: String(lastEvent?.date || "").trim(),
-    startTime: String(primaryEvent?.startTime || firstEvent?.startTime || "").trim(),
-    endTime: String(primaryEvent?.endTime || firstEvent?.endTime || "").trim(),
-  };
-}
-
-function getUsedSalonesForReports() {
-  const seenReservations = new Set();
-  const salones = new Set();
-  for (const ev of state.events || []) {
-    const reservationKey = String(reservationKeyFromEvent(ev) || ev?.id || "").trim();
-    if (reservationKey) {
-      if (seenReservations.has(reservationKey)) continue;
-      seenReservations.add(reservationKey);
-    }
-    for (const salon of getEventSeriesFinancialMeta(ev).salones) {
-      salones.add(salon);
-    }
-  }
-  return Array.from(salones).sort((a, b) => String(a).localeCompare(String(b), "es", { sensitivity: "base" }));
 }
 
 function uniqueSlotsFromSeries(series) {
@@ -20973,28 +20694,12 @@ function normalizeState(candidate) {
   const hasRemoteTemplates = Object.prototype.hasOwnProperty.call(candidate, "quickTemplates");
   const fallbackLocalTemplates = loadQuickTemplates();
   const templateSource = hasRemoteTemplates ? candidate.quickTemplates : fallbackLocalTemplates;
-  const normalizeEventSalonNames = (value, fallbackSalon = "") => {
-    const merged = [...(Array.isArray(value) ? value : []), fallbackSalon]
-      .map((name) => String(name || "").trim())
-      .filter(Boolean);
-    return Array.from(new Set(merged));
-  };
 
   const normalized = {
     ...candidate,
     salones,
     events: Array.isArray(candidate.events)
-      ? candidate.events.map((e) => {
-        const salon = String(e?.salon ?? "").trim();
-        const eventSalones = normalizeEventSalonNames(e?.salones, salon);
-        const mainSalon = String(e?.mainSalon || eventSalones[0] || salon).trim();
-        return {
-          ...e,
-          salon,
-          mainSalon: mainSalon || salon,
-          salones: eventSalones,
-        };
-      })
+      ? candidate.events.map(e => ({ ...e, salon: e?.salon ?? "" }))
       : [],
     users: Array.isArray(candidate.users) ? candidate.users.map(normalizeUserRecord).filter((u) => u.id && u.name) : [],
     companies: Array.isArray(candidate.companies) ? candidate.companies : [],
@@ -21779,23 +21484,6 @@ function getEventsInWeek(weekStart, salon, dayCount = 7) {
       return compareTime(a.startTime, b.startTime);
     });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
