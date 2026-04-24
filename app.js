@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    CRM Reservas - Calendario tipo Google Calendar (frontend)
    - Salones
    - Estados con colores
@@ -78,6 +78,20 @@ const DASHBOARD_STATUS_ORDER = [
   STATUS.CONFIRMADO,
   STATUS.PRERESERVA,
   STATUS.LISTA,
+];
+const LEADS_PIPELINE_STATUSES = new Set([
+  STATUS.PRIMERA,
+  STATUS.SEGUIMIENTO,
+  STATUS.LISTA,
+  STATUS.PRERESERVA,
+  STATUS.PERDIDO,
+]);
+const LEADS_PIPELINE_STATUS_ORDER = [
+  STATUS.PRIMERA,
+  STATUS.SEGUIMIENTO,
+  STATUS.LISTA,
+  STATUS.PRERESERVA,
+  STATUS.PERDIDO,
 ];
 const DASHBOARD_EVENT_TYPES = ["Social", "Corporativo", "Individual"];
 const USER_ROLE = {
@@ -264,7 +278,10 @@ const el = {
   moduleHubScreen: document.getElementById("moduleHubScreen"),
   reportsHubScreen: document.getElementById("reportsHubScreen"),
   settingsScreen: document.getElementById("settingsScreen"),
-  btnOpenModules: document.getElementById("btnOpenModules"),
+  btnSideDashboardReports: document.getElementById("btnSideDashboardReports"),
+  btnSideCalendar: document.getElementById("btnSideCalendar"),
+  btnSideReports: document.getElementById("btnSideReports"),
+  btnSideSettings: document.getElementById("btnSideSettings"),
   btnModuleCalendar: document.getElementById("btnModuleCalendar"),
   btnModuleReports: document.getElementById("btnModuleReports"),
   btnModuleSettings: document.getElementById("btnModuleSettings"),
@@ -284,6 +301,7 @@ const el = {
   btnNext: document.getElementById("btnNext"),
   btnToday: document.getElementById("btnToday"),
   navMode: document.getElementById("navMode"),
+  btnOpenLeads: document.getElementById("btnOpenLeads"),
   btnFindEvent: document.getElementById("btnFindEvent"),
   btnNew: document.getElementById("btnNew"),
   settingsMenu: document.getElementById("settingsMenu"),
@@ -442,6 +460,7 @@ const el = {
 
   modalBackdrop: document.getElementById("modalBackdrop"),
   btnClose: document.getElementById("btnClose"),
+  btnBackToForm: document.getElementById("btnBackToForm"),
   btnDiscard: document.getElementById("btnDiscard"),
   eventForm: document.getElementById("eventForm"),
   eventId: document.getElementById("eventId"),
@@ -485,6 +504,15 @@ const el = {
   btnEventFinderClose: document.getElementById("btnEventFinderClose"),
   eventFinderSearch: document.getElementById("eventFinderSearch"),
   eventFinderBody: document.getElementById("eventFinderBody"),
+  leadsBackdrop: document.getElementById("leadsBackdrop"),
+  btnLeadsClose: document.getElementById("btnLeadsClose"),
+  leadsSearch: document.getElementById("leadsSearch"),
+  leadsStatusFilter: document.getElementById("leadsStatusFilter"),
+  leadsSellerFilter: document.getElementById("leadsSellerFilter"),
+  leadsDateFrom: document.getElementById("leadsDateFrom"),
+  leadsDateTo: document.getElementById("leadsDateTo"),
+  btnLeadsReset: document.getElementById("btnLeadsReset"),
+  leadsBody: document.getElementById("leadsBody"),
 
   btnAddUser: document.getElementById("btnAddUser"),
   userBackdrop: document.getElementById("userBackdrop"),
@@ -516,6 +544,7 @@ const el = {
   userTitle: document.getElementById("userTitle"),
 
   quoteBackdrop: document.getElementById("quoteBackdrop"),
+  quoteDocPanelCard: document.getElementById("quoteDocPanelCard"),
   quoteDocFold: document.getElementById("quoteDocFold"),
   quoteForm: document.getElementById("quoteForm"),
   quoteEventId: document.getElementById("quoteEventId"),
@@ -525,6 +554,7 @@ const el = {
   quoteVersionSelect: document.getElementById("quoteVersionSelect"),
   quoteTemplateSelect: document.getElementById("quoteTemplateSelect"),
   btnLoadQuoteVersion: document.getElementById("btnLoadQuoteVersion"),
+  btnToggleQuoteDoc: document.getElementById("btnToggleQuoteDoc"),
   quoteServiceTemplateSelect: document.getElementById("quoteServiceTemplateSelect"),
   quoteServiceTemplateName: document.getElementById("quoteServiceTemplateName"),
   btnQuoteServiceTemplateApply: document.getElementById("btnQuoteServiceTemplateApply"),
@@ -558,6 +588,8 @@ const el = {
   btnQuotePaymentClear: document.getElementById("btnQuotePaymentClear"),
   quoteServiceDate: document.getElementById("quoteServiceDate"),
   quoteServiceSearch: document.getElementById("quoteServiceSearch"),
+  quoteServiceQty: document.getElementById("quoteServiceQty"),
+  quoteServiceQtyHint: document.getElementById("quoteServiceQtyHint"),
   servicesList: document.getElementById("servicesList"),
   serviceDescriptionsList: document.getElementById("serviceDescriptionsList"),
   btnAddServiceToQuote: document.getElementById("btnAddServiceToQuote"),
@@ -569,6 +601,12 @@ const el = {
   quoteSubtotal: document.getElementById("quoteSubtotal"),
   quoteDiscountAmount: document.getElementById("quoteDiscountAmount"),
   quoteTotal: document.getElementById("quoteTotal"),
+  quoteSidebarDocument: document.getElementById("quoteSidebarDocument"),
+  quoteSidebarClient: document.getElementById("quoteSidebarClient"),
+  quoteSidebarBreakdown: document.getElementById("quoteSidebarBreakdown"),
+  quoteSidebarSubtotal: document.getElementById("quoteSidebarSubtotal"),
+  quoteSidebarDiscount: document.getElementById("quoteSidebarDiscount"),
+  quoteSidebarTotal: document.getElementById("quoteSidebarTotal"),
   quoteAccountMeta: document.getElementById("quoteAccountMeta"),
   quoteAccountDocument: document.getElementById("quoteAccountDocument"),
   quoteAccountEvent: document.getElementById("quoteAccountEvent"),
@@ -934,7 +972,7 @@ function restorePersistedAppSession() {
   } else if (targetScreen === "reports") {
     showReportsHub();
   } else if (targetScreen === "hub") {
-    showModuleHub();
+    showCalendarModule();
   } else {
     showCalendarModule();
   }
@@ -1443,8 +1481,8 @@ async function promptTextRequired({ title, label = "", placeholder = "" }) {
       showCancelButton: true,
       confirmButtonText: "Guardar",
       cancelButtonText: "Cancelar",
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#2563eb",
       inputValidator: (value) => {
         if (!String(value || "").trim()) return "Este campo es obligatorio.";
@@ -1474,8 +1512,8 @@ async function promptSelectRequired({ title, options = [], label = "Selecciona u
       showCancelButton: true,
       confirmButtonText: "Continuar",
       cancelButtonText: "Cancelar",
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#2563eb",
       inputValidator: (value) => {
         if (!String(value || "").trim()) return "Debes seleccionar una opcion.";
@@ -3405,21 +3443,40 @@ function setActiveModuleScreen(screen) {
   savePersistedModuleScreen(target);
 }
 
+function setSideNavActive(key = "calendar") {
+  const items = [
+    { key: "dashboard", node: el.btnSideDashboardReports },
+    { key: "calendar", node: el.btnSideCalendar },
+    { key: "reports", node: el.btnSideReports },
+    { key: "settings", node: el.btnSideSettings },
+  ];
+  const target = String(key || "").trim() || "calendar";
+  for (const item of items) {
+    if (!item?.node) continue;
+    const active = item.key === target;
+    item.node.classList.toggle("isActive", active);
+    item.node.setAttribute("aria-current", active ? "page" : "false");
+  }
+}
+
 function showModuleHub() {
   setActiveModuleScreen("hub");
 }
 
 function showCalendarModule() {
   setActiveModuleScreen("");
+  setSideNavActive("calendar");
 }
 
 function showReportsHub() {
   setActiveModuleScreen("reports");
+  setSideNavActive("reports");
 }
 
 function showSettingsHub() {
   setQuickAddGroupOpen(true);
   setSettingsPanelOpen(true);
+  setSideNavActive("settings");
 }
 
 function getActiveModuleScreenName() {
@@ -3758,6 +3815,9 @@ function renderSalesReportSummary(rows = []) {
   const totalPax = safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.pax || 0)), 0);
   const totalAmount = safeRows.reduce((acc, row) => acc + Math.max(0, Number(row?.total || 0)), 0);
   const avgTicket = safeRows.length ? (totalAmount / safeRows.length) : 0;
+  const baseRowsCount = enrichAccountingReportRows(buildSalesReportRows()).length || safeRows.length;
+  const pipelinePct = baseRowsCount ? Math.max(0, Math.round((safeRows.length / baseRowsCount) * 100)) : 0;
+  const conversionPct = safeRows.length ? Math.max(0, Math.round((confirmedCount / safeRows.length) * 100)) : 0;
   const topSellerMap = new Map();
   for (const row of safeRows) {
     const seller = String(row?.seller || "Sin vendedor").trim() || "Sin vendedor";
@@ -3765,13 +3825,18 @@ function renderSalesReportSummary(rows = []) {
   }
   const topSeller = Array.from(topSellerMap.entries()).sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))[0];
   const cards = [
-    { tone: "primary", eyebrow: "Pipeline", label: "Registros visibles", value: String(safeRows.length), meta: safeRows.length ? `Con filtros activos sobre ${safeRows.length} fila(s)` : "No hay resultados para el filtro actual" },
-    { tone: "success", eyebrow: "Conversion", label: "Confirmados", value: String(confirmedCount), meta: `${preReservedCount} pre reserva(s) en seguimiento` },
-    { tone: "info", eyebrow: "Capacidad", label: "PAX total", value: String(totalPax), meta: `Ticket promedio ${moneyGT(avgTicket)}` },
-    { tone: "accent", eyebrow: "Facturacion", label: "Total cotizado", value: moneyGT(totalAmount), meta: topSeller ? `Top vendedor ${topSeller[0]}` : "Sin vendedor destacado" },
+    { tone: "primary", icon: "inventory_2", eyebrow: "Pipeline", label: "Registros visibles", value: String(safeRows.length), meta: "Registros visibles", trend: `+${pipelinePct}%` },
+    { tone: "success", icon: "check_circle", eyebrow: "Conversion", label: "Confirmado", value: String(confirmedCount), meta: "Confirmado", trend: `${conversionPct}%` },
+    { tone: "info", icon: "groups", eyebrow: "Capacidad", label: "PAX total", value: String(totalPax), meta: "PAX total", trend: "" },
+    { tone: "ticket", icon: "payments", eyebrow: "Ticket Promedio", label: "Por evento", value: moneyGT(avgTicket), meta: "Por evento", trend: "" },
+    { tone: "accent", icon: "trending_up", eyebrow: "Facturacion", label: "Total cotizado", value: moneyGT(totalAmount), meta: "Total cotizado", trend: topSeller ? `Top vendedor ${topSeller[0]}` : "" },
   ];
   el.salesReportSummary.innerHTML = cards.map((card) => `
     <article class="salesSummaryCard salesSummaryCard--${escapeHtml(card.tone)}" title="${escapeHtml(({ Pipeline: "Pipeline = cuantos registros u oportunidades tienes activas en el flujo", Conversion: "Conversion = cuantas ya pasaron a confirmados", Capacidad: "Capacidad = volumen o PAX asociado", Facturacion: "Facturacion = cuanto dinero representa ese pipeline o lo ya cerrado" }[card.eyebrow] || ""))}">
+      <div class="salesSummaryHead">
+        <span class="salesSummaryIcon material-symbols-outlined">${escapeHtml(card.icon || "insights")}</span>
+        ${card.trend ? `<span class="salesSummaryTrend">${escapeHtml(card.trend)}</span>` : ""}
+      </div>
       <span class="salesSummaryEyebrow">${escapeHtml(card.eyebrow)}</span>
       <small>${escapeHtml(card.label)}</small>
       <strong>${escapeHtml(card.value)}</strong>
@@ -3787,49 +3852,25 @@ function renderSalesReportTable() {
   el.salesReportBody.innerHTML = "";
   if (!rows.length) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="35">Sin resultados para los filtros seleccionados.</td>`;
+    tr.innerHTML = `<td colspan="9">Sin resultados para los filtros seleccionados.</td>`;
     el.salesReportBody.appendChild(tr);
     return;
   }
-  const pick = (obj, key) => obj?.[key] || { qty: 0, amount: 0 };
   for (const r of rows) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><span class="salesStatusBadge" style="background:${hexToRgba(r.statusColor, 0.25)};border-color:${hexToRgba(r.statusColor, 0.6)}">${escapeHtml(r.status || "-")}</span></td>
       <td>${escapeHtml(r.refId || "-")}</td>
-      <td>${escapeHtml(r.seller || "-")}</td>
+      <td class="salesSellerCell">
+        <span class="salesSellerAvatar">${escapeHtml(getInitials(r.seller || "-"))}</span>
+        <span>${escapeHtml(r.seller || "-")}</span>
+      </td>
       <td>${escapeHtml(r.eventDate || "-")}</td>
       <td>${escapeHtml(r.eventType || "-")}</td>
-      <td>${escapeHtml(r.startTime || "-")}</td>
-      <td>${escapeHtml(r.endTime || "-")}</td>
+      <td>${escapeHtml(r.startTime || "-")} - ${escapeHtml(r.endTime || "-")}</td>
       <td>${escapeHtml(r.salon || "-")}</td>
-      <td>${escapeHtml(r.company || "-")}</td>
-      <td>${escapeHtml(r.manager || "-")}</td>
       <td>${escapeHtml(String(r.pax || 0))}</td>
-      <td>${escapeHtml(String(pick(r.subcatBuckets, "desayunos").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.subcatBuckets, "desayunos").amount))}</td>
-      <td>${escapeHtml(String(pick(r.subcatBuckets, "refa").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.subcatBuckets, "refa").amount))}</td>
-      <td>${escapeHtml(String(pick(r.subcatBuckets, "almuerzos").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.subcatBuckets, "almuerzos").amount))}</td>
-      <td>${escapeHtml(String(pick(r.subcatBuckets, "amRefa").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.subcatBuckets, "amRefa").amount))}</td>
-      <td>${escapeHtml(String(pick(r.subcatBuckets, "pmRefa").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.subcatBuckets, "pmRefa").amount))}</td>
-      <td>${escapeHtml(String(pick(r.subcatBuckets, "cenasBuffet").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.subcatBuckets, "cenasBuffet").amount))}</td>
-      <td>${escapeHtml(String(pick(r.subcatBuckets, "miscelaneos").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.subcatBuckets, "miscelaneos").amount))}</td>
-      <td>${escapeHtml(String(pick(r.catBuckets, "alimentosBebidas").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.catBuckets, "alimentosBebidas").amount))}</td>
-      <td>${escapeHtml(String(pick(r.catBuckets, "hospedajeJdl").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.catBuckets, "hospedajeJdl").amount))}</td>
-      <td>${escapeHtml(String(pick(r.catBuckets, "hospedajeTerceros").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.catBuckets, "hospedajeTerceros").amount))}</td>
-      <td>${escapeHtml(String(pick(r.catBuckets, "miscelaneos").qty || 0))}</td>
-      <td>${escapeHtml(moneyGT(pick(r.catBuckets, "miscelaneos").amount))}</td>
-      <td>${escapeHtml(moneyGT(r.discount || 0))}</td>
-      <td>${escapeHtml(r.updatedAt || "-")}</td>
+      <td>${escapeHtml(moneyGT(r.total || 0))}</td>
     `;
     el.salesReportBody.appendChild(tr);
   }
@@ -4014,6 +4055,7 @@ function accountingReportFiltersSummaryText() {
 
 const accountingReportExpandedAccounts = new Set();
 let accountingReportReturnAfterPayment = false;
+let accountingReturnAfterPaymentTarget = "";
 let accountingStatementActiveCompanyKey = "";
 
 function summarizeAccountingCollectionState(account) {
@@ -4682,6 +4724,7 @@ function openAccountingReportModal() {
 function closeAccountingReportModal() {
   if (!el.accountingReportBackdrop) return;
   accountingReportReturnAfterPayment = false;
+  accountingReturnAfterPaymentTarget = "";
   document.body.classList.remove("accountingPaymentMode");
   el.accountingReportBackdrop.hidden = true;
   closeAccountingStatementModal();
@@ -5948,6 +5991,7 @@ function resetDashboardReportFilters() {
 
 function openDashboardReportModal() {
   if (!el.dashboardReportBackdrop) return;
+  setSideNavActive("dashboard");
   resetDashboardReportFilters();
   renderDashboardReport();
   el.dashboardReportBackdrop.hidden = false;
@@ -5957,6 +6001,9 @@ function closeDashboardReportModal() {
   if (!el.dashboardReportBackdrop) return;
   el.dashboardReportBackdrop.hidden = true;
   restoreModuleScreenAfterModal();
+  if (el.settingsScreen && !el.settingsScreen.hidden) setSideNavActive("settings");
+  else if (el.reportsHubScreen && !el.reportsHubScreen.hidden) setSideNavActive("reports");
+  else setSideNavActive("calendar");
 }
 
 function getInstitutionReportDefaultRange() {
@@ -6441,7 +6488,10 @@ function renderInstitutionReport() {
 
   if (el.institutionOverviewGrid) {
     if (!data.company) {
-      el.institutionOverviewGrid.innerHTML = `<div class="dashboardEmpty">Sin datos para mostrar.</div>`;
+      el.institutionOverviewGrid.innerHTML = buildInstitutionReportEmptyStateHtml(
+        "Selecciona una institucion",
+        "Al elegir una institucion veras ingresos, ticket promedio, conversion y actividad historica."
+      );
     } else {
       const overviewRows = [
         { label: "Ingreso total", value: moneyGT(data.totalRevenue || 0) },
@@ -6464,7 +6514,10 @@ function renderInstitutionReport() {
 
   if (el.institutionReportChartsBody) {
     if (!data.company) {
-      el.institutionReportChartsBody.innerHTML = `<div class="dashboardEmpty">Sin datos para graficas.</div>`;
+      el.institutionReportChartsBody.innerHTML = buildInstitutionReportEmptyStateHtml(
+        "Graficas listas para analizar",
+        "Selecciona una institucion y el sistema armara las graficas de ingresos por mes y distribucion por estado."
+      );
     } else {
       el.institutionReportChartsBody.innerHTML = `
         <article class="institutionChartCard" style="min-width:0; overflow:hidden; display:flex; flex-direction:column; gap:14px;">
@@ -6485,47 +6538,71 @@ function renderInstitutionReport() {
     }
   }
   if (el.institutionReportSalonBody) {
-    el.institutionReportSalonBody.innerHTML = buildInstitutionMetricListHtml(
-      data.salonRows.slice(0, 8),
-      "Sin uso de salones para el rango seleccionado.",
-      (row, idx) => `
-        <article class="institutionMetricCard">
-          <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
-          <span>${escapeHtml(String(row.count || 0))} uso(s)</span>
-        </article>
-      `
-    );
+    if (!data.company) {
+      el.institutionReportSalonBody.innerHTML = buildInstitutionReportEmptyStateHtml(
+        "Sin salon seleccionado aun",
+        "Aqui apareceran los salones mas usados por la institucion dentro del rango que definas."
+      );
+    } else {
+      el.institutionReportSalonBody.innerHTML = buildInstitutionMetricListHtml(
+        data.salonRows.slice(0, 8),
+        "Sin uso de salones para el rango seleccionado.",
+        (row, idx) => `
+          <article class="institutionMetricCard">
+            <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
+            <span>${escapeHtml(String(row.count || 0))} uso(s)</span>
+          </article>
+        `
+      );
+    }
   }
 
   if (el.institutionReportDishBody) {
-    el.institutionReportDishBody.innerHTML = buildInstitutionMetricListHtml(
-      data.dishRows.slice(0, 10),
-      "Sin platillos o servicios cotizados para este rango.",
-      (row, idx) => `
-        <article class="institutionMetricCard">
-          <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
-          <span>${escapeHtml(String(row.qty || 0))} unidad(es) | ${escapeHtml(moneyGT(row.amount || 0))}</span>
-        </article>
-      `
-    );
+    if (!data.company) {
+      el.institutionReportDishBody.innerHTML = buildInstitutionReportEmptyStateHtml(
+        "Consumo pendiente de cargar",
+        "Cuando selecciones una institucion veras aqui los platillos y servicios mas cotizados."
+      );
+    } else {
+      el.institutionReportDishBody.innerHTML = buildInstitutionMetricListHtml(
+        data.dishRows.slice(0, 10),
+        "Sin platillos o servicios cotizados para este rango.",
+        (row, idx) => `
+          <article class="institutionMetricCard">
+            <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
+            <span>${escapeHtml(String(row.qty || 0))} unidad(es) | ${escapeHtml(moneyGT(row.amount || 0))}</span>
+          </article>
+        `
+      );
+    }
   }
 
   if (el.institutionReportManagerBody) {
-    el.institutionReportManagerBody.innerHTML = buildInstitutionMetricListHtml(
-      data.managerRows.slice(0, 8),
-      "Sin encargados asociados en el rango.",
-      (row, idx) => `
-        <article class="institutionMetricCard">
-          <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
-          <span>${escapeHtml(String(row.count || 0))} reserva(s)</span>
-        </article>
-      `
-    );
+    if (!data.company) {
+      el.institutionReportManagerBody.innerHTML = buildInstitutionReportEmptyStateHtml(
+        "Encargados por mostrar",
+        "El panel listara a las personas que mas eventos han coordinado con nosotros para esa institucion."
+      );
+    } else {
+      el.institutionReportManagerBody.innerHTML = buildInstitutionMetricListHtml(
+        data.managerRows.slice(0, 8),
+        "Sin encargados asociados en el rango.",
+        (row, idx) => `
+          <article class="institutionMetricCard">
+            <strong>#${idx + 1} ${escapeHtml(row.label || "-")}</strong>
+            <span>${escapeHtml(String(row.count || 0))} reserva(s)</span>
+          </article>
+        `
+      );
+    }
   }
 
   if (el.institutionReportTimelineBody) {
     if (!data.company) {
-      el.institutionReportTimelineBody.innerHTML = `<div class="dashboardEmpty">Sin datos de historial.</div>`;
+      el.institutionReportTimelineBody.innerHTML = buildInstitutionReportEmptyStateHtml(
+        "Historial aun no disponible",
+        "Selecciona una institucion para revisar meses fuertes, ultima visita y seguimiento comercial."
+      );
     } else {
       const monthHtml = buildInstitutionMetricListHtml(
         data.monthRows.slice(0, 6),
@@ -6584,6 +6661,15 @@ function renderInstitutionReport() {
       }
     }
   }
+}
+
+function buildInstitutionReportEmptyStateHtml(title, text) {
+  return `
+    <div class="institutionPanelEmpty">
+      <strong>${escapeHtml(title)}</strong>
+      <span>${escapeHtml(text)}</span>
+    </div>
+  `;
 }
 
 function scrollInstitutionReportToSection(sectionId) {
@@ -7200,6 +7286,8 @@ function enhanceSelectControl(select, force = false) {
   if (!USE_ENHANCED_SELECTS) return;
   if (!select || typeof window.SlimSelect !== "function") return;
   if (select === el.navMode || select === el.roomSelect || select.closest?.(".topbar")) return;
+  // Keep quote page selects native to avoid floating/overlapping slim-select wrappers.
+  if (select.closest?.("#quoteBackdrop")) return;
   const existing = uiEnhancers.selectChoices.get(select);
   if (existing && !force) return;
   if (existing) {
@@ -7623,7 +7711,7 @@ async function doLogin() {
   renderTopbarWelcome();
   refreshTopbarReminders();
   el.loginScreen.hidden = true;
-  showModuleHub();
+  showCalendarModule();
   if (el.loginPassword) el.loginPassword.value = "";
   if (el.eventUser && authSession.userId) {
     syncEnhancedSelectValue(el.eventUser, authSession.userId);
@@ -7660,6 +7748,9 @@ function initModernTimePicker(input) {
       prevArrow: "<span aria-hidden=\"true\">&lsaquo;</span>",
       onReady: (_, __, instance) => {
         instance.calendarContainer?.classList.add("crmTimePicker");
+        if (input.id === "appointmentTime") {
+          instance.calendarContainer?.classList.add("appointmentPickerFlat", "appointmentTimePickerFlat");
+        }
         input.addEventListener("focus", () => instance.open());
         input.addEventListener("click", () => instance.open());
       },
@@ -7730,6 +7821,9 @@ function initModernDatePicker(input) {
       },
       onReady: (_, __, instance) => {
         instance.calendarContainer?.classList.add("crmDatePicker");
+        if (input.id === "appointmentDate") {
+          instance.calendarContainer?.classList.add("appointmentPickerFlat", "appointmentDatePickerFlat");
+        }
         normalizeEventDateRange(input);
         input.addEventListener("focus", () => instance.open());
         input.addEventListener("click", () => instance.open());
@@ -10640,10 +10734,10 @@ async function requestMmsItemQty(label, currentQty = 1, kindLabel = "producto") 
       showCancelButton: true,
       confirmButtonText: "Agregar",
       cancelButtonText: "Cancelar",
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#0f766e",
-      cancelButtonColor: "#334155",
+      cancelButtonColor: "#94a3b8",
       inputValidator: (value) => {
         const qty = Math.floor(Number(value || 0));
         if (!Number.isFinite(qty) || qty <= 0) return "Ingresa una cantidad valida mayor a 0.";
@@ -11855,8 +11949,8 @@ function placeEvent(ev, layout = null) {
   card.classList.toggle("compact", isCompact || !!topbarSettings.compactEvents);
 
   const c = statusColor(ev.status);
-  card.style.background = `linear-gradient(135deg, ${hexToRgba(c, 0.35)}, ${hexToRgba("#000000", 0.18)})`;
-  card.style.borderColor = hexToRgba(c, 0.35);
+  card.style.background = `linear-gradient(180deg, ${hexToRgba(c, 0.20)}, ${hexToRgba(c, 0.12)})`;
+  card.style.borderColor = hexToRgba(c, 0.42);
   card.style.setProperty("--status-color", c);
 
   const user = state.users.find(u => u.id === ev.userId) || { name: "-" };
@@ -12205,6 +12299,178 @@ function renderEventFinderResults(rawTerm = "") {
   }
 }
 
+function openLeadsModal() {
+  if (!el.leadsBackdrop) return;
+  ensureLeadsFilterOptions();
+  const term = String(el.leadsSearch?.value || "").trim();
+  renderLeadsResults(term);
+  el.leadsBackdrop.hidden = false;
+  setTimeout(() => {
+    if (el.leadsSearch) {
+      el.leadsSearch.focus();
+      el.leadsSearch.select();
+    }
+  }, 0);
+}
+
+function closeLeadsModal() {
+  if (!el.leadsBackdrop) return;
+  el.leadsBackdrop.hidden = true;
+}
+
+function renderLeadsIdle() {
+  if (!el.leadsBody) return;
+  el.leadsBody.innerHTML = "";
+  const tr = document.createElement("tr");
+  tr.innerHTML = `<td colspan="7">No hay leads para los filtros seleccionados.</td>`;
+  el.leadsBody.appendChild(tr);
+}
+
+function buildLeadsRows() {
+  const usersById = new Map((state.users || []).map((u) => [String(u.id || "").trim(), String(u.fullName || u.name || "").trim()]));
+  const companiesById = new Map((state.companies || []).map((c) => [String(c.id || "").trim(), c]));
+  const rows = [];
+  for (const ev of state.events || []) {
+    const status = String(ev?.status || "").trim();
+    if (!LEADS_PIPELINE_STATUSES.has(status)) continue;
+    const quote = ev?.quote || {};
+    const companyId = String(quote.companyId || "").trim();
+    const company = companiesById.get(companyId) || null;
+    const companyName = String(company?.name || quote.companyName || "").trim();
+    const managerName = String(quote.managerName || "").trim();
+    const contactName = String(quote.contact || "").trim();
+    const eventName = String(ev?.name || "").trim();
+    const leadLabel = contactName && eventName && contactName !== eventName
+      ? `${eventName} / ${contactName}`
+      : (eventName || contactName || "-");
+    const userName = usersById.get(String(ev?.userId || "").trim()) || "";
+    const parts = [
+      String(ev?.date || ""),
+      String(ev?.startTime || ""),
+      String(ev?.endTime || ""),
+      String(ev?.salon || ""),
+      String(status || ""),
+      String(eventName || ""),
+      String(contactName || ""),
+      String(companyName || ""),
+      String(managerName || ""),
+      String(userName || ""),
+      String(quote?.code || ""),
+    ];
+    rows.push({
+      eventId: String(ev?.id || ""),
+      date: String(ev?.date || ""),
+      leadLabel,
+      companyName,
+      managerName: managerName || userName,
+      sellerId: String(ev?.userId || "").trim(),
+      sellerName: userName,
+      status,
+      salon: String(ev?.salon || ""),
+      statusColor: statusColor(status),
+      searchBlob: parts.join(" ").toLowerCase(),
+      startTime: String(ev?.startTime || ""),
+    });
+  }
+  rows.sort((a, b) => {
+    const d = String(b.date || "").localeCompare(String(a.date || ""));
+    if (d !== 0) return d;
+    return String(a.startTime || "").localeCompare(String(b.startTime || ""));
+  });
+  return rows;
+}
+
+function ensureLeadsFilterOptions() {
+  if (el.leadsStatusFilter) {
+    const current = String(el.leadsStatusFilter.value || "");
+    const options = ['<option value="">Todos los estados</option>'];
+    for (const status of LEADS_PIPELINE_STATUS_ORDER) {
+      options.push(`<option value="${escapeHtml(status)}">${escapeHtml(status)}</option>`);
+    }
+    el.leadsStatusFilter.innerHTML = options.join("");
+    if (current && LEADS_PIPELINE_STATUS_ORDER.includes(current)) {
+      el.leadsStatusFilter.value = current;
+    }
+  }
+  if (el.leadsSellerFilter) {
+    const current = String(el.leadsSellerFilter.value || "");
+    const users = (state.users || [])
+      .map(normalizeUserRecord)
+      .filter((u) => u.active !== false)
+      .sort((a, b) => String(a.fullName || a.name || "").localeCompare(String(b.fullName || b.name || ""), "es", { sensitivity: "base" }));
+    const options = ['<option value="">Todos los vendedores</option>'];
+    for (const u of users) {
+      const id = String(u.id || "").trim();
+      if (!id) continue;
+      const label = String(u.fullName || u.name || u.username || "").trim() || id;
+      options.push(`<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`);
+    }
+    el.leadsSellerFilter.innerHTML = options.join("");
+    if (current && users.some((u) => String(u.id || "") === current)) {
+      el.leadsSellerFilter.value = current;
+    }
+  }
+}
+
+function getLeadsFilters() {
+  return {
+    status: String(el.leadsStatusFilter?.value || "").trim(),
+    sellerId: String(el.leadsSellerFilter?.value || "").trim(),
+    dateFrom: String(el.leadsDateFrom?.value || "").trim(),
+    dateTo: String(el.leadsDateTo?.value || "").trim(),
+  };
+}
+
+function applyLeadsFilters(rows) {
+  const filters = getLeadsFilters();
+  return (rows || []).filter((row) => {
+    const rowDate = String(row?.date || "").trim();
+    if (filters.status && String(row?.status || "").trim() !== filters.status) return false;
+    if (filters.sellerId && String(row?.sellerId || "").trim() !== filters.sellerId) return false;
+    if (filters.dateFrom && rowDate && rowDate < filters.dateFrom) return false;
+    if (filters.dateTo && rowDate && rowDate > filters.dateTo) return false;
+    return true;
+  });
+}
+
+function resetLeadsFilters() {
+  if (el.leadsStatusFilter) el.leadsStatusFilter.value = "";
+  if (el.leadsSellerFilter) el.leadsSellerFilter.value = "";
+  if (el.leadsDateFrom) el.leadsDateFrom.value = "";
+  if (el.leadsDateTo) el.leadsDateTo.value = "";
+}
+
+function renderLeadsResults(rawTerm = "") {
+  if (!el.leadsBody) return;
+  const term = String(rawTerm || "").trim();
+  const allRows = applyLeadsFilters(buildLeadsRows());
+  const rows = term
+    ? allRows.filter((r) => matchesLikeSearch(r.searchBlob, term)).slice(0, 180)
+    : allRows.slice(0, 140);
+  el.leadsBody.innerHTML = "";
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="7">No hay leads que coincidan con la busqueda.</td>`;
+    el.leadsBody.appendChild(tr);
+    return;
+  }
+  for (const r of rows) {
+    const badgeBg = hexToRgba(r.statusColor || "#94a3b8", 0.22);
+    const badgeBorder = hexToRgba(r.statusColor || "#94a3b8", 0.56);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(r.date || "-")}</td>
+      <td>${escapeHtml(r.leadLabel || "-")}</td>
+      <td>${escapeHtml(r.companyName || "-")}</td>
+      <td>${escapeHtml(r.managerName || "-")}</td>
+      <td><span class="salesStatusBadge" style="background:${escapeHtml(badgeBg)};border-color:${escapeHtml(badgeBorder)}">${escapeHtml(r.status || "-")}</span></td>
+      <td>${escapeHtml(r.salon || "-")}</td>
+      <td><button class="btn" type="button" data-lead-event-id="${escapeHtml(r.eventId || "")}">Ver</button></td>
+    `;
+    el.leadsBody.appendChild(tr);
+  }
+}
+
 function revealEventInCalendar(eventId) {
   const id = String(eventId || "").trim();
   if (!id) return;
@@ -12253,9 +12519,31 @@ function bindEvents() {
   if (el.loginPassword) {
     el.loginPassword.addEventListener("input", () => setLoginError(""));
   }
-  if (el.btnOpenModules) {
-    el.btnOpenModules.addEventListener("click", () => {
-      showModuleHub();
+  if (el.btnSideDashboardReports) {
+    el.btnSideDashboardReports.addEventListener("click", () => {
+      closeSettingsPanel();
+      prepareModuleModalOpen("reports");
+      openSalesReportModal();
+      setSideNavActive("reports");
+    });
+  }
+  if (el.btnSideCalendar) {
+    el.btnSideCalendar.addEventListener("click", () => {
+      closeSettingsPanel();
+      showCalendarModule();
+      render();
+    });
+  }
+  if (el.btnSideReports) {
+    el.btnSideReports.addEventListener("click", () => {
+      closeSettingsPanel();
+      showReportsHub();
+    });
+  }
+  if (el.btnSideSettings) {
+    el.btnSideSettings.addEventListener("click", () => {
+      closeSettingsPanel();
+      showSettingsHub();
     });
   }
   if (el.btnLogout) {
@@ -12281,13 +12569,15 @@ function bindEvents() {
   }
   if (el.btnBackFromReports) {
     el.btnBackFromReports.addEventListener("click", () => {
-      showModuleHub();
+      showCalendarModule();
+      render();
     });
   }
   if (el.btnBackFromSettings) {
     el.btnBackFromSettings.addEventListener("click", () => {
       if (el.settingsScreen) el.settingsScreen.hidden = true;
-      showModuleHub();
+      showCalendarModule();
+      render();
     });
   }
 
@@ -12502,6 +12792,52 @@ function bindEvents() {
       salon: selectedSalon,
     });
   });
+
+  if (el.btnOpenLeads) {
+    el.btnOpenLeads.addEventListener("click", () => {
+      closeSettingsPanel();
+      openLeadsModal();
+    });
+  }
+  if (el.btnLeadsClose) {
+    el.btnLeadsClose.addEventListener("click", closeLeadsModal);
+  }
+  if (el.leadsBackdrop) {
+    bindSafeBackdropClose(el.leadsBackdrop, closeLeadsModal);
+  }
+  if (el.leadsSearch) {
+    el.leadsSearch.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        renderLeadsResults(String(el.leadsSearch.value || "").trim());
+        return;
+      }
+      if (e.key === "Escape") closeLeadsModal();
+    });
+  }
+  const refreshLeadsWithCurrentTerm = () => {
+    renderLeadsResults(String(el.leadsSearch?.value || "").trim());
+  };
+  [el.leadsStatusFilter, el.leadsSellerFilter, el.leadsDateFrom, el.leadsDateTo].forEach((control) => {
+    if (!control) return;
+    control.addEventListener("change", refreshLeadsWithCurrentTerm);
+  });
+  if (el.btnLeadsReset) {
+    el.btnLeadsReset.addEventListener("click", () => {
+      resetLeadsFilters();
+      refreshLeadsWithCurrentTerm();
+    });
+  }
+  if (el.leadsBody) {
+    el.leadsBody.addEventListener("click", (e) => {
+      const btn = e.target.closest?.("[data-lead-event-id]");
+      if (!btn) return;
+      const eventId = String(btn.dataset.leadEventId || "").trim();
+      if (!eventId) return;
+      closeLeadsModal();
+      revealEventInCalendar(eventId);
+    });
+  }
 
   if (el.btnFindEvent) {
     el.btnFindEvent.addEventListener("click", () => {
@@ -12720,6 +13056,11 @@ function bindEvents() {
       setAppointmentsPanelVisible(!!nextVisible);
     });
   }
+  if (el.btnBackToForm) {
+    el.btnBackToForm.addEventListener("click", () => {
+      backToEventForm();
+    });
+  }
   if (el.btnTopbarReminders) {
     el.btnTopbarReminders.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -12760,10 +13101,16 @@ function bindEvents() {
     });
   }
 
-  el.btnQuoteEvent.addEventListener("click", () => {
-    const id = el.eventId.value;
+  el.btnQuoteEvent.addEventListener("click", async () => {
+    const id = String(el.eventId?.value || "").trim();
     if (!id) return;
-    openQuoteModal(id);
+    // Evita que el modal de Edicion quede encima y oculte la pantalla de cotizacion.
+    closeModal();
+    try {
+      await openQuoteModal(id);
+    } catch (_) {
+      toast("No se pudo abrir la cotizacion. Intenta nuevamente.");
+    }
   });
   if (el.btnMenuMontaje) {
     el.btnMenuMontaje.addEventListener("click", () => {
@@ -12819,8 +13166,8 @@ function bindEvents() {
       }
     });
   }
-  if (el.quoteAdvanceBody) {
-    el.quoteAdvanceBody.addEventListener("click", (e) => {
+  if (el.quoteAdvanceBackdrop) {
+    el.quoteAdvanceBackdrop.addEventListener("click", (e) => {
       const editBtn = e.target.closest(".quoteAdvanceEditBtn");
       if (editBtn) {
         startEditQuoteAdvance(editBtn.dataset.advanceId);
@@ -14528,6 +14875,19 @@ function bindEvents() {
       addServiceToQuoteDraft(el.quoteServiceSearch.value);
     }
   });
+  if (el.quoteServiceSearch) {
+    el.quoteServiceSearch.addEventListener("input", () => {
+      syncQuoteServiceQuantityField();
+    });
+    el.quoteServiceSearch.addEventListener("change", () => {
+      syncQuoteServiceQuantityField();
+    });
+  }
+  if (el.quoteServiceQty) {
+    el.quoteServiceQty.addEventListener("input", () => {
+      el.quoteServiceQty.classList.remove("fieldInvalid");
+    });
+  }
   if (el.btnToggleQuoteItemsExpand) {
     el.btnToggleQuoteItemsExpand.addEventListener("click", () => {
       setQuoteItemsExpanded(!quoteItemsExpanded);
@@ -14649,10 +15009,19 @@ function bindEvents() {
   }
   if (el.quoteDocFold && el.quoteBackdrop) {
     el.quoteDocFold.addEventListener("toggle", () => {
-      if (el.quoteDocFold.open) {
-        el.quoteBackdrop.classList.add("docFloatOpen");
-      } else {
-        el.quoteBackdrop.classList.remove("docFloatOpen");
+      if (el.quoteDocPanelCard && !el.quoteDocFold.open && !el.quoteDocPanelCard.hidden) {
+        setQuoteDocPanelVisible(false);
+        return;
+      }
+      syncQuoteDocFoldUi();
+    });
+  }
+  if (el.btnToggleQuoteDoc) {
+    el.btnToggleQuoteDoc.addEventListener("click", () => {
+      const nextVisible = el.quoteDocPanelCard ? el.quoteDocPanelCard.hidden : !el.quoteDocFold?.open;
+      setQuoteDocPanelVisible(nextVisible);
+      if (nextVisible && el.quoteDocFold) {
+        el.quoteDocFold.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     });
   }
@@ -14722,7 +15091,7 @@ function bindEvents() {
     await saveQuoteFromForm();
   });
 
-  el.quoteItemsBody.addEventListener("input", handleQuoteItemsInput);
+  el.quoteItemsBody.addEventListener("change", handleQuoteItemsInput);
   el.quoteItemsBody.addEventListener("click", handleQuoteItemsClick);
 
   el.eventUser.addEventListener("change", () => {
@@ -14752,7 +15121,6 @@ function bindEvents() {
       else if (el.menuCatalogBackdrop && !el.menuCatalogBackdrop.hidden) closeMenuCatalogManagerModal();
       else if (!el.serviceBackdrop.hidden) closeServiceModal();
       else if (!el.companyBackdrop.hidden) closeCompanyModal();
-      else if (!el.quoteBackdrop.hidden && quoteItemsExpanded) setQuoteItemsExpanded(false);
       else if (!el.quoteBackdrop.hidden) closeQuoteModal();
       else if (!el.modalBackdrop.hidden) closeModal();
     }
@@ -15141,12 +15509,19 @@ async function openQuoteModal(eventId) {
   if (el.quoteDiscountValue) el.quoteDiscountValue.value = String(Math.max(0, Number(quoteDraft.discountValue || 0)));
   renderQuoteServiceDateSelect();
   el.quoteServiceSearch.value = "";
+  if (el.quoteServiceQty) {
+    el.quoteServiceQty.value = "";
+    el.quoteServiceQty.classList.remove("fieldInvalid");
+  }
+  syncQuoteServiceQuantityField();
   renderQuoteItems();
   syncPaxQuantityItems();
   renderQuoteVersionControls();
   setQuoteItemsExpanded(false);
 
   el.quoteBackdrop.hidden = false;
+  document.body.classList.add("quoteModeOpen");
+  setQuoteDocPanelVisible(false);
   if (!String(quoteDraft.templateId || "").trim()) {
     quoteDraft.templateId = CORPORATE_TEMPLATE_ID;
   }
@@ -15156,8 +15531,9 @@ async function openQuoteModal(eventId) {
 function closeQuoteModal() {
   setQuoteItemsExpanded(false);
   el.quoteBackdrop.hidden = true;
+  document.body.classList.remove("quoteModeOpen");
   el.quoteBackdrop.classList.remove("docFloatOpen");
-  if (el.quoteDocFold) el.quoteDocFold.open = false;
+  setQuoteDocPanelVisible(false);
   closeQuoteAdvanceModal();
   closeMenuMontajeModal();
   closeMenuMontajeSelectableModal();
@@ -15167,7 +15543,11 @@ function closeQuoteModal() {
     renderAccountingReportTable();
     document.body.classList.remove("accountingPaymentMode");
     el.accountingReportBackdrop.hidden = false;
+    if (accountingReturnAfterPaymentTarget === "statement" && accountingStatementActiveCompanyKey) {
+      openAccountingStatementModal(accountingStatementActiveCompanyKey);
+    }
     accountingReportReturnAfterPayment = false;
+    accountingReturnAfterPaymentTarget = "";
   }
 }
 
@@ -15205,12 +15585,15 @@ function persistQuoteDraftFinancials({ showToast = false } = {}) {
 async function applyPaymentFromAccountingReport(eventId) {
   const id = String(eventId || "").trim();
   if (!id) return;
-  accountingReportReturnAfterPayment = !!(el.accountingReportBackdrop && !el.accountingReportBackdrop.hidden);
+  const openedFromStatement = !!(el.accountStatementBackdrop && !el.accountStatementBackdrop.hidden);
+  const openedFromReport = !!(el.accountingReportBackdrop && !el.accountingReportBackdrop.hidden);
+  accountingReportReturnAfterPayment = openedFromStatement || openedFromReport;
+  accountingReturnAfterPaymentTarget = openedFromStatement ? "statement" : (openedFromReport ? "report" : "");
   if (accountingReportReturnAfterPayment && el.accountingReportBackdrop) {
     document.body.classList.add("accountingPaymentMode");
     el.accountingReportBackdrop.hidden = true;
-    closeAccountingStatementModal();
   }
+  if (openedFromStatement) closeAccountingStatementModal();
   await openQuoteModal(id);
   if (el.quoteBackdrop) el.quoteBackdrop.hidden = false;
   openQuoteAdvanceModal();
@@ -15233,8 +15616,8 @@ async function openLatestQuoteFromAccounting(eventId) {
   }
   await openQuoteModal(id);
   if (el.quoteBackdrop) el.quoteBackdrop.hidden = false;
-  if (el.quoteDocFold) el.quoteDocFold.open = true;
-  setQuoteItemsExpanded(true);
+  setQuoteDocPanelVisible(false);
+  setQuoteItemsExpanded(false);
   setTimeout(() => el.quoteItemsPanel?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
 }
 
@@ -15321,44 +15704,43 @@ function renderQuoteAdvancesModal() {
     });
   const balance = getQuoteAdvanceBalanceSummary(quoteDraft || {});
   const rowsHtml = !advances.length
-    ? `<tr><td colspan="7">Sin anticipos registrados.</td></tr>`
+    ? `<div class="quoteAdvanceLedgerEmpty">Sin anticipos registrados.</div>`
     : advances.map((row) => {
       const evidenceAnchor = row.evidenceDataUrl
         ? `<a class="btn" href="${escapeHtml(row.evidenceDataUrl)}" download="${escapeHtml(row.evidenceName || `evidencia_${row.id}.pdf`)}" target="_blank" rel="noopener">Ver</a>`
-        : "-";
+        : `<span class="quoteAdvanceLedgerMuted">-</span>`;
       return `
-        <tr>
-          <td>${escapeHtml(row.date || "-")}</td>
-          <td>${escapeHtml(row.paymentType || "-")}</td>
-          <td>${escapeHtml(row.voucherNumber || "-")}</td>
-          <td>${escapeHtml(row.description || "-")}</td>
-          <td>${moneyGT(row.amount || 0)}</td>
-          <td>${evidenceAnchor}</td>
-          <td class="appointmentActions">
-            <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar" aria-label="Editar">&#9998;</button>
-            <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar" aria-label="Eliminar">&#128465;</button>
-          </td>
-        </tr>
+        <div class="quoteAdvanceLedgerRow">
+          <div class="quoteAdvanceLedgerCell"><span class="quoteAdvanceLedgerLabel">Fecha</span><span>${escapeHtml(row.date || "-")}</span></div>
+          <div class="quoteAdvanceLedgerCell"><span class="quoteAdvanceLedgerLabel">Tipo</span><span>${escapeHtml(row.paymentType || "-")}</span></div>
+          <div class="quoteAdvanceLedgerCell"><span class="quoteAdvanceLedgerLabel">No. boleta</span><span>${escapeHtml(row.voucherNumber || "-")}</span></div>
+          <div class="quoteAdvanceLedgerCell"><span class="quoteAdvanceLedgerLabel">Descripcion</span><span>${escapeHtml(row.description || "-")}</span></div>
+          <div class="quoteAdvanceLedgerCell"><span class="quoteAdvanceLedgerLabel">Monto</span><strong>${moneyGT(row.amount || 0)}</strong></div>
+          <div class="quoteAdvanceLedgerCell quoteAdvanceLedgerCell--evidence"><span class="quoteAdvanceLedgerLabel">Evidencia</span>${evidenceAnchor}</div>
+          <div class="quoteAdvanceLedgerCell quoteAdvanceLedgerCell--actions">
+            <span class="quoteAdvanceLedgerLabel">Acciones</span>
+            <div class="appointmentActions">
+              <button class="apptIconBtn apptEdit quoteAdvanceEditBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Editar" aria-label="Editar">&#9998;</button>
+              <button class="apptIconBtn apptDelete quoteAdvanceRemoveBtn" type="button" data-advance-id="${escapeHtml(row.id)}" title="Eliminar" aria-label="Eliminar">&#128465;</button>
+            </div>
+          </div>
+        </div>
       `;
     }).join("");
 
   advanceWrap.innerHTML = `
-    <table class="quoteTable">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Tipo</th>
-          <th>No. boleta</th>
-          <th>Descripcion</th>
-          <th>Monto</th>
-          <th>Evidencia</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="quoteAdvanceBody">${rowsHtml}</tbody>
-    </table>
+    <div class="quoteAdvanceLedgerHead">
+      <span>Fecha</span>
+      <span>Tipo</span>
+      <span>No. boleta</span>
+      <span>Descripcion</span>
+      <span>Monto</span>
+      <span>Evidencia</span>
+      <span>Acciones</span>
+    </div>
+    <div class="quoteAdvanceLedgerBody">${rowsHtml}</div>
   `;
-  el.quoteAdvanceBody = document.getElementById("quoteAdvanceBody");
+  el.quoteAdvanceBody = advanceWrap;
   el.quoteAdvanceTotal.textContent = moneyGT(balance.advancesTotal || 0);
   if (el.quoteAdvancePending) el.quoteAdvancePending.textContent = moneyGT(balance.balancePending || 0);
   if (el.quoteAdvanceCredit) el.quoteAdvanceCredit.textContent = moneyGT(balance.creditBalance || 0);
@@ -15512,6 +15894,9 @@ function openQuoteAdvanceModal() {
 function closeQuoteAdvanceModal() {
   resetQuoteAdvanceForm();
   if (el.quoteAdvanceBackdrop) el.quoteAdvanceBackdrop.hidden = true;
+  if (accountingReportReturnAfterPayment && el.quoteBackdrop && !el.quoteBackdrop.hidden) {
+    closeQuoteModal();
+  }
 }
 
 function openAppointmentModal(eventId) {
@@ -16403,14 +16788,24 @@ function addServiceToQuoteDraft(rawName) {
   }
   const defaultServiceDate = selectedServiceDate;
   const paxQty = normalizeQuotePeopleValue();
+  const requestedQty = Math.max(0, Math.floor(Number(el.quoteServiceQty?.value || 0)));
+  const isPaxService = String(service?.quantityMode || "").trim().toUpperCase() === "PAX";
+  if (!isPaxService && requestedQty <= 0) {
+    if (el.quoteServiceQty) {
+      el.quoteServiceQty.classList.add("fieldInvalid");
+      el.quoteServiceQty.focus();
+      el.quoteServiceQty.select?.();
+    }
+    return toast("Este producto requiere una cantidad manual antes de agregarlo.");
+  }
   const item = service
     ? {
       rowId: uid(),
       serviceId: service.id,
       name: service.name,
-      qty: service.quantityMode === "PAX" ? 1 : 1,
+      qty: isPaxService ? 1 : requestedQty,
       unitPrice: Number(service.price || 0),
-      price: service.quantityMode === "PAX"
+      price: isPaxService
         ? Math.max(0, Number(service.price || 0) * Math.max(0, paxQty))
         : Number(service.price || 0),
       description: service.description || "",
@@ -16423,7 +16818,7 @@ function addServiceToQuoteDraft(rawName) {
       rowId: uid(),
       serviceId: null,
       name,
-      qty: 1,
+      qty: requestedQty,
       unitPrice: 0,
       price: 0,
       description: "",
@@ -16434,6 +16829,11 @@ function addServiceToQuoteDraft(rawName) {
     };
   quoteDraft.items.push(item);
   el.quoteServiceSearch.value = "";
+  if (el.quoteServiceQty) {
+    el.quoteServiceQty.value = "";
+    el.quoteServiceQty.classList.remove("fieldInvalid");
+  }
+  syncQuoteServiceQuantityField();
   renderQuoteItems();
   const ctx = getCurrentQuoteHistoryContext();
   if (ctx) {
@@ -16460,6 +16860,167 @@ function renderQuoteCurrencyPicker() {
   if (el.quoteDiscountType) {
     const amountOption = Array.from(el.quoteDiscountType.options || []).find((opt) => String(opt.value || "") === "AMOUNT");
     if (amountOption) amountOption.textContent = `Monto (${getQuoteCurrencySymbol(currency)})`;
+  }
+}
+
+function setQuoteDocPanelVisible(visible) {
+  const shouldShow = !!visible;
+  const docCard = el.quoteDocPanelCard;
+  const docFold = el.quoteDocFold;
+  if (docCard && !docCard.__homeParent) {
+    docCard.__homeParent = docCard.parentNode;
+    docCard.__homeNextSibling = docCard.nextSibling;
+  }
+
+  const attachDocPanelHome = () => {
+    if (!docCard || !docCard.__homeParent) return;
+    if (docCard.parentNode === docCard.__homeParent) return;
+    if (docCard.__homeNextSibling && docCard.__homeNextSibling.parentNode === docCard.__homeParent) {
+      docCard.__homeParent.insertBefore(docCard, docCard.__homeNextSibling);
+    } else {
+      docCard.__homeParent.appendChild(docCard);
+    }
+  };
+
+  const attachDocPanelOverlay = () => {
+    if (!docCard) return;
+    if (docCard.parentNode !== document.body) {
+      document.body.appendChild(docCard);
+    }
+  };
+
+  if (el.quoteDocPanelCard) {
+    if (shouldShow) {
+      attachDocPanelOverlay();
+      el.quoteDocPanelCard.hidden = false;
+      el.quoteDocPanelCard.classList.add("quoteDocDetached", "isForceVisible");
+      el.quoteDocPanelCard.classList.remove("isForceHidden");
+      el.quoteDocPanelCard.style.setProperty("display", "block", "important");
+      el.quoteDocPanelCard.style.setProperty("visibility", "visible", "important");
+      el.quoteDocPanelCard.style.setProperty("opacity", "1", "important");
+      el.quoteDocPanelCard.style.setProperty("position", "fixed", "important");
+      el.quoteDocPanelCard.style.setProperty("top", "96px", "important");
+      el.quoteDocPanelCard.style.setProperty("left", "280px", "important");
+      el.quoteDocPanelCard.style.setProperty("right", "24px", "important");
+      el.quoteDocPanelCard.style.setProperty("bottom", "88px", "important");
+      el.quoteDocPanelCard.style.setProperty("max-height", "none", "important");
+      el.quoteDocPanelCard.style.setProperty("overflow", "auto", "important");
+      el.quoteDocPanelCard.style.setProperty("z-index", "10050", "important");
+      el.quoteDocPanelCard.style.setProperty("background", "var(--ui-surface, #ffffff)", "important");
+      el.quoteDocPanelCard.style.setProperty("border", "1px solid var(--ui-border, #cdd8e7)", "important");
+      el.quoteDocPanelCard.style.setProperty("border-radius", "12px", "important");
+      el.quoteDocPanelCard.style.setProperty("box-shadow", "0 20px 45px rgba(2, 6, 23, 0.25)", "important");
+      el.quoteDocPanelCard.style.setProperty("padding", "0", "important");
+    } else {
+      el.quoteDocPanelCard.hidden = true;
+      el.quoteDocPanelCard.classList.remove("quoteDocDetached", "isForceVisible");
+      el.quoteDocPanelCard.classList.add("isForceHidden");
+      el.quoteDocPanelCard.style.setProperty("display", "none", "important");
+      el.quoteDocPanelCard.style.setProperty("visibility", "hidden", "important");
+      el.quoteDocPanelCard.style.setProperty("opacity", "0", "important");
+      attachDocPanelHome();
+      el.quoteDocPanelCard.style.removeProperty("position");
+      el.quoteDocPanelCard.style.removeProperty("top");
+      el.quoteDocPanelCard.style.removeProperty("left");
+      el.quoteDocPanelCard.style.removeProperty("right");
+      el.quoteDocPanelCard.style.removeProperty("bottom");
+      el.quoteDocPanelCard.style.removeProperty("max-height");
+      el.quoteDocPanelCard.style.removeProperty("overflow");
+      el.quoteDocPanelCard.style.removeProperty("z-index");
+      el.quoteDocPanelCard.style.removeProperty("background");
+      el.quoteDocPanelCard.style.removeProperty("border");
+      el.quoteDocPanelCard.style.removeProperty("border-radius");
+      el.quoteDocPanelCard.style.removeProperty("box-shadow");
+      el.quoteDocPanelCard.style.removeProperty("padding");
+    }
+  }
+  if (el.quoteBackdrop) {
+    el.quoteBackdrop.classList.toggle("quoteDocVisible", shouldShow);
+  }
+  if (el.quoteDocFold) {
+    el.quoteDocFold.open = shouldShow;
+    el.quoteDocFold.style.setProperty("position", "static", "important");
+    el.quoteDocFold.style.setProperty("transform", "none", "important");
+    el.quoteDocFold.style.setProperty("inset", "auto", "important");
+    el.quoteDocFold.style.setProperty("max-height", "none", "important");
+    el.quoteDocFold.style.setProperty("overflow", "visible", "important");
+  }
+  syncQuoteDocFoldUi();
+}
+
+function syncQuoteDocFoldUi() {
+  if (!el.btnToggleQuoteDoc) return;
+  const isVisible = el.quoteDocPanelCard ? !el.quoteDocPanelCard.hidden : !!el.quoteDocFold?.open;
+  el.btnToggleQuoteDoc.textContent = isVisible ? "Ocultar datos" : "Datos empresa";
+  el.btnToggleQuoteDoc.setAttribute("aria-expanded", isVisible ? "true" : "false");
+}
+
+function syncQuoteServiceQuantityField() {
+  if (!el.quoteServiceQty) return;
+  const matched = resolveServiceFromSearch(el.quoteServiceSearch?.value || "");
+  const isPaxMode = String(matched?.quantityMode || "").trim().toUpperCase() === "PAX";
+  if (isPaxMode) {
+    el.quoteServiceQty.value = "1";
+    el.quoteServiceQty.disabled = true;
+    el.quoteServiceQty.readOnly = true;
+    el.quoteServiceQty.placeholder = "Automatico por pax";
+    el.quoteServiceQty.classList.remove("fieldInvalid");
+    if (el.quoteServiceQtyHint) {
+      el.quoteServiceQtyHint.textContent = "Este servicio usa identificador PAX: la cantidad se calcula automaticamente con el numero de personas del evento.";
+    }
+    return;
+  }
+  el.quoteServiceQty.disabled = false;
+  el.quoteServiceQty.readOnly = false;
+  el.quoteServiceQty.placeholder = "Ingresa cantidad";
+  if (el.quoteServiceQtyHint) {
+    el.quoteServiceQtyHint.textContent = matched
+      ? "Este servicio es manual: debes indicar una cantidad valida antes de agregarlo al carrito."
+      : "Si no existe identificador PAX, debes ingresar una cantidad valida antes de agregar el servicio.";
+  }
+}
+
+function renderQuoteSidebarSummary() {
+  if (!quoteDraft) return;
+  const currency = normalizeQuoteCurrency(quoteDraft.currency);
+  const money = (n) => moneyQuote(n, currency);
+  const totals = getQuoteTotals(quoteDraft);
+  const { catBuckets } = aggregateQuoteBuckets(quoteDraft || {});
+  const breakdownRows = [
+    { label: "Alimentos y bebidas", amount: Number(catBuckets?.alimentosBebidas?.amount || 0) },
+    { label: "Miscelaneos", amount: Number(catBuckets?.miscelaneos?.amount || 0) },
+    { label: "Hospedaje JDL", amount: Number(catBuckets?.hospedajeJdl?.amount || 0) },
+    { label: "Hospedaje terceros", amount: Number(catBuckets?.hospedajeTerceros?.amount || 0) },
+  ].filter((row) => Number(row.amount || 0) > 0);
+  const company = (state.companies || []).find((c) => String(c?.id || "") === String(quoteDraft.companyId || ""));
+  const documentLabel = String(quoteDraft.code || "COTIZACION SIN CODIGO").trim() || "COTIZACION SIN CODIGO";
+  const clientLabel = String(
+    quoteDraft.companyName
+    || company?.name
+    || quoteDraft.contact
+    || "Selecciona una institucion para comenzar"
+  ).trim() || "Selecciona una institucion para comenzar";
+
+  if (el.quoteSidebarDocument) el.quoteSidebarDocument.textContent = documentLabel;
+  if (el.quoteSidebarClient) el.quoteSidebarClient.textContent = clientLabel;
+  if (el.quoteSidebarSubtotal) el.quoteSidebarSubtotal.textContent = money(totals.subtotal);
+  if (el.quoteSidebarDiscount) el.quoteSidebarDiscount.textContent = money(totals.discountAmount);
+  if (el.quoteSidebarTotal) el.quoteSidebarTotal.textContent = money(totals.total);
+  if (el.quoteSidebarBreakdown) {
+    if (!breakdownRows.length) {
+      el.quoteSidebarBreakdown.innerHTML = `
+        <div class="quoteSidebarBreakdownEmpty">
+          Agrega servicios para ver aqui la distribucion por categoria.
+        </div>
+      `;
+    } else {
+      el.quoteSidebarBreakdown.innerHTML = breakdownRows.map((row) => `
+        <div class="quoteSidebarBreakdownRow">
+          <span>${escapeHtml(row.label)}</span>
+          <strong>${escapeHtml(money(row.amount))}</strong>
+        </div>
+      `).join("");
+    }
   }
 }
 
@@ -16499,6 +17060,20 @@ function renderQuoteItems() {
     ? availableDates.filter(d => byDate.has(d))
     : Array.from(byDate.keys()).sort((a, b) => a.localeCompare(b));
 
+  if (!quoteDraft.items.length) {
+    const tr = document.createElement("tr");
+    tr.className = "quoteItemsEmptyRow";
+    tr.innerHTML = `
+      <td colspan="6">
+        <div class="quoteItemsEmptyState">
+          <strong>Tu carrito aun esta vacio</strong>
+          <span>Busca un servicio en el panel derecho o crea uno nuevo para comenzar a cotizar.</span>
+        </div>
+      </td>
+    `;
+    el.quoteItemsBody.appendChild(tr);
+  }
+
   for (const dateKey of orderedDates) {
     const dayItems = byDate.get(dateKey) || [];
     for (const item of dayItems) {
@@ -16508,34 +17083,35 @@ function renderQuoteItems() {
       const isPaxMode = String(item.quantityMode || "").toUpperCase() === "PAX";
       const qtyValue = Number(item.qty || 0);
       const priceValue = Number(item.price || 0);
-      const qtyInputHtml = `<div class="quoteSpinInput${isPaxMode ? " isDisabled" : ""}">
-          <input class="quoteInput" data-field="qty" type="number" min="0" step="1" value="${qtyValue}" ${isPaxMode ? "readonly disabled" : ""} title="${isPaxMode ? "Cantidad automatica por pax" : ""}" />
-          <div class="quoteSpinBtns">
-            <button type="button" class="quoteSpinBtn quoteSpinUp" data-spin-field="qty" data-spin-dir="up" ${isPaxMode ? "disabled" : ""} aria-label="Subir cantidad">+</button>
-            <button type="button" class="quoteSpinBtn quoteSpinDown" data-spin-field="qty" data-spin-dir="down" ${isPaxMode ? "disabled" : ""} aria-label="Bajar cantidad">-</button>
-          </div>
-        </div>`;
-      const priceInputHtml = `<div class="quoteSpinInput${isPaxMode ? " isDisabled" : ""}">
-          <input class="quoteInput" data-field="price" type="number" min="0" step="0.01" value="${priceValue}" ${isPaxMode ? "readonly disabled" : ""} title="${isPaxMode ? "Precio calculado por pax" : ""}" />
-          <div class="quoteSpinBtns">
-            <button type="button" class="quoteSpinBtn quoteSpinUp" data-spin-field="price" data-spin-dir="up" ${isPaxMode ? "disabled" : ""} aria-label="Subir precio">+</button>
-            <button type="button" class="quoteSpinBtn quoteSpinDown" data-spin-field="price" data-spin-dir="down" ${isPaxMode ? "disabled" : ""} aria-label="Bajar precio">-</button>
-          </div>
-        </div>`;
+      const qtyInputHtml = `<input class="quoteInput quoteSimpleInput${isPaxMode ? " quotePaxReadonly" : ""}" data-field="qty" type="number" min="0" step="1" value="${qtyValue}" ${isPaxMode ? "readonly disabled" : ""} title="${isPaxMode ? "Cantidad automatica por pax" : ""}" />`;
+      const priceInputHtml = `<input class="quoteInput quoteSimpleInput${isPaxMode ? " quotePaxReadonly" : ""}" data-field="price" type="number" min="0" step="1" value="${priceValue}" ${isPaxMode ? "readonly disabled" : ""} title="${isPaxMode ? "Precio calculado por pax" : ""}" />`;
+      const currentName = String(item.name || "").trim();
+      const currentDetail = String(item.description || "").trim();
+      const customDetail = currentDetail && currentDetail !== currentName ? currentDetail : "";
       tr.innerHTML = `
-        <td>
+        <td class="quoteItemDateCell">
           <select class="quoteInput" data-field="serviceDate">
             ${availableDates.map(d => `<option value="${escapeHtml(d)}"${d === item.serviceDate ? " selected" : ""}>${escapeHtml(d)}</option>`).join("")}
           </select>
         </td>
-        <td>${qtyInputHtml}</td>
-        <td>
-          <input class="quoteInput" data-field="name" list="servicesList" value="${escapeHtml(item.name || "")}" placeholder="Buscar servicio..." />
-          <input class="quoteInput" data-field="description" list="serviceDescriptionsList" value="${escapeHtml(item.description || "")}" placeholder="Descripcion del servicio" style="margin-top:6px;" />
+        <td class="quoteItemQtyCell">
+          ${qtyInputHtml}
         </td>
-        <td>${priceInputHtml}</td>
-        <td class="quoteMoney">${money(subtotal)}</td>
-        <td><button type="button" class="btnDanger quoteRemoveBtn">X</button></td>
+        <td class="quoteItemDescriptionCell">
+          <div class="quoteItemServiceStack">
+            <div class="quoteItemServiceRow">
+              <input class="quoteInput quoteItemNameInput" data-field="name" list="servicesList" value="${escapeHtml(item.name || "")}" placeholder="Buscar servicio..." />
+              <button type="button" class="quoteDetailBtn" data-action="edit-detail" title="Editar detalle del servicio">Detalle</button>
+            </div>
+            ${customDetail ? `<div class="quoteItemDetailPreview">${escapeHtml(customDetail)}</div>` : ""}
+          </div>
+        </td>
+        <td class="quoteItemPriceCell">${priceInputHtml}</td>
+        <td class="quoteMoney quoteItemTotalCell">
+          <strong>${money(subtotal)}</strong>
+          <span>${qtyValue} x ${money(priceValue)}</span>
+        </td>
+        <td class="quoteItemActionCell"><button type="button" class="apptIconBtn apptDelete quoteRemoveBtn" title="Eliminar servicio" aria-label="Eliminar servicio"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></td>
       `;
       el.quoteItemsBody.appendChild(tr);
     }
@@ -16555,6 +17131,7 @@ function renderQuoteItems() {
   if (el.quoteSubtotal) el.quoteSubtotal.textContent = money(totals.subtotal);
   if (el.quoteDiscountAmount) el.quoteDiscountAmount.textContent = money(totals.discountAmount);
   el.quoteTotal.textContent = money(totals.total);
+  renderQuoteSidebarSummary();
   renderQuoteAccountStatement();
   syncQuoteServiceDateRequired();
 }
@@ -16590,9 +17167,11 @@ function handleQuoteItemsInput(e) {
       item.price = Math.max(0, Number(input.value || 0));
     }
   } else if (field === "name") {
+    const previousName = String(item.name || "").trim();
+    const previousDescription = String(item.description || "").trim();
     const term = String(input.value || "").trim();
     item.name = term;
-    if (!String(item.description || "").trim()) item.description = term;
+    if (!previousDescription || previousDescription === previousName) item.description = term;
     const matched = resolveServiceFromSearch(term);
     if (matched) {
       applyServiceToQuoteItem(item, matched);
@@ -16602,11 +17181,7 @@ function handleQuoteItemsInput(e) {
     }
   } else if (field === "description") {
     const term = String(input.value || "").trim();
-    item.description = term;
-    const matched = resolveServiceFromSearch(term);
-    if (matched) {
-      applyServiceToQuoteItem(item, matched);
-    }
+    item.description = term || String(item.name || "").trim();
   } else if (field === "serviceDate") {
     item.serviceDate = input.value;
   }
@@ -16614,24 +17189,22 @@ function handleQuoteItemsInput(e) {
 }
 
 async function handleQuoteItemsClick(e) {
-  const spinBtn = e.target.closest(".quoteSpinBtn");
-  if (spinBtn && quoteDraft) {
-    const row = spinBtn.closest("tr");
+  const detailBtn = e.target.closest(".quoteDetailBtn");
+  if (detailBtn && quoteDraft) {
+    const row = detailBtn.closest("tr");
     const rowId = row?.dataset.rowId;
     if (!rowId) return;
-    const item = quoteDraft.items.find((x) => x.rowId === rowId);
+    const item = quoteDraft.items.find(x => x.rowId === rowId);
     if (!item) return;
-    const field = String(spinBtn.dataset.spinField || "").trim();
-    const dir = String(spinBtn.dataset.spinDir || "").trim();
-    const delta = dir === "down" ? -1 : 1;
-    if (field === "qty" && String(item.quantityMode || "").toUpperCase() !== "PAX") {
-      item.qty = Math.max(0, Number(item.qty || 0) + delta);
-      renderQuoteItems();
-    } else if (field === "price" && String(item.quantityMode || "").toUpperCase() !== "PAX") {
-      const next = Math.max(0, Number(item.price || 0) + (delta * 1));
-      item.price = Math.round(next * 100) / 100;
-      renderQuoteItems();
-    }
+    const serviceName = String(item.name || "").trim();
+    const currentDetail = String(item.description || "").trim();
+    const editableDetail = currentDetail && currentDetail !== serviceName ? currentDetail : "";
+    const detail = window.prompt("Detalle adicional del servicio (deja vacio para quitarlo):", editableDetail);
+    if (detail === null) return;
+    const cleaned = String(detail || "").trim();
+    item.description = cleaned || serviceName;
+    renderQuoteItems();
+    toast(cleaned ? "Detalle actualizado." : "Detalle eliminado.");
     return;
   }
   const btn = e.target.closest(".quoteRemoveBtn");
@@ -16663,7 +17236,7 @@ async function handleQuoteItemsClick(e) {
 function focusQuoteValidationTarget(node, message, opts = {}) {
   const openDoc = opts?.openDoc !== false;
   const expandItems = opts?.expandItems === true;
-  if (openDoc && el.quoteDocFold) el.quoteDocFold.open = true;
+  if (openDoc) setQuoteDocPanelVisible(true);
   if (expandItems) setQuoteItemsExpanded(true);
   toast(String(message || "Completa los datos de la cotizacion."));
   if (!node) return false;
@@ -17915,8 +18488,8 @@ async function promptQuotePrintVariant(ev, quote) {
             text-align:left;
             padding:14px 16px;
             border-radius:16px;
-            background:rgba(15,23,42,.88);
-            box-shadow:inset 0 0 0 1px rgba(148,163,184,.18);
+            background:#ffffff;
+            box-shadow:inset 0 0 0 1px rgba(203,213,225,.9), 0 8px 20px rgba(15,23,42,.08);
             transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
             cursor:pointer;
             display:grid;
@@ -17924,21 +18497,21 @@ async function promptQuotePrintVariant(ev, quote) {
           }
           .quotePrintOptionCard:hover:not(.isDisabled){
             transform:translateY(-1px);
-            box-shadow:inset 0 0 0 1px rgba(191,219,254,.34), 0 10px 24px rgba(2,6,23,.22);
+            box-shadow:inset 0 0 0 1px rgba(147,197,253,.65), 0 10px 24px rgba(37,99,235,.12);
           }
           .quotePrintOptionCard.isActive{
-            box-shadow:inset 0 0 0 2px rgba(255,255,255,.14), 0 12px 28px rgba(2,6,23,.24);
+            box-shadow:inset 0 0 0 2px rgba(148,163,184,.4), 0 12px 28px rgba(15,23,42,.1);
           }
           .quotePrintOptionCard--slate.isActive{
-            background:rgba(30,41,59,.98);
+            background:#f1f5f9;
             box-shadow:inset 0 0 0 2px rgba(148,163,184,.46), 0 12px 28px rgba(2,6,23,.24);
           }
           .quotePrintOptionCard--blue.isActive{
-            background:rgba(22,49,92,.98);
+            background:#eff6ff;
             box-shadow:inset 0 0 0 2px rgba(96,165,250,.56), 0 12px 28px rgba(2,6,23,.24);
           }
           .quotePrintOptionCard--green.isActive{
-            background:rgba(15,57,51,.98);
+            background:#ecfdf5;
             box-shadow:inset 0 0 0 2px rgba(52,211,153,.48), 0 12px 28px rgba(2,6,23,.24);
           }
           .quotePrintOptionCard.isDisabled{
@@ -17950,14 +18523,14 @@ async function promptQuotePrintVariant(ev, quote) {
             display:block;
             font-size:16px;
             font-weight:900;
-            color:#f8fafc;
+            color:#0f172a;
             letter-spacing:.1px;
           }
           .quotePrintOptionText{
             display:block;
             font-size:12px;
             line-height:1.45;
-            color:#dbe5f1;
+            color:#475569;
           }
           .quotePrintOptionNote{
             display:inline-flex;
@@ -17965,8 +18538,8 @@ async function promptQuotePrintVariant(ev, quote) {
             margin-top:2px;
             padding:4px 8px;
             border-radius:999px;
-            background:rgba(148,163,184,.18);
-            color:#e2e8f0;
+            background:rgba(148,163,184,.14);
+            color:#334155;
             font-size:11px;
             font-weight:700;
           }
@@ -17977,10 +18550,10 @@ async function promptQuotePrintVariant(ev, quote) {
       showCancelButton: true,
       confirmButtonText: "Abrir documento",
       cancelButtonText: "Cancelar",
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#2563eb",
-      cancelButtonColor: "#334155",
+      cancelButtonColor: "#94a3b8",
       didOpen: (popup) => {
         const hidden = popup.querySelector('#quotePrintVariantInput');
         const cards = Array.from(popup.querySelectorAll('[data-quote-print-value]'));
@@ -19887,23 +20460,23 @@ async function openReminderEditor(eventId, reminderId) {
       title: "Editar cita",
       html: `
         <div style="display:grid;gap:8px;text-align:left">
-          <label style="font-size:12px;color:#bfdbfe;">Fecha</label>
+          <label style="font-size:12px;color:#35506b;">Fecha</label>
           <input id="swalReminderDate" class="swal2-input" type="date" value="${escapeHtml(nextDate)}" style="margin:0" />
-          <label style="font-size:12px;color:#bfdbfe;">Hora (HH:mm)</label>
+          <label style="font-size:12px;color:#35506b;">Hora (HH:mm)</label>
           <input id="swalReminderTime" class="swal2-input" type="text" value="${escapeHtml(nextTime)}" style="margin:0" />
-          <label style="font-size:12px;color:#bfdbfe;">Medio</label>
+          <label style="font-size:12px;color:#35506b;">Medio</label>
           <select id="swalReminderChannel" class="swal2-input" style="margin:0">
             ${["Telefono", "Correo", "Teams", "Google Meet", "WhatsApp"].map((x) => `<option value="${x}"${x === nextChannel ? " selected" : ""}>${x}</option>`).join("")}
           </select>
-          <label style="font-size:12px;color:#bfdbfe;">Detalle</label>
+          <label style="font-size:12px;color:#35506b;">Detalle</label>
           <input id="swalReminderNotes" class="swal2-input" type="text" value="${escapeHtml(nextNotes)}" style="margin:0" />
         </div>
       `,
       showCancelButton: true,
       confirmButtonText: "Guardar cambios",
       cancelButtonText: "Cancelar",
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#2563eb",
       preConfirm: () => {
         const date = String(document.getElementById("swalReminderDate")?.value || "").trim();
@@ -20171,6 +20744,7 @@ function setAppointmentsPanelVisible(visible) {
   if (el.btnToggleAppointments) {
     el.btnToggleAppointments.textContent = visible ? "Ocultar citas" : "Ver citas";
   }
+  updateEventPanelsBackButtonVisibility();
 }
 
 function runUpcomingReminderChecks() {
@@ -20239,6 +20813,22 @@ function setHistoryPanelVisible(visible) {
   el.historyPanel.hidden = !visible;
   if (el.btnToggleHistory) {
     el.btnToggleHistory.textContent = visible ? "Ocultar historial" : "Historial";
+  }
+  updateEventPanelsBackButtonVisibility();
+}
+
+function updateEventPanelsBackButtonVisibility() {
+  if (!el.btnBackToForm) return;
+  const historyVisible = !!el.historyPanel && !el.historyPanel.hidden;
+  const appointmentsVisible = !!el.appointmentPanel && !el.appointmentPanel.hidden;
+  el.btnBackToForm.hidden = !(historyVisible || appointmentsVisible);
+}
+
+function backToEventForm() {
+  setHistoryPanelVisible(false);
+  setAppointmentsPanelVisible(false);
+  if (el.eventForm) {
+    el.eventForm.scrollIntoView({ block: "start", behavior: "smooth" });
   }
 }
 
@@ -21308,8 +21898,8 @@ function modernAlert({ icon = "info", title = "", text = "", html = "", confirmT
       text: text || undefined,
       html: html || undefined,
       confirmButtonText: confirmText,
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#2563eb",
       allowOutsideClick: false,
     });
@@ -21344,10 +21934,10 @@ async function modernConfirm({ title = "Confirmar", message = "", confirmText = 
       showCancelButton: true,
       confirmButtonText: confirmText,
       cancelButtonText: cancelText,
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#2563eb",
-      cancelButtonColor: "#334155",
+      cancelButtonColor: "#94a3b8",
     });
     return !!result?.isConfirmed;
   }
@@ -21363,10 +21953,10 @@ function modernConfirmMaintenance() {
       showCancelButton: true,
       confirmButtonText: "Si, poner en mantenimiento",
       cancelButtonText: "No, cancelar",
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#8b5cf6",
-      cancelButtonColor: "#334155",
+      cancelButtonColor: "#94a3b8",
     });
   }
   return Promise.resolve({ isConfirmed: window.confirm("Esta seguro de ponerla en Mantenimiento?") });
@@ -21381,10 +21971,10 @@ function modernConfirmReleaseMaintenance() {
       showCancelButton: true,
       confirmButtonText: "Si, liberar",
       cancelButtonText: "No, cancelar",
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#dc2626",
-      cancelButtonColor: "#334155",
+      cancelButtonColor: "#94a3b8",
     });
   }
   return Promise.resolve({ isConfirmed: window.confirm("Estas seguro de quitar mantenimiento?") });
@@ -21427,8 +22017,8 @@ async function requestPastEventEditAuthorization(ev) {
       showCancelButton: true,
       confirmButtonText: "Autorizar",
       cancelButtonText: "Cancelar",
-      background: "#0b1a32",
-      color: "#f8fafc",
+      background: "#f8fbff",
+      color: "#10243b",
       confirmButtonColor: "#2563eb",
       inputValidator: (value) => {
         if (!String(value || "").trim()) return "Ingresa el codigo.";
@@ -21779,6 +22369,9 @@ function getEventsInWeek(weekStart, salon, dayCount = 7) {
       return compareTime(a.startTime, b.startTime);
     });
 }
+
+
+
 
 
 

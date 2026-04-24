@@ -3,1201 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#182131" />
+  <meta name="theme-color" content="#f4f7fb" />
   <meta name="application-name" content="CRM Reservas JDL" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="CRM JDL" />
-  <meta name="msapplication-TileColor" content="#0b1220" />
+  <meta name="msapplication-TileColor" content="#f4f7fb" />
   <meta name="msapplication-TileImage" content="./icons/icon-256.png?v=20260321c" />
   <title>CRM Reservas - Salones</title>
   <link rel="manifest" href="./manifest.json?v=20260321c" />
   <link rel="icon" href="./favicon.ico?v=20260321c" sizes="any" />
   <link rel="shortcut icon" href="./favicon.ico?v=20260321c" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=20260321c" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=20260424a" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slim-select@2.8.0/dist/slimselect.css" />
-  <style>
-    .statusSwitchInline{
-      display:inline-flex !important;
-      align-items:center !important;
-      gap:12px !important;
-      width:fit-content !important;
-      min-width:0 !important;
-      min-height:44px !important;
-      padding:0 !important;
-      border:none !important;
-      background:transparent !important;
-      box-shadow:none !important;
-    }
-    .field > .statusSwitchInline{
-      margin-top:2px !important;
-    }
-    .statusSwitchInline input[type='checkbox']{
-      -webkit-appearance:none !important;
-      appearance:none !important;
-      position:relative !important;
-      width:86px !important;
-      min-width:86px !important;
-      max-width:86px !important;
-      height:34px !important;
-      min-height:34px !important;
-      max-height:34px !important;
-      margin:0 !important;
-      border-radius:999px !important;
-      border:2px solid #8f231f !important;
-      background:linear-gradient(180deg,#f13c2f 0%,#c92722 100%) !important;
-      box-shadow:inset 0 2px 5px rgba(255,255,255,.16), inset 0 -3px 7px rgba(0,0,0,.22), 0 4px 10px rgba(0,0,0,.16) !important;
-      cursor:pointer !important;
-      transition:background .18s ease,border-color .18s ease,box-shadow .18s ease !important;
-    }
-    .statusSwitchInline input[type='checkbox']::before{
-      content:'OFF' !important;
-      position:absolute !important;
-      top:50% !important;
-      left:40px !important;
-      transform:translateY(-50%) !important;
-      color:#fff !important;
-      font-size:10px !important;
-      font-weight:900 !important;
-      letter-spacing:.08em !important;
-      line-height:1 !important;
-    }
-    .statusSwitchInline input[type='checkbox']::after{
-      content:'' !important;
-      position:absolute !important;
-      top:2px !important;
-      left:2px !important;
-      width:26px !important;
-      height:26px !important;
-      border-radius:999px !important;
-      background:radial-gradient(circle at 30% 30%,#ffffff 0%,#f4f7fb 58%,#d8e0ea 100%) !important;
-      box-shadow:0 2px 6px rgba(0,0,0,.28), inset 0 1px 1px rgba(255,255,255,.92) !important;
-      border:none !important;
-      transition:left .18s ease !important;
-    }
-    .statusSwitchInline input[type='checkbox']:checked{
-      border-color:#3b9828 !important;
-      background:linear-gradient(180deg,#79e25d 0%,#49b932 100%) !important;
-      box-shadow:inset 0 2px 5px rgba(255,255,255,.18), inset 0 -3px 7px rgba(0,0,0,.18), 0 4px 10px rgba(27,94,32,.22) !important;
-    }
-    .statusSwitchInline input[type='checkbox']:checked::before{
-      content:'ON' !important;
-      left:16px !important;
-    }
-    .statusSwitchInline input[type='checkbox']:checked::after{
-      left:56px !important;
-      width:26px !important;
-      height:26px !important;
-      border:none !important;
-      transform:none !important;
-    }
-    .statusSwitchInline input[type='checkbox']:focus-visible{
-      outline:none !important;
-      box-shadow:inset 0 2px 5px rgba(255,255,255,.16), inset 0 -3px 7px rgba(0,0,0,.22), 0 0 0 3px rgba(56,189,248,.22) !important;
-    }
-    .salesTargetSwitchInline{
-      align-items:flex-start !important;
-      gap:14px !important;
-    }
-    .salesTargetSwitchInline span:last-child{
-      white-space:normal !important;
-      max-width:430px;
-      padding-top:6px;
-    }
-    .salesTargetSwitchInline input[type='checkbox']{
-      flex:0 0 auto;
-      margin-top:4px !important;
-    }
-    .logo{
-      width:56px !important;
-      height:56px !important;
-      border-radius:18px !important;
-      background:transparent !important;
-      border:1px solid rgba(255,255,255,0.14) !important;
-      box-shadow:none !important;
-    }
-    .topbarLogoImg{
-      width:42px !important;
-      height:42px !important;
-      object-fit:contain !important;
-      filter:brightness(0) invert(1) drop-shadow(0 3px 8px rgba(255,255,255,0.16)) !important;
-      opacity:0.96 !important;
-    }
-    .topbarUserBadge{
-      border:2px solid rgba(255,255,255,0.96) !important;
-      box-shadow:0 8px 20px rgba(0,0,0,0.28) !important;
-    }
-    .welcomeUser{
-      color:rgba(255,255,255,0.98) !important;
-    }    .statusSwitchInline span:last-child{
-      color:#eef6ff !important;
-      line-height:1.1 !important;
-      font-size:14px !important;
-      font-weight:800 !important;
-      white-space:nowrap !important;
-    }
-      #appShell{
-      background:#0a1120 !important;
-    }
-    body{
-      background:#08101d !important;
-    }
-    .topbar{
-      background:#182131 !important;
-      border-color:rgba(255,255,255,0.10) !important;
-      box-shadow:none !important;
-      -webkit-backdrop-filter:none !important;
-      backdrop-filter:none !important;
-    }
-    .legend{
-      background:#1a2233 !important;
-      border:1px solid rgba(255,255,255,0.08) !important;
-      border-radius:18px !important;
-    }
-    .calendar{
-      background:#0d1524 !important;
-      border-radius:22px !important;
-      gap:12px !important;
-    }
-    .timeCol{
-      background:#1a2233 !important;
-      border:1px solid rgba(255,255,255,0.08) !important;
-      border-radius:18px !important;
-    }
-    .gridWrap{
-      background:#111a2a !important;
-      border:1px solid rgba(255,255,255,0.08) !important;
-      border-radius:18px !important;
-      overflow:hidden !important;
-    }
-    .daysHeader{
-      background:#162132 !important;
-      border-bottom:1px solid rgba(255,255,255,0.08) !important;
-    }
-    .grid{
-      background:#121b2b !important;
-    }
-    .legend .chip,
-    .legend button,
-    .topbar .btn,
-    .topbar .iconBtn,
-    .topbar .weekLabel,
-    .topbar .select,
-    .topbar .select select{
-      background-color:#243041 !important;
-      background-image:none !important;
-    }
-    #btnLogout{
-      background-color:rgba(185, 28, 28, 0.88) !important;
-      color:#fee2e2 !important;
-      border:1px solid rgba(252, 165, 165, 0.38) !important;
-      box-shadow:0 10px 22px rgba(127, 29, 29, 0.28) !important;
-    }
-    #btnLogout:hover{
-      background-color:rgba(220, 38, 38, 0.96) !important;
-      color:#fff5f5 !important;
-    }
-    .moduleScreen{
-      background:rgba(4,10,20,0.88) !important;
-      -webkit-backdrop-filter:none !important;
-      backdrop-filter:none !important;
-    }
-    .moduleHub,
-    .moduleHubShowcase{
-      background:#0f1724 !important;
-      border:1px solid rgba(255,255,255,0.10) !important;
-      box-shadow:0 24px 60px rgba(0,0,0,0.34) !important;
-    }
-    .moduleHero{
-      min-height:300px !important;
-      background:#162131 !important;
-      border:1px solid rgba(255,255,255,0.08) !important;
-    }
-    .moduleHero::before,
-    .moduleHero::after,
-    .moduleCard::before,
-    .moduleCard::after{
-      display:none !important;
-      content:none !important;
-    }
-    .moduleHubBadge{
-      background:#f4f7fb !important;
-      border:1px solid rgba(255,255,255,0.22) !important;
-      box-shadow:0 14px 28px rgba(0,0,0,0.18) !important;
-    }
-    .moduleHubTitle,
-    .moduleCardTitle,
-    .moduleActionBtn .actionCardLabel{
-      text-shadow:none !important;
-    }
-    .moduleDock{
-      margin-top:-48px !important;
-    }
-    .moduleCard,
-    .moduleActionBtn,
-    .settingsHubBtn{
-      background:#253142 !important;
-      border:1px solid rgba(255,255,255,0.10) !important;
-      box-shadow:0 14px 30px rgba(0,0,0,0.18) !important;
-      backdrop-filter:none !important;
-      -webkit-backdrop-filter:none !important;
-    }
-    .moduleCard:hover,
-    .moduleActionBtn:hover,
-    .settingsHubBtn:hover{
-      background:#2c394c !important;
-      border-color:rgba(191,219,254,0.18) !important;
-      box-shadow:0 18px 34px rgba(0,0,0,0.22) !important;
-      transform:translateY(-4px) !important;
-    }
-    .moduleIconTile,
-    .actionCardIcon{
-      background:#5a6577 !important;
-      border:1px solid rgba(255,255,255,0.16) !important;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,0.12) !important;
-    }
-      #occupancyReportBackdrop,
-    #salesReportBackdrop,
-    #institutionReportBackdrop{
-      background:rgba(6,10,18,0.86) !important;
-      -webkit-backdrop-filter:none !important;
-      backdrop-filter:none !important;
-    }
-    #occupancyReportBackdrop .modal,
-    #salesReportBackdrop .modal,
-    #institutionReportBackdrop .modal{
-      background:#0f1724 !important;
-      border:1px solid rgba(255,255,255,0.10) !important;
-      box-shadow:0 24px 60px rgba(0,0,0,0.34) !important;
-    }
-    #occupancyReportBackdrop .modalHeader,
-    #occupancyReportBackdrop .reportModalHeader,
-    #salesReportBackdrop .modalHeader,
-    #salesReportBackdrop .reportModalHeader,
-    #institutionReportBackdrop .modalHeader,
-    #institutionReportBackdrop .reportModalHeader{
-      background:#172131 !important;
-      border-bottom:1px solid rgba(255,255,255,0.08) !important;
-    }
-    #occupancyReportBackdrop .reportBrandHeader,
-    #salesReportBackdrop .reportBrandHeader,
-    #institutionReportBackdrop .reportBrandHeader,
-    #occupancyReportBackdrop .reportBrandCopy,
-    #salesReportBackdrop .reportBrandCopy,
-    #institutionReportBackdrop .reportBrandCopy,
-    #occupancyReportBackdrop .reportHeroPanel,
-    #salesReportBackdrop .reportHeroPanel,
-    #institutionReportBackdrop .reportHeroPanel,
-    #occupancyReportBackdrop .occupancyHeroPanel,
-    #occupancyReportBackdrop .occupancySection,
-    #salesReportBackdrop .reportDataSection,
-    #institutionReportBackdrop .dashboardCard,
-    #institutionReportBackdrop .institutionDetailCard,
-    #institutionReportBackdrop .institutionHeadlineCard,
-    #institutionReportBackdrop .institutionReportNav,
-    #institutionReportBackdrop .institutionMetricCard,
-    #institutionReportBackdrop .institutionChartCard,
-    #institutionReportBackdrop .institutionTimelineCard{
-      background:#162132 !important;
-      background-image:none !important;
-      border:1px solid rgba(255,255,255,0.08) !important;
-      box-shadow:none !important;
-    }
-    #occupancyReportBackdrop .occupancySummary .occupancyCard,
-    #occupancyReportBackdrop .occupancyDaysStrip .occupancyDayCard,
-    #occupancyReportBackdrop .occupancyDayDetail .occupancyEventCard,
-    #salesReportBackdrop .salesSummaryCard,
-    #institutionReportBackdrop .institutionSummaryCard,
-    #institutionReportBackdrop .institutionHeadlineValueBlock,
-    #institutionReportBackdrop .dashboardSellerPerfCard,
-    #institutionReportBackdrop .dashboardStatusChip{
-      background:#223043 !important;
-      background-image:none !important;
-      border:1px solid rgba(255,255,255,0.08) !important;
-      box-shadow:none !important;
-    }
-    #occupancyReportBackdrop input,
-    #occupancyReportBackdrop select,
-    #occupancyReportBackdrop .occupancyWeekNav,
-    #occupancyReportBackdrop .occupancyToolbar .btn,
-    #occupancyReportBackdrop .occupancyToolbar .btnPrimary,
-    #salesReportBackdrop input,
-    #salesReportBackdrop select,
-    #salesReportBackdrop .btn,
-    #salesReportBackdrop .btnPrimary,
-    #institutionReportBackdrop input,
-    #institutionReportBackdrop select,
-    #institutionReportBackdrop .btn,
-    #institutionReportBackdrop .btnPrimary{
-      background:#243041 !important;
-      background-image:none !important;
-      border:1px solid rgba(255,255,255,0.10) !important;
-      box-shadow:none !important;
-    }
-    #occupancyReportBackdrop .occupancyTableWrap,
-    #salesReportBackdrop .salesReportTableWrap,
-    #institutionReportBackdrop .salesReportTableWrap,
-    #institutionReportBackdrop .institutionEventsWrap{
-      background:#101927 !important;
-      border:1px solid rgba(255,255,255,0.08) !important;
-      box-shadow:none !important;
-    }
-    #occupancyReportBackdrop .occupancyTable thead th,
-    #salesReportBackdrop .salesReportTable thead th,
-    #institutionReportBackdrop .salesReportTable thead th{
-      background:#1d2a3b !important;
-    }
-    #occupancyReportBackdrop .occupancyTable tbody tr:nth-child(odd),
-    #salesReportBackdrop .salesReportTable tbody tr:nth-child(odd),
-    #institutionReportBackdrop .salesReportTable tbody tr:nth-child(odd){
-      background:#111b2a !important;
-    }
-    #occupancyReportBackdrop .occupancyTable tbody tr:nth-child(even),
-    #salesReportBackdrop .salesReportTable tbody tr:nth-child(even),
-    #institutionReportBackdrop .salesReportTable tbody tr:nth-child(even){
-      background:#152031 !important;
-    }
-    #occupancyReportBackdrop .occupancyTable tbody tr:hover,
-    #salesReportBackdrop .salesReportTable tbody tr:hover,
-    #institutionReportBackdrop .salesReportTable tbody tr:hover{
-      background:#1c2940 !important;
-    }
-      #occupancyReportBackdrop .occupancySectionEyebrow,
-    #salesReportBackdrop .salesSummaryEyebrow,
-    #institutionReportBackdrop .reportSectionEyebrow,
-    #institutionReportBackdrop .dashboardCardHead small,
-    #institutionReportBackdrop .institutionDetailCard small,
-    #institutionReportBackdrop .institutionMetricList small,
-    #occupancyReportBackdrop .occupancyCard small,
-    #occupancyReportBackdrop .occupancyDayCard small,
-    #occupancyReportBackdrop .occupancySectionText,
-    #salesReportBackdrop .salesSummaryCard small,
-    #salesReportBackdrop .salesSummaryMeta,
-    #institutionReportBackdrop .institutionHeadlineValueBlock small,
-    #institutionReportBackdrop .institutionSummaryCard small,
-    #institutionReportBackdrop .dashboardStatusChip span{
-      color:#b9c4d3 !important;
-    }
-    #occupancyReportBackdrop .occupancySectionTitle,
-    #salesReportBackdrop .reportSectionTitle,
-    #institutionReportBackdrop .reportSectionTitle,
-    #occupancyReportBackdrop .occupancySummary .occupancyCard strong,
-    #occupancyReportBackdrop .occupancyDaysStrip .occupancyDayCard strong,
-    #occupancyReportBackdrop .occupancyDayDetail .occupancyEventCard strong,
-    #salesReportBackdrop .salesSummaryCard strong,
-    #institutionReportBackdrop .institutionSummaryCard strong,
-    #institutionReportBackdrop .institutionHeadlineValueBlock strong,
-    #institutionReportBackdrop .dashboardCardHead strong,
-    #institutionReportBackdrop .dashboardSellerPerfValue,
-    #institutionReportBackdrop .dashboardStatusChip b{
-      color:#f4f7fb !important;
-    }
-    #occupancyReportBackdrop .occupancyDayCard,
-    #occupancyReportBackdrop .occupancyCard,
-    #salesReportBackdrop .salesSummaryCard,
-    #institutionReportBackdrop .institutionSummaryCard{
-      color:#c7d0dc !important;
-    }
-      #occupancyReportBackdrop .occupancySectionEyebrow,
-    #salesReportBackdrop .salesSummaryEyebrow,
-    #institutionReportBackdrop .reportSectionEyebrow{
-      color:#d7e3f4 !important;
-    }
-    #occupancyReportBackdrop .occupancyCard small,
-    #occupancyReportBackdrop .occupancyDayCard small,
-    #occupancyReportBackdrop .occupancySectionText,
-    #salesReportBackdrop .salesSummaryCard small,
-    #salesReportBackdrop .salesSummaryMeta,
-    #institutionReportBackdrop .dashboardCardHead small,
-    #institutionReportBackdrop .institutionDetailCard small,
-    #institutionReportBackdrop .institutionMetricList small,
-    #institutionReportBackdrop .institutionHeadlineValueBlock small,
-    #institutionReportBackdrop .institutionSummaryCard small,
-    #institutionReportBackdrop .dashboardStatusChip span{
-      color:#d2dbe8 !important;
-    }
-    #occupancyReportBackdrop .occupancyDayCard,
-    #occupancyReportBackdrop .occupancyCard,
-    #salesReportBackdrop .salesSummaryCard,
-    #institutionReportBackdrop .institutionSummaryCard{
-      color:#e3ebf5 !important;
-    }
-    #occupancyReportBackdrop .occupancyCard strong,
-    #occupancyReportBackdrop .occupancyDayCard strong,
-    #salesReportBackdrop .salesSummaryCard strong,
-    #institutionReportBackdrop .institutionSummaryCard strong,
-    #institutionReportBackdrop .institutionHeadlineValueBlock strong{
-      color:#ffffff !important;
-    }
-  #occupancyReportBackdrop .occupancyCardKicker,
-#occupancyReportBackdrop .occupancyCardIcon,
-#occupancyReportBackdrop .occupancyDayCardTop,
-#occupancyReportBackdrop .occupancyDayPills span{
-  color:#dbe7f6 !important;
-  opacity:1 !important;
-}
-#occupancyReportBackdrop .occupancyCardMeta,
-#occupancyReportBackdrop .occupancyCardHint,
-#occupancyReportBackdrop .occupancyDayMeta{
-  color:#d1dced !important;
-  opacity:1 !important;
-}
-#occupancyReportBackdrop .occupancyDayRevenue,
-#occupancyReportBackdrop .occupancyCardValue,
-#occupancyReportBackdrop .occupancyDayCount{
-  color:#ffffff !important;
-  opacity:1 !important;
-}
-#occupancyReportBackdrop .occupancyDayPills span{
-  background:rgba(255,255,255,.08) !important;
-  border-color:rgba(255,255,255,.12) !important;
-}
-.quoteCurrencyPickerWrap{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:6px;
-}
-.quoteCurrencyPickerLabel{
-  font-size:11px;
-  font-weight:700;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  color:rgba(191,219,254,.84);
-}
-.quoteCurrencyPicker{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:6px;
-  border-radius:16px;
-  border:1px solid rgba(96,165,250,.22);
-  background:rgba(15,23,42,.82);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
-}
-.quoteCurrencyBtn{
-  width:42px;
-  height:42px;
-  border:none;
-  border-radius:12px;
-  background:rgba(30,41,59,.92);
-  color:rgba(226,232,240,.92);
-  font-size:18px;
-  font-weight:900;
-  cursor:pointer;
-  transition:background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
-}
-.quoteCurrencyBtn:hover{
-  transform:translateY(-1px);
-  background:rgba(37,99,235,.32);
-  color:#fff;
-}
-.quoteCurrencyBtn.isActive{
-  background:linear-gradient(180deg, rgba(37,99,235,.98), rgba(29,78,216,.98));
-  color:#fff;
-  box-shadow:0 8px 18px rgba(29,78,216,.28);
-}
-@media (max-width: 900px){
-  .quoteTotalRow{
-    align-items:flex-start;
-  }
-  .quoteCurrencyPickerWrap{
-    align-items:flex-start;
-  }
-}
-    .moduleCard,
-    .moduleActionBtn,
-    .settingsHubBtn{
-      transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s ease, border-color .28s ease, background-color .28s ease !important;
-      position:relative !important;
-      overflow:hidden !important;
-      isolation:isolate !important;
-    }
-    .moduleCard::before,
-    .moduleActionBtn::before,
-    .settingsHubBtn::before{
-      content:'' !important;
-      position:absolute !important;
-      inset:-35% auto auto -22% !important;
-      width:58% !important;
-      height:180% !important;
-      background:linear-gradient(115deg, rgba(120,210,255,0.20), rgba(120,210,255,0.06) 42%, rgba(255,255,255,0) 70%) !important;
-      opacity:0 !important;
-      transform:translateX(-18px) rotate(10deg) !important;
-      transition:opacity .3s ease, transform .35s ease !important;
-      pointer-events:none !important;
-      z-index:0 !important;
-    }
-    .moduleCard > *,
-    .moduleActionBtn > *,
-    .settingsHubBtn > *{
-      position:relative !important;
-      z-index:1 !important;
-    }
-    .moduleCard:hover,
-    .moduleActionBtn:hover,
-    .settingsHubBtn:hover{
-      background:#31425a !important;
-      border-color:rgba(99,204,255,0.58) !important;
-      box-shadow:0 26px 54px rgba(3,8,18,0.42), 0 0 0 1px rgba(104,205,255,0.16) inset, 0 0 34px rgba(33,150,243,0.18) !important;
-      transform:translateY(-10px) scale(1.022) !important;
-    }
-    .moduleCard:hover::before,
-    .moduleActionBtn:hover::before,
-    .settingsHubBtn:hover::before{
-      opacity:1 !important;
-      transform:translateX(16px) rotate(10deg) !important;
-    }
-    .moduleCard:hover .moduleCardTitle,
-    .moduleActionBtn:hover .actionCardLabel,
-    .settingsHubBtn:hover .actionCardLabel{
-      color:#ffffff !important;
-      letter-spacing:0.05em !important;
-      text-shadow:0 0 14px rgba(131,211,255,0.18) !important;
-    }
-    .moduleCard:hover .moduleCardText,
-    .moduleActionBtn:hover .actionCardHint,
-    .settingsHubBtn:hover .actionCardHint{
-      color:rgba(236,245,255,0.94) !important;
-    }
-    .moduleIconTile,
-    .actionCardIcon{
-      transition:transform .28s cubic-bezier(.22,1,.36,1), background-color .28s ease, box-shadow .28s ease, border-color .28s ease !important;
-    }
-    .moduleCard:hover .moduleIconTile,
-    .moduleActionBtn:hover .actionCardIcon,
-    .settingsHubBtn:hover .actionCardIcon{
-      background:#75839d !important;
-      border-color:rgba(196,232,255,0.58) !important;
-      box-shadow:0 18px 34px rgba(17,29,47,0.38), inset 0 1px 0 rgba(255,255,255,0.22), 0 0 24px rgba(76,175,255,0.28) !important;
-      transform:translateY(-5px) scale(1.08) !important;
-    }
-    .moduleCard:hover .moduleCardIconSvg,
-    .moduleActionBtn:hover .actionCardIcon svg,
-    .settingsHubBtn:hover .actionCardIcon svg{
-      transform:scale(1.09) !important;
-      filter:drop-shadow(0 0 14px rgba(143,214,255,0.34)) !important;
-    }
-    /* === EVENT MODAL RESPONSIVE REFINEMENT === */
-    #modalBackdrop{
-      background:rgba(2, 8, 23, 0.96) !important;
-      -webkit-backdrop-filter:blur(8px) !important;
-      backdrop-filter:blur(8px) !important;
-      overflow:auto !important;
-      place-items:start center !important;
-      padding:12px !important;
-    }
-    #modalBackdrop .modal{
-      width:min(1240px, 98vw) !important;
-      max-height:94vh !important;
-      display:flex !important;
-      flex-direction:column !important;
-      overflow:hidden !important;
-      border-radius:24px !important;
-      background:linear-gradient(180deg, rgba(10, 17, 31, 0.995), rgba(6, 12, 24, 0.995)) !important;
-      border:1px solid rgba(108, 136, 177, 0.18) !important;
-      box-shadow:0 28px 72px rgba(2, 6, 23, 0.62) !important;
-    }
-    #modalBackdrop .modalHeader{
-      display:flex !important;
-      align-items:center !important;
-      justify-content:space-between !important;
-      gap:14px !important;
-      padding:18px 20px 16px !important;
-      border-bottom:1px solid rgba(255,255,255,0.08) !important;
-      background:linear-gradient(180deg, rgba(15,24,41,1), rgba(10,16,28,1)) !important;
-      position:relative !important;
-      isolation:isolate !important;
-      overflow:hidden !important;
-    }
-    #modalBackdrop .modalHeader::before{
-      content:"" !important;
-      position:absolute !important;
-      inset:0 !important;
-      background:linear-gradient(180deg, rgba(15,24,41,1), rgba(10,16,28,1)) !important;
-      z-index:1 !important;
-      pointer-events:none !important;
-    }
-    #modalBackdrop .modalHeaderCopy{
-      flex:1 1 auto !important;
-      min-width:0 !important;
-      padding-left:4px !important;
-      position:relative !important;
-      z-index:2 !important;
-      display:flex !important;
-      align-items:flex-start !important;
-      gap:10px !important;
-    }
-    #modalBackdrop .modalHeaderBrand{
-      width:46px !important;
-      height:46px !important;
-      flex:0 0 46px !important;
-      display:grid !important;
-      place-items:center !important;
-      overflow:hidden !important;
-      margin-top:2px !important;
-    }
-    #modalBackdrop .modalHeaderLogo{
-      width:100% !important;
-      height:100% !important;
-      max-width:46px !important;
-      max-height:46px !important;
-      object-fit:contain !important;
-      display:block !important;
-    }
-    #modalBackdrop .modalHeaderText{
-      min-width:0 !important;
-      flex:1 1 auto !important;
-    }
-    #modalBackdrop #btnClose{
-      position:absolute !important;
-      top:16px !important;
-      right:16px !important;
-      z-index:20 !important;
-      pointer-events:auto !important;
-      cursor:pointer !important;
-      flex:0 0 auto !important;
-    }
-    body.eventModalOpen .topbar{
-      opacity:0 !important;
-      pointer-events:none !important;
-      visibility:hidden !important;
-    }
-    body.eventModalOpen .topbar .logo{
-      display:none !important;
-    }
-    #modalBackdrop .modalTitle{
-      margin:0 !important;
-      font-size:30px !important;
-      line-height:1.05 !important;
-      white-space:normal !important;
-      overflow-wrap:anywhere !important;
-    }
-    #modalBackdrop .modalSubtitle{
-      margin-top:4px !important;
-      font-size:12px !important;
-      color:rgba(198,212,230,0.72) !important;
-      white-space:normal !important;
-      overflow-wrap:anywhere !important;
-    }
-    #modalBackdrop .eventModalMain{
-      display:grid !important;
-      grid-template-columns:minmax(0, 1fr) !important;
-      min-height:0 !important;
-      flex:1 1 auto !important;
-    }
-    #modalBackdrop #eventForm{
-      display:grid !important;
-      gap:14px !important;
-      min-height:0 !important;
-      overflow:auto !important;
-      padding:16px 18px 18px !important;
-    }
-    #modalBackdrop #eventForm > .eventMainRow,
-    #modalBackdrop #eventForm > .eventDatesRow,
-    #modalBackdrop #eventForm > .eventActorRow,
-    #modalBackdrop #eventForm > .eventNotesRow,
-    #modalBackdrop #eventForm > .conflictsBox{
-      margin:0 !important;
-      padding:14px !important;
-      border-radius:18px !important;
-      border:1px solid rgba(108,135,176,0.18) !important;
-      background:linear-gradient(180deg, rgba(11,18,31,0.98), rgba(8,14,24,0.98)) !important;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,0.03) !important;
-    }
-    #modalBackdrop .eventMainRow{
-      grid-template-columns:minmax(280px, 1.02fr) minmax(420px, 1.65fr) !important;
-      align-items:start !important;
-      gap:14px !important;
-    }
-    #modalBackdrop .eventDatesRow{
-      display:grid !important;
-      grid-template-columns:repeat(2, minmax(220px, 1fr)) !important;
-      gap:12px !important;
-    }
-    #modalBackdrop .eventActorRow{
-      grid-template-columns:minmax(260px, 1.5fr) minmax(140px, 0.34fr) minmax(220px, 0.66fr) !important;
-      align-items:start !important;
-      gap:12px !important;
-    }
-    #modalBackdrop .eventNotesRow textarea{
-      min-height:92px !important;
-      resize:vertical !important;
-    }
-    #modalBackdrop .field > span{
-      margin-bottom:8px !important;
-      font-size:11px !important;
-      font-weight:800 !important;
-      letter-spacing:0.06em !important;
-      text-transform:uppercase !important;
-      color:rgba(195,211,231,0.82) !important;
-    }
-    #modalBackdrop input,
-    #modalBackdrop select,
-    #modalBackdrop textarea{
-      min-height:46px !important;
-    }
-    #modalBackdrop .userPick{
-      display:grid !important;
-      grid-template-columns:minmax(0, 1fr) auto !important;
-      gap:8px !important;
-      align-items:center !important;
-    }
-    #modalBackdrop .userPick .btn{
-      min-height:44px !important;
-      white-space:nowrap !important;
-    }
-    #modalBackdrop .quoteTableWrap{
-      margin-top:10px !important;
-      max-height:290px !important;
-      overflow:auto !important;
-      border-radius:16px !important;
-      border:1px solid rgba(102,129,169,0.16) !important;
-      background:rgba(13,20,34,0.9) !important;
-    }
-    #modalBackdrop .quoteTable thead th{
-      position:sticky !important;
-      top:0 !important;
-      z-index:1 !important;
-    }
-    #modalBackdrop .modalFooter{
-      position:sticky !important;
-      bottom:0 !important;
-      z-index:3 !important;
-      display:flex !important;
-      justify-content:space-between !important;
-      align-items:flex-end !important;
-      flex-wrap:nowrap !important;
-      margin-top:8px !important;
-      padding:16px 0 0 !important;
-      background:
-        linear-gradient(180deg, rgba(5,12,22,0.06), rgba(5,12,22,0.84) 34%, rgba(5,12,22,0.98) 100%) !important;
-      border-top:1px solid rgba(96,165,250,0.14) !important;
-      gap:18px !important;
-    }
-    #modalBackdrop .modalFooter .leftActions,
-    #modalBackdrop .modalFooter .rightActions{
-      display:flex !important;
-      flex-wrap:wrap !important;
-      gap:10px !important;
-      align-items:center !important;
-      width:auto !important;
-      max-width:100% !important;
-    }
-    #modalBackdrop .modalFooter .leftActions{
-      flex:1 1 auto !important;
-      justify-content:flex-start !important;
-      align-items:flex-start !important;
-      padding:10px 12px 0 0 !important;
-      border-top:1px solid rgba(255,255,255,0.04) !important;
-    }
-    #modalBackdrop .modalFooter .rightActions{
-      flex:0 0 auto !important;
-      justify-content:flex-end !important;
-      margin-left:auto !important;
-      padding-left:18px !important;
-    }
-    #modalBackdrop .modalFooter .btn,
-    #modalBackdrop .modalFooter .btnPrimary,
-    #modalBackdrop .modalFooter .btnDanger{
-      min-height:44px !important;
-      padding:0 16px !important;
-      border-radius:15px !important;
-      font-weight:800 !important;
-      letter-spacing:.01em !important;
-      box-shadow:0 10px 22px rgba(4, 10, 22, 0.22) !important;
-    }
-    #modalBackdrop .modalFooter .leftActions .btn,
-    #modalBackdrop .modalFooter .leftActions .btnDanger{
-      min-width:0 !important;
-      background:linear-gradient(180deg, rgba(70,84,112,0.88), rgba(49,61,85,0.96)) !important;
-      border:1px solid rgba(163,184,214,0.16) !important;
-      color:#edf4ff !important;
-    }
-    #modalBackdrop .modalFooter .leftActions .btn:hover,
-    #modalBackdrop .modalFooter .leftActions .btnDanger:hover{
-      transform:translateY(-1px) !important;
-      border-color:rgba(125,211,252,0.24) !important;
-      box-shadow:0 14px 28px rgba(8, 16, 32, 0.28) !important;
-    }
-    #modalBackdrop #btnSetMaintenance{
-      background:linear-gradient(180deg, rgba(95,111,141,0.92), rgba(64,78,103,0.98)) !important;
-      border-color:rgba(191,219,254,0.18) !important;
-    }
-    #modalBackdrop #btnCancelEvent{
-      background:linear-gradient(135deg, rgba(239,68,68,0.96), rgba(220,38,38,0.96)) !important;
-      border:1px solid rgba(254,202,202,0.26) !important;
-      color:#fff7f7 !important;
-    }
-    #modalBackdrop #btnQuoteEvent,
-    #modalBackdrop #btnAddAppointment,
-    #modalBackdrop #btnToggleHistory,
-    #modalBackdrop #btnToggleAppointments{
-      background:linear-gradient(180deg, rgba(78,92,121,0.9), rgba(54,66,91,0.96)) !important;
-    }
-    #modalBackdrop #btnDelete{
-      min-width:168px !important;
-      background:linear-gradient(180deg, rgba(86,99,124,0.86), rgba(60,72,95,0.94)) !important;
-      border:1px solid rgba(189,201,221,0.14) !important;
-      color:#f2f7ff !important;
-    }
-    #modalBackdrop #btnSave{
-      min-width:172px !important;
-      background:linear-gradient(135deg, rgba(43,152,255,0.98), rgba(38,102,230,0.98)) !important;
-      border:1px solid rgba(147,197,253,0.34) !important;
-      box-shadow:0 16px 30px rgba(19, 84, 190, 0.34) !important;
-    }
-    @media (max-width: 1024px){
-      #modalBackdrop{
-        padding:0 !important;
-      }
-      #modalBackdrop .modal{
-        width:100vw !important;
-        max-height:100vh !important;
-        min-height:100vh !important;
-        border-radius:0 !important;
-      }
-      #modalBackdrop #eventForm{
-        padding:14px !important;
-      }
-      #modalBackdrop .eventMainRow,
-      #modalBackdrop .eventActorRow{
-        grid-template-columns:1fr !important;
-      }
-      #modalBackdrop .eventDatesRow{
-        grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
-      }
-      #modalBackdrop .quoteTableWrap{
-        max-height:240px !important;
-      }
-    }
-    @media (max-width: 720px){
-      #modalBackdrop .modalHeader{
-        align-items:flex-start !important;
-        padding:16px 70px 14px 16px !important;
-      }
-      #modalBackdrop .modalHeaderCopy{
-        padding-left:0 !important;
-        gap:8px !important;
-      }
-      #modalBackdrop .modalHeaderBrand{
-        width:36px !important;
-        height:36px !important;
-        flex:0 0 36px !important;
-      }
-      #modalBackdrop .modalHeaderLogo{
-        max-width:36px !important;
-        max-height:36px !important;
-      }
-      #modalBackdrop .modalTitle{
-        font-size:24px !important;
-      }
-      #modalBackdrop #eventForm{
-        gap:12px !important;
-        padding:12px !important;
-      }
-      #modalBackdrop #eventForm > .eventMainRow,
-      #modalBackdrop #eventForm > .eventDatesRow,
-      #modalBackdrop #eventForm > .eventActorRow,
-      #modalBackdrop #eventForm > .eventNotesRow,
-      #modalBackdrop #eventForm > .conflictsBox{
-        padding:12px !important;
-        border-radius:16px !important;
-      }
-      #modalBackdrop .eventDatesRow{
-        grid-template-columns:1fr !important;
-      }
-      #modalBackdrop .userPick{
-        grid-template-columns:1fr !important;
-      }
-      #modalBackdrop .userPick .btn,
-      #modalBackdrop .modalFooter .btn,
-      #modalBackdrop .modalFooter .btnPrimary,
-      #modalBackdrop .modalFooter .btnDanger{
-        width:100% !important;
-      }
-      #modalBackdrop .modalFooter{
-        display:grid !important;
-        grid-template-columns:1fr !important;
-      }
-      #modalBackdrop .modalFooter .leftActions,
-      #modalBackdrop .modalFooter .rightActions{
-        width:100% !important;
-      }
-      #modalBackdrop .quoteTableWrap{
-        max-height:none !important;
-      }
-    }
-    /* === END EVENT MODAL RESPONSIVE REFINEMENT === */
-    /* === UI POLISH: SPACING, ALIGNMENT, BUTTON CONSISTENCY === */
-    .app{
-      gap: 16px !important;
-      padding: 18px !important;
-    }
-    .topbar{
-      gap: 18px !important;
-      align-items: stretch !important;
-      padding: 18px 20px !important;
-      border-radius: 24px !important;
-    }
-    .brand{
-      flex: 1 1 320px !important;
-      min-width: 0 !important;
-      align-items: center !important;
-    }
-    .brandText{
-      min-width: 0 !important;
-    }
-    .brandText .title{
-      font-size: 18px !important;
-      letter-spacing: .02em !important;
-    }
-    .brandMeta{
-      gap: 12px !important;
-      margin-top: 6px !important;
-    }
-    .toolbar{
-      flex: 1 1 780px !important;
-      justify-content: flex-end !important;
-      align-items: end !important;
-      gap: 12px !important;
-    }
-    .toolbar .btn,
-    .toolbar .btnPrimary,
-    .toolbar .iconBtn,
-    .toolbar .topbarReminderBtn,
-    .toolbar .weekLabel,
-    .toolbar .select select{
-      min-height: 48px !important;
-      height: 48px !important;
-      border-radius: 14px !important;
-      font-size: 14px !important;
-    }
-    .toolbar .btn,
-    .toolbar .btnPrimary{
-      min-width: 136px !important;
-      padding: 0 18px !important;
-      justify-content: center !important;
-      font-weight: 800 !important;
-    }
-    .toolbar .iconBtn,
-    .toolbar .topbarReminderBtn{
-      width: 48px !important;
-      min-width: 48px !important;
-      padding: 0 !important;
-    }
-    .toolbar .topbarReminderBtn .bellGlyph{
-      width: 18px !important;
-      height: 18px !important;
-    }
-    .nav{
-      display: grid !important;
-      grid-template-columns: 48px minmax(220px, 1fr) 48px !important;
-      align-items: stretch !important;
-      gap: 10px !important;
-      min-width: 340px !important;
-    }
-    .toolbar .weekLabel{
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      min-width: 220px !important;
-      padding: 0 18px !important;
-      text-align: center !important;
-      font-weight: 700 !important;
-    }
-    .toolbar .select{
-      display: grid !important;
-      gap: 6px !important;
-      min-width: 150px !important;
-    }
-    .toolbar .select span{
-      padding-left: 2px !important;
-      font-size: 11px !important;
-      font-weight: 800 !important;
-      letter-spacing: .08em !important;
-      text-transform: uppercase !important;
-      color: #c8d5e6 !important;
-    }
-    .toolbar .select select{
-      min-width: 150px !important;
-      padding: 0 40px 0 14px !important;
-    }
-    .legend{
-      padding: 14px 16px !important;
-      min-height: 62px !important;
-      display: flex !important;
-      align-items: center !important;
-      gap: 10px !important;
-      flex-wrap: wrap !important;
-    }
-    .calendar{
-      gap: 16px !important;
-      padding: 16px !important;
-      min-height: 0 !important;
-    }
-    .timeCol{
-      min-width: 84px !important;
-      padding: 12px 10px !important;
-    }
-    .gridWrap{
-      min-width: 0 !important;
-    }
-    .btn,
-    .btnPrimary,
-    .btnDanger{
-      min-height: 46px !important;
-      height: 46px !important;
-      padding: 0 18px !important;
-      border-radius: 14px !important;
-      font-size: 14px !important;
-      font-weight: 800 !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 8px !important;
-      white-space: nowrap !important;
-    }
-    .modalHeader .iconBtn,
-    .modalFooter .iconBtn{
-      width: 46px !important;
-      min-width: 46px !important;
-      height: 46px !important;
-      border-radius: 14px !important;
-    }
-    .row1,
-    .row2,
-    .row3,
-    .row4{
-      gap: 16px !important;
-      align-items: start !important;
-    }
-    .field{
-      display: grid !important;
-      gap: 8px !important;
-      min-width: 0 !important;
-    }
-    .field > span{
-      font-size: 11px !important;
-      font-weight: 800 !important;
-      letter-spacing: .08em !important;
-      text-transform: uppercase !important;
-      color: #bfd0e4 !important;
-    }
-    .field input,
-    .field select,
-    .field textarea{
-      width: 100% !important;
-      border-radius: 14px !important;
-      font-size: 14px !important;
-    }
-    .field input,
-    .field select{
-      min-height: 46px !important;
-      height: 46px !important;
-    }
-    .field textarea{
-      min-height: 110px !important;
-      padding-top: 12px !important;
-      padding-bottom: 12px !important;
-    }
-    .rightActions{
-      display: flex !important;
-      align-items: stretch !important;
-      justify-content: flex-end !important;
-      gap: 12px !important;
-      flex-wrap: wrap !important;
-      width: 100% !important;
-    }
-    .rightActions .btn,
-    .rightActions .btnPrimary,
-    .rightActions .btnDanger{
-      min-width: 168px !important;
-      flex: 0 0 auto !important;
-    }
-    .modalFooter{
-      gap: 16px !important;
-      align-items: center !important;
-    }
-    .modalFooter .rightActions{
-      justify-content: flex-end !important;
-    }
-    @media (max-width: 1180px){
-      .topbar{
-        flex-direction: column !important;
-        align-items: stretch !important;
-      }
-      .toolbar{
-        justify-content: flex-start !important;
-      }
-    }
-    @media (max-width: 900px){
-      .app{
-        padding: 12px !important;
-      }
-      .topbar{
-        padding: 16px !important;
-      }
-      .toolbar{
-        gap: 10px !important;
-      }
-      .nav{
-        min-width: 100% !important;
-        grid-template-columns: 48px minmax(0, 1fr) 48px !important;
-      }
-      .toolbar .select{
-        min-width: min(220px, 100%) !important;
-        flex: 1 1 220px !important;
-      }
-      .toolbar .btn,
-      .toolbar .btnPrimary{
-        min-width: 120px !important;
-      }
-      .rightActions .btn,
-      .rightActions .btnPrimary,
-      .rightActions .btnDanger{
-        min-width: 144px !important;
-        flex: 1 1 180px !important;
-      }
-      .calendar{
-        gap: 12px !important;
-        padding: 12px !important;
-      }
-    }
-    @media (max-width: 640px){
-      .brand{
-        align-items: flex-start !important;
-      }
-      .brandMeta{
-        align-items: flex-start !important;
-      }
-      .toolbar > .btn,
-      .toolbar > .btnPrimary,
-      .toolbar > label.select,
-      .toolbar > .nav{
-        width: 100% !important;
-      }
-      .toolbar .btn,
-      .toolbar .btnPrimary{
-        width: 100% !important;
-      }
-      .toolbar .select{
-        min-width: 100% !important;
-      }
-      .toolbar .select select{
-        width: 100% !important;
-      }
-      .rightActions .btn,
-      .rightActions .btnPrimary,
-      .rightActions .btnDanger{
-        width: 100% !important;
-      }
-    }
-    /* === END UI POLISH === */
-</style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" />
+<link rel="stylesheet" href="./design-system.css?v=20260423e" />
 </head>
 <body>
   <div class="loginScreen" id="loginScreen" hidden>
@@ -1530,81 +353,101 @@
     </div>
   </div>
 
-  <div class="app" id="appShell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="topbarLogoImg" /></div>
+  <div class="app lum-calendar" id="appShell">
+    <aside class="lum-sidebar" aria-label="Menu principal">
+      <div class="lum-sidebarBrand">
+        <div class="logo"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines CRM" class="topbarLogoImg" /></div>
         <div class="brandText">
-          <div class="title">CRM Reservas</div>
-          <div class="brandMeta">
-            <span class="subtitle">Calendario de salones</span>
-            <span class="topbarUserBadge">
-              <img id="topbarUserAvatar" class="topbarUserAvatar" alt="Avatar sesion" />
-            </span>
-            <span class="welcomeUser" id="topbarWelcome">Bienvenido -</span>
-          </div>
+          <div class="title">Jardines CRM</div>
+          <div class="subtitle">Enterprise Edition</div>
         </div>
       </div>
 
-      <div class="toolbar">
-        <button class="btn" id="btnToday" title="Ir a hoy">Hoy</button>
+      <nav class="lum-sideNav">
+        <button class="lum-sideItem" id="btnSideDashboardReports" type="button"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span><span>Dashboard reportes</span></button>
+        <button class="lum-sideItem" id="btnOpenLeads" type="button"><span class="material-symbols-outlined" aria-hidden="true">group</span><span>Leads</span></button>
+        <button class="lum-sideItem isActive" id="btnSideCalendar" type="button" aria-current="page"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span><span>Calendar</span></button>
+        <button class="lum-sideItem" id="btnFindEvent" type="button"><span class="material-symbols-outlined" aria-hidden="true">search</span><span>Buscar evento</span></button>
+        <button class="lum-sideItem" id="btnSideReports" type="button"><span class="material-symbols-outlined" aria-hidden="true">analytics</span><span>Reportes</span></button>
+        <button class="lum-sideItem" id="btnSideSettings" type="button"><span class="material-symbols-outlined" aria-hidden="true">settings</span><span>Configuraciones</span></button>
+      </nav>
 
-        <div class="nav">
-          <button class="iconBtn" id="btnPrev" title="Anterior">&lsaquo;</button>
-          <div class="weekLabel" id="weekLabel">-</div>
-          <button class="iconBtn" id="btnNext" title="Siguiente">&rsaquo;</button>
+      <div class="lum-sideCta">
+        <button class="btnPrimary" id="btnNew" type="button">+ Nueva reserva</button>
+      </div>
+
+      <div class="lum-sideFooter">
+        <a class="lum-sideItem" href="#"><span class="material-symbols-outlined" aria-hidden="true">help</span><span>Help</span></a>
+        <button class="lum-sideItem" id="btnLogout" type="button" title="Cerrar sesion" aria-label="Cerrar sesion"><span class="material-symbols-outlined" aria-hidden="true">logout</span><span>Cerrar sesion</span></button>
+      </div>
+    </aside>
+
+    <div class="lum-main">
+      <header class="topbar">
+        <div class="toolbar">
+          <button class="btn" id="btnToday" title="Ir a hoy">Hoy</button>
+
+          <div class="nav">
+            <button class="iconBtn" id="btnPrev" title="Anterior">&lsaquo;</button>
+            <div class="weekLabel" id="weekLabel">-</div>
+            <button class="iconBtn" id="btnNext" title="Siguiente">&rsaquo;</button>
+          </div>
+
+          <label class="select">
+            <span>Navegar</span>
+            <select id="navMode">
+              <option value="day">Dia</option>
+              <option value="week">Semana</option>
+              <option value="month">Mes</option>
+            </select>
+          </label>
+
+          <label class="lum-search" for="quickSearchEvent">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input id="quickSearchEvent" type="text" placeholder="Buscar eventos..." autocomplete="off" />
+          </label>
+
+          <label class="select">
+            <span>Salon</span>
+            <select id="roomSelect"></select>
+          </label>
         </div>
 
-        <label class="select">
-          <span>Navegar</span>
-          <select id="navMode">
-            <option value="day">Dia</option>
-            <option value="week">Semana</option>
-            <option value="month">Mes</option>
-          </select>
-        </label>
-
-        <div class="divider"></div>
-
-        <label class="select">
-          <span>Salon</span>
-          <select id="roomSelect"></select>
-        </label>
-
-        <div class="topbarReminderWrap" id="topbarReminderWrap">
-          <button class="iconBtn topbarReminderBtn" id="btnTopbarReminders" type="button" title="Citas pendientes" aria-expanded="false" aria-haspopup="true">
-            <svg class="bellGlyph" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 22a2.2 2.2 0 0 0 2.15-1.7h-4.3A2.2 2.2 0 0 0 12 22Zm7-5.2-1.5-1.8V10a5.5 5.5 0 0 0-4.5-5.4V3.8a1 1 0 0 0-2 0v.8A5.5 5.5 0 0 0 6.5 10v5l-1.5 1.8a1 1 0 0 0 .76 1.64h12.48A1 1 0 0 0 19 16.8Z"/>
-            </svg>
-            <span class="topbarReminderCount" id="topbarReminderCount" hidden>0</span>
-          </button>
-          <div class="topbarReminderPanel" id="topbarReminderPanel" hidden>
-            <div class="topbarReminderHeader">
-              <strong>Citas pendientes</strong>
-              <small id="topbarReminderSubtitle">Sin pendientes</small>
+        <div class="toolbar">
+          <div class="topbarReminderWrap" id="topbarReminderWrap">
+            <button class="iconBtn topbarReminderBtn" id="btnTopbarReminders" type="button" title="Citas pendientes" aria-expanded="false" aria-haspopup="true">
+              <svg class="bellGlyph" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 22a2.2 2.2 0 0 0 2.15-1.7h-4.3A2.2 2.2 0 0 0 12 22Zm7-5.2-1.5-1.8V10a5.5 5.5 0 0 0-4.5-5.4V3.8a1 1 0 0 0-2 0v.8A5.5 5.5 0 0 0 6.5 10v5l-1.5 1.8a1 1 0 0 0 .76 1.64h12.48A1 1 0 0 0 19 16.8Z"/>
+              </svg>
+              <span class="topbarReminderCount" id="topbarReminderCount" hidden>0</span>
+            </button>
+            <div class="topbarReminderPanel" id="topbarReminderPanel" hidden>
+              <div class="topbarReminderHeader">
+                <strong>Citas pendientes</strong>
+                <small id="topbarReminderSubtitle">Sin pendientes</small>
+              </div>
+              <div class="topbarReminderList" id="topbarReminderList"></div>
             </div>
-            <div class="topbarReminderList" id="topbarReminderList"></div>
           </div>
+
+          <span class="topbarUserBadge">
+            <img id="topbarUserAvatar" class="topbarUserAvatar" alt="Avatar sesion" />
+          </span>
+          <span class="welcomeUser" id="topbarWelcome">Bienvenido -</span>
         </div>
+      </header>
 
-        <button class="btn" id="btnOpenModules" type="button">Modulos</button>
+      <section class="legend" id="legend"></section>
 
-        <button class="btn" id="btnFindEvent" type="button">Buscar evento</button>
-        <button class="btnPrimary" id="btnNew">+ Reservar</button>
-        <button class="iconBtn" id="btnLogout" type="button" title="Cerrar sesion" aria-label="Cerrar sesion">&#x23FB;</button>
-      </div>
-    </header>
+      <main class="calendar">
+        <aside class="timeCol" id="timeCol"></aside>
 
-    <section class="legend" id="legend"></section>
-
-    <main class="calendar">
-      <aside class="timeCol" id="timeCol"></aside>
-
-      <section class="gridWrap">
-        <div class="daysHeader" id="daysHeader"></div>
-        <div class="grid" id="grid"></div>
-      </section>
-    </main>
+        <section class="gridWrap">
+          <div class="daysHeader" id="daysHeader"></div>
+          <div class="grid" id="grid"></div>
+        </section>
+      </main>
+    </div>
 
     <div class="toast" id="toast" aria-live="polite"></div>
 
@@ -1612,12 +455,12 @@
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modalHeader">
           <div class="modalHeaderCopy">
-            <div class="modalHeaderBrand"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="modalHeaderLogo" /></div>
             <div class="modalHeaderText">
               <div class="modalTitle" id="modalTitle">Reservar salon</div>
               <div class="modalSubtitle" id="modalSubtitle">-</div>
             </div>
           </div>
+          <button class="btn modalBackBtn" id="btnBackToForm" type="button" hidden>Volver al formulario</button>
           <button class="iconBtn" id="btnClose" type="button" title="Cerrar">&#10005;</button>
         </div>
 
@@ -1834,6 +677,70 @@
       </div>
     </div>
 
+    <div class="modalBackdrop" id="leadsBackdrop" hidden>
+      <div class="modal eventFinderModal" role="dialog" aria-modal="true" aria-labelledby="leadsTitle">
+        <div class="modalHeader">
+          <div>
+            <div class="modalTitle" id="leadsTitle">Leads</div>
+            <div class="modalSubtitle">Pipeline comercial por estado, empresa y encargado</div>
+          </div>
+          <button class="iconBtn" id="btnLeadsClose" type="button" title="Cerrar">&#10005;</button>
+        </div>
+        <div class="modalBody">
+          <label class="field">
+            <span>Buscar lead</span>
+            <input id="leadsSearch" type="text" placeholder="Ej: institucion, contacto, salon, fecha, estado..." />
+          </label>
+          <div class="row2">
+            <label class="field">
+              <span>Estado</span>
+              <select id="leadsStatusFilter">
+                <option value="">Todos los estados</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Vendedor</span>
+              <select id="leadsSellerFilter">
+                <option value="">Todos los vendedores</option>
+              </select>
+            </label>
+          </div>
+          <div class="row2">
+            <label class="field">
+              <span>Fecha desde</span>
+              <input id="leadsDateFrom" type="date" />
+            </label>
+            <label class="field">
+              <span>Fecha hasta</span>
+              <input id="leadsDateTo" type="date" />
+            </label>
+          </div>
+          <div class="modalFooter">
+            <div></div>
+            <div class="rightActions">
+              <button class="btn" id="btnLeadsReset" type="button">Limpiar filtros</button>
+            </div>
+          </div>
+          <div class="quoteTableWrap">
+            <table class="quoteTable">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Lead</th>
+                  <th>Institucion</th>
+                  <th>Encargado</th>
+                  <th>Estado</th>
+                  <th>Salon</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="leadsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="modalBackdrop" id="userBackdrop" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="userTitle">
         <div class="modalHeader">
@@ -1962,19 +869,22 @@
       </div>
     </div>
 
-    <div class="modalBackdrop" id="quoteBackdrop" hidden>
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="quoteTitle">
-        <div class="modalHeader">
-          <div>
+    <div class="modalBackdrop quotePageBackdrop" id="quoteBackdrop" hidden>
+      <div class="modal quotePageModal" role="dialog" aria-modal="true" aria-labelledby="quoteTitle">
+        <div class="modalHeader quotePageHeader">
+          <div class="quotePageHeading">
+            <div class="quoteBreadcrumb">CRM / Reservas / Cotizacion</div>
             <div class="modalTitle" id="quoteTitle">Cotizar evento</div>
             <div class="modalSubtitle" id="quoteSubtitle">-</div>
           </div>
-          <button class="iconBtn" id="btnQuoteClose" type="button" title="Cerrar">&#10005;</button>
+          <div class="quotePageHeaderActions">
+            <button class="btn" id="btnQuoteClose" type="button" title="Cerrar">Cerrar</button>
+          </div>
         </div>
 
-        <form class="modalBody" id="quoteForm">
+        <form class="modalBody quotePageBody" id="quoteForm">
           <input type="hidden" id="quoteEventId" />
-          <section class="quoteCard quoteVersionCard">
+          <section class="quoteCard quoteVersionCard quotePageTopStrip">
             <div class="quoteServiceAdder quoteVersionAdder">
               <label class="field">
                 <span>Version de cotizacion</span>
@@ -1986,10 +896,11 @@
               </label>
               <div class="quoteServiceActions">
                 <button class="btn quoteAddBtn" type="button" id="btnLoadQuoteVersion">Cargar version</button>
+                <button class="btn quoteAddBtn" type="button" id="btnToggleQuoteDoc" aria-expanded="false">Datos empresa</button>
               </div>
             </div>
           </section>
-          <section class="quoteDocPanel quoteDocPanelCard">
+          <section class="quoteDocPanel quoteDocPanelCard quotePageDataSection" id="quoteDocPanelCard">
             <details class="quoteFold quoteDocFold" id="quoteDocFold">
               <summary>Datos de cotizacion</summary>
               <div class="quoteDocGrid">
@@ -2047,126 +958,191 @@
             </details>
           </section>
 
-          <section class="quoteCard quoteServiceCard">
-            <div class="quoteCardTitle">Agregar servicio</div>
-            <div class="quoteServiceAdder">
-              <label class="field">
-                <span>Fecha del servicio</span>
-                <select id="quoteServiceDate" required></select>
-              </label>
-              <label class="field quoteServiceSearchField">
-                <span>Servicio o descripcion</span>
-                <input id="quoteServiceSearch" list="servicesList" type="text" placeholder="Buscar servicio..." />
-                <datalist id="servicesList"></datalist>
-                <datalist id="serviceDescriptionsList"></datalist>
-              </label>
-              <div class="quoteServiceActions">
-                <button class="btn quoteAddBtn" type="button" id="btnAddServiceToQuote">+ Servicio</button>
-                <button class="btn quoteAddBtn" type="button" id="btnOpenServiceCreate">+ Crear servicio</button>
-              </div>
-            </div>
-          </section>
-          <section class="quoteCard quoteServiceCard">
-            <div class="quoteCardTitle">Plantillas de servicios</div>
-            <div class="quoteServiceAdder">
-              <label class="field">
-                <span>Plantilla guardada</span>
-                <select id="quoteServiceTemplateSelect"></select>
-              </label>
-              <label class="field quoteServiceSearchField">
-                <span>Nombre de plantilla</span>
-                <input id="quoteServiceTemplateName" type="text" placeholder="Ej: Boda premium 150 pax" />
-              </label>
-              <div class="quoteServiceActions">
-                <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateApply">Aplicar</button>
-                <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateSave">Guardar nueva</button>
-                <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateUpdate">Actualizar</button>
-                <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateDelete">Eliminar</button>
-              </div>
-            </div>
-          </section>
+          <div class="quoteComposerLayout quotePageMainGrid">
+            <section class="quoteWorkbenchStrip">
+              <div class="quoteWorkbenchTools">
+                <section class="quoteWorkbenchPanel quoteServicePanel quoteSidebarCard">
+                  <div class="quoteWorkbenchHead">
+                    <div>
+                      <div class="quotePanelEyebrow">Entrada directa</div>
+                      <div class="quoteCardTitle">Agregar servicio al carrito</div>
+                    </div>
+                    <div class="quoteWorkbenchMiniText">Sin pasos extra: busca, valida cantidad y agrega.</div>
+                  </div>
+                  <div class="quoteServiceAdder quoteSidebarAdder quoteWorkbenchFields">
+                    <label class="field">
+                      <span>Fecha del servicio</span>
+                      <select id="quoteServiceDate" required></select>
+                    </label>
+                    <label class="field quoteServiceSearchField">
+                      <span>Servicio o descripcion</span>
+                      <input id="quoteServiceSearch" list="servicesList" type="text" placeholder="Buscar servicio..." />
+                      <datalist id="servicesList"></datalist>
+                      <datalist id="serviceDescriptionsList"></datalist>
+                    </label>
+                    <label class="field">
+                      <span>Cantidad previa</span>
+                      <input id="quoteServiceQty" type="number" min="1" step="1" placeholder="Ingresa cantidad" />
+                      <small class="hint" id="quoteServiceQtyHint">Obligatoria para servicios manuales. Los productos por pax se calculan automaticamente.</small>
+                    </label>
+                    <div class="quoteServiceActions quoteSidebarActions quoteWorkbenchActions">
+                      <button class="btn quoteAddBtn" type="button" id="btnAddServiceToQuote">+ Servicio</button>
+                      <button class="btn quoteAddBtn" type="button" id="btnOpenServiceCreate">+ Crear servicio</button>
+                    </div>
+                  </div>
+                </section>
 
-          <section class="quoteCard quoteItemsCard quoteItemsPanel" id="quoteItemsPanel">
-            <div class="quoteCardTitleRow">
-              <div class="quoteCardTitle">Detalle de servicios</div>
-              <button class="btn" type="button" id="btnToggleQuoteItemsExpand" aria-expanded="false">Expandir</button>
-            </div>
-            <div class="quoteTableWrap">
-              <table class="quoteTable">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Cantidad</th>
-                    <th>Descripcion</th>
-                    <th>Precio</th>
-                    <th>Total</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="quoteItemsBody"></tbody>
-              </table>
-            </div>
-            <div class="quoteDiscountRow">
-              <label class="field">
-                <span>Descuento</span>
-                <select id="quoteDiscountType">
-                  <option value="AMOUNT">Monto (Q)</option>
-                  <option value="PERCENT">Porcentaje (%)</option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Valor descuento</span>
-                <input id="quoteDiscountValue" type="number" min="0" step="0.01" value="0" />
-              </label>
-            </div>
-            <div class="quoteTotalRow">
-              <div>
-                <div>Subtotal: <strong id="quoteSubtotal">Q 0.00</strong></div>
-                <div>Descuento: <strong id="quoteDiscountAmount">Q 0.00</strong></div>
+                <section class="quoteWorkbenchPanel quoteTemplatePanel quoteSidebarCard">
+                  <div class="quoteWorkbenchHead">
+                    <div>
+                      <div class="quotePanelEyebrow">Automatizacion</div>
+                      <div class="quoteCardTitle">Plantillas de servicios</div>
+                    </div>
+                    <div class="quoteWorkbenchMiniText">Aplica combos guardados para eventos repetitivos.</div>
+                  </div>
+                  <div class="quoteServiceAdder quoteSidebarAdder quoteWorkbenchFields">
+                    <label class="field">
+                      <span>Plantilla guardada</span>
+                      <select id="quoteServiceTemplateSelect"></select>
+                    </label>
+                    <label class="field quoteServiceSearchField">
+                      <span>Nombre de plantilla</span>
+                      <input id="quoteServiceTemplateName" type="text" placeholder="Ej: Boda premium 150 pax" />
+                    </label>
+                    <div class="quoteServiceActions quoteSidebarActions quoteTemplateActions quoteWorkbenchTemplateActions">
+                      <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateApply">Aplicar</button>
+                      <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateSave">Guardar nueva</button>
+                      <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateUpdate">Actualizar</button>
+                      <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateDelete">Eliminar</button>
+                    </div>
+                  </div>
+                </section>
               </div>
-              <div class="quoteCurrencyPickerWrap">
-                <div class="quoteCurrencyPickerLabel">Tipo de cotizacion</div>
-                <div class="quoteCurrencyPicker" role="group" aria-label="Moneda de cotizacion">
-                  <button class="quoteCurrencyBtn isActive" type="button" id="btnQuoteCurrencyGTQ" data-currency="GTQ" title="Cotizacion en quetzales">Q</button>
-                  <button class="quoteCurrencyBtn" type="button" id="btnQuoteCurrencyUSD" data-currency="USD" title="Cotizacion en dolares">$</button>
+
+              <section class="quoteWorkbenchSummary quoteSidebarSummaryCard">
+                <div class="quoteSidebarSummaryHead">
+                  <div>
+                    <div class="quotePanelEyebrow">Resumen en vivo</div>
+                    <div class="quoteCardTitle">Cotizacion actual</div>
+                  </div>
+                  <div class="quoteSidebarLiveBadge">Activo</div>
                 </div>
-              </div>
-              <div>Total cotizacion: <strong id="quoteTotal">Q 0.00</strong></div>
-            </div>
-            <section class="quoteAccountPanel">
-              <div class="quoteAccountHeader">
+                <div class="quoteSidebarSummaryMeta">
+                  <div class="quoteSidebarMetaLabel">Documento</div>
+                  <div class="quoteSidebarMetaValue" id="quoteSidebarDocument">COTIZACION SIN CODIGO</div>
+                  <div class="quoteSidebarMetaSub" id="quoteSidebarClient">Selecciona una institucion para comenzar</div>
+                </div>
+                <div class="quoteSidebarBreakdown" id="quoteSidebarBreakdown"></div>
+                <div class="quoteSidebarTotals">
+                  <div class="quoteSidebarTotalRow">
+                    <span>Subtotal</span>
+                    <strong id="quoteSidebarSubtotal">Q 0.00</strong>
+                  </div>
+                  <div class="quoteSidebarTotalRow">
+                    <span>Descuento</span>
+                    <strong id="quoteSidebarDiscount">Q 0.00</strong>
+                  </div>
+                  <div class="quoteSidebarTotalRow isGrand">
+                    <span>Total</span>
+                    <strong id="quoteSidebarTotal">Q 0.00</strong>
+                  </div>
+                </div>
+              </section>
+            </section>
+
+            <section class="quoteItemsShell quoteItemsPanel" id="quoteItemsPanel">
+              <div class="quoteCardTitleRow quoteItemsPanelHead">
                 <div>
-                  <div class="quoteCardTitle">Estado de cuenta</div>
-                  <div class="quoteAccountDocument" id="quoteAccountDocument">COTIZACION SIN CODIGO</div>
-                  <div class="quoteAccountEvent" id="quoteAccountEvent">Evento sin nombre</div>
-                  <div class="quoteAccountRange" id="quoteAccountRange">Sin rango de fechas definido</div>
+                  <div class="quotePanelEyebrow">Carrito operativo</div>
+                  <div class="quoteCardTitle">Servicios y productos agregados</div>
+                  <div class="quoteItemsPanelText">Todo el trabajo principal queda aqui: cantidades, precio, fecha, servicio y total.</div>
                 </div>
-                <div class="quoteAccountMeta" id="quoteAccountMeta">Sin movimientos registrados</div>
+                <button class="btn" type="button" id="btnToggleQuoteItemsExpand" aria-expanded="false">Expandir</button>
               </div>
-              <div class="quoteAccountSummary" id="quoteAccountSummary"></div>
-              <div class="quoteTableWrap quoteAccountTableWrap">
-                <table class="quoteTable quoteAccountTable">
+              <div class="quoteTableWrap quoteItemsTableWrap">
+                <table class="quoteTable quoteItemsTable">
                   <thead>
                     <tr>
-                      <th>Tipo</th>
                       <th>Fecha</th>
-                      <th>Concepto</th>
-                      <th>Cargo</th>
-                      <th>Abono</th>
-                      <th>Saldo</th>
+                      <th>Cantidad</th>
+                      <th>Servicio</th>
+                      <th>Precio</th>
+                      <th>Total</th>
+                      <th></th>
                     </tr>
                   </thead>
-                  <tbody id="quoteAccountBody"></tbody>
+                  <tbody id="quoteItemsBody"></tbody>
                 </table>
               </div>
+              <div class="quoteItemsFooterGrid">
+                <div class="quoteDiscountRow">
+                  <label class="field">
+                    <span>Descuento</span>
+                    <select id="quoteDiscountType">
+                      <option value="AMOUNT">Monto (Q)</option>
+                      <option value="PERCENT">Porcentaje (%)</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Valor descuento</span>
+                    <input id="quoteDiscountValue" type="number" min="0" step="0.01" value="0" />
+                  </label>
+                </div>
+                <div class="quoteTotalRow">
+                  <div class="quoteTotalsStack">
+                    <div>Subtotal: <strong id="quoteSubtotal">Q 0.00</strong></div>
+                    <div>Descuento: <strong id="quoteDiscountAmount">Q 0.00</strong></div>
+                  </div>
+                  <div class="quoteCurrencyPickerWrap">
+                    <div class="quoteCurrencyPickerLabel">Tipo de cotizacion</div>
+                    <div class="quoteCurrencyPicker" role="group" aria-label="Moneda de cotizacion">
+                      <button class="quoteCurrencyBtn isActive" type="button" id="btnQuoteCurrencyGTQ" data-currency="GTQ" title="Cotizacion en quetzales" aria-label="Moneda quetzales">
+                        <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+                      </button>
+                      <button class="quoteCurrencyBtn" type="button" id="btnQuoteCurrencyUSD" data-currency="USD" title="Cotizacion en dolares" aria-label="Moneda dolares">
+                        <span class="material-symbols-outlined" aria-hidden="true">attach_money</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="quoteGrandTotalBlock">Total cotizacion: <strong id="quoteTotal">Q 0.00</strong></div>
+                </div>
+              </div>
+              <section class="quoteAccountPanel">
+                <div class="quoteAccountHeader">
+                  <div>
+                    <div class="quotePanelEyebrow">Control financiero</div>
+                    <div class="quoteCardTitle">Estado de cuenta</div>
+                    <div class="quoteAccountDocument" id="quoteAccountDocument">COTIZACION SIN CODIGO</div>
+                    <div class="quoteAccountEvent" id="quoteAccountEvent">Evento sin nombre</div>
+                    <div class="quoteAccountRange" id="quoteAccountRange">Sin rango de fechas definido</div>
+                  </div>
+                  <div class="quoteAccountMeta" id="quoteAccountMeta">Sin movimientos registrados</div>
+                </div>
+                <div class="quoteAccountSummary" id="quoteAccountSummary"></div>
+                <div class="quoteTableWrap quoteAccountTableWrap">
+                  <table class="quoteTable quoteAccountTable">
+                    <thead>
+                      <tr>
+                        <th>Tipo</th>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Cargo</th>
+                        <th>Abono</th>
+                        <th>Saldo</th>
+                      </tr>
+                    </thead>
+                    <tbody id="quoteAccountBody"></tbody>
+                  </table>
+                </div>
+              </section>
+              <label class="field quoteInternalNotesField">
+                <span>Notas internas</span>
+                <textarea id="quoteInternalNotes" rows="2" placeholder="Observaciones internas"></textarea>
+              </label>
             </section>
-            <label class="field">
-              <span>Notas internas</span>
-              <textarea id="quoteInternalNotes" rows="2" placeholder="Observaciones internas"></textarea>
-            </label>
-          </section>
+          </div>
 
-          <div class="modalFooter quoteFooterRow">
+          <div class="modalFooter quoteFooterRow quotePageFooter">
             <div></div>
             <div class="rightActions">
               <button class="btn" type="button" id="btnMenuMontaje">Menu &amp; Montaje</button>
@@ -2226,11 +1202,11 @@
             </div>
           </div>
           <div class="quoteAdvanceSummary">
-            <div class="quoteAdvanceMetric">
+            <div class="quoteAdvanceMetric quoteAdvanceMetric--total">
               <span>Total anticipos</span>
               <strong id="quoteAdvanceTotal">Q 0.00</strong>
             </div>
-            <div class="quoteAdvanceMetric">
+            <div class="quoteAdvanceMetric quoteAdvanceMetric--pending">
               <span>Saldo pendiente</span>
               <strong id="quoteAdvancePending">Q 0.00</strong>
             </div>
@@ -3212,7 +2188,7 @@
       <div class="modal salesReportModal" role="dialog" aria-modal="true" aria-labelledby="salesReportTitle">
         <div class="modalHeader">
           <div class="reportBrandHeader">
-            <div class="reportBrandBadge salesReportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo salesReportBrandLogo" /></div>
+            <div class="reportBrandBadge salesReportBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="reportBrandLogo salesReportBrandLogo" /></div>
             <div class="reportBrandCopy">
               <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
               <div class="modalTitle" id="salesReportTitle">Reporte de ventas</div>
@@ -3283,40 +2259,14 @@
               <thead>
                 <tr>
                   <th>Estado</th>
-                  <th>ID Cotizacion/Reserva</th>
+                  <th>ID Cotización</th>
                   <th>Vendedor</th>
-                  <th>Fecha evento</th>
-                  <th>Tipo evento</th>
-                  <th>Hora inicio</th>
-                  <th>Hora final</th>
-                  <th>Salon</th>
-                  <th>Institucion</th>
-                  <th>Encargado evento</th>
+                  <th>Fecha</th>
+                  <th>Evento</th>
+                  <th>Horario</th>
+                  <th>Salón</th>
                   <th>PAX</th>
-                  <th>Cant Desayunos</th>
-                  <th>Monto Desayunos</th>
-                  <th>Cant Refa</th>
-                  <th>Monto Refa</th>
-                  <th>Cant Almuerzos</th>
-                  <th>Monto Almuerzos</th>
-                  <th>Cant AM Refa</th>
-                  <th>Monto AM Refa</th>
-                  <th>Cant PM Refa</th>
-                  <th>Monto PM Refa</th>
-                  <th>Cant Cenas Buffet</th>
-                  <th>Monto Cenas Buffet</th>
-                  <th>Cant Miscelaneos</th>
-                  <th>Monto Miscelaneos</th>
-                  <th>Cat A&B Cant</th>
-                  <th>Cat A&B Monto</th>
-                  <th>Cat Hospedaje JDL Cant</th>
-                  <th>Cat Hospedaje JDL Monto</th>
-                  <th>Cat Hospedaje Terceros Cant</th>
-                  <th>Cat Hospedaje Terceros Monto</th>
-                  <th>Cat Miscelaneos Cant</th>
-                  <th>Cat Miscelaneos Monto</th>
-                  <th>Descuento</th>
-                  <th>Ultima modificacion</th>
+                  <th>Monto</th>
                 </tr>
               </thead>
               <tbody id="salesReportBody"></tbody>
@@ -3331,7 +2281,7 @@
       <div class="modal salesReportModal" role="dialog" aria-modal="true" aria-labelledby="accountingReportTitle">
         <div class="modalHeader">
           <div class="reportBrandHeader">
-            <div class="reportBrandBadge salesReportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo salesReportBrandLogo" /></div>
+            <div class="reportBrandBadge salesReportBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="reportBrandLogo salesReportBrandLogo" /></div>
             <div class="reportBrandCopy">
               <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
               <div class="modalTitle" id="accountingReportTitle">Estado de cuenta contable</div>
@@ -3489,7 +2439,7 @@
       <div class="modal occupancyReportModal" role="dialog" aria-modal="true" aria-labelledby="occupancyReportTitle">
         <div class="modalHeader">
           <div class="reportBrandHeader">
-            <div class="reportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
             <div class="reportBrandCopy">
               <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
               <div class="modalTitle" id="occupancyReportTitle">Reporte de ocupacion</div>
@@ -3599,7 +2549,7 @@
       <div class="modal dashboardReportModal" role="dialog" aria-modal="true" aria-labelledby="dashboardReportTitle">
         <div class="modalHeader">
           <div class="reportBrandHeader">
-            <div class="reportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
             <div class="reportBrandCopy">
               <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
               <div class="modalTitle" id="dashboardReportTitle">Reporte Dashboard</div>
@@ -3720,7 +2670,7 @@
       <div class="modal dashboardReportModal institutionReportModal" role="dialog" aria-modal="true" aria-labelledby="institutionReportTitle">
         <div class="modalHeader">
           <div class="reportBrandHeader">
-            <div class="reportBrandBadge"><img src="./Oficial_JDL_blanco.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
+            <div class="reportBrandBadge"><img src="./Oficial_JDL_acua.png" alt="Logo Jardines del Lago" class="reportBrandLogo" /></div>
             <div class="reportBrandCopy">
               <div class="reportBrandEyebrow">CRM Reservas | Jardines del Lago</div>
               <div class="modalTitle" id="institutionReportTitle">Reporte por institucion</div>
@@ -4032,7 +2982,7 @@
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js?v=20260321c").catch((error) => {
+    navigator.serviceWorker.register("./sw.js?v=20260422i").catch((error) => {
           console.warn("No se pudo registrar el service worker de la PWA.", error);
         });
       });
@@ -4040,6 +2990,21 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

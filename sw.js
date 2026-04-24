@@ -1,5 +1,5 @@
 // Nombre de cache versionado para forzar actualizacion cuando cambia la PWA.
-const CACHE_NAME = "crm-jdl-pwa-v3";
+const CACHE_NAME = "crm-jdl-pwa-v18";
 // Archivos minimos que permiten abrir la app instalada con su apariencia base.
 const APP_SHELL = [
   "./",
