@@ -25,6 +25,7 @@
   --ui-danger-fg: #991b1b;
   --ui-info-bg: #dbeafe;
   --ui-info-fg: #1e3a8a;
+  --c-reserva-sin-cotizacion: #0ea5e9;
 
   --ui-radius-sm: 8px;
   --ui-radius-md: 10px;
@@ -231,6 +232,333 @@ textarea:focus,
   outline: none !important;
   border-color: #2d6ea8 !important;
   box-shadow: 0 0 0 3px rgba(45, 110, 168, 0.15) !important;
+}
+
+/* SweetAlert2 dialogs */
+.swal2-container {
+  z-index: 10000 !important;
+  padding: 18px !important;
+}
+
+.swal2-popup {
+  width: min(92vw, 560px) !important;
+  padding: 30px 34px 28px !important;
+  border: 1px solid #c5d4ea !important;
+  border-radius: 16px !important;
+  background: #f8fbff !important;
+  color: #10243b !important;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.28) !important;
+}
+
+.swal2-icon {
+  margin: 12px auto 18px !important;
+  width: 5.5em !important;
+  height: 5.5em !important;
+}
+
+.swal2-title {
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #10243b !important;
+  font-size: 32px !important;
+  line-height: 1.15 !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+}
+
+.swal2-html-container {
+  width: 100% !important;
+  margin: 18px 0 0 !important;
+  padding: 0 !important;
+  color: #1e293b !important;
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+  overflow: visible !important;
+}
+
+.swal2-input,
+.swal2-select,
+.swal2-textarea {
+  width: min(100%, 520px) !important;
+  max-width: 100% !important;
+  min-height: 54px !important;
+  margin: 22px auto 0 !important;
+  padding: 12px 16px !important;
+  border: 1px solid #9fc0ef !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 0 0 3px rgba(59,130,246,0.08) !important;
+  outline: none !important;
+}
+
+.swal2-input:focus,
+.swal2-select:focus,
+.swal2-textarea:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.18) !important;
+}
+
+.swal2-input::placeholder,
+.swal2-textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.swal2-html-container .swal2-input,
+.swal2-html-container .swal2-select,
+.swal2-html-container .swal2-textarea {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.swal2-actions {
+  width: 100% !important;
+  margin: 26px 0 0 !important;
+  gap: 10px !important;
+}
+
+.swal2-styled {
+  min-width: 120px !important;
+  min-height: 46px !important;
+  margin: 0 !important;
+  padding: 10px 20px !important;
+  border-radius: 12px !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+.swal2-confirm {
+  background: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.swal2-cancel {
+  border: 1px solid #c5d4ea !important;
+  background: #eff4ff !important;
+  color: #0f172a !important;
+}
+
+.swal2-validation-message {
+  margin: 14px 0 0 !important;
+  border-radius: 10px !important;
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.swal2-toast.swal-ios-toast,
+.swal2-popup.swal-ios-toast {
+  width: min(92vw, 380px) !important;
+  min-height: 72px !important;
+  padding: 12px 16px !important;
+  border-radius: 14px !important;
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  column-gap: 12px !important;
+  align-items: center !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-icon {
+  grid-column: 1 !important;
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  font-size: 8px !important;
+}
+
+.swal2-toast .swal2-title,
+.swal2-popup.swal-ios-toast .swal2-title {
+  grid-column: 2 !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+  overflow-wrap: anywhere !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-timer-progress-bar-container {
+  grid-column: 1 / -1 !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-timer-progress-bar {
+  height: 3px !important;
+}
+
+@media (max-width: 640px) {
+  .swal2-container {
+    padding: 12px !important;
+  }
+
+  .swal2-popup {
+    padding: 24px 18px 22px !important;
+  }
+
+  .swal2-icon {
+    width: 4.75em !important;
+    height: 4.75em !important;
+  }
+
+  .swal2-title {
+    font-size: 24px !important;
+  }
+
+  .swal2-actions {
+    flex-direction: column-reverse !important;
+  }
+
+  .swal2-styled {
+    width: 100% !important;
+  }
+}
+
+/* Global toast reset: keep SweetAlert2 notifications aligned over every module. */
+.swal2-container.swal2-top,
+.swal2-container.swal2-top-start,
+.swal2-container.swal2-top-end,
+.swal2-container.swal2-center {
+  z-index: 22000 !important;
+}
+
+.swal2-popup.swal2-toast.swal-ios-toast,
+.swal2-popup.swal-ios-toast {
+  box-sizing: border-box !important;
+  position: relative !important;
+  width: min(420px, calc(100vw - 32px)) !important;
+  min-height: 62px !important;
+  margin: 0 auto !important;
+  padding: 13px 18px 16px 68px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid #bfd2ee !important;
+  border-radius: 14px !important;
+  background: #f8fbff !important;
+  color: #10213b !important;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14) !important;
+  font-family: "Segoe UI", Tahoma, Verdana, Arial, sans-serif !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-icon {
+  position: absolute !important;
+  left: 18px !important;
+  top: 50% !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+  font-size: 7.2px !important;
+  transform: translateY(-50%) !important;
+  flex: 0 0 36px !important;
+  grid-column: auto !important;
+  overflow: visible !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-success,
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-error,
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-info {
+  display: inline-grid !important;
+  place-items: center !important;
+  border-width: 2px !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  font-weight: 800 !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-success {
+  color: #16a34a !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-error {
+  color: #ef4444 !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-info {
+  color: #2563eb !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-icon .swal2-x-mark,
+.swal2-popup.swal-ios-toast .swal2-icon .swal2-success-ring,
+.swal2-popup.swal-ios-toast .swal2-icon .swal2-success-fix,
+.swal2-popup.swal-ios-toast .swal2-icon [class^="swal2-success-circular-line"],
+.swal2-popup.swal-ios-toast .swal2-icon [class^="swal2-success-line"] {
+  display: none !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-icon-content {
+  font-size: 24px !important;
+  line-height: 36px !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-title {
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #10213b !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  grid-column: auto !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-timer-progress-bar-container {
+  position: absolute !important;
+  left: 18px !important;
+  right: 18px !important;
+  bottom: 0 !important;
+  width: auto !important;
+  height: 3px !important;
+  margin: 0 !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  grid-column: auto !important;
+}
+
+.swal2-popup.swal-ios-toast .swal2-timer-progress-bar {
+  height: 3px !important;
+  border-radius: 999px !important;
+  background: #94a3b8 !important;
+}
+
+#toast.toast {
+  position: fixed !important;
+  top: 16px !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: 22001 !important;
+  width: min(420px, calc(100vw - 32px)) !important;
+  min-height: 58px !important;
+  padding: 14px 18px !important;
+  transform: translate(-50%, -12px) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  border: 1px solid #bfd2ee !important;
+  border-radius: 14px !important;
+  background: #f8fbff !important;
+  color: #10213b !important;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14) !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  transition: opacity 0.18s ease, transform 0.18s ease !important;
+}
+
+#toast.toast.show {
+  transform: translate(-50%, 0) !important;
+  opacity: 1 !important;
 }
 
 .field {
@@ -1097,19 +1425,19 @@ body {
 }
 
 .lum-calendar .event::before {
-  background: linear-gradient(180deg, #16b8b0, #0f8f8a) !important;
+  background: var(--status-color, #16b8b0) !important;
 }
 
 .lum-calendar .event[data-status="confirmado"]::before {
-  background: linear-gradient(180deg, #16a34a, #15803d) !important;
+  background: var(--status-color, #16a34a) !important;
 }
 
 .lum-calendar .event[data-status*="pre"]::before {
-  background: linear-gradient(180deg, #0ea5e9, #2563eb) !important;
+  background: var(--status-color, #0ea5e9) !important;
 }
 
 .lum-calendar .event[data-status*="cancel"]::before {
-  background: linear-gradient(180deg, #ef4444, #dc2626) !important;
+  background: var(--status-color, #ef4444) !important;
 }
 
 #modalBackdrop {
@@ -1468,499 +1796,6 @@ body {
   }
 }
 
-/* === NEXUS QUOTE DESIGN (CREATE QUOTES) === */
-#quoteBackdrop {
-  position: fixed;
-  inset: 0;
-  padding: 0 !important;
-  background: #f8f9ff !important;
-  z-index: 3000;
-}
-
-#quoteBackdrop .quotePageModal {
-  width: 100vw !important;
-  height: 100vh !important;
-  max-height: 100vh !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: #f8f9ff !important;
-  box-shadow: none !important;
-}
-
-#quoteBackdrop .quotePageHeader {
-  min-height: 64px;
-  padding: 10px 24px !important;
-  border-bottom: 1px solid #d3e4fe !important;
-  background: #ffffff !important;
-  box-shadow: none !important;
-}
-
-#quoteBackdrop .quoteBreadcrumb {
-  color: #45474c !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-#quoteBackdrop .modalTitle {
-  color: #0b1c30 !important;
-  font-size: 26px !important;
-  font-weight: 700 !important;
-  line-height: 1.2 !important;
-}
-
-#quoteBackdrop .modalSubtitle {
-  color: #45474c !important;
-  font-size: 13px !important;
-}
-
-#quoteBackdrop .quotePageHeaderActions .btn {
-  border-radius: 10px !important;
-  border: 1px solid #c5c6cd !important;
-  background: #eff4ff !important;
-  color: #0b1c30 !important;
-  font-weight: 600 !important;
-}
-
-#quoteBackdrop .quotePageBody {
-  padding: 24px !important;
-  background: #f8f9ff !important;
-  gap: 18px;
-}
-
-#quoteBackdrop .quotePageTopStrip,
-#quoteBackdrop .quotePageDataSection,
-#quoteBackdrop .quoteItemsShell,
-#quoteBackdrop .quoteAccountPanel,
-#quoteBackdrop .quoteSidebarCard,
-#quoteBackdrop .quoteWorkbenchSummary {
-  border: 1px solid #d3e4fe !important;
-  border-radius: 12px !important;
-  background: #ffffff !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
-}
-
-#quoteBackdrop .quotePageTopStrip {
-  padding: 16px !important;
-}
-
-#quoteBackdrop .quoteDocFold > summary {
-  border-bottom: 1px solid #d3e4fe !important;
-  background: #eff4ff !important;
-  color: #0b1c30 !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  border-radius: 12px 12px 0 0 !important;
-}
-
-#quoteBackdrop .quoteDocGrid {
-  background: #ffffff !important;
-}
-
-#quoteBackdrop .quoteDocRow > span,
-#quoteBackdrop .field > span,
-#quoteBackdrop .quotePanelEyebrow {
-  color: #45474c !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.01em !important;
-  text-transform: none !important;
-}
-
-#quoteBackdrop .quoteCardTitle {
-  color: #0b1c30 !important;
-  font-size: 20px !important;
-  font-weight: 600 !important;
-}
-
-#quoteBackdrop .quoteItemsPanelText,
-#quoteBackdrop .quoteWorkbenchMiniText,
-#quoteBackdrop .quoteSidebarMetaSub,
-#quoteBackdrop .hint,
-#quoteBackdrop small {
-  color: #45474c !important;
-}
-
-#quoteBackdrop .quotePageBody input,
-#quoteBackdrop .quotePageBody select,
-#quoteBackdrop .quotePageBody textarea,
-#quoteBackdrop .quotePageBody .ss-main {
-  min-height: 42px;
-  border-radius: 8px !important;
-  border: 1px solid #c5c6cd !important;
-  background: #ffffff !important;
-  color: #0b1c30 !important;
-  box-shadow: none !important;
-}
-
-#quoteBackdrop .quotePageBody textarea {
-  min-height: 92px;
-}
-
-#quoteBackdrop .quotePageBody input:focus,
-#quoteBackdrop .quotePageBody select:focus,
-#quoteBackdrop .quotePageBody textarea:focus,
-#quoteBackdrop .quotePageBody .ss-main:focus-within {
-  border-color: #006a61 !important;
-  box-shadow: 0 0 0 2px rgba(0, 106, 97, 0.15) !important;
-}
-
-#quoteBackdrop .quoteWorkbenchStrip {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.85fr) !important;
-  gap: 16px !important;
-}
-
-#quoteBackdrop .quoteWorkbenchTools {
-  display: grid;
-  grid-template-columns: 1fr !important;
-  gap: 16px !important;
-}
-
-#quoteBackdrop .quoteSidebarCard,
-#quoteBackdrop .quoteWorkbenchSummary {
-  padding: 16px !important;
-}
-
-#quoteBackdrop .quoteSidebarSummaryCard .quoteSidebarLiveBadge {
-  background: #e5eeff !important;
-  color: #091426 !important;
-  border: 1px solid #c5c6cd !important;
-  border-radius: 999px !important;
-}
-
-#quoteBackdrop .quoteSidebarSummaryMeta,
-#quoteBackdrop .quoteSidebarTotals,
-#quoteBackdrop .quoteSidebarBreakdownRow {
-  border-color: #d3e4fe !important;
-  background: #eff4ff !important;
-}
-
-#quoteBackdrop .quoteSidebarMetaValue,
-#quoteBackdrop .quoteSidebarTotalRow strong,
-#quoteBackdrop #quoteSidebarTotal {
-  color: #091426 !important;
-}
-
-#quoteBackdrop .quoteTableWrap,
-#quoteBackdrop .quoteItemsTableWrap,
-#quoteBackdrop .quoteAccountTableWrap {
-  border: 1px solid #d3e4fe !important;
-  border-radius: 8px !important;
-  overflow: auto;
-  background: #ffffff !important;
-}
-
-#quoteBackdrop .quoteTable thead th {
-  background: #eff4ff !important;
-  color: #45474c !important;
-  border-bottom: 1px solid #d3e4fe !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.05em !important;
-  text-transform: uppercase !important;
-}
-
-#quoteBackdrop .quoteTable tbody td {
-  background: #ffffff !important;
-  color: #0b1c30 !important;
-  border-bottom: 1px solid #d3e4fe !important;
-}
-
-#quoteBackdrop .quoteTable tbody tr:nth-child(even) td {
-  background: #f8f9ff !important;
-}
-
-#quoteBackdrop .quoteTable tbody tr:hover td {
-  background: #eff4ff !important;
-}
-
-#quoteBackdrop .quoteCurrencyPicker {
-  border: 1px solid #c5c6cd !important;
-  background: #eff4ff !important;
-  border-radius: 8px !important;
-}
-
-#quoteBackdrop .quoteCurrencyBtn {
-  color: #45474c !important;
-}
-
-#quoteBackdrop .quoteCurrencyBtn.isActive {
-  background: #ffffff !important;
-  color: #091426 !important;
-  border-radius: 6px !important;
-}
-
-#quoteBackdrop .btn,
-#quoteBackdrop .quoteAddBtn {
-  border-radius: 8px !important;
-  border: 1px solid #c5c6cd !important;
-  background: #eff4ff !important;
-  color: #0b1c30 !important;
-  font-weight: 500 !important;
-}
-
-#quoteBackdrop .btn:hover,
-#quoteBackdrop .quoteAddBtn:hover {
-  background: #dce9ff !important;
-}
-
-#quoteBackdrop .btnPrimary,
-#quoteBackdrop .quoteFooterRow .btnPrimary {
-  border-radius: 8px !important;
-  border: 1px solid #091426 !important;
-  background: #091426 !important;
-  color: #ffffff !important;
-  font-weight: 600 !important;
-  box-shadow: none !important;
-}
-
-#quoteBackdrop .btnPrimary:hover,
-#quoteBackdrop .quoteFooterRow .btnPrimary:hover {
-  background: #1e293b !important;
-}
-
-#quoteBackdrop .quoteFooterRow {
-  margin-top: 0 !important;
-  padding: 14px 20px !important;
-  border-top: 1px solid #d3e4fe !important;
-  background: #e5eeff !important;
-}
-
-#quoteBackdrop .quoteFooterRow .rightActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-@media (max-width: 1280px) {
-  #quoteBackdrop .quoteWorkbenchStrip {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-@media (max-width: 900px) {
-  #quoteBackdrop .quotePageHeader {
-    padding: 10px 12px !important;
-  }
-
-  #quoteBackdrop .quotePageBody {
-    padding: 12px !important;
-  }
-
-  #quoteBackdrop .quoteFooterRow {
-    padding: 12px !important;
-  }
-}
-
-/* === NEXUS RESERVATION MODAL (FINAL OVERRIDE) === */
-#modalBackdrop {
-  background: rgba(11, 28, 48, 0.35) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-}
-
-#modalBackdrop .modal {
-  width: min(1320px, 97vw) !important;
-  max-height: 94vh !important;
-  border-radius: 20px !important;
-  border: 1px solid #d3e4fe !important;
-  background: #f8f9ff !important;
-  box-shadow: 0 20px 52px rgba(11, 28, 48, 0.2) !important;
-}
-
-#modalBackdrop .modalHeader {
-  min-height: 76px !important;
-  border-bottom: 1px solid #d3e4fe !important;
-  background: #ffffff !important;
-  padding: 14px 18px !important;
-}
-
-#modalBackdrop .modalHeaderBrand {
-  width: 38px !important;
-  height: 38px !important;
-  border-radius: 10px !important;
-  background: #eff4ff !important;
-  border: 1px solid #c5c6cd !important;
-}
-
-#modalBackdrop .modalTitle {
-  color: #0b1c30 !important;
-  font-size: 36px !important;
-  line-height: 1.1 !important;
-  letter-spacing: -0.02em !important;
-  font-weight: 700 !important;
-}
-
-#modalBackdrop .modalSubtitle {
-  color: #45474c !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-}
-
-#modalBackdrop .modalHeader .iconBtn {
-  width: 40px !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  border-radius: 12px !important;
-  border: 1px solid #c5c6cd !important;
-  background: #eff4ff !important;
-  color: #45474c !important;
-}
-
-#modalBackdrop #eventForm {
-  padding: 16px !important;
-  gap: 14px !important;
-  background: #f8f9ff !important;
-}
-
-#modalBackdrop #eventForm > .eventMainRow,
-#modalBackdrop #eventForm > .eventDatesRow,
-#modalBackdrop #eventForm > .eventActorRow,
-#modalBackdrop #eventForm > .eventNotesRow,
-#modalBackdrop #eventForm > .conflictsBox {
-  border: 1px solid #d3e4fe !important;
-  border-radius: 14px !important;
-  background: #ffffff !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
-  padding: 12px !important;
-}
-
-#modalBackdrop #eventForm .eventMainRow {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(540px, 1.6fr) !important;
-  gap: 12px !important;
-}
-
-#modalBackdrop #eventForm .eventDatesRow {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(220px, 1fr)) !important;
-  gap: 12px !important;
-}
-
-#modalBackdrop #eventForm .eventActorRow {
-  display: grid !important;
-  grid-template-columns: minmax(260px, 1.6fr) minmax(160px, 0.7fr) minmax(220px, 0.9fr) !important;
-  gap: 12px !important;
-}
-
-#modalBackdrop #eventForm .field > span {
-  color: #5a6a81 !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.01em !important;
-  text-transform: none !important;
-}
-
-#modalBackdrop input,
-#modalBackdrop select,
-#modalBackdrop textarea {
-  min-height: 44px !important;
-  border-radius: 12px !important;
-  border: 1px solid #c5c6cd !important;
-  background: #ffffff !important;
-  color: #0b1c30 !important;
-  box-shadow: none !important;
-}
-
-#modalBackdrop textarea {
-  min-height: 96px !important;
-}
-
-#modalBackdrop input:focus,
-#modalBackdrop select:focus,
-#modalBackdrop textarea:focus {
-  border-color: #006a61 !important;
-  box-shadow: 0 0 0 2px rgba(0, 106, 97, 0.14) !important;
-}
-
-#modalBackdrop .hint,
-#modalBackdrop small {
-  color: #5a6a81 !important;
-}
-
-#modalBackdrop .quoteTableWrap {
-  border: 1px solid #c5c6cd !important;
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  background: #ffffff !important;
-}
-
-#modalBackdrop .quoteTable thead th {
-  background: #eff4ff !important;
-  color: #45474c !important;
-  border-bottom: 1px solid #d3e4fe !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.05em !important;
-  text-transform: uppercase !important;
-}
-
-#modalBackdrop .quoteTable tbody td {
-  border-bottom: 1px solid #d3e4fe !important;
-  background: #ffffff !important;
-}
-
-#modalBackdrop .quoteTable tbody tr:nth-child(even) td {
-  background: #f8f9ff !important;
-}
-
-#modalBackdrop #btnAddSlot,
-#modalBackdrop #btnAddUser {
-  border-radius: 10px !important;
-  border: 1px solid #c5c6cd !important;
-  background: #eff4ff !important;
-  color: #1e293b !important;
-  font-weight: 600 !important;
-}
-
-#modalBackdrop .modalFooter {
-  margin-top: 2px !important;
-  padding: 12px 0 0 !important;
-  border-top: 1px solid #d3e4fe !important;
-  background: #e5eeff !important;
-}
-
-#modalBackdrop .modalFooter .leftActions .btn,
-#modalBackdrop .modalFooter .rightActions .btn {
-  border-radius: 10px !important;
-  border: 1px solid #c5c6cd !important;
-  background: #eff4ff !important;
-  color: #45474c !important;
-}
-
-#modalBackdrop #btnSave {
-  min-width: 142px;
-  border-radius: 12px !important;
-  border: 1px solid #091426 !important;
-  background: #091426 !important;
-  color: #ffffff !important;
-  font-weight: 700 !important;
-}
-
-#modalBackdrop #btnSave:hover {
-  background: #1e293b !important;
-}
-
-@media (max-width: 1180px) {
-  #modalBackdrop .modal {
-    width: 100vw !important;
-    max-height: 100vh !important;
-    border-radius: 0 !important;
-  }
-
-  #modalBackdrop #eventForm .eventMainRow,
-  #modalBackdrop #eventForm .eventDatesRow,
-  #modalBackdrop #eventForm .eventActorRow {
-    grid-template-columns: 1fr !important;
-  }
-
-  #modalBackdrop .modalTitle {
-    font-size: 30px !important;
-  }
-}
-
 /* === NEXUS RESERVATION LAYOUT (EXACT MATCH PASS) === */
 #modalBackdrop {
   background: rgba(248, 249, 255, 0.96) !important;
@@ -2175,6 +2010,7 @@ body {
     font-size: 32px !important;
   }
 }
+
 
 /* === RESERVAR SALON FLAT CANVAS (NO FLOATING WINDOW) === */
 #appShell.lum-calendar #modalBackdrop {
@@ -2621,6 +2457,36 @@ body {
 #modalBackdrop #appointmentPanel .historyTable td {
   overflow-wrap: anywhere !important;
   word-break: break-word !important;
+}
+
+#modalBackdrop #appointmentPanel .reminderState {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 78px !important;
+  min-height: 28px !important;
+  padding: 5px 11px !important;
+  border-radius: 999px !important;
+  border: 1px solid #22c55e !important;
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+  white-space: nowrap !important;
+}
+
+#modalBackdrop #appointmentPanel .reminderState.soon {
+  border-color: #f59e0b !important;
+  background: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+#modalBackdrop #appointmentPanel .reminderState.today {
+  border-color: #3b82f6 !important;
+  background: #dbeafe !important;
+  color: #1e40af !important;
 }
 
 #modalBackdrop .eventModalMain:has(#historyPanel:not([hidden])):has(#appointmentPanel:not([hidden])) {
@@ -3625,24 +3491,22 @@ body {
 }
 
 #appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  margin-top: -2px !important;
+  background: #ffffff !important;
+  border: 1px solid #d6e2f2 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05) !important;
+  border-radius: 10px !important;
+  margin-top: 0 !important;
+  padding: 14px !important;
 }
 
 #appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchHead {
-  padding: 0 0 10px !important;
-  border: 0 !important;
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid #e1e9f5 !important;
   background: transparent !important;
 }
 
 #appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quotePanelEyebrow,
-#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchMiniText,
-#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .field,
-#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel #quoteServiceTemplateSelect,
-#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel #quoteServiceTemplateName {
+#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchMiniText {
   display: none !important;
 }
 
@@ -3655,8 +3519,8 @@ body {
 }
 
 #appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchTemplateActions {
-  display: flex !important;
-  flex-wrap: wrap !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
   gap: 8px !important;
   padding: 0 !important;
 }
@@ -3668,16 +3532,96 @@ body {
   border-radius: 6px !important;
   padding: 8px 12px !important;
   font-weight: 600 !important;
+  width: 100% !important;
+  white-space: normal !important;
 }
 
-#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel #btnQuoteServiceTemplateSave,
-#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel #btnQuoteServiceTemplateUpdate,
-#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel #btnQuoteServiceTemplateDelete {
-  display: none !important;
+#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchFields {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .field {
+  display: grid !important;
+  gap: 6px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .field > span {
+  display: block !important;
+  color: #173456 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel #quoteServiceTemplateSelect,
+#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel #quoteServiceTemplateName {
+  display: block !important;
+  width: 100% !important;
+  min-height: 42px !important;
 }
 
 #appShell.lum-calendar #quoteBackdrop .quoteWorkbenchSummary {
   display: none !important;
+}
+
+.quoteServiceTemplateManagerModal {
+  width: min(96vw, 980px) !important;
+}
+
+.quoteServiceTemplateManagerBody {
+  display: grid !important;
+  gap: 16px !important;
+  max-height: min(78vh, 820px) !important;
+  overflow: auto !important;
+}
+
+.qstmPanel {
+  padding: 18px !important;
+  border: 1px solid #d5e2f3 !important;
+  background: #f8fbff !important;
+}
+
+.qstmActions {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+
+.qstmServiceGrid {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 1fr) 150px 170px !important;
+  gap: 12px !important;
+  align-items: end !important;
+  margin-top: 12px !important;
+}
+
+.qstmTableWrap {
+  margin-top: 16px !important;
+  max-height: 340px !important;
+  overflow: auto !important;
+}
+
+.qstmTableWrap .quoteTable {
+  min-width: 760px !important;
+}
+
+.qstmTableWrap td strong,
+.qstmTableWrap td small {
+  display: block !important;
+}
+
+.qstmTableWrap td small {
+  margin-top: 4px !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+}
+
+@media (max-width: 780px) {
+  .qstmActions,
+  .qstmServiceGrid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 #appShell.lum-calendar #quoteBackdrop .quoteItemsPanel {
@@ -4452,3 +4396,167 @@ body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteCurrencyBtn .mate
   line-height: 1 !important;
 }
 /* === End Quote Cart Visual Refresh === */
+
+/* === 14-INCH LAPTOP FIT PASS === */
+@media (min-width: 901px) and (max-width: 1536px), (max-height: 900px) and (min-width: 901px) {
+  #appShell.lum-calendar .lum-sidebar {
+    width: 220px !important;
+    min-width: 220px !important;
+    padding: 18px 10px !important;
+  }
+
+  #appShell.lum-calendar .lum-sideItem {
+    min-height: 40px !important;
+    padding: 8px 11px !important;
+    gap: 8px !important;
+    font-size: 13px !important;
+  }
+
+  #appShell.lum-calendar .lum-sideCta {
+    padding: 4px 10px 8px !important;
+  }
+
+  #appShell.lum-calendar .lum-sideCta .btnPrimary {
+    min-height: 42px !important;
+  }
+
+  #appShell.lum-calendar .lum-main {
+    padding: 12px 14px !important;
+    gap: 10px !important;
+  }
+
+  #appShell.lum-calendar .topbar {
+    min-height: 58px !important;
+    padding: 8px 12px !important;
+    gap: 10px !important;
+  }
+
+  #appShell.lum-calendar .brand {
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  #appShell.lum-calendar .brandText {
+    min-width: 0 !important;
+  }
+
+  #appShell.lum-calendar .brandText .title,
+  #appShell.lum-calendar .brandText .subtitle,
+  #appShell.lum-calendar .welcomeUser {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  #appShell.lum-calendar .toolbar {
+    gap: 6px !important;
+  }
+
+  #appShell.lum-calendar .btn,
+  #appShell.lum-calendar .iconBtn,
+  #appShell.lum-calendar .select select {
+    min-height: 36px !important;
+  }
+
+  #appShell.lum-calendar .weekLabel {
+    min-width: 150px !important;
+  }
+
+  #appShell.lum-calendar .lum-search {
+    min-width: 220px !important;
+    max-width: 280px !important;
+  }
+
+  #appShell.lum-calendar .legend {
+    min-height: 44px !important;
+  }
+
+  #appShell.lum-calendar #modalBackdrop {
+    left: 220px !important;
+    width: calc(100vw - 220px) !important;
+    padding: 14px 16px !important;
+  }
+
+  #appShell.lum-calendar #modalBackdrop .modal {
+    width: min(1180px, calc(100vw - 252px)) !important;
+  }
+
+  #appShell.lum-calendar #modalBackdrop .modalHeader {
+    min-height: 86px !important;
+    padding: 12px 14px 10px !important;
+  }
+
+  #appShell.lum-calendar #modalBackdrop .modalTitle {
+    font-size: 40px !important;
+    line-height: 1.06 !important;
+  }
+
+  #appShell.lum-calendar #modalBackdrop .modalSubtitle {
+    font-size: 17px !important;
+  }
+
+  #appShell.lum-calendar #modalBackdrop #eventForm {
+    gap: 12px !important;
+  }
+
+  #modalBackdrop .eventModalMain:has(#historyPanel:not([hidden])):has(#appointmentPanel:not([hidden])),
+  #modalBackdrop .eventModalMain:has(#historyPanel:not([hidden])),
+  #modalBackdrop .eventModalMain:has(#appointmentPanel:not([hidden])) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop {
+    inset: 58px 0 0 220px !important;
+    padding: 10px !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quotePageModal {
+    min-height: calc(100vh - 58px - 20px) !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quotePageHeader {
+    min-height: 80px !important;
+    padding: 12px 16px !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .modalTitle {
+    font-size: 38px !important;
+    line-height: 1.06 !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quotePageBody {
+    padding: 10px !important;
+    gap: 10px !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteWorkbenchStrip,
+  #appShell.lum-calendar #quoteBackdrop .quoteWorkbenchTools {
+    grid-template-columns: 1fr !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteFooterRow {
+    padding: 10px 12px !important;
+  }
+}
+
+@media (min-width: 901px) and (max-height: 820px) {
+  #appShell.lum-calendar .lum-sidebarBrand {
+    margin-bottom: 4px !important;
+  }
+
+  #appShell.lum-calendar .lum-sideNav,
+  #appShell.lum-calendar .lum-sideFooter {
+    gap: 2px !important;
+  }
+
+  #appShell.lum-calendar .legend {
+    max-height: 76px !important;
+    overflow: auto !important;
+  }
+
+  #appShell.lum-calendar #modalBackdrop .modalHeader,
+  #appShell.lum-calendar #quoteBackdrop .quotePageHeader {
+    min-height: auto !important;
+  }
+}
+/* === END 14-INCH LAPTOP FIT PASS === */

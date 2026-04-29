@@ -585,6 +585,26 @@ async function ensureQuoteVersionStructure() {
   }
 }
 
+async function ensureEventDateRangeStructure() {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const cols = await conn.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_schema = ? AND table_name = 'eventos'`,
+      [DB_NAME]
+    );
+    const colSet = new Set(cols.map((r) => String(r.column_name || "").toLowerCase()));
+    if (!colSet.has("fecha_inicio_reserva")) {
+      await conn.query("ALTER TABLE eventos ADD COLUMN fecha_inicio_reserva DATE NULL AFTER fecha_evento");
+    }
+    if (!colSet.has("fecha_fin_reserva")) {
+      await conn.query("ALTER TABLE eventos ADD COLUMN fecha_fin_reserva DATE NULL AFTER fecha_inicio_reserva");
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
 async function ensureAdvancesStructure() {
   let conn;
   try {
@@ -1137,7 +1157,7 @@ async function readStateFromTables() {
         LEFT JOIN subcategorias_servicio sc ON sc.id = s.id_subcategoria
         ORDER BY s.creado_en, s.id
       `),
-      conn.query("SELECT id, id_grupo, nombre, nombre_salon, fecha_evento, hora_inicio, hora_fin, estado, id_usuario, pax, notas, cotizacion_json FROM eventos ORDER BY fecha_evento, hora_inicio, id"),
+      conn.query("SELECT id, id_grupo, nombre, nombre_salon, fecha_evento, fecha_inicio_reserva, fecha_fin_reserva, hora_inicio, hora_fin, estado, id_usuario, pax, notas, cotizacion_json FROM eventos ORDER BY fecha_evento, hora_inicio, id"),
       conn.query("SELECT clave_evento, cambiado_en_iso, id_usuario_actor, nombre_actor, cambio_texto FROM historial_evento ORDER BY id DESC"),
       conn.query("SELECT id, clave_evento, fecha_recordatorio, hora_recordatorio, medio, notas, creado_en_iso, id_usuario_creador FROM recordatorios_evento ORDER BY id"),
       conn.query("SELECT id, nombre, activo FROM menu_bebidas ORDER BY nombre ASC"),
@@ -1249,6 +1269,8 @@ async function readStateFromTables() {
           name: str(e.nombre),
           salon: str(e.nombre_salon),
           date: toIsoDate(e.fecha_evento),
+          eventDateStart: toIsoDate(e.fecha_inicio_reserva) || toIsoDate(e.fecha_evento),
+          eventDateEnd: toIsoDate(e.fecha_fin_reserva) || toIsoDate(e.fecha_inicio_reserva) || toIsoDate(e.fecha_evento),
           status: str(e.estado),
           startTime: toHHmm(e.hora_inicio),
           endTime: toHHmm(e.hora_fin),
@@ -2418,8 +2440,8 @@ async function writeStateToTables(state) {
       await conn.query(
         `
           INSERT INTO eventos
-            (id, id_grupo, nombre, nombre_salon, fecha_evento, hora_inicio, hora_fin, estado, id_usuario, pax, notas, cotizacion_json)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, id_grupo, nombre, nombre_salon, fecha_evento, fecha_inicio_reserva, fecha_fin_reserva, hora_inicio, hora_fin, estado, id_usuario, pax, notas, cotizacion_json)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         [
           id,
@@ -2427,6 +2449,8 @@ async function writeStateToTables(state) {
           str(e?.name).trim() || "(sin nombre)",
           str(e?.salon).trim() || "(sin salon)",
           asDate(e?.date) || "1970-01-01",
+          asDate(e?.eventDateStart || e?.reservationDateStart || e?.seriesDateStart) || asDate(e?.date) || "1970-01-01",
+          asDate(e?.eventDateEnd || e?.reservationDateEnd || e?.seriesDateEnd) || asDate(e?.eventDateStart || e?.reservationDateStart || e?.seriesDateStart) || asDate(e?.date) || "1970-01-01",
           asTime(e?.startTime) || "00:00:00",
           asTime(e?.endTime) || "00:30:00",
           str(e?.status).trim() || "Lista de Espera",
@@ -3064,6 +3088,7 @@ async function start() {
     await ensureAppStateExtraStructure();
     await ensureServiceCatalogStructure();
     await ensureQuoteVersionStructure();
+    await ensureEventDateRangeStructure();
     await ensureAdvancesStructure();
     await ensureMenuMontajeCatalogStructure();
     await ensureDocumentSequenceStructure();
@@ -3082,8 +3107,4 @@ async function start() {
 }
 
 start();
-
-
-
-
 

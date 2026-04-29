@@ -763,6 +763,7 @@
   box-shadow:0 12px 24px rgba(16,64,153,0.26);
   white-space:nowrap;
 }
+
 #accountingReportBackdrop .accountingActionBtn:hover, #accountStatementBackdrop .accountingActionBtn:hover{
   transform:translateY(-1px);
   box-shadow:0 14px 28px rgba(16,64,153,0.32);
@@ -2549,8 +2550,57 @@ html body #institutionReportBackdrop .institutionPanelEmpty span{
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 
-.quoteWorkbenchTemplateActions{
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+.quoteTemplatePanel .quoteWorkbenchTemplateActions{
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+.quoteTemplatePanel .quoteServiceActions,
+.quoteTemplatePanel .quoteSidebarActions,
+.quoteTemplatePanel .quoteTemplateActions,
+.quoteTemplatePanel .quoteWorkbenchTemplateActions{
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  width: 100% !important;
+  justify-items: stretch !important;
+}
+
+.quoteTemplatePanel .quoteWorkbenchTemplateActions .btn,
+.quoteTemplatePanel .quoteServiceActions .btn,
+.quoteTemplatePanel .quoteTemplateActions .btn{
+  width: 100% !important;
+  min-height: 44px !important;
+  padding: 12px 14px !important;
+  white-space: nowrap !important;
+}
+
+.quoteTemplatePanel .quoteServiceAdder{
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+
+.quoteTemplatePanel .quoteServiceActions,
+.quoteTemplatePanel .quoteSidebarActions,
+.quoteTemplatePanel .quoteTemplateActions,
+.quoteTemplatePanel .quoteWorkbenchTemplateActions{
+  width: auto !important;
+}
+
+.quoteTemplatePanel .field{
+  display: grid !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.quoteTemplatePanel #quoteServiceTemplateSelect{
+  width: 100% !important;
+  min-width: 0 !important;
 }
 
 .quotePanelEyebrow{
@@ -3979,317 +4029,2660 @@ input[type="number"]::-webkit-outer-spin-button{
 }
 /* === END UNIFIED FLAT + RESPONSIVE REPORTS/SETTINGS OVERRIDE === */
 
-/* === SALES REPORT TEMPLATE STYLE (USER REFERENCE) === */
-#salesReportBackdrop{
-  background: #f1f5f9 !important;
+
+
+/* === ACTIVE REPORTS MODERN CARD SYSTEM === */
+#salesReportBackdrop,
+#accountingReportBackdrop,
+#occupancyReportBackdrop,
+#dashboardReportBackdrop,
+#institutionReportBackdrop{
+  background:
+    linear-gradient(180deg, rgba(241,245,249,0.96), rgba(226,232,240,0.96)) !important;
 }
 
-#salesReportBackdrop .salesReportModal{
+#salesReportBackdrop .salesReportModal,
+#accountingReportBackdrop .salesReportModal,
+#occupancyReportBackdrop .occupancyReportModal,
+#dashboardReportBackdrop .dashboardReportModal,
+#institutionReportBackdrop .institutionReportModal{
+  background: #f8fafc !important;
   border: 1px solid #cbd5e1 !important;
-  border-radius: 16px !important;
+  border-radius: 18px !important;
+  box-shadow: 0 18px 40px rgba(15,23,42,0.10) !important;
+}
+
+#salesReportBackdrop .modalHeader,
+#accountingReportBackdrop .modalHeader,
+#occupancyReportBackdrop .modalHeader,
+#dashboardReportBackdrop .modalHeader,
+#institutionReportBackdrop .modalHeader{
+  padding: 18px 22px !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #dbe3ef !important;
+}
+
+#salesReportBackdrop .reportBrandBadge,
+#salesReportBackdrop .salesReportBrandBadge,
+#accountingReportBackdrop .reportBrandBadge,
+#accountingReportBackdrop .salesReportBrandBadge,
+#occupancyReportBackdrop .reportBrandBadge,
+#dashboardReportBackdrop .reportBrandBadge,
+#institutionReportBackdrop .reportBrandBadge{
+  width: 58px !important;
+  height: 58px !important;
+  flex-basis: 58px !important;
+  border-radius: 14px !important;
+  background: #f8fbff !important;
+  border: 1px solid #bfdbfe !important;
+  box-shadow: 0 8px 18px rgba(37,99,235,0.10) !important;
+}
+
+#salesReportBackdrop .modalTitle,
+#accountingReportBackdrop .modalTitle,
+#occupancyReportBackdrop .modalTitle,
+#dashboardReportBackdrop .modalTitle,
+#institutionReportBackdrop .modalTitle{
+  color: #0f172a !important;
+  font-size: clamp(1.7rem, 1.2vw + 1.2rem, 2.25rem) !important;
+  font-weight: 900 !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0 !important;
+}
+
+#salesReportBackdrop .modalSubtitle,
+#accountingReportBackdrop .modalSubtitle,
+#occupancyReportBackdrop .modalSubtitle,
+#dashboardReportBackdrop .modalSubtitle,
+#institutionReportBackdrop .modalSubtitle,
+#salesReportBackdrop .reportBrandEyebrow,
+#accountingReportBackdrop .reportBrandEyebrow,
+#occupancyReportBackdrop .reportBrandEyebrow,
+#dashboardReportBackdrop .reportBrandEyebrow,
+#institutionReportBackdrop .reportBrandEyebrow{
+  color: #475569 !important;
+}
+
+#salesReportBackdrop .salesReportBody,
+#accountingReportBackdrop .salesReportBody,
+#occupancyReportBackdrop .occupancyReportBody,
+#dashboardReportBackdrop .dashboardReportBody,
+#institutionReportBackdrop .institutionReportBody{
+  padding: 18px !important;
+  gap: 18px !important;
   background: #f8fafc !important;
 }
 
-#salesReportBackdrop .modalHeader{
-  border-bottom: 1px solid #dbe3ef !important;
-  background: #ffffff !important;
-  padding: 14px 18px !important;
+#salesReportBackdrop .reportHeroPanel,
+#accountingReportBackdrop .reportHeroPanel,
+#occupancyReportBackdrop .occupancyHeroPanel,
+#dashboardReportBackdrop .reportHeroPanel,
+#institutionReportBackdrop .reportHeroPanel{
+  padding: 18px !important;
+  border: 1px solid #dbe7f5 !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f7fbff 100%) !important;
+  box-shadow: 0 12px 28px rgba(15,23,42,0.06) !important;
 }
 
-#salesReportBackdrop .reportBrandEyebrow{
-  color: #64748b !important;
-  font-size: 12px !important;
+#salesReportBackdrop .reportSectionIntro,
+#accountingReportBackdrop .reportSectionIntro,
+#dashboardReportBackdrop .reportSectionIntro,
+#institutionReportBackdrop .reportSectionIntro,
+#occupancyReportBackdrop .occupancySectionIntro{
+  margin-bottom: 14px !important;
 }
 
-#salesReportBackdrop .modalTitle{
-  color: #0f172a !important;
-  font-size: 36px !important;
+#salesReportBackdrop .reportSectionEyebrow,
+#accountingReportBackdrop .reportSectionEyebrow,
+#dashboardReportBackdrop .reportSectionEyebrow,
+#institutionReportBackdrop .reportSectionEyebrow,
+#occupancyReportBackdrop .occupancySectionEyebrow{
+  display: inline-flex !important;
+  align-items: center !important;
+  width: fit-content !important;
+  color: #2563eb !important;
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 999px !important;
+  padding: 5px 9px !important;
+  font-size: 10px !important;
   font-weight: 900 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
 }
 
-#salesReportBackdrop .modalSubtitle{
+#salesReportBackdrop .reportSectionTitle,
+#accountingReportBackdrop .reportSectionTitle,
+#dashboardReportBackdrop .reportSectionTitle,
+#institutionReportBackdrop .reportSectionTitle,
+#occupancyReportBackdrop .occupancySectionTitle{
+  margin-top: 8px !important;
+  color: #0f172a !important;
+  font-size: clamp(1.05rem, .55vw + .95rem, 1.35rem) !important;
+  line-height: 1.25 !important;
+  font-weight: 850 !important;
+}
+
+#salesReportBackdrop .reportSectionText,
+#accountingReportBackdrop .reportSectionText,
+#dashboardReportBackdrop .reportSectionText,
+#institutionReportBackdrop .reportSectionText,
+#occupancyReportBackdrop .occupancySectionText{
+  margin-top: 4px !important;
+  color: #475569 !important;
+  line-height: 1.5 !important;
+}
+
+#salesReportBackdrop .reportFilterMeta,
+#accountingReportBackdrop .reportFilterMeta{
+  align-self: flex-start !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #dbe3ef !important;
+  border-radius: 999px !important;
+  color: #475569 !important;
+  padding: 7px 12px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+#salesReportBackdrop .salesReportSummary,
+#accountingReportBackdrop .salesReportSummary,
+#occupancyReportBackdrop .occupancySummary,
+#dashboardReportBackdrop .dashboardGoalsGrid,
+#institutionReportBackdrop .institutionReportSummary{
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+}
+
+#salesReportBackdrop .salesSummaryCard,
+#accountingReportBackdrop .salesSummaryCard,
+#occupancyReportBackdrop .occupancySummaryCard,
+#dashboardReportBackdrop .dashboardGoalCard,
+#institutionReportBackdrop .institutionSummaryCard{
+  position: relative !important;
+  min-height: 142px !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 7px !important;
+  overflow: hidden !important;
+  border: 1px solid #dbe7f5 !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(15,23,42,0.06) !important;
+}
+
+#salesReportBackdrop .salesSummaryCard::before,
+#accountingReportBackdrop .salesSummaryCard::before,
+#occupancyReportBackdrop .occupancySummaryCard::before,
+#dashboardReportBackdrop .dashboardGoalCard::before,
+#institutionReportBackdrop .institutionSummaryCard::before{
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  inset: 0 0 auto 0 !important;
+  height: 4px !important;
+  background: #2563eb !important;
+}
+
+#salesReportBackdrop .salesSummaryCard--success::before,
+#accountingReportBackdrop .salesSummaryCard--success::before{
+  background: #16a34a !important;
+}
+
+#salesReportBackdrop .salesSummaryCard--info::before,
+#accountingReportBackdrop .salesSummaryCard--info::before{
+  background: #0891b2 !important;
+}
+
+#salesReportBackdrop .salesSummaryCard--accent::before,
+#accountingReportBackdrop .salesSummaryCard--accent::before{
+  background: #d97706 !important;
+}
+
+#salesReportBackdrop .salesSummaryEyebrow,
+#accountingReportBackdrop .salesSummaryEyebrow{
   color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
 }
 
-#salesReportBackdrop .salesReportBody{
-  padding: 16px !important;
-  gap: 16px !important;
+#salesReportBackdrop .salesSummaryCard small,
+#accountingReportBackdrop .salesSummaryCard small{
+  color: #334155 !important;
+  font-size: 13px !important;
+  line-height: 1.3 !important;
+  font-weight: 700 !important;
 }
 
-#salesReportBackdrop .salesReportHeroPanel{
+#salesReportBackdrop .salesSummaryCard strong,
+#accountingReportBackdrop .salesSummaryCard strong{
+  color: #07172c !important;
+  font-size: clamp(1.75rem, 1.15vw + 1.35rem, 2.7rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+}
+
+#salesReportBackdrop .salesSummaryMeta,
+#accountingReportBackdrop .salesSummaryMeta{
+  margin-top: auto !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  padding: 6px 10px !important;
+  border: 1px solid #dbe3ef !important;
+  border-radius: 999px !important;
+  background: #f8fafc !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+#salesReportBackdrop .salesReportDataSection,
+#accountingReportBackdrop .salesReportDataSection,
+#dashboardReportBackdrop .reportDataSection,
+#institutionReportBackdrop .institutionDetailCard,
+#occupancyReportBackdrop .occupancySection{
   padding: 16px !important;
-  border: 1px solid #d3deed !important;
-  border-radius: 14px !important;
+  border: 1px solid #dbe7f5 !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(15,23,42,0.05) !important;
+}
+
+#salesReportBackdrop .salesReportFiltersInline,
+#accountingReportBackdrop .salesReportFiltersInline,
+#dashboardReportBackdrop .dashboardReportFilters,
+#institutionReportBackdrop .dashboardReportFilters,
+#occupancyReportBackdrop .occupancyToolbar{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important;
+  gap: 12px !important;
+  align-items: end !important;
+  padding: 14px !important;
+  border: 1px solid #dbe7f5 !important;
+  border-radius: 16px !important;
+  background: #f1f6fd !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.90) !important;
+}
+
+#salesReportBackdrop .salesReportFiltersInline .field > span,
+#accountingReportBackdrop .salesReportFiltersInline .field > span,
+#dashboardReportBackdrop .dashboardReportFilters .field > span,
+#institutionReportBackdrop .dashboardReportFilters .field > span,
+#occupancyReportBackdrop .occupancyField > span{
+  color: #334155 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: .04em !important;
+  text-transform: uppercase !important;
+}
+
+#salesReportBackdrop input,
+#salesReportBackdrop select,
+#accountingReportBackdrop input,
+#accountingReportBackdrop select,
+#dashboardReportBackdrop input,
+#dashboardReportBackdrop select,
+#institutionReportBackdrop input,
+#institutionReportBackdrop select,
+#occupancyReportBackdrop input,
+#occupancyReportBackdrop select{
+  height: 42px !important;
+  border-radius: 12px !important;
+  border: 1px solid #bfdbfe !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04) !important;
+}
+
+#salesReportBackdrop input:focus,
+#salesReportBackdrop select:focus,
+#accountingReportBackdrop input:focus,
+#accountingReportBackdrop select:focus,
+#dashboardReportBackdrop input:focus,
+#dashboardReportBackdrop select:focus,
+#institutionReportBackdrop input:focus,
+#institutionReportBackdrop select:focus,
+#occupancyReportBackdrop input:focus,
+#occupancyReportBackdrop select:focus{
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12) !important;
+}
+
+#salesReportBackdrop .salesReportActions,
+#accountingReportBackdrop .salesReportActions,
+#dashboardReportBackdrop .dashboardReportActions,
+#institutionReportBackdrop .dashboardReportActions,
+#occupancyReportBackdrop .occupancyHeroActions{
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
+
+#salesReportBackdrop .btn,
+#accountingReportBackdrop .btn,
+#dashboardReportBackdrop .btn,
+#institutionReportBackdrop .btn,
+#occupancyReportBackdrop .btn,
+#reportsHubScreen .btn{
+  min-height: 40px !important;
+  border-radius: 12px !important;
+  border: 1px solid #bfdbfe !important;
+  background: #eff6ff !important;
+  color: #1e3a8a !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+#salesReportBackdrop .btnPrimary,
+#accountingReportBackdrop .btnPrimary,
+#dashboardReportBackdrop .btnPrimary,
+#institutionReportBackdrop .btnPrimary,
+#occupancyReportBackdrop .btnPrimary{
+  min-height: 40px !important;
+  border-radius: 12px !important;
+  border: 1px solid #1d4ed8 !important;
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+  font-weight: 850 !important;
+  box-shadow: 0 8px 18px rgba(29,78,216,0.20) !important;
+}
+
+#salesReportBackdrop .salesReportTableWrap,
+#accountingReportBackdrop .salesReportTableWrap,
+#occupancyReportBackdrop .occupancyTableWrap,
+#dashboardReportBackdrop .dashboardSellerTableWrap,
+#institutionReportBackdrop .institutionEventsWrap{
+  overflow: auto !important;
+  border: 1px solid #dbe7f5 !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(15,23,42,0.05) !important;
+}
+
+#salesReportBackdrop .salesReportTable,
+#accountingReportBackdrop .salesReportTable,
+#occupancyReportBackdrop .occupancyTable,
+#dashboardReportBackdrop .dashboardSellerTable,
+#institutionReportBackdrop .institutionEventsTable{
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+#salesReportBackdrop .salesReportTable thead th,
+#accountingReportBackdrop .salesReportTable thead th,
+#occupancyReportBackdrop .occupancyTable thead th,
+#dashboardReportBackdrop .dashboardSellerTable thead th,
+#institutionReportBackdrop .institutionEventsTable thead th{
+  background: #eaf1fb !important;
+  color: #0f2744 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+
+#salesReportBackdrop .salesReportTable tbody td,
+#accountingReportBackdrop .salesReportTable tbody td,
+#occupancyReportBackdrop .occupancyTable tbody td,
+#dashboardReportBackdrop .dashboardSellerTable tbody td,
+#institutionReportBackdrop .institutionEventsTable tbody td{
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #e5edf7 !important;
+}
+
+#salesReportBackdrop .salesReportTable tbody tr:nth-child(even) td,
+#accountingReportBackdrop .salesReportTable tbody tr:nth-child(even) td,
+#occupancyReportBackdrop .occupancyTable tbody tr:nth-child(even) td,
+#dashboardReportBackdrop .dashboardSellerTable tbody tr:nth-child(even) td,
+#institutionReportBackdrop .institutionEventsTable tbody tr:nth-child(even) td{
   background: #f8fbff !important;
 }
 
-#salesReportBackdrop .reportFilterMeta{
-  color: #64748b !important;
-  background: #eef2f7 !important;
-  border: 1px solid #d6e0ed !important;
+#salesReportBackdrop .salesReportTable tbody tr:hover td,
+#accountingReportBackdrop .salesReportTable tbody tr:hover td,
+#occupancyReportBackdrop .occupancyTable tbody tr:hover td,
+#dashboardReportBackdrop .dashboardSellerTable tbody tr:hover td,
+#institutionReportBackdrop .institutionEventsTable tbody tr:hover td{
+  background: #eff6ff !important;
+}
+
+#accountingReportBackdrop .accountingIndicator{
   border-radius: 999px !important;
-  padding: 6px 10px !important;
+  padding: 7px 12px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: .05em !important;
+  text-transform: uppercase !important;
+  box-shadow: none !important;
 }
 
-#salesReportBackdrop .salesReportSummary{
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: 12px !important;
+#accountingReportBackdrop .accountingIndicator--overdue{
+  background: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #991b1b !important;
 }
 
-#salesReportBackdrop .salesSummaryCard{
-  min-height: 156px !important;
-  padding: 14px !important;
-  border: 1px solid #d3deed !important;
-  border-radius: 14px !important;
-  background: #ffffff !important;
-}
-
-#salesReportBackdrop .salesSummaryCard::before{
-  display: none !important;
-}
-
-#salesReportBackdrop .salesSummaryHead{
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  margin-bottom: 6px !important;
-}
-
-#salesReportBackdrop .salesSummaryIcon{
-  width: 38px !important;
-  height: 38px !important;
-  border-radius: 10px !important;
-  display: inline-grid !important;
-  place-items: center !important;
-  font-size: 22px !important;
-  background: #eaf1fb !important;
-  color: #1d4ed8 !important;
-  font-variation-settings: "FILL" 0, "wght" 500, "opsz" 24 !important;
-}
-
-#salesReportBackdrop .salesSummaryTrend{
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  border-radius: 999px !important;
-  padding: 4px 10px !important;
-  background: #dbeafe !important;
-  color: #1d4ed8 !important;
-}
-
-#salesReportBackdrop .salesSummaryCard--success .salesSummaryIcon{
-  background: #dcfce7 !important;
-  color: #059669 !important;
-}
-
-#salesReportBackdrop .salesSummaryCard--success .salesSummaryTrend{
-  background: #dcfce7 !important;
-  color: #047857 !important;
-}
-
-#salesReportBackdrop .salesSummaryCard--info .salesSummaryIcon{
+#accountingReportBackdrop .accountingIndicator--due{
   background: #fef3c7 !important;
-  color: #b45309 !important;
+  border-color: #fbbf24 !important;
+  color: #92400e !important;
 }
 
-#salesReportBackdrop .salesSummaryCard--ticket .salesSummaryIcon{
-  background: #f3e8ff !important;
-  color: #7e22ce !important;
+#accountingReportBackdrop .accountingIndicator--ok{
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+  color: #166534 !important;
 }
 
-#salesReportBackdrop .salesSummaryCard--accent{
-  border-width: 2px !important;
-  border-color: rgba(13,148,136,0.28) !important;
+#accountingReportBackdrop .accountingIndicator--credit{
+  background: #ccfbf1 !important;
+  border-color: #5eead4 !important;
+  color: #115e59 !important;
 }
 
-#salesReportBackdrop .salesSummaryCard--accent .salesSummaryIcon{
-  background: rgba(13,148,136,0.14) !important;
-  color: #0d9488 !important;
+#accountingReportBackdrop .accountingIndicator--neutral{
+  background: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  color: #075985 !important;
 }
 
-#salesReportBackdrop .salesSummaryEyebrow{
-  font-size: 11px !important;
-  letter-spacing: .02em !important;
-  color: #334155 !important;
+#reportsHubScreen .moduleActionGrid{
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 14px !important;
 }
 
-#salesReportBackdrop .salesSummaryCard small{
-  font-size: 12px !important;
-  color: #64748b !important;
-}
-
-#salesReportBackdrop .salesSummaryCard strong{
-  font-size: 44px !important;
-  line-height: 1.1 !important;
-  color: #0f172a !important;
-}
-
-#salesReportBackdrop .salesSummaryMeta{
-  margin-top: 8px !important;
-  width: auto !important;
-  border: 0 !important;
-  background: transparent !important;
-  color: #94a3b8 !important;
-  padding: 0 !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-}
-
-#salesReportBackdrop .salesReportDataSection{
-  border: 0 !important;
-  background: transparent !important;
-  padding: 0 !important;
-}
-
-#salesReportBackdrop .reportSectionIntro--table{
-  margin-bottom: 10px !important;
-}
-
-#salesReportBackdrop .reportSectionIntro--table .reportSectionEyebrow{
-  font-size: 32px !important;
-  letter-spacing: 0 !important;
-  text-transform: none !important;
-  color: #0f172a !important;
-  background: transparent !important;
-  border: 0 !important;
-  padding: 0 !important;
-}
-
-#salesReportBackdrop .salesReportFiltersInline{
-  border: 0 !important;
-  border-radius: 18px !important;
-  padding: 14px !important;
-  background: linear-gradient(135deg, #0b1738 0%, #1f2b4a 100%) !important;
-  grid-template-columns: repeat(7, minmax(140px, 1fr)) auto !important;
-  align-items: end !important;
-}
-
-#salesReportBackdrop .salesReportFiltersInline .field > span{
-  color: #8ba0bf !important;
-  text-transform: uppercase !important;
-  font-size: 11px !important;
-  letter-spacing: .08em !important;
-}
-
-#salesReportBackdrop .salesReportFiltersInline input,
-#salesReportBackdrop .salesReportFiltersInline select{
-  height: 42px !important;
-  border-radius: 12px !important;
-  border: 1px solid #334155 !important;
-  background: #0f223f !important;
-  color: #f8fafc !important;
-}
-
-#salesReportBackdrop .salesReportFiltersInline input::placeholder{
-  color: #7f95b5 !important;
-}
-
-#salesReportBackdrop .salesReportActions{
-  grid-column: auto !important;
-  justify-content: flex-end !important;
-  flex-wrap: nowrap !important;
-}
-
-#salesReportBackdrop #btnSalesReportReset{
-  background: #334155 !important;
-  border-color: #475569 !important;
-  color: #f1f5f9 !important;
-}
-
-#salesReportBackdrop #btnSalesReportExportExcel{
-  background: #059669 !important;
-  border-color: #059669 !important;
-  color: #ffffff !important;
-}
-
-#salesReportBackdrop .salesReportTableWrap{
-  border: 1px solid #d3deed !important;
+#reportsHubScreen .moduleActionBtn{
+  min-height: 96px !important;
   border-radius: 16px !important;
+  border: 1px solid #dbe7f5 !important;
   background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(15,23,42,0.06) !important;
 }
 
-#salesReportBackdrop .salesReportTable{
-  min-width: 1000px !important;
-}
-
-#salesReportBackdrop .salesReportTable thead th{
-  background: #f8fafc !important;
-  color: #64748b !important;
-  font-size: 11px !important;
-  font-weight: 800 !important;
-  letter-spacing: .10em !important;
-  text-transform: uppercase !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-}
-
-#salesReportBackdrop .salesReportTable tbody td{
-  color: #0f172a !important;
-  font-size: 14px !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-  background: #ffffff !important;
-}
-
-#salesReportBackdrop .salesReportTable tbody tr:hover td{
-  background: #f8fafc !important;
-}
-
-#salesReportBackdrop .salesStatusBadge{
-  border-radius: 999px !important;
-  padding: 5px 12px !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-}
-
-#salesReportBackdrop .salesSellerCell{
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-
-#salesReportBackdrop .salesSellerAvatar{
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 999px !important;
-  display: inline-grid !important;
-  place-items: center !important;
-  background: #e2e8f0 !important;
-  color: #334155 !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
+#reportsHubScreen .moduleActionBtn:hover{
+  transform: translateY(-2px) !important;
+  border-color: #bfdbfe !important;
+  background: #f8fbff !important;
+  box-shadow: 0 14px 28px rgba(15,23,42,0.08) !important;
 }
 
 @media (max-width: 1400px){
-  #salesReportBackdrop .salesReportSummary{
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  #salesReportBackdrop .salesReportFiltersInline{
-    grid-template-columns: repeat(4, minmax(160px, 1fr)) !important;
-  }
-
-  #salesReportBackdrop .salesReportActions{
-    grid-column: 1 / -1 !important;
-    flex-wrap: wrap !important;
+  #salesReportBackdrop .salesReportSummary,
+  #accountingReportBackdrop .salesReportSummary,
+  #occupancyReportBackdrop .occupancySummary,
+  #dashboardReportBackdrop .dashboardGoalsGrid,
+  #institutionReportBackdrop .institutionReportSummary{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
-@media (max-width: 900px){
-  #salesReportBackdrop .salesReportSummary{
+@media (max-width: 760px){
+  #salesReportBackdrop .salesReportSummary,
+  #accountingReportBackdrop .salesReportSummary,
+  #occupancyReportBackdrop .occupancySummary,
+  #dashboardReportBackdrop .dashboardGoalsGrid,
+  #institutionReportBackdrop .institutionReportSummary{
+    grid-template-columns: 1fr !important;
+  }
+}
+/* === END ACTIVE REPORTS MODERN CARD SYSTEM === */
+
+/* === INSTITUTION REPORT LAYOUT REPAIR === */
+#institutionReportBackdrop .institutionReportModal{
+  overflow: hidden !important;
+}
+
+#institutionReportBackdrop .institutionReportBody{
+  height: calc(100vh - 104px) !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 20px 22px 28px !important;
+  gap: 16px !important;
+  scroll-padding-top: 86px !important;
+}
+
+#institutionReportBackdrop .institutionReportHeroPanel{
+  overflow: visible !important;
+  min-height: 0 !important;
+}
+
+#institutionReportBackdrop .dashboardReportFilters.institutionReportFilters{
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(260px, 1.2fr) minmax(240px, 1fr) minmax(160px, .7fr) minmax(160px, .7fr) auto !important;
+  align-items: end !important;
+  gap: 12px !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionSearchField{
+  position: relative !important;
+  min-width: 0 !important;
+}
+
+#institutionReportBackdrop .institutionSearchResults{
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  left: 0 !important;
+  right: auto !important;
+  width: min(420px, 88vw) !important;
+  max-height: 260px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  z-index: 40 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 18px 34px rgba(15,23,42,0.14) !important;
+}
+
+#institutionReportBackdrop .institutionSearchCard{
+  min-height: 0 !important;
+  padding: 12px 14px !important;
+  display: grid !important;
+  gap: 4px !important;
+  overflow: hidden !important;
+}
+
+#institutionReportBackdrop .institutionSearchCardTitle,
+#institutionReportBackdrop .institutionSearchCardMeta,
+#institutionReportBackdrop .institutionSearchCardSub{
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+#institutionReportBackdrop .institutionReportNav{
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 25 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  border-radius: 16px !important;
+  background: rgba(241,246,253,0.96) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: 0 10px 22px rgba(15,23,42,0.08) !important;
+}
+
+#institutionReportBackdrop .institutionReportNav .btn{
+  flex: 0 1 auto !important;
+  min-width: 92px !important;
+  white-space: nowrap !important;
+}
+
+#institutionReportBackdrop .institutionHeadlineCard{
+  overflow: visible !important;
+  padding: 18px !important;
+  min-height: 0 !important;
+}
+
+#institutionReportBackdrop .institutionHeadlineTop{
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+#institutionReportBackdrop .institutionHeadlineIdentity,
+#institutionReportBackdrop .institutionHeadlineValueBlock{
+  min-width: 0 !important;
+}
+
+#institutionReportBackdrop .institutionHeadlineIdentity strong,
+#institutionReportBackdrop .institutionHeadlineMoney{
+  overflow-wrap: anywhere !important;
+}
+
+#institutionReportBackdrop .institutionHeadlineStats{
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 16px !important;
+}
+
+#institutionReportBackdrop .institutionStatCard{
+  min-height: 98px !important;
+  padding: 16px !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionStatCard strong{
+  display: block !important;
+  margin-top: 10px !important;
+  line-height: 1.25 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#institutionReportBackdrop .institutionReportSummary{
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+#institutionReportBackdrop .institutionSummaryCard{
+  min-height: 128px !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionSummaryCard strong{
+  display: block !important;
+  line-height: 1.18 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#institutionReportBackdrop .institutionReportContent{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionDetailCard{
+  min-height: 280px !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#institutionReportBackdrop #institutionSectionOverview,
+#institutionReportBackdrop #institutionSectionEvents{
+  grid-column: 1 / -1 !important;
+}
+
+#institutionReportBackdrop .dashboardCardHead{
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 12px !important;
+}
+
+#institutionReportBackdrop .dashboardCardHead strong,
+#institutionReportBackdrop .dashboardCardHead small{
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#institutionReportBackdrop .institutionOverviewGrid{
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+#institutionReportBackdrop .institutionOverviewChip{
+  min-width: 0 !important;
+  min-height: 86px !important;
+  padding: 14px !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionOverviewChip b,
+#institutionReportBackdrop .institutionOverviewChip span{
+  display: block !important;
+  overflow-wrap: anywhere !important;
+}
+
+#institutionReportBackdrop .institutionChartsGrid{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+}
+
+#institutionReportBackdrop .institutionChartCard{
+  min-height: 280px !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionMetricList{
+  display: grid !important;
+  gap: 10px !important;
+  align-content: start !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionMetricCard{
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-height: 44px !important;
+  padding: 12px 14px !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionMetricCard strong,
+#institutionReportBackdrop .institutionMetricCard span{
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#institutionReportBackdrop .institutionTimelineGrid{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  min-height: 0 !important;
+}
+
+#institutionReportBackdrop .institutionTimelineCol{
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+#institutionReportBackdrop .institutionEventsWrap{
+  width: 100% !important;
+  max-height: none !important;
+  overflow: auto !important;
+}
+
+#institutionReportBackdrop .institutionEventsTable{
+  width: 100% !important;
+  min-width: 1200px !important;
+}
+
+#institutionReportBackdrop .institutionEventsTable th,
+#institutionReportBackdrop .institutionEventsTable td{
+  white-space: nowrap !important;
+}
+
+#institutionReportBackdrop .salesStatusBadge{
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+@media (max-width: 1280px){
+  #institutionReportBackdrop .dashboardReportFilters.institutionReportFilters{
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
-  #salesReportBackdrop .salesReportFiltersInline{
+  #institutionReportBackdrop .institutionReportContent{
     grid-template-columns: 1fr !important;
   }
 
-  #salesReportBackdrop .salesSummaryCard strong{
-    font-size: 36px !important;
+  #institutionReportBackdrop .institutionHeadlineTop,
+  #institutionReportBackdrop .institutionTimelineGrid{
+    grid-template-columns: 1fr !important;
+  }
+
+  #institutionReportBackdrop .institutionHeadlineStats,
+  #institutionReportBackdrop .institutionOverviewGrid,
+  #institutionReportBackdrop .institutionReportSummary{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
-@media (max-width: 640px){
-  #salesReportBackdrop .salesReportSummary{
+@media (max-width: 760px){
+  #institutionReportBackdrop .institutionReportBody{
+    height: calc(100vh - 92px) !important;
+    padding: 14px !important;
+  }
+
+  #institutionReportBackdrop .dashboardReportFilters.institutionReportFilters,
+  #institutionReportBackdrop .institutionHeadlineStats,
+  #institutionReportBackdrop .institutionOverviewGrid,
+  #institutionReportBackdrop .institutionReportSummary{
+    grid-template-columns: 1fr !important;
+  }
+
+  #institutionReportBackdrop .institutionSearchResults{
+    width: min(100%, 88vw) !important;
+  }
+
+  #institutionReportBackdrop .institutionMetricCard{
     grid-template-columns: 1fr !important;
   }
 }
-/* === END SALES REPORT TEMPLATE STYLE === */
+/* === END INSTITUTION REPORT LAYOUT REPAIR === */
 
+/* === INSTITUTION REPORT SEARCH/NAV STACK FIX === */
+#institutionReportBackdrop .institutionReportHeroPanel{
+  z-index: 2 !important;
+  margin-bottom: 0 !important;
+}
+
+#institutionReportBackdrop .dashboardReportFilters.institutionReportFilters{
+  align-items: start !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionSearchField{
+  align-self: start !important;
+}
+
+#institutionReportBackdrop .institutionSearchResults{
+  position: static !important;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: 190px !important;
+  margin-top: 8px !important;
+  overflow: auto !important;
+  z-index: auto !important;
+  box-shadow: 0 10px 22px rgba(15,23,42,0.10) !important;
+}
+
+#institutionReportBackdrop .institutionSearchResults:empty,
+#institutionReportBackdrop .institutionSearchResults[hidden]{
+  display: none !important;
+}
+
+#institutionReportBackdrop .institutionSearchCard{
+  border-radius: 12px !important;
+}
+
+#institutionReportBackdrop .institutionReportNav{
+  position: relative !important;
+  top: auto !important;
+  z-index: 1 !important;
+  margin: 4px 0 0 !important;
+  transform: none !important;
+}
+
+#institutionReportBackdrop .institutionReportContent,
+#institutionReportBackdrop .institutionHeadlineCard,
+#institutionReportBackdrop .institutionReportSummary{
+  position: relative !important;
+  z-index: 0 !important;
+}
+
+@media (max-width: 1280px){
+  #institutionReportBackdrop .dashboardReportFilters.institutionReportFilters{
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  #institutionReportBackdrop .institutionSearchField{
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 760px){
+  #institutionReportBackdrop .dashboardReportFilters.institutionReportFilters{
+    grid-template-columns: 1fr !important;
+  }
+
+  #institutionReportBackdrop .institutionReportNav{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #institutionReportBackdrop .institutionReportNav .btn{
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+/* === END INSTITUTION REPORT SEARCH/NAV STACK FIX === */
+
+/* === INSTITUTION REPORT FINAL POLISH === */
+#institutionReportBackdrop .institutionReportBody {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  overflow-x: hidden !important;
+}
+
+#institutionReportBackdrop .institutionReportBody > * {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+}
+
+#institutionReportBackdrop .institutionReportHeroPanel {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  min-height: 0 !important;
+  padding: 18px !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionReportHeroPanel .reportSectionIntro {
+  display: block !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionReportHeroPanel .reportSectionTitle {
+  position: relative !important;
+  z-index: 1 !important;
+  display: block !important;
+  margin: 10px 0 6px !important;
+  max-width: 920px !important;
+  line-height: 1.15 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+}
+
+#institutionReportBackdrop .institutionReportHeroPanel .reportSectionText {
+  position: relative !important;
+  z-index: 1 !important;
+  max-width: 960px !important;
+  margin: 0 !important;
+  line-height: 1.55 !important;
+}
+
+#institutionReportBackdrop .institutionReportSummary {
+  position: relative !important;
+  top: auto !important;
+  z-index: 1 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  transform: none !important;
+  clear: both !important;
+}
+
+#institutionReportBackdrop .institutionSummaryCard {
+  position: relative !important;
+  top: auto !important;
+  min-height: 112px !important;
+  padding: 18px !important;
+  overflow: hidden !important;
+  transform: none !important;
+}
+
+#institutionReportBackdrop .dashboardReportFilters.institutionReportFilters,
+#institutionReportBackdrop .institutionReportFilters {
+  position: relative !important;
+  z-index: 8 !important;
+  display: grid !important;
+  grid-template-columns: minmax(260px, 1.2fr) minmax(260px, 1fr) minmax(160px, .7fr) minmax(160px, .7fr) auto !important;
+  gap: 12px !important;
+  align-items: end !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 18px !important;
+  overflow: visible !important;
+}
+
+#institutionReportBackdrop .institutionSearchField {
+  position: relative !important;
+  z-index: 10 !important;
+  min-width: 0 !important;
+}
+
+#institutionReportBackdrop .institutionSearchResults {
+  position: absolute !important;
+  top: calc(100% + 10px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 20 !important;
+  display: grid !important;
+  gap: 8px !important;
+  max-height: 160px !important;
+  overflow: auto !important;
+  padding: 8px !important;
+  background: rgba(255, 255, 255, .98) !important;
+  border: 1px solid #cfe0f3 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, .16) !important;
+}
+
+#institutionReportBackdrop .institutionSearchField:has(.institutionSearchResults:not(:empty)) {
+  margin-bottom: 170px !important;
+}
+
+#institutionReportBackdrop .institutionSearchCard {
+  min-height: 0 !important;
+  padding: 12px 14px !important;
+  border: 1px solid #d8e5f4 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+#institutionReportBackdrop .institutionSearchCard.is-active,
+#institutionReportBackdrop .institutionSearchCard.isActive,
+#institutionReportBackdrop .institutionSearchCard.active,
+#institutionReportBackdrop .institutionSearchCard:hover {
+  border-color: #38bdf8 !important;
+  background: #e8f7ff !important;
+}
+
+#institutionReportBackdrop .institutionReportNav {
+  position: relative !important;
+  top: auto !important;
+  z-index: 2 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 14px 16px !important;
+  transform: none !important;
+}
+
+#institutionReportBackdrop .institutionHeadlineTop {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px) !important;
+  gap: 18px !important;
+  align-items: center !important;
+}
+
+#institutionReportBackdrop .institutionHeroEyebrow {
+  display: inline-flex !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  padding: 7px 14px !important;
+  color: #075985 !important;
+  background: #e0f2fe !important;
+  border: 1px solid #7dd3fc !important;
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+  letter-spacing: .04em !important;
+  text-shadow: none !important;
+}
+
+#institutionReportBackdrop .institutionMetricCard {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) max-content !important;
+  gap: 14px !important;
+  align-items: center !important;
+}
+
+#institutionReportBackdrop .institutionMetricCard span,
+#institutionReportBackdrop .institutionSummaryCard .dashboardGoalMeta {
+  color: #1d4ed8 !important;
+  font-weight: 800 !important;
+  text-shadow: none !important;
+}
+
+#institutionReportBackdrop .institutionMetricCard span {
+  display: inline-flex !important;
+  justify-self: end !important;
+  max-width: 100% !important;
+  padding: 5px 10px !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 999px !important;
+  background: #eff6ff !important;
+  white-space: nowrap !important;
+}
+
+#institutionReportBackdrop .institutionHeadlineValueLabel,
+#institutionReportBackdrop .institutionStatCard span,
+#institutionReportBackdrop .institutionSearchCardMeta,
+#institutionReportBackdrop .institutionSearchCardSub {
+  color: #475569 !important;
+  text-shadow: none !important;
+}
+
+@media (max-width: 1100px) {
+  #institutionReportBackdrop .institutionReportSummary,
+  #institutionReportBackdrop .institutionHeadlineTop {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #institutionReportBackdrop .dashboardReportFilters.institutionReportFilters,
+  #institutionReportBackdrop .institutionReportFilters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #institutionReportBackdrop .dashboardReportFilters.institutionReportFilters .dashboardReportActions,
+  #institutionReportBackdrop .institutionReportFilters .dashboardReportActions {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 720px) {
+  #institutionReportBackdrop .institutionReportHeroPanel,
+  #institutionReportBackdrop .dashboardReportFilters.institutionReportFilters,
+  #institutionReportBackdrop .institutionReportFilters {
+    padding: 14px !important;
+  }
+
+  #institutionReportBackdrop .institutionReportSummary,
+  #institutionReportBackdrop .institutionHeadlineTop,
+  #institutionReportBackdrop .institutionReportFilters {
+    grid-template-columns: 1fr !important;
+  }
+
+  #institutionReportBackdrop .institutionSearchField:has(.institutionSearchResults:not(:empty)) {
+    margin-bottom: 160px !important;
+  }
+
+  #institutionReportBackdrop .institutionMetricCard {
+    grid-template-columns: 1fr !important;
+  }
+
+  #institutionReportBackdrop .institutionMetricCard span {
+    justify-self: start !important;
+    white-space: normal !important;
+  }
+}
+
+/* === EVENT ROOM DATE RANGE FIELDS === */
+#modalBackdrop #eventForm .quoteTableWrap {
+  overflow-x: auto;
+}
+
+#modalBackdrop #eventForm .quoteTable {
+  min-width: 1040px;
+}
+
+#modalBackdrop #eventForm .slotDateStart,
+#modalBackdrop #eventForm .slotDateEnd {
+  min-width: 138px;
+}
+
+#modalBackdrop #eventForm .slotStart,
+#modalBackdrop #eventForm .slotEnd {
+  min-width: 112px;
+}
+
+#modalBackdrop #eventForm .slotPax {
+  min-width: 90px;
+}
+
+#modalBackdrop #eventForm .slotRoom {
+  min-width: 170px;
+}
+
+@media (max-width: 900px) {
+  #modalBackdrop #eventForm .quoteTable {
+    min-width: 980px;
+  }
+}
+
+/* === MENU Y MONTAJE FLAT REDESIGN === */
+#menuMontajeSelectableBackdrop{
+  padding:0 !important;
+  background:#f5f7fc !important;
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+}
+#menuMontajeSelectableBackdrop:not([hidden]){
+  display:block !important;
+}
+#menuMontajeSelectableBackdrop .menuMontajeModal{
+  width:100vw !important;
+  max-width:none !important;
+  height:100vh !important;
+  max-height:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:#f5f7fc !important;
+  box-shadow:none !important;
+  display:grid !important;
+  grid-template-rows:78px minmax(0,1fr) 76px;
+  overflow:hidden !important;
+}
+#menuMontajeSelectableBackdrop .modalHeader{
+  min-height:78px;
+  padding:0 30px !important;
+  border-bottom:1px solid #dbe3ef !important;
+  background:#ffffff !important;
+  box-shadow:0 1px 4px rgba(15,23,42,.06) !important;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+}
+#menuMontajeSelectableBackdrop .modalHeader > div{
+  display:flex;
+  align-items:center;
+  gap:46px;
+  min-width:0;
+}
+#menuMontajeSelectableBackdrop .modalTitle{
+  color:#071125 !important;
+  font-size:27px !important;
+  font-weight:900 !important;
+  letter-spacing:-.04em;
+  white-space:nowrap;
+}
+#menuMontajeSelectableBackdrop .modalSubtitle{
+  color:#4b5f7a !important;
+  font-size:16px !important;
+  font-weight:500;
+  margin:0 !important;
+}
+#menuMontajeSelectableBackdrop .iconBtn{
+  width:42px;
+  height:42px;
+  border-radius:999px !important;
+  border:1px solid #cbd6e6 !important;
+  background:#e8eef7 !important;
+  color:#17233a !important;
+  box-shadow:none !important;
+}
+#menuMontajeSelectableBackdrop .menuMontajeBody{
+  position:relative;
+  min-height:0;
+  height:100%;
+  overflow:auto;
+  padding:32px 30px 34px 350px !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr);
+  gap:22px !important;
+  background:#f5f7fc !important;
+}
+#menuMontajeSelectableBackdrop .menuMontajeBody::before{
+  content:"Menú y Montaje\A GESTIÓN DE EVENTOS";
+  white-space:pre-line;
+  position:fixed;
+  left:0;
+  top:78px;
+  bottom:0;
+  width:320px;
+  padding:27px 30px;
+  border-right:1px solid #dbe3ef;
+  background:#f8fbff;
+  color:#071125;
+  font-size:25px;
+  line-height:1.15;
+  font-weight:900;
+  letter-spacing:-.04em;
+  z-index:0;
+}
+#menuMontajeSelectableBackdrop .menuMontajeBody::after{
+  content:"Usa las categorías del constructor para avanzar paso a paso.";
+  position:fixed;
+  left:30px;
+  bottom:96px;
+  width:250px;
+  padding-top:18px;
+  border-top:1px solid #dbe3ef;
+  color:#4b5f7a;
+  font-size:13px;
+  line-height:1.5;
+  z-index:0;
+}
+#menuMontajeSelectableBackdrop .mmCard{
+  position:relative;
+  z-index:1;
+  border:1px solid #d8e2f1 !important;
+  border-radius:14px !important;
+  background:#ffffff !important;
+  box-shadow:none !important;
+  padding:22px 30px !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextCard{
+  padding:28px 30px !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatBuilderCard{
+  background:transparent !important;
+  border:0 !important;
+  padding:0 !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatSavedCard{
+  overflow:hidden;
+  padding:0 !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatSavedCard .mmsFlatSectionHead{
+  padding:24px 30px 18px;
+  border-bottom:1px solid #edf1f7;
+  background:#ffffff;
+}
+#menuMontajeSelectableBackdrop .quoteCardTitle{
+  color:#070d1c !important;
+  font-size:24px !important;
+  font-weight:900 !important;
+  letter-spacing:-.04em;
+}
+#menuMontajeSelectableBackdrop .mmsSectionLead,
+#menuMontajeSelectableBackdrop .mmsFlowHint,
+#menuMontajeSelectableBackdrop .mmsSummaryLead,
+#menuMontajeSelectableBackdrop .hint{
+  color:#64748b !important;
+  font-size:13px !important;
+  line-height:1.45;
+}
+#menuMontajeSelectableBackdrop .mmsFlatSectionHead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:18px;
+}
+#menuMontajeSelectableBackdrop .mmsFlatFlowStrip,
+#menuMontajeSelectableBackdrop .mmsFlatLegend{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+#menuMontajeSelectableBackdrop .mmsFlatFlowStrip span,
+#menuMontajeSelectableBackdrop .mmsFlatLegend span{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:6px 10px;
+  border-radius:8px;
+  border:1px solid #d9e2ef;
+  background:#f8fafc;
+  color:#52637b;
+  font-size:12px;
+  font-weight:800;
+}
+#menuMontajeSelectableBackdrop .mmsFlatFlowStrip span.isActive{
+  border-color:#bfd4f4;
+  background:#eaf2ff;
+  color:#075cca;
+}
+#menuMontajeSelectableBackdrop .mmsFlatLegend b{
+  width:10px;
+  height:10px;
+  margin-right:7px;
+  border-radius:999px;
+  background:#eef3f9;
+  border:1px solid #cbd7e7;
+}
+#menuMontajeSelectableBackdrop .mmsFlatLegend span:last-child b{
+  background:#0b63ce;
+  border-color:#0b63ce;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextGrid{
+  grid-template-columns:1fr 1fr 1fr !important;
+  gap:20px !important;
+}
+#menuMontajeSelectableBackdrop .field > span{
+  color:#1c2433 !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+#menuMontajeSelectableBackdrop input,
+#menuMontajeSelectableBackdrop select,
+#menuMontajeSelectableBackdrop textarea{
+  border:1px solid #c8d1de !important;
+  border-radius:10px !important;
+  background:#ffffff !important;
+  color:#071125 !important;
+  box-shadow:none !important;
+}
+#menuMontajeSelectableBackdrop input,
+#menuMontajeSelectableBackdrop select{
+  min-height:47px;
+  padding:11px 14px !important;
+  font-size:16px !important;
+}
+#menuMontajeSelectableBackdrop textarea{
+  min-height:92px;
+  padding:12px 14px !important;
+  font-size:14px !important;
+  line-height:1.5;
+}
+#menuMontajeSelectableBackdrop input:focus,
+#menuMontajeSelectableBackdrop select:focus,
+#menuMontajeSelectableBackdrop textarea:focus{
+  border-color:#0b63ce !important;
+  outline:2px solid rgba(11,99,206,.14) !important;
+  outline-offset:0;
+}
+#menuMontajeSelectableBackdrop .quoteServiceActions{
+  align-items:center;
+  gap:10px !important;
+}
+#menuMontajeSelectableBackdrop .mmsVersionActions select{
+  min-width:0;
+}
+#menuMontajeSelectableBackdrop .btn,
+#menuMontajeSelectableBackdrop .btnPrimary,
+#menuMontajeSelectableBackdrop .btnDanger{
+  min-height:42px;
+  border-radius:9px !important;
+  box-shadow:none !important;
+  font-weight:800 !important;
+  transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease;
+}
+#menuMontajeSelectableBackdrop .btn{
+  border:1px solid #cbd7e7 !important;
+  background:#ffffff !important;
+  color:#0b63ce !important;
+}
+#menuMontajeSelectableBackdrop .btn:hover{
+  background:#f1f6ff !important;
+  border-color:#aecaef !important;
+  transform:none !important;
+}
+#menuMontajeSelectableBackdrop .btnPrimary{
+  border:1px solid #0b63ce !important;
+  background:#0b63ce !important;
+  color:#ffffff !important;
+}
+#menuMontajeSelectableBackdrop .btnDanger{
+  border:1px solid #ffd2d2 !important;
+  background:#fff5f5 !important;
+  color:#bd1f1f !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatPosLayout{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 400px !important;
+  gap:20px !important;
+  align-items:start;
+}
+#menuMontajeSelectableBackdrop .mmsPosLeft,
+#menuMontajeSelectableBackdrop .mmsPosRight{
+  min-width:0;
+}
+#menuMontajeSelectableBackdrop .mmsPosLeft > .field,
+#menuMontajeSelectableBackdrop .mmsPosRight > .field,
+#menuMontajeSelectableBackdrop .mmsPosRight > label.field{
+  border:1px solid #d8e2f1;
+  border-radius:14px;
+  background:#ffffff;
+  padding:20px;
+}
+#menuMontajeSelectableBackdrop .mmsPrimaryTabs{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px !important;
+  padding:4px;
+  border:1px solid #d8e2f1;
+  border-radius:12px;
+  background:#f1f5fb;
+}
+#menuMontajeSelectableBackdrop .mmsPrimaryTab{
+  border-color:transparent !important;
+  background:transparent !important;
+  color:#475569 !important;
+}
+#menuMontajeSelectableBackdrop .mmsPrimaryTab.isActive{
+  background:#0f172a !important;
+  color:#ffffff !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTabs{
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px !important;
+  margin:16px 0;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab{
+  justify-content:flex-start;
+  min-height:48px;
+  padding:10px 12px !important;
+  color:#1b304b !important;
+  border-color:transparent !important;
+  background:#f5f8fc !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab::before{
+  content:"";
+  width:28px;
+  height:28px;
+  flex:0 0 28px;
+  display:inline-grid;
+  place-items:center;
+  margin-right:8px;
+  border-radius:8px;
+  background:#e6edf7;
+  color:#3d506a;
+  font-size:15px;
+  line-height:1;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="plato"]::before{content:"P";}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="preparacion"]::before{content:"Pr";}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="salsa"]::before{content:"S";}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="guarnicion"]::before{content:"G";}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="postre"]::before{content:"D";}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="bebida"]::before{content:"B";}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="montaje_tipo"]::before{content:"M";}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="montaje_adicional"]::before{content:"+";}
+#menuMontajeSelectableBackdrop .mmsStageTab.isActive{
+  background:#0f172a !important;
+  color:#ffffff !important;
+  border-color:#0f172a !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab.isActive::before{
+  background:#ffffff;
+  color:#0f172a;
+}
+#menuMontajeSelectableBackdrop .mmsStageBoard{
+  border:1px solid #d8e2f1 !important;
+  border-radius:14px !important;
+  background:#f3f7ff !important;
+  padding:20px !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTitle{
+  color:#071125 !important;
+  font-size:22px !important;
+  font-weight:900 !important;
+  letter-spacing:-.03em;
+  margin-bottom:14px !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickButtons{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn{
+  position:relative;
+  min-height:72px;
+  width:100%;
+  justify-content:flex-start;
+  text-align:left;
+  padding:14px 132px 14px 70px !important;
+  border:1px solid #d8e2f1 !important;
+  border-radius:10px !important;
+  background:#ffffff !important;
+  color:#071125 !important;
+  box-shadow:none !important;
+  font-size:16px !important;
+  font-weight:900 !important;
+  white-space:normal;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn::before{
+  content:"";
+  position:absolute;
+  left:20px;
+  top:50%;
+  width:38px;
+  height:38px;
+  border-radius:999px;
+  transform:translateY(-50%);
+  background:#eef3f9;
+  border:1px solid #e5edf7;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn::after{
+  content:"Seleccionar";
+  position:absolute;
+  right:20px;
+  top:50%;
+  transform:translateY(-50%);
+  min-width:112px;
+  padding:9px 14px;
+  border:1px solid #bfd4f4;
+  border-radius:9px;
+  background:#ffffff;
+  color:#005cca;
+  text-align:center;
+  font-size:14px;
+  font-weight:800;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn:hover{
+  border-color:#0b63ce !important;
+  background:#fbfdff !important;
+  transform:none !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn.isSelected{
+  border:2px solid #0b63ce !important;
+  background:#eaf2ff !important;
+  color:#075cca !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn.isSelected::before{
+  background:#bfd8fa;
+  border-color:#bfd8fa;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn.isSelected::after{
+  content:"Seleccionado";
+  border-color:transparent;
+  background:transparent;
+  color:#075cca;
+  font-weight:900;
+}
+#menuMontajeSelectableBackdrop .mmsPosLiveTitle{
+  color:#071125 !important;
+  font-size:24px !important;
+  font-weight:900 !important;
+  letter-spacing:-.04em !important;
+  text-transform:none !important;
+}
+#menuMontajeSelectableBackdrop .mmsActivePlateHint{
+  border:0 !important;
+  border-left:4px solid #0b63ce !important;
+  border-radius:10px !important;
+  background:#f8fafc !important;
+  color:#334155 !important;
+  padding:12px 14px !important;
+}
+#menuMontajeSelectableBackdrop .mmsComanda{
+  display:grid !important;
+  gap:12px !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaBlock{
+  border:0 !important;
+  border-left:4px solid #cbd9ea !important;
+  border-radius:10px !important;
+  background:#f8fafc !important;
+  padding:16px 18px !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaBlock:has(.mmsComandaTag:not(.muted)){
+  border-left-color:#0b63ce !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTitle{
+  color:#1e293b !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+}
+#menuMontajeSelectableBackdrop .mmsComandaItems{
+  margin-top:8px;
+  gap:8px !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag{
+  border:1px solid #d8e2f1 !important;
+  border-radius:8px !important;
+  background:#ffffff !important;
+  color:#071125 !important;
+  box-shadow:none !important;
+  padding:8px 10px !important;
+  font-weight:800 !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag.isActiveLine,
+#menuMontajeSelectableBackdrop .mmsComandaTag.isFresh{
+  border-color:#0b63ce !important;
+  background:#eaf2ff !important;
+  color:#075cca !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag button{
+  border:0;
+  border-radius:6px;
+  background:#eef4fb;
+  color:#334155;
+  font-weight:900;
+}
+#menuMontajeSelectableBackdrop .quoteTableWrap{
+  border:0 !important;
+  border-radius:0 !important;
+  background:#ffffff !important;
+}
+#menuMontajeSelectableBackdrop .quoteTable{
+  border-collapse:collapse !important;
+}
+#menuMontajeSelectableBackdrop .quoteTable thead th{
+  background:#fbfcff !important;
+  color:#2b3342 !important;
+  border-bottom:1px solid #edf1f7 !important;
+  padding:18px 30px !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  letter-spacing:.08em;
+  text-transform:none !important;
+}
+#menuMontajeSelectableBackdrop .quoteTable tbody td{
+  background:#ffffff !important;
+  border-top:1px solid #edf1f7 !important;
+  color:#071125 !important;
+  padding:20px 30px !important;
+  font-size:15px !important;
+}
+#menuMontajeSelectableBackdrop .quoteTable tbody tr:hover td{
+  background:#f8fbff !important;
+}
+#menuMontajeSelectableBackdrop .modalFooter{
+  min-height:76px;
+  padding:14px 30px !important;
+  border-top:1px solid #dbe3ef !important;
+  background:#ffffff !important;
+  box-shadow:0 -1px 4px rgba(15,23,42,.04) !important;
+}
+#menuMontajeSelectableBackdrop .modalFooter .btnPrimary{
+  min-width:210px;
+}
+@media (max-width:1280px){
+  #menuMontajeSelectableBackdrop .menuMontajeBody{
+    padding-left:260px !important;
+  }
+  #menuMontajeSelectableBackdrop .menuMontajeBody::before{
+    width:236px;
+    padding-inline:22px;
+  }
+  #menuMontajeSelectableBackdrop .menuMontajeBody::after{
+    left:22px;
+    width:190px;
+  }
+  #menuMontajeSelectableBackdrop .mmsFlatPosLayout{
+    grid-template-columns:minmax(0,1fr) 340px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTabs{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media (max-width:980px){
+  #menuMontajeSelectableBackdrop .menuMontajeModal{
+    grid-template-rows:auto minmax(0,1fr) auto;
+  }
+  #menuMontajeSelectableBackdrop .modalHeader,
+  #menuMontajeSelectableBackdrop .modalHeader > div,
+  #menuMontajeSelectableBackdrop .mmsFlatSectionHead,
+  #menuMontajeSelectableBackdrop .modalFooter,
+  #menuMontajeSelectableBackdrop .modalFooter .leftActions,
+  #menuMontajeSelectableBackdrop .modalFooter .rightActions{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  #menuMontajeSelectableBackdrop .modalHeader{
+    padding:18px !important;
+    gap:14px;
+  }
+  #menuMontajeSelectableBackdrop .menuMontajeBody{
+    padding:18px !important;
+  }
+  #menuMontajeSelectableBackdrop .menuMontajeBody::before,
+  #menuMontajeSelectableBackdrop .menuMontajeBody::after{
+    display:none;
+  }
+  #menuMontajeSelectableBackdrop .mmsFlatContextGrid,
+  #menuMontajeSelectableBackdrop .mmsFlatPosLayout{
+    grid-template-columns:1fr !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTabs{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #menuMontajeSelectableBackdrop .mmsQuickBtn{
+    padding-right:18px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsQuickBtn::after{
+    position:static;
+    transform:none;
+    margin-left:auto;
+  }
+}
+@media (max-width:620px){
+  #menuMontajeSelectableBackdrop .mmCard,
+  #menuMontajeSelectableBackdrop .mmsPosLeft > .field,
+  #menuMontajeSelectableBackdrop .mmsPosRight > .field,
+  #menuMontajeSelectableBackdrop .mmsPosRight > label.field{
+    padding:16px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTabs,
+  #menuMontajeSelectableBackdrop .mmsPrimaryTabs{
+    grid-template-columns:1fr;
+  }
+  #menuMontajeSelectableBackdrop .mmsQuickBtn{
+    min-height:64px;
+    padding-left:60px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsQuickBtn::before{
+    left:16px;
+    width:32px;
+    height:32px;
+  }
+}
+/* === END MENU Y MONTAJE FLAT REDESIGN === */
+
+/* === MENU Y MONTAJE COMPACT OVERRIDE === */
+#menuMontajeSelectableBackdrop .menuMontajeModal{
+  grid-template-rows:56px minmax(0,1fr) 58px !important;
+}
+#menuMontajeSelectableBackdrop .modalHeader{
+  min-height:56px !important;
+  padding:0 20px !important;
+}
+#menuMontajeSelectableBackdrop .modalHeader > div{
+  gap:34px !important;
+}
+#menuMontajeSelectableBackdrop .modalTitle{
+  font-size:25px !important;
+}
+#menuMontajeSelectableBackdrop .modalSubtitle{
+  font-size:13px !important;
+}
+#menuMontajeSelectableBackdrop .iconBtn{
+  width:40px !important;
+  height:40px !important;
+  border-radius:10px !important;
+  background:#eef5ff !important;
+}
+#menuMontajeSelectableBackdrop .menuMontajeBody{
+  padding:22px 20px 22px 332px !important;
+  gap:16px !important;
+}
+#menuMontajeSelectableBackdrop .menuMontajeBody::before{
+  top:56px !important;
+  width:290px !important;
+  padding:24px 28px !important;
+  font-size:24px !important;
+}
+#menuMontajeSelectableBackdrop .menuMontajeBody::after{
+  left:28px !important;
+  bottom:76px !important;
+  width:250px !important;
+  font-size:12px !important;
+}
+#menuMontajeSelectableBackdrop .mmCard{
+  border-radius:12px !important;
+  padding:16px 20px !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextCard{
+  padding:16px 20px !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatSectionHead{
+  margin-bottom:12px !important;
+  align-items:center !important;
+}
+#menuMontajeSelectableBackdrop .quoteCardTitle{
+  font-size:22px !important;
+}
+#menuMontajeSelectableBackdrop .mmsSectionLead,
+#menuMontajeSelectableBackdrop .mmsFlowHint,
+#menuMontajeSelectableBackdrop .mmsSummaryLead,
+#menuMontajeSelectableBackdrop .hint{
+  font-size:12px !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatFlowStrip span,
+#menuMontajeSelectableBackdrop .mmsFlatLegend span{
+  min-height:26px !important;
+  padding:5px 9px !important;
+  font-size:11px !important;
+}
+#menuMontajeSelectableBackdrop input,
+#menuMontajeSelectableBackdrop select{
+  min-height:40px !important;
+  padding:8px 12px !important;
+  font-size:14px !important;
+}
+#menuMontajeSelectableBackdrop textarea{
+  min-height:70px !important;
+  padding:10px 12px !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatPosLayout{
+  grid-template-columns:minmax(0,1fr) 380px !important;
+  gap:16px !important;
+}
+#menuMontajeSelectableBackdrop .mmsPosLeft > .field,
+#menuMontajeSelectableBackdrop .mmsPosRight > .field,
+#menuMontajeSelectableBackdrop .mmsPosRight > label.field{
+  padding:16px !important;
+  border-radius:12px !important;
+}
+#menuMontajeSelectableBackdrop .field > span{
+  font-size:11px !important;
+  letter-spacing:.08em !important;
+}
+#menuMontajeSelectableBackdrop .mmsPrimaryTabs{
+  gap:6px !important;
+  padding:3px !important;
+  border-radius:10px !important;
+}
+#menuMontajeSelectableBackdrop .mmsPrimaryTab{
+  min-height:36px !important;
+  padding:7px 10px !important;
+  font-size:13px !important;
+  letter-spacing:.04em;
+}
+#menuMontajeSelectableBackdrop .mmsPrimaryTab.isActive{
+  background:#0b63ce !important;
+  color:#fff !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22) !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTabs{
+  grid-template-columns:repeat(4,minmax(120px,1fr)) !important;
+  gap:8px !important;
+  margin:12px 0 !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab{
+  min-height:40px !important;
+  padding:7px 10px !important;
+  border:1px solid #cfe0f7 !important;
+  background:#eef5ff !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab::before{
+  width:24px !important;
+  height:24px !important;
+  flex-basis:24px !important;
+  margin-right:7px !important;
+  border-radius:7px !important;
+  font-size:12px !important;
+  background:#dfeafa !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab.isActive{
+  background:#0f172a !important;
+  color:#fff !important;
+  border-color:#0f172a !important;
+}
+#menuMontajeSelectableBackdrop .quoteServiceActions{
+  gap:6px !important;
+}
+#menuMontajeSelectableBackdrop .quoteServiceActions:has(#mmsStageFilter){
+  display:grid !important;
+  grid-template-columns:minmax(180px,1fr) auto auto auto;
+  align-items:center;
+}
+#menuMontajeSelectableBackdrop .btn,
+#menuMontajeSelectableBackdrop .btnPrimary,
+#menuMontajeSelectableBackdrop .btnDanger{
+  min-height:38px !important;
+  padding:8px 12px !important;
+  border-radius:8px !important;
+  font-size:13px !important;
+}
+#menuMontajeSelectableBackdrop .btnCatalogAccent{
+  background:#eef6ff !important;
+  border-color:#b9d2f8 !important;
+  color:#173d75 !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageBoard{
+  padding:14px !important;
+  border-radius:12px !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTitle{
+  margin-bottom:10px !important;
+  font-size:20px !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickButtons{
+  gap:8px !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn{
+  min-height:54px !important;
+  padding:10px 118px 10px 58px !important;
+  border-radius:9px !important;
+  font-size:15px !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn::before{
+  left:16px !important;
+  width:30px !important;
+  height:30px !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn::after{
+  right:16px !important;
+  min-width:100px !important;
+  padding:7px 10px !important;
+  border-radius:8px !important;
+  font-size:13px !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn.isSelected{
+  border-width:1px !important;
+  background:#e7f0ff !important;
+  box-shadow:inset 4px 0 0 #0b63ce !important;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn.isSelected::before{
+  content:"✓";
+  display:grid;
+  place-items:center;
+  background:#0b63ce !important;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+}
+#menuMontajeSelectableBackdrop .mmsQuickBtn.isSelected::after{
+  content:"Seleccionado" !important;
+  min-width:auto !important;
+  color:#075cca !important;
+}
+#menuMontajeSelectableBackdrop .mmsPosLiveTitle{
+  font-size:17px !important;
+  line-height:1.2 !important;
+}
+#menuMontajeSelectableBackdrop .mmsActivePlateHint{
+  padding:10px 12px !important;
+  font-size:12px !important;
+}
+#menuMontajeSelectableBackdrop .mmsComanda{
+  gap:10px !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaBlock{
+  padding:13px 14px !important;
+  border-radius:9px !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTitle{
+  font-size:12px !important;
+  letter-spacing:.12em !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaItems{
+  margin-top:7px !important;
+  gap:6px !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag{
+  padding:7px 9px !important;
+  border-radius:7px !important;
+  font-size:12px !important;
+  line-height:1.25 !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag.isPlateSelector,
+#menuMontajeSelectableBackdrop .mmsComandaTag.isActiveLine{
+  background:#eaf2ff !important;
+  border-color:#0b63ce !important;
+  color:#075cca !important;
+  box-shadow:inset 3px 0 0 #0b63ce !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag button{
+  min-width:18px;
+  height:20px;
+  padding:0 4px;
+  margin-left:5px;
+}
+#menuMontajeSelectableBackdrop .mmsFlatSavedCard .mmsFlatSectionHead{
+  padding:16px 20px 12px !important;
+}
+#menuMontajeSelectableBackdrop .quoteTable thead th{
+  padding:13px 20px !important;
+  font-size:12px !important;
+}
+#menuMontajeSelectableBackdrop .quoteTable tbody td{
+  padding:14px 20px !important;
+  font-size:13px !important;
+}
+#menuMontajeSelectableBackdrop .modalFooter{
+  min-height:58px !important;
+  padding:10px 20px !important;
+}
+#menuMontajeSelectableBackdrop .modalFooter .btnPrimary{
+  min-width:190px !important;
+}
+@media (max-width:1280px){
+  #menuMontajeSelectableBackdrop .menuMontajeBody{
+    padding-left:240px !important;
+  }
+  #menuMontajeSelectableBackdrop .menuMontajeBody::before{
+    width:218px !important;
+    padding-inline:20px !important;
+    font-size:21px !important;
+  }
+  #menuMontajeSelectableBackdrop .menuMontajeBody::after{
+    left:20px !important;
+    width:180px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsFlatPosLayout{
+    grid-template-columns:minmax(0,1fr) 340px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTabs{
+    grid-template-columns:repeat(3,minmax(120px,1fr)) !important;
+  }
+}
+@media (max-width:980px){
+  #menuMontajeSelectableBackdrop .menuMontajeBody{
+    padding:14px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsFlatPosLayout,
+  #menuMontajeSelectableBackdrop .quoteServiceActions:has(#mmsStageFilter){
+    grid-template-columns:1fr !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTabs{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+/* === END MENU Y MONTAJE COMPACT OVERRIDE === */
+
+/* === MENU Y MONTAJE LEFT NAV + TOAST FIX === */
+.swal2-popup.swal-ios-toast,
+.swal2-popup.swal2-toast{
+  width:min(420px, calc(100vw - 32px)) !important;
+  min-height:58px !important;
+  padding:12px 18px 12px 68px !important;
+  border:1px solid #bfd2ee !important;
+  border-radius:14px !important;
+  background:#f8fbff !important;
+  color:#0f1b33 !important;
+  box-shadow:0 14px 34px rgba(15,23,42,.14) !important;
+  overflow:visible !important;
+}
+.swal2-popup.swal-ios-toast .swal2-icon,
+.swal2-popup.swal2-toast .swal2-icon{
+  position:absolute !important;
+  left:18px !important;
+  top:50% !important;
+  width:36px !important;
+  height:36px !important;
+  min-width:36px !important;
+  min-height:36px !important;
+  margin:0 !important;
+  font-size:7.2px !important;
+  transform:translateY(-50%) !important;
+  overflow:visible !important;
+}
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-success,
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-error,
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-info,
+.swal2-popup.swal2-toast .swal2-icon.swal2-success,
+.swal2-popup.swal2-toast .swal2-icon.swal2-error,
+.swal2-popup.swal2-toast .swal2-icon.swal2-info{
+  display:inline-grid !important;
+  place-items:center !important;
+  border-width:2px !important;
+  font-size:22px !important;
+  line-height:1 !important;
+  font-weight:800 !important;
+}
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-success,
+.swal2-popup.swal2-toast .swal2-icon.swal2-success{
+  color:#16a34a !important;
+}
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-error,
+.swal2-popup.swal2-toast .swal2-icon.swal2-error{
+  color:#ef4444 !important;
+}
+.swal2-popup.swal-ios-toast .swal2-icon.swal2-info,
+.swal2-popup.swal2-toast .swal2-icon.swal2-info{
+  color:#2563eb !important;
+}
+.swal2-popup.swal-ios-toast .swal2-icon .swal2-x-mark,
+.swal2-popup.swal-ios-toast .swal2-icon .swal2-success-ring,
+.swal2-popup.swal-ios-toast .swal2-icon .swal2-success-fix,
+.swal2-popup.swal-ios-toast .swal2-icon [class^="swal2-success-circular-line"],
+.swal2-popup.swal-ios-toast .swal2-icon [class^="swal2-success-line"],
+.swal2-popup.swal2-toast .swal2-icon .swal2-x-mark,
+.swal2-popup.swal2-toast .swal2-icon .swal2-success-ring,
+.swal2-popup.swal2-toast .swal2-icon .swal2-success-fix,
+.swal2-popup.swal2-toast .swal2-icon [class^="swal2-success-circular-line"],
+.swal2-popup.swal2-toast .swal2-icon [class^="swal2-success-line"]{
+  display:none !important;
+}
+.swal2-popup.swal-ios-toast .swal2-icon-content,
+.swal2-popup.swal2-toast .swal2-icon-content{
+  font-size:24px !important;
+  line-height:36px !important;
+}
+.swal2-popup.swal-ios-toast .swal2-title,
+.swal2-popup.swal2-toast .swal2-title{
+  margin:0 !important;
+  padding:0 !important;
+  color:#10213b !important;
+  font-size:14px !important;
+  line-height:1.35 !important;
+  font-weight:900 !important;
+  text-align:left !important;
+  white-space:normal !important;
+}
+.swal2-popup.swal-ios-toast .swal2-timer-progress-bar-container,
+.swal2-popup.swal2-toast .swal2-timer-progress-bar-container{
+  left:18px !important;
+  right:18px !important;
+  bottom:0 !important;
+  width:auto !important;
+  height:3px !important;
+  overflow:hidden !important;
+  border-radius:999px !important;
+}
+.swal2-popup.swal-ios-toast .swal2-timer-progress-bar,
+.swal2-popup.swal2-toast .swal2-timer-progress-bar{
+  height:3px !important;
+  border-radius:999px !important;
+  background:#94a3b8 !important;
+}
+.swal2-popup.swal2-icon-success .swal2-timer-progress-bar{
+  background:#7bcf65 !important;
+}
+.swal2-popup.swal2-icon-error .swal2-timer-progress-bar{
+  background:#ef4444 !important;
+}
+@media (min-width:981px){
+  #menuMontajeSelectableBackdrop .menuMontajeBody{
+    padding-left:314px !important;
+  }
+  #menuMontajeSelectableBackdrop .menuMontajeBody::before{
+    content:"Menú y Montaje\A GESTIÓN DE EVENTOS" !important;
+    width:290px !important;
+    padding:22px 24px !important;
+    border-right:1px solid #dbe3ef !important;
+    background:#f8fbff !important;
+    font-size:23px !important;
+    line-height:1.08 !important;
+  }
+  #menuMontajeSelectableBackdrop .menuMontajeBody::after{
+    content:"Elige el modo y luego avanza por cada categoría." !important;
+    left:24px !important;
+    bottom:78px !important;
+    width:238px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsPrimaryTabs{
+    position:fixed !important;
+    left:24px !important;
+    top:176px !important;
+    width:242px !important;
+    z-index:4 !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsPrimaryTabs::before{
+    content:"Modo";
+    display:block;
+    margin:0 0 2px;
+    color:#64748b;
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+  }
+  #menuMontajeSelectableBackdrop .mmsPrimaryTab{
+    justify-content:flex-start !important;
+    min-height:38px !important;
+    padding:9px 12px !important;
+    border:1px solid #d6e2f2 !important;
+    border-radius:10px !important;
+    background:#ffffff !important;
+    color:#20324d !important;
+    text-align:left !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsPrimaryTab.isActive{
+    background:#0f172a !important;
+    border-color:#0f172a !important;
+    color:#ffffff !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsPrimaryTab.isActive::after{
+    content:"Activo";
+    margin-left:auto;
+    padding:3px 7px;
+    border-radius:999px;
+    background:rgba(255,255,255,.16);
+    color:#ffffff;
+    font-size:10px;
+    font-weight:900;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTabs{
+    position:fixed !important;
+    left:24px !important;
+    top:288px !important;
+    bottom:150px !important;
+    width:242px !important;
+    z-index:4 !important;
+    display:flex !important;
+    flex-direction:column !important;
+    gap:8px !important;
+    margin:0 !important;
+    overflow:auto !important;
+    padding-right:2px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTabs::before{
+    content:"Categorías";
+    flex:0 0 auto;
+    margin:0 0 2px;
+    color:#64748b;
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTab{
+    flex:0 0 auto;
+    width:100% !important;
+    min-height:42px !important;
+    justify-content:flex-start !important;
+    border-radius:10px !important;
+    background:#ffffff !important;
+    border:1px solid #d6e2f2 !important;
+    color:#20324d !important;
+    box-shadow:none !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTab:hover{
+    border-color:#9fc2f5 !important;
+    background:#eef5ff !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTab.isActive{
+    background:#0f172a !important;
+    border-color:#0f172a !important;
+    color:#ffffff !important;
+    box-shadow:0 8px 18px rgba(15,23,42,.16) !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTab.isActive::after{
+    content:"";
+    width:8px;
+    height:8px;
+    margin-left:auto;
+    border-radius:999px;
+    background:#3b82f6;
+    box-shadow:0 0 0 4px rgba(59,130,246,.18);
+  }
+  #menuMontajeSelectableBackdrop .mmsPosLeft > .field{
+    padding-top:14px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsPosLeft > .field > span,
+  #menuMontajeSelectableBackdrop .mmsFlowHint{
+    display:none !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsFlatLegend{
+    display:none !important;
+  }
+  #menuMontajeSelectableBackdrop .quoteServiceActions:has(#mmsStageFilter){
+    grid-template-columns:minmax(220px,1fr) auto auto auto !important;
+    margin-bottom:8px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageBoard{
+    margin-top:0 !important;
+  }
+}
+@media (max-width:1280px) and (min-width:981px){
+  #menuMontajeSelectableBackdrop .menuMontajeBody{
+    padding-left:260px !important;
+  }
+  #menuMontajeSelectableBackdrop .menuMontajeBody::before{
+    width:238px !important;
+    padding-inline:20px !important;
+    font-size:20px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsPrimaryTabs,
+  #menuMontajeSelectableBackdrop .mmsStageTabs{
+    left:20px !important;
+    width:198px !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsStageTabs{
+    top:280px !important;
+  }
+}
+/* === END MENU Y MONTAJE LEFT NAV + TOAST FIX === */
+
+/* === MENU Y MONTAJE STEP GUIDE + CHIP CONTROLS === */
+#menuMontajeSelectableBackdrop .mmsStageTab{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  min-height:44px !important;
+  padding:9px 12px !important;
+  overflow:hidden !important;
+  font-size:13px !important;
+  line-height:1.15 !important;
+  letter-spacing:.01em !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab::before{
+  width:30px !important;
+  height:30px !important;
+  flex:0 0 30px !important;
+  margin:0 !important;
+  border-radius:10px !important;
+  background:#eaf2ff !important;
+  color:#0b63ce !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75) !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="plato"]::before{content:"1" !important; background:#eaf2ff !important; color:#0b63ce !important;}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="preparacion"]::before{content:"2" !important; background:#eef6ff !important; color:#2563eb !important;}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="salsa"]::before{content:"3" !important; background:#fff7ed !important; color:#c2410c !important;}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="guarnicion"]::before{content:"4" !important; background:#ecfdf5 !important; color:#047857 !important;}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="postre"]::before{content:"5" !important; background:#fdf2f8 !important; color:#be185d !important;}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="bebida"]::before{content:"6" !important; background:#eff6ff !important; color:#1d4ed8 !important;}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="montaje_tipo"]::before{content:"M" !important; background:#f5f3ff !important; color:#6d28d9 !important;}
+#menuMontajeSelectableBackdrop .mmsStageTab[data-mms-stage="montaje_adicional"]::before{content:"+" !important; background:#f0fdfa !important; color:#0f766e !important;}
+#menuMontajeSelectableBackdrop .mmsStageTab.isActive{
+  background:linear-gradient(135deg,#0f172a,#123b79) !important;
+  border-color:#1d4ed8 !important;
+  color:#ffffff !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab.isActive::before{
+  background:#ffffff !important;
+  color:#0b63ce !important;
+}
+#menuMontajeSelectableBackdrop .mmsStageTab.isActive::after{
+  content:"\2713" !important;
+  width:22px !important;
+  height:22px !important;
+  margin-left:auto !important;
+  display:inline-grid !important;
+  place-items:center !important;
+  border-radius:999px !important;
+  background:#22c55e !important;
+  color:#ffffff !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+  box-shadow:0 0 0 4px rgba(34,197,94,.18) !important;
+}
+#menuMontajeSelectableBackdrop .mmsActivePlateHint{
+  position:relative !important;
+  border-left:0 !important;
+  padding:12px 14px 12px 46px !important;
+  background:linear-gradient(135deg,#eef6ff,#f8fbff) !important;
+  border:1px solid #cfe0f7 !important;
+  color:#172554 !important;
+  font-weight:850 !important;
+  line-height:1.35 !important;
+}
+#menuMontajeSelectableBackdrop .mmsActivePlateHint::before{
+  content:"\2192";
+  position:absolute;
+  left:14px;
+  top:50%;
+  width:22px;
+  height:22px;
+  display:grid;
+  place-items:center;
+  transform:translateY(-50%);
+  border-radius:999px;
+  background:#0b63ce;
+  color:#ffffff;
+  font-size:14px;
+  font-weight:950;
+}
+#menuMontajeSelectableBackdrop .mmsComandaBlock{
+  padding:13px 14px !important;
+  background:#f8fbff !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaBlock:has(.mmsComandaTag:not(.muted)){
+  background:linear-gradient(180deg,#f8fbff,#f4f8ff) !important;
+  box-shadow:inset 0 0 0 1px rgba(11,99,206,.06) !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaItems{
+  display:flex !important;
+  align-items:flex-start !important;
+  flex-wrap:wrap !important;
+  gap:8px !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:7px !important;
+  max-width:100% !important;
+  min-height:36px !important;
+  padding:6px 7px 6px 10px !important;
+  border-radius:10px !important;
+  background:#ffffff !important;
+  border:1px solid #cfe0f7 !important;
+  color:#0f1b33 !important;
+  font-size:12px !important;
+  line-height:1.2 !important;
+  box-shadow:0 6px 14px rgba(15,23,42,.04) !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTagText{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag.isFresh{
+  animation:mmsFreshPulse 1.4s ease-out 1;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag.isActiveLine,
+#menuMontajeSelectableBackdrop .mmsComandaTag.isFresh{
+  border-color:#0b63ce !important;
+  background:#eaf2ff !important;
+  color:#075cca !important;
+}
+#menuMontajeSelectableBackdrop .mmsTagQty{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:3px;
+  border-radius:999px;
+  background:#edf5ff;
+  border:1px solid #cfe0f7;
+}
+#menuMontajeSelectableBackdrop .mmsTagQtyText{
+  padding:0 6px;
+  color:#174174;
+  font-size:11px;
+  font-weight:950;
+  white-space:nowrap;
+}
+#menuMontajeSelectableBackdrop .mmsTagIconBtn{
+  width:24px !important;
+  height:24px !important;
+  min-width:24px !important;
+  padding:0 !important;
+  display:inline-grid !important;
+  place-items:center !important;
+  border:1px solid transparent !important;
+  border-radius:999px !important;
+  font-size:0 !important;
+  line-height:1 !important;
+  cursor:pointer !important;
+  transition:transform .12s ease, background .12s ease, border-color .12s ease !important;
+}
+#menuMontajeSelectableBackdrop .mmsTagIconBtn:hover{
+  transform:translateY(-1px) !important;
+}
+#menuMontajeSelectableBackdrop .mmsTagQtyBtn.isDec{
+  background:#fff7ed !important;
+  border-color:#fed7aa !important;
+  color:#c2410c !important;
+}
+#menuMontajeSelectableBackdrop .mmsTagQtyBtn.isDec::before{content:"-"; font-size:14px; font-weight:950;}
+#menuMontajeSelectableBackdrop .mmsTagQtyBtn.isInc{
+  background:#ecfdf5 !important;
+  border-color:#bbf7d0 !important;
+  color:#047857 !important;
+}
+#menuMontajeSelectableBackdrop .mmsTagQtyBtn.isInc::before{content:"+"; font-size:14px; font-weight:950;}
+#menuMontajeSelectableBackdrop .mmsTagRemoveBtn{
+  background:#eef4fb !important;
+  border-color:#cfe0f7 !important;
+  color:#334155 !important;
+}
+#menuMontajeSelectableBackdrop .mmsTagRemoveBtn::before{content:"\00d7"; font-size:15px; font-weight:950;}
+#menuMontajeSelectableBackdrop .mmsTagRemoveBtn:hover{
+  background:#fee2e2 !important;
+  border-color:#fecaca !important;
+  color:#b91c1c !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag.isPlateSelector{
+  width:100% !important;
+  justify-content:space-between !important;
+  border-color:#9fc2f5 !important;
+}
+#menuMontajeSelectableBackdrop .swal-ios-toast .swal2-title,
+.swal2-popup.swal-ios-toast .swal2-title{
+  font-size:13px !important;
+  line-height:1.42 !important;
+}
+@keyframes mmsFreshPulse{
+  0%{box-shadow:0 0 0 0 rgba(11,99,206,.32); transform:scale(.98);}
+  55%{box-shadow:0 0 0 8px rgba(11,99,206,0); transform:scale(1.02);}
+  100%{box-shadow:0 6px 14px rgba(15,23,42,.04); transform:scale(1);}
+}
+/* === END MENU Y MONTAJE STEP GUIDE + CHIP CONTROLS === */
+
+/* === MENU Y MONTAJE EVENT DATA ALIGNMENT === */
+#menuMontajeSelectableBackdrop .mmsFlatContextCard{
+  padding:18px 20px 16px !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextCard .mmsFlatSectionHead{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:start !important;
+  gap:18px !important;
+  margin-bottom:14px !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextCard .mmsFlatFlowStrip{
+  justify-content:flex-end !important;
+  align-content:start !important;
+  padding-top:6px !important;
+  white-space:nowrap !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextGrid{
+  display:grid !important;
+  grid-template-columns:minmax(260px,1.05fr) minmax(260px,1fr) minmax(220px,1fr) !important;
+  align-items:end !important;
+  column-gap:20px !important;
+  row-gap:12px !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextGrid .field{
+  display:grid !important;
+  grid-template-rows:auto 40px !important;
+  gap:7px !important;
+  min-width:0 !important;
+  margin:0 !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextGrid .field > span{
+  display:flex !important;
+  align-items:center !important;
+  min-height:14px !important;
+  margin:0 !important;
+  line-height:1.1 !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextGrid select,
+#menuMontajeSelectableBackdrop .mmsFlatContextGrid input,
+#menuMontajeSelectableBackdrop .mmsFlatContextGrid .quoteServiceActions{
+  width:100% !important;
+  min-width:0 !important;
+}
+#menuMontajeSelectableBackdrop .mmsFlatContextGrid .quoteServiceActions:has(#mmsVersionSelect){
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 86px !important;
+  align-items:center !important;
+  gap:8px !important;
+  margin:0 !important;
+}
+#menuMontajeSelectableBackdrop #btnMmsLoadVersion{
+  width:86px !important;
+  min-width:86px !important;
+  height:40px !important;
+  min-height:40px !important;
+  padding:0 12px !important;
+  border-radius:10px !important;
+  background:#eef6ff !important;
+  border-color:#b9d2f8 !important;
+  color:#173d75 !important;
+  font-weight:900 !important;
+}
+#menuMontajeSelectableBackdrop #btnMmsLoadVersion:hover{
+  background:#dcecff !important;
+  border-color:#8ebcf5 !important;
+}
+@media (max-width:1180px){
+  #menuMontajeSelectableBackdrop .mmsFlatContextCard .mmsFlatSectionHead{
+    grid-template-columns:1fr !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsFlatContextCard .mmsFlatFlowStrip{
+    justify-content:flex-start !important;
+    padding-top:0 !important;
+    white-space:normal !important;
+  }
+  #menuMontajeSelectableBackdrop .mmsFlatContextGrid{
+    grid-template-columns:1fr 1fr !important;
+  }
+}
+@media (max-width:720px){
+  #menuMontajeSelectableBackdrop .mmsFlatContextGrid{
+    grid-template-columns:1fr !important;
+  }
+}
+/* === END MENU Y MONTAJE EVENT DATA ALIGNMENT === */
+
+/* === MENU Y MONTAJE MODE ACTIVE CHECK === */
+#menuMontajeSelectableBackdrop .mmsPrimaryTab{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  position:relative !important;
+}
+#menuMontajeSelectableBackdrop .mmsPrimaryTab.isActive{
+  background:linear-gradient(135deg,#0f172a,#123b79) !important;
+  border-color:#1d4ed8 !important;
+  color:#ffffff !important;
+}
+#menuMontajeSelectableBackdrop .mmsPrimaryTab.isActive::after{
+  content:"\2713" !important;
+  width:22px !important;
+  height:22px !important;
+  margin-left:auto !important;
+  padding:0 !important;
+  display:inline-grid !important;
+  place-items:center !important;
+  border-radius:999px !important;
+  background:#22c55e !important;
+  color:#ffffff !important;
+  font-size:12px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  box-shadow:0 0 0 4px rgba(34,197,94,.18) !important;
+}
+/* === END MENU Y MONTAJE MODE ACTIVE CHECK === */

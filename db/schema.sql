@@ -96,6 +96,8 @@ CREATE TABLE IF NOT EXISTS eventos (
   nombre VARCHAR(240) NOT NULL,
   nombre_salon VARCHAR(120) NOT NULL,
   fecha_evento DATE NOT NULL,
+  fecha_inicio_reserva DATE NULL,
+  fecha_fin_reserva DATE NULL,
   hora_inicio TIME NOT NULL,
   hora_fin TIME NOT NULL,
   estado VARCHAR(80) NOT NULL,

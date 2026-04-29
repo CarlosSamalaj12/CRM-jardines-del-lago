@@ -269,6 +269,8 @@ async function migrateState(conn, state) {
     const id = str(ev?.id).trim();
     if (!id) continue;
     const eventDate = asDate(ev?.date) || "1970-01-01";
+    const eventDateStart = asDate(ev?.eventDateStart || ev?.reservationDateStart || ev?.seriesDateStart) || eventDate;
+    const eventDateEnd = asDate(ev?.eventDateEnd || ev?.reservationDateEnd || ev?.seriesDateEnd) || eventDateStart;
     const startTime = asTime(ev?.startTime) || "00:00:00";
     const endTime = asTime(ev?.endTime) || "00:30:00";
     const userId = str(ev?.userId).trim();
@@ -276,8 +278,8 @@ async function migrateState(conn, state) {
     await conn.query(
       `
         INSERT INTO eventos
-          (id, id_grupo, nombre, nombre_salon, fecha_evento, hora_inicio, hora_fin, estado, id_usuario, pax, notas, cotizacion_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (id, id_grupo, nombre, nombre_salon, fecha_evento, fecha_inicio_reserva, fecha_fin_reserva, hora_inicio, hora_fin, estado, id_usuario, pax, notas, cotizacion_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         id,
@@ -285,6 +287,8 @@ async function migrateState(conn, state) {
         str(ev?.name).trim() || "(sin nombre)",
         str(ev?.salon).trim() || "(sin salon)",
         eventDate,
+        eventDateStart,
+        eventDateEnd,
         startTime,
         endTime,
         str(ev?.status).trim() || "Lista de Espera",

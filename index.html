@@ -15,12 +15,12 @@
   <link rel="icon" href="./favicon.ico?v=20260321c" sizes="any" />
   <link rel="shortcut icon" href="./favicon.ico?v=20260321c" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=20260321c" />
-  <link rel="stylesheet" href="./styles.css?v=20260424a" />
+  <link rel="stylesheet" href="./styles.css?v=20260427b" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slim-select@2.8.0/dist/slimselect.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" />
-<link rel="stylesheet" href="./design-system.css?v=20260423e" />
+<link rel="stylesheet" href="./design-system.css?v=20260429c" />
 </head>
 <body>
   <div class="loginScreen" id="loginScreen" hidden>
@@ -348,7 +348,85 @@
               </span>
             </span>
           </button>
+          <button class="moduleActionBtn settingsHubBtn" id="btnManageQuoteServiceTemplates" type="button">
+            <span class="actionCardInner">
+              <span class="actionCardIcon">
+                <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                  <path d="M18 16h28v36H18z"></path>
+                  <path d="M24 26h16M24 34h16M24 42h10"></path>
+                  <path d="M46 20h4v28h-4"></path>
+                </svg>
+              </span>
+              <span class="actionCardText">
+                <span class="actionCardLabel">Plantillas de cotizacion</span>
+                <span class="actionCardMeta">Combos de servicios para cargar en cotizaciones</span>
+              </span>
+            </span>
+          </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalBackdrop" id="quoteServiceTemplateManagerBackdrop" hidden>
+    <div class="modal quoteServiceTemplateManagerModal" role="dialog" aria-modal="true" aria-labelledby="quoteServiceTemplateManagerTitle">
+      <div class="modalHeader">
+        <div>
+          <div class="modalTitle" id="quoteServiceTemplateManagerTitle">Plantillas de cotizacion</div>
+          <div class="modalSubtitle">Crea y administra combos de servicios reutilizables.</div>
+        </div>
+        <button class="iconBtn" id="btnQuoteServiceTemplateManagerClose" type="button" title="Cerrar">&#10005;</button>
+      </div>
+      <div class="modalBody quoteServiceTemplateManagerBody">
+        <section class="quoteCard qstmPanel">
+          <div class="quoteCardTitle">Plantilla</div>
+          <div class="row2">
+            <label class="field">
+              <span>Plantilla existente</span>
+              <select id="settingsQuoteServiceTemplateSelect"></select>
+            </label>
+            <label class="field">
+              <span>Nombre de plantilla</span>
+              <input id="settingsQuoteServiceTemplateName" type="text" placeholder="Ej: Boda premium 150 pax" />
+            </label>
+          </div>
+          <div class="quoteServiceActions qstmActions">
+            <button class="btn" id="btnSettingsQuoteServiceTemplateNew" type="button">Nueva</button>
+            <button class="btnPrimary" id="btnSettingsQuoteServiceTemplateSave" type="button">Guardar</button>
+            <button class="btn" id="btnSettingsQuoteServiceTemplateUpdate" type="button">Actualizar</button>
+            <button class="btnDanger" id="btnSettingsQuoteServiceTemplateDelete" type="button">Eliminar</button>
+          </div>
+        </section>
+
+        <section class="quoteCard qstmPanel">
+          <div class="quoteCardTitle">Servicios de la plantilla</div>
+          <div class="qstmServiceGrid">
+            <label class="field">
+              <span>Servicio</span>
+              <input id="settingsQuoteTemplateServiceSearch" list="settingsQuoteTemplateServicesList" type="text" placeholder="Buscar servicio..." />
+              <datalist id="settingsQuoteTemplateServicesList"></datalist>
+            </label>
+            <label class="field">
+              <span>Cantidad</span>
+              <input id="settingsQuoteTemplateServiceQty" type="number" min="1" step="1" placeholder="Cantidad" />
+            </label>
+            <button class="btn" id="btnSettingsQuoteTemplateServiceAdd" type="button">Agregar servicio</button>
+          </div>
+          <div class="quoteTableWrap qstmTableWrap">
+            <table class="quoteTable">
+              <thead>
+                <tr>
+                  <th>Servicio</th>
+                  <th>Cantidad</th>
+                  <th>Precio</th>
+                  <th>Total base</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="settingsQuoteTemplateItemsBody"></tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -364,8 +442,7 @@
       </div>
 
       <nav class="lum-sideNav">
-        <button class="lum-sideItem" id="btnSideDashboardReports" type="button"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span><span>Dashboard reportes</span></button>
-        <button class="lum-sideItem" id="btnOpenLeads" type="button"><span class="material-symbols-outlined" aria-hidden="true">group</span><span>Leads</span></button>
+        <button class="lum-sideItem" id="btnOpenLeads" type="button"><span class="material-symbols-outlined" aria-hidden="true">group</span><span>Clientes potenciales</span></button>
         <button class="lum-sideItem isActive" id="btnSideCalendar" type="button" aria-current="page"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span><span>Calendar</span></button>
         <button class="lum-sideItem" id="btnFindEvent" type="button"><span class="material-symbols-outlined" aria-hidden="true">search</span><span>Buscar evento</span></button>
         <button class="lum-sideItem" id="btnSideReports" type="button"><span class="material-symbols-outlined" aria-hidden="true">analytics</span><span>Reportes</span></button>
@@ -377,7 +454,7 @@
       </div>
 
       <div class="lum-sideFooter">
-        <a class="lum-sideItem" href="#"><span class="material-symbols-outlined" aria-hidden="true">help</span><span>Help</span></a>
+        <a class="lum-sideItem" href="#"><span class="material-symbols-outlined" aria-hidden="true">help</span><span>Ayuda</span></a>
         <button class="lum-sideItem" id="btnLogout" type="button" title="Cerrar sesion" aria-label="Cerrar sesion"><span class="material-symbols-outlined" aria-hidden="true">logout</span><span>Cerrar sesion</span></button>
       </div>
     </aside>
@@ -485,6 +562,8 @@
                     <tr>
                       <th>Salon</th>
                       <th>PAX</th>
+                      <th>Desde</th>
+                      <th>Hasta</th>
                       <th>Inicio</th>
                       <th>Fin</th>
                       <th></th>
@@ -681,7 +760,7 @@
       <div class="modal eventFinderModal" role="dialog" aria-modal="true" aria-labelledby="leadsTitle">
         <div class="modalHeader">
           <div>
-            <div class="modalTitle" id="leadsTitle">Leads</div>
+            <div class="modalTitle" id="leadsTitle">Clientes potenciales</div>
             <div class="modalSubtitle">Pipeline comercial por estado, empresa y encargado</div>
           </div>
           <button class="iconBtn" id="btnLeadsClose" type="button" title="Cerrar">&#10005;</button>
@@ -1002,18 +1081,12 @@
                   </div>
                   <div class="quoteServiceAdder quoteSidebarAdder quoteWorkbenchFields">
                     <label class="field">
-                      <span>Plantilla guardada</span>
+                      <span>Seleccionar plantilla a aplicar</span>
                       <select id="quoteServiceTemplateSelect"></select>
-                    </label>
-                    <label class="field quoteServiceSearchField">
-                      <span>Nombre de plantilla</span>
-                      <input id="quoteServiceTemplateName" type="text" placeholder="Ej: Boda premium 150 pax" />
+                      <small class="hint">Elige aqui la plantilla guardada que quieres cargar al carrito.</small>
                     </label>
                     <div class="quoteServiceActions quoteSidebarActions quoteTemplateActions quoteWorkbenchTemplateActions">
-                      <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateApply">Aplicar</button>
-                      <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateSave">Guardar nueva</button>
-                      <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateUpdate">Actualizar</button>
-                      <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateDelete">Eliminar</button>
+                      <button class="btn quoteAddBtn" type="button" id="btnQuoteServiceTemplateApply">Aplicar plantilla</button>
                     </div>
                   </div>
                 </section>
@@ -1356,16 +1429,15 @@
       <div class="modal menuMontajeModal" role="dialog" aria-modal="true" aria-labelledby="menuMontajeSelectableTitle">
         <div class="modalHeader">
           <div>
-            <div class="modalTitle" id="menuMontajeSelectableTitle">Menu &amp; Montaje (Listas)</div>
-            <div class="modalSubtitle">Crea menu por seleccion con sugerencias + opciones libres del catalogo.</div>
+            <div class="modalTitle" id="menuMontajeSelectableTitle">Menú y Montaje</div>
+            <div class="modalSubtitle">Gestión intuitiva del menú, montaje y comanda por evento.</div>
           </div>
           <button class="iconBtn" id="btnMenuMontajeSelectableClose" type="button" title="Cerrar">&#10005;</button>
         </div>
         <div class="modalBody menuMontajeBody">
-          <section class="quoteCard mmCard mmCardWide">
-            <div class="quoteCardTitle">Datos por fecha y salon</div>
-            <div class="mmsSectionLead">Elige la version, fecha y salon para trabajar sobre la comanda correcta.</div>
-            <div class="mmGrid">
+          <section class="quoteCard mmCard mmCardWide mmsFlatContextCard">
+            <div class="mmsFlatSectionHead"><div><div class="quoteCardTitle">Datos del evento</div><div class="mmsSectionLead">Selecciona versión, fecha y salón antes de armar la comanda.</div></div><div class="mmsFlatFlowStrip"><span class="isActive">1 Datos</span><span>2 Menú</span><span>3 Montaje</span><span>4 Guardar</span></div></div>
+            <div class="mmGrid mmsFlatContextGrid">
               <label class="field">
                 <span>Version Menu &amp; Montaje</span>
                 <div class="quoteServiceActions">
@@ -1384,14 +1456,13 @@
             </div>
           </section>
 
-          <section class="quoteCard mmCard mmCardWide">
-            <div class="quoteCardTitle">Comanda POS (Menu y Montaje)</div>
-            <div class="mmsSectionLead">Sigue el flujo: modo, categoria y opciones. El resumen de la derecha te confirma lo que ya llevas armado.</div>
-            <div class="mmsPosLayout">
+          <section class="quoteCard mmCard mmCardWide mmsFlatBuilderCard">
+            <div class="mmsFlatSectionHead"><div><div class="quoteCardTitle">Armar menú y montaje</div><div class="mmsSectionLead">Trabaja de izquierda a derecha: modo, categoría, opciones y resumen final.</div></div><div class="mmsFlatLegend"><span><b></b> Disponible</span><span><b></b> Seleccionado</span></div></div>
+            <div class="mmsPosLayout mmsFlatPosLayout">
               <div class="mmsPosLeft">
                 <div class="field">
-                  <span>Seleccion por botones</span>
-                  <div class="mmsFlowHint">1. Elige modo. 2. Elige categoria. 3. Toca opciones para agregarlas.</div>
+                  <span>Paso 2: selecciona opciones</span>
+                  <div class="mmsFlowHint">Primero elige si trabajarás Menú o Montaje. Luego toca una categoría y agrega opciones con un clic.</div>
                   <div class="mmsPrimaryTabs" id="mmsPrimaryTabs">
                     <button class="btn mmsPrimaryTab" id="btnMmsPrimaryMenu" type="button" data-mms-primary="menu">Menu</button>
                     <button class="btn mmsPrimaryTab" id="btnMmsPrimaryMontaje" type="button" data-mms-primary="montaje">Montaje</button>
@@ -1420,8 +1491,8 @@
               </div>
               <div class="mmsPosRight">
                 <div class="field">
-                  <span class="mmsPosLiveTitle">Cuenta POS en vivo</span>
-                  <div class="mmsSummaryLead">Resumen en vivo de lo que estas construyendo.</div>
+                  <span class="mmsPosLiveTitle">Resumen de comanda</span>
+                  <div class="mmsSummaryLead">Aquí se confirma todo lo agregado antes de guardar.</div>
                   <div class="mmsActivePlateHint" id="mmsActivePlateHint">Toca un plato para editarlo.</div>
                   <div class="mmsComanda" id="mmsComandaPreview">
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Plato fuerte</div><div class="mmsComandaItems" id="mmsComandaPlato"></div></div>
@@ -1483,8 +1554,8 @@
             </div>
           </section>
 
-          <section class="quoteCard mmCard mmCardWide">
-            <div class="quoteCardTitle">Resumen guardado</div>
+          <section class="quoteCard mmCard mmCardWide mmsFlatSavedCard">
+            <div class="mmsFlatSectionHead"><div><div class="quoteCardTitle">Resumen guardado</div><div class="mmsSectionLead">Registros ya generados para esta cotización.</div></div></div>
             <div class="quoteTableWrap">
               <table class="quoteTable">
                 <thead>
@@ -2978,7 +3049,7 @@
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/slim-select@2.8.0/dist/slimselect.min.js"></script>
-  <script src="./app.js"></script>
+  <script src="./app.js?v=20260426b"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

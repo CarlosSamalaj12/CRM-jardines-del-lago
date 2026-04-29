@@ -54,11 +54,13 @@ const STATUS = {
   MANTENIMIENTO: "Mantenimiento",
   CANCELADO: "Cancelado",
   PERDIDO: "Perdido",
+  RESERVA_SIN_COTIZACION: "Reserva sin Cotizacion",
   PRIMERA: "1er Cotizacion",
   SEGUIMIENTO: "Seguimiento",
 };
 
 const STATUS_META = [
+  { key: STATUS.RESERVA_SIN_COTIZACION, colorVar: "--c-reserva-sin-cotizacion" },
   { key: STATUS.PRIMERA, colorVar: "--c-primera" },
   { key: STATUS.PERDIDO, colorVar: "--c-perdido" },
   { key: STATUS.SEGuimiento ?? STATUS.SEGUIMIENTO, colorVar: "--c-seguimiento" }, // safety
@@ -69,17 +71,19 @@ const STATUS_META = [
   { key: STATUS.MANTENIMIENTO, colorVar: "--c-mantenimiento" },
 ].map(x => ({ ...x, key: x.key === undefined ? STATUS.SEGUIMIENTO : x.key }));
 
-const AUTO_STATUSES = new Set([STATUS.PRIMERA, STATUS.SEGUIMIENTO, STATUS.PERDIDO]);
+const AUTO_STATUSES = new Set([STATUS.RESERVA_SIN_COTIZACION, STATUS.PRIMERA, STATUS.SEGUIMIENTO, STATUS.PERDIDO]);
 const DASHBOARD_STATUS_ORDER = [
   STATUS.PERDIDO,
   STATUS.SEGUIMIENTO,
   STATUS.PRIMERA,
+  STATUS.RESERVA_SIN_COTIZACION,
   STATUS.CANCELADO,
   STATUS.CONFIRMADO,
   STATUS.PRERESERVA,
   STATUS.LISTA,
 ];
 const LEADS_PIPELINE_STATUSES = new Set([
+  STATUS.RESERVA_SIN_COTIZACION,
   STATUS.PRIMERA,
   STATUS.SEGUIMIENTO,
   STATUS.LISTA,
@@ -87,6 +91,7 @@ const LEADS_PIPELINE_STATUSES = new Set([
   STATUS.PERDIDO,
 ]);
 const LEADS_PIPELINE_STATUS_ORDER = [
+  STATUS.RESERVA_SIN_COTIZACION,
   STATUS.PRIMERA,
   STATUS.SEGUIMIENTO,
   STATUS.LISTA,
@@ -126,6 +131,10 @@ function userRolePluralLabel(value) {
 }
 function isAutoStatus(status) {
   return AUTO_STATUSES.has(String(status || "").trim());
+}
+
+function reservationStatusFromQuotePresence(ev) {
+  return ev?.quote ? STATUS.PRIMERA : STATUS.RESERVA_SIN_COTIZACION;
 }
 
 function cssVar(name) {
@@ -211,6 +220,7 @@ let checklistTemplateCurrentId = "";
 let checklistTemplateSectionEditingId = "";
 let currentEventChecklistId = "";
 let eventChecklistDraft = null;
+let quoteServiceTemplateManagerItems = [];
 const interaction = {
   selecting: null,
   selectionBox: null,
@@ -322,6 +332,20 @@ const el = {
   btnQuickAddGlobalGoal: document.getElementById("btnQuickAddGlobalGoal"),
   btnQuickAddChecklist: document.getElementById("btnQuickAddChecklist"),
   btnQuickOpenMenuCatalog: document.getElementById("btnQuickOpenMenuCatalog"),
+  btnManageQuoteServiceTemplates: document.getElementById("btnManageQuoteServiceTemplates"),
+  quoteServiceTemplateManagerBackdrop: document.getElementById("quoteServiceTemplateManagerBackdrop"),
+  btnQuoteServiceTemplateManagerClose: document.getElementById("btnQuoteServiceTemplateManagerClose"),
+  settingsQuoteServiceTemplateSelect: document.getElementById("settingsQuoteServiceTemplateSelect"),
+  settingsQuoteServiceTemplateName: document.getElementById("settingsQuoteServiceTemplateName"),
+  btnSettingsQuoteServiceTemplateNew: document.getElementById("btnSettingsQuoteServiceTemplateNew"),
+  btnSettingsQuoteServiceTemplateSave: document.getElementById("btnSettingsQuoteServiceTemplateSave"),
+  btnSettingsQuoteServiceTemplateUpdate: document.getElementById("btnSettingsQuoteServiceTemplateUpdate"),
+  btnSettingsQuoteServiceTemplateDelete: document.getElementById("btnSettingsQuoteServiceTemplateDelete"),
+  settingsQuoteTemplateServiceSearch: document.getElementById("settingsQuoteTemplateServiceSearch"),
+  settingsQuoteTemplateServicesList: document.getElementById("settingsQuoteTemplateServicesList"),
+  settingsQuoteTemplateServiceQty: document.getElementById("settingsQuoteTemplateServiceQty"),
+  btnSettingsQuoteTemplateServiceAdd: document.getElementById("btnSettingsQuoteTemplateServiceAdd"),
+  settingsQuoteTemplateItemsBody: document.getElementById("settingsQuoteTemplateItemsBody"),
   btnReportSales: document.getElementById("btnReportSales"),
   btnReportAccounting: document.getElementById("btnReportAccounting"),
   btnReportOccupancy: document.getElementById("btnReportOccupancy"),
@@ -3501,6 +3525,45 @@ function restoreModuleScreenAfterModal() {
   moduleModalReturnScreen = "";
 }
 
+function closeBlockingOverlaysForNavigation() {
+  const backdrops = [
+    el.salesReportBackdrop,
+    el.accountingReportBackdrop,
+    el.accountStatementBackdrop,
+    el.occupancyReportBackdrop,
+    el.dashboardReportBackdrop,
+    el.institutionReportBackdrop,
+    el.checklistTemplateBackdrop,
+    el.eventChecklistBackdrop,
+    el.modalBackdrop,
+    el.appointmentBackdrop,
+    el.eventFinderBackdrop,
+    el.leadsBackdrop,
+    el.userBackdrop,
+    el.quoteBackdrop,
+    el.quoteAdvanceBackdrop,
+    el.menuMontajeBackdrop,
+    el.menuMontajeSelectableBackdrop,
+    el.quoteServiceTemplateManagerBackdrop,
+    el.companyBackdrop,
+    el.serviceBackdrop,
+    el.serviceCategoryBackdrop,
+    el.serviceSubcategoryBackdrop,
+    el.globalGoalsBackdrop,
+    el.salonesBackdrop,
+    el.menuSuggestionsBackdrop,
+    el.menuCatalogBackdrop,
+  ];
+
+  for (const node of backdrops) {
+    if (node) node.hidden = true;
+  }
+
+  if (el.quoteBackdrop) el.quoteBackdrop.classList.remove("docFloatOpen");
+  document.body.classList.remove("eventModalOpen", "quoteModeOpen", "menuSuggestionsModalOpen");
+  moduleModalReturnScreen = "";
+}
+
 function setSettingsPanelOpen(open) {
   if (!el.settingsPanel) return;
   if (el.settingsScreen) el.settingsScreen.hidden = !open;
@@ -5465,6 +5528,9 @@ function dashboardNormalizeEventType(value) {
 function dashboardNormalizeStatus(status) {
   const raw = String(status || "").trim();
   const norm = normalizeBucketKey(raw);
+  if (matchesAliases(norm, ["reserva sin cotizacion", "reservacion sin cotizacion", "sin cotizacion", "reserva"])) {
+    return STATUS.RESERVA_SIN_COTIZACION;
+  }
   if (matchesAliases(norm, ["1er cotizacion", "1ra cotizacion", "primera cotizacion", "1er reserva", "primera reserva"])) {
     return STATUS.PRIMERA;
   }
@@ -5527,6 +5593,7 @@ function dashboardGoalCardState(progressPct) {
 function getDashboardHeroStatusMeta() {
   return [
     { key: STATUS.CONFIRMADO, label: "Confirmado", color: "#10c972" },
+    { key: STATUS.RESERVA_SIN_COTIZACION, label: "Reserva sin cotizacion", color: "#0ea5e9" },
     { key: STATUS.PRIMERA, label: "1era. Cotizacion", color: "#aa97df" },
     { key: STATUS.SEGUIMIENTO, label: "Negociacion", color: "#ff6b3a" },
     { key: STATUS.PERDIDO, label: "Perdido", color: "#7c5cff" },
@@ -7578,6 +7645,7 @@ function renderStatusSelect() {
   el.eventStatus.innerHTML = "";
   // Orden visual importante
   const order = [
+    STATUS.RESERVA_SIN_COTIZACION,
     STATUS.PRIMERA,
     STATUS.PERDIDO,
     STATUS.SEGUIMIENTO,
@@ -7836,6 +7904,20 @@ function initModernDatePicker(input) {
   input.type = "date";
 }
 
+function setModernDateValue(input, value, triggerChange = false) {
+  if (!input) return;
+  const clean = String(value || "").trim();
+  if (input._flatpickr) {
+    input._flatpickr.setDate(clean || null, !!triggerChange, "Y-m-d");
+    return;
+  }
+  input.value = clean;
+  if (triggerChange) {
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+}
+
 function initModernDatePickers() {
   for (const input of Array.from(document.querySelectorAll('input[type="date"]'))) {
     initModernDatePicker(input);
@@ -7848,17 +7930,23 @@ function addSlotRow(slot = null) {
   const salon = slot?.salon || "";
   const paxValue = Number(slot?.slotPax ?? slot?.pax ?? 0);
   const pax = paxValue > 0 ? String(Math.round(paxValue)) : "";
+  const slotDateStart = slot?.dateStart || slot?.startDate || el.eventDate?.value || "";
+  const slotDateEnd = slot?.dateEnd || slot?.endDate || el.eventDateEnd?.value || slotDateStart;
   const start = slot?.startTime || "";
   const end = slot?.endTime || "";
   row.innerHTML = `
     <td><select class="quoteInput slotRoom">${salonOptionsHtml(salon, true)}</select></td>
     <td><input class="quoteInput slotPax" type="number" min="1" step="1" placeholder="PAX" value="${escapeHtml(pax)}" /></td>
+    <td><input class="quoteInput slotDateStart" type="date" value="${escapeHtml(slotDateStart)}" /></td>
+    <td><input class="quoteInput slotDateEnd" type="date" value="${escapeHtml(slotDateEnd)}" /></td>
     <td><input class="quoteInput slotStart" type="text" inputmode="numeric" placeholder="HH:mm" value="${escapeHtml(start)}" /></td>
     <td><input class="quoteInput slotEnd" type="text" inputmode="numeric" placeholder="HH:mm" value="${escapeHtml(end)}" /></td>
     <td><button type="button" class="btnDanger slotRemoveBtn">X</button></td>
   `;
   el.slotsBody.appendChild(row);
   const slotRoomSelect = row.querySelector(".slotRoom");
+  initModernDatePicker(row.querySelector(".slotDateStart"));
+  initModernDatePicker(row.querySelector(".slotDateEnd"));
   initModernTimePicker(row.querySelector(".slotStart"));
   initModernTimePicker(row.querySelector(".slotEnd"));
   queueSelectEnhancement(slotRoomSelect, true);
@@ -7882,9 +7970,30 @@ function getSlotsFromForm() {
   return rows.map(row => ({
     salon: row.querySelector(".slotRoom")?.value || "",
     slotPax: Math.max(0, Number(row.querySelector(".slotPax")?.value || 0)) || 0,
+    dateStart: row.querySelector(".slotDateStart")?.value || "",
+    dateEnd: row.querySelector(".slotDateEnd")?.value || "",
     startTime: row.querySelector(".slotStart")?.value || "",
     endTime: row.querySelector(".slotEnd")?.value || "",
   }));
+}
+
+function normalizeSlotDateRange(slot, fallbackStart = "", fallbackEnd = "") {
+  const rawStart = String(slot?.dateStart || fallbackStart || "").trim();
+  const rawEnd = String(slot?.dateEnd || fallbackEnd || rawStart).trim();
+  if (!rawStart && !rawEnd) return { start: "", end: "" };
+  if (!rawStart) return { start: rawEnd, end: rawEnd };
+  if (!rawEnd) return { start: rawStart, end: rawStart };
+  return rawStart <= rawEnd
+    ? { start: rawStart, end: rawEnd }
+    : { start: rawEnd, end: rawStart };
+}
+
+function getEventGeneralDateStart(ev) {
+  return String(ev?.eventDateStart || ev?.reservationDateStart || ev?.seriesDateStart || ev?.date || "").trim();
+}
+
+function getEventGeneralDateEnd(ev) {
+  return String(ev?.eventDateEnd || ev?.reservationDateEnd || ev?.seriesDateEnd || ev?.date || "").trim();
 }
 
 function syncEventPaxFromSlots() {
@@ -8923,7 +9032,7 @@ function renderQuoteServiceTemplateSelect(selectedId = "") {
   el.quoteServiceTemplateSelect.innerHTML = "";
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent = "Selecciona plantilla";
+  placeholder.textContent = templates.length ? "Selecciona plantilla" : "No hay plantillas guardadas";
   el.quoteServiceTemplateSelect.appendChild(placeholder);
   for (const tpl of templates) {
     const opt = document.createElement("option");
@@ -8937,6 +9046,164 @@ function renderQuoteServiceTemplateSelect(selectedId = "") {
     const found = templates.find((t) => String(t.id) === selected);
     el.quoteServiceTemplateName.value = found ? String(found.name || "") : "";
   }
+}
+
+function renderSettingsQuoteTemplateServicesList() {
+  if (!el.settingsQuoteTemplateServicesList) return;
+  el.settingsQuoteTemplateServicesList.innerHTML = "";
+  const disabledServices = new Set((state.disabledServices || []).map((x) => String(x)));
+  const services = (state.services || [])
+    .filter((s) => !disabledServices.has(String(s?.id || "")))
+    .slice()
+    .sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity: "base" }));
+  for (const service of services) {
+    const opt = document.createElement("option");
+    opt.value = String(service.name || "");
+    const meta = [service.category, service.subcategory].filter(Boolean).join(" / ");
+    if (meta) opt.label = meta;
+    el.settingsQuoteTemplateServicesList.appendChild(opt);
+  }
+}
+
+function renderSettingsQuoteServiceTemplateSelect(selectedId = "") {
+  if (!el.settingsQuoteServiceTemplateSelect) return;
+  const templates = normalizeQuoteServiceTemplatesCollection(getQuoteServiceTemplatesFromState());
+  state.quoteServiceTemplates = templates;
+  el.settingsQuoteServiceTemplateSelect.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = templates.length ? "Selecciona plantilla" : "No hay plantillas guardadas";
+  el.settingsQuoteServiceTemplateSelect.appendChild(placeholder);
+  for (const tpl of templates) {
+    const opt = document.createElement("option");
+    opt.value = String(tpl.id || "");
+    opt.textContent = String(tpl.name || "Plantilla");
+    el.settingsQuoteServiceTemplateSelect.appendChild(opt);
+  }
+  const selected = templates.some((t) => String(t.id) === String(selectedId || "")) ? String(selectedId || "") : "";
+  el.settingsQuoteServiceTemplateSelect.value = selected;
+}
+
+function renderQuoteServiceTemplateManagerItems() {
+  if (!el.settingsQuoteTemplateItemsBody) return;
+  const items = normalizeQuoteItemsForSnapshot(quoteServiceTemplateManagerItems);
+  quoteServiceTemplateManagerItems = items;
+  if (!items.length) {
+    el.settingsQuoteTemplateItemsBody.innerHTML = `<tr><td colspan="5">Sin servicios en esta plantilla.</td></tr>`;
+    return;
+  }
+  el.settingsQuoteTemplateItemsBody.innerHTML = items.map((item) => {
+    const qty = Number(item.qty || 0);
+    const unit = Math.max(0, Number(item.unitPrice || item.price || 0));
+    const total = String(item.quantityMode || "").toUpperCase() === "PAX" ? unit : unit * Math.max(1, qty || 1);
+    return `
+      <tr>
+        <td><strong>${escapeHtml(item.name || "Servicio")}</strong><small>${escapeHtml([item.category, item.subcategory].filter(Boolean).join(" / "))}</small></td>
+        <td>${escapeHtml(String(item.quantityMode || "").toUpperCase() === "PAX" ? "PAX" : String(qty || 1))}</td>
+        <td>Q ${unit.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td>Q ${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td><button class="btn" type="button" data-qstm-remove="${escapeHtml(String(item.rowId || ""))}">Quitar</button></td>
+      </tr>`;
+  }).join("");
+}
+
+function loadQuoteServiceTemplateManager(templateId = "") {
+  const id = String(templateId || "").trim();
+  const templates = normalizeQuoteServiceTemplatesCollection(getQuoteServiceTemplatesFromState());
+  const found = templates.find((t) => String(t.id) === id);
+  renderSettingsQuoteServiceTemplateSelect(id);
+  if (el.settingsQuoteServiceTemplateName) el.settingsQuoteServiceTemplateName.value = found ? String(found.name || "") : "";
+  quoteServiceTemplateManagerItems = found ? normalizeQuoteItemsForSnapshot(found.items).map((item) => ({ ...item, rowId: uid() })) : [];
+  renderQuoteServiceTemplateManagerItems();
+}
+
+function openQuoteServiceTemplateManager() {
+  if (!el.quoteServiceTemplateManagerBackdrop) return;
+  renderSettingsQuoteTemplateServicesList();
+  loadQuoteServiceTemplateManager(el.settingsQuoteServiceTemplateSelect?.value || "");
+  el.quoteServiceTemplateManagerBackdrop.hidden = false;
+  setTimeout(() => el.settingsQuoteServiceTemplateSelect?.focus(), 0);
+}
+
+function closeQuoteServiceTemplateManager() {
+  if (el.quoteServiceTemplateManagerBackdrop) el.quoteServiceTemplateManagerBackdrop.hidden = true;
+}
+
+function addServiceToQuoteServiceTemplateManager() {
+  const rawName = String(el.settingsQuoteTemplateServiceSearch?.value || "").trim();
+  if (!rawName) return toast("Escribe un servicio.");
+  const service = resolveServiceFromSearch(rawName);
+  const requestedQty = Math.max(0, Math.floor(Number(el.settingsQuoteTemplateServiceQty?.value || 0)));
+  const isPaxService = String(service?.quantityMode || "").trim().toUpperCase() === "PAX";
+  if (!isPaxService && requestedQty <= 0) return toast("Este producto requiere una cantidad manual.");
+  const unitPrice = Math.max(0, Number(service?.price || 0));
+  quoteServiceTemplateManagerItems.push({
+    rowId: uid(),
+    serviceId: service?.id || null,
+    name: service?.name || rawName,
+    qty: isPaxService ? 1 : requestedQty,
+    unitPrice,
+    price: unitPrice,
+    description: service?.description || "",
+    category: service?.category || "",
+    subcategory: service?.subcategory || "",
+    quantityMode: isPaxService ? "PAX" : "MANUAL",
+    serviceDate: "",
+  });
+  if (el.settingsQuoteTemplateServiceSearch) el.settingsQuoteTemplateServiceSearch.value = "";
+  if (el.settingsQuoteTemplateServiceQty) el.settingsQuoteTemplateServiceQty.value = "";
+  renderQuoteServiceTemplateManagerItems();
+}
+
+function saveQuoteServiceTemplateFromManager(updateExisting = false) {
+  const name = String(el.settingsQuoteServiceTemplateName?.value || "").trim();
+  if (!name) return toast("Escribe el nombre de la plantilla.");
+  const sanitizedItems = normalizeQuoteItemsForSnapshot(quoteServiceTemplateManagerItems).filter((item) => String(item.name || "").trim());
+  if (!sanitizedItems.length) return toast("Agrega al menos un servicio a la plantilla.");
+  const templates = normalizeQuoteServiceTemplatesCollection(getQuoteServiceTemplatesFromState());
+  const nowIso = new Date().toISOString();
+  if (updateExisting) {
+    const selectedId = String(el.settingsQuoteServiceTemplateSelect?.value || "").trim();
+    if (!selectedId) return toast("Selecciona una plantilla para actualizar.");
+    const idx = templates.findIndex((t) => String(t.id) === selectedId);
+    if (idx < 0) return toast("Plantilla no encontrada para actualizar.");
+    templates[idx] = { ...templates[idx], name, items: sanitizedItems, updatedAt: nowIso };
+    state.quoteServiceTemplates = normalizeQuoteServiceTemplatesCollection(templates);
+    renderQuoteServiceTemplateSelect(selectedId);
+    loadQuoteServiceTemplateManager(selectedId);
+    persist();
+    toast("Plantilla de servicios actualizada.");
+    return;
+  }
+  const duplicate = templates.find((t) => String(t.name || "").trim().toLowerCase() === name.toLowerCase());
+  if (duplicate) return toast("Ya existe una plantilla con ese nombre. Seleccionala para actualizar.");
+  const nextId = `qst_${uid()}`;
+  templates.push({ id: nextId, name, items: sanitizedItems, createdAt: nowIso, updatedAt: nowIso });
+  state.quoteServiceTemplates = normalizeQuoteServiceTemplatesCollection(templates);
+  renderQuoteServiceTemplateSelect(nextId);
+  loadQuoteServiceTemplateManager(nextId);
+  persist();
+  toast("Plantilla de servicios guardada.");
+}
+
+async function deleteQuoteServiceTemplateFromManager() {
+  const selectedId = String(el.settingsQuoteServiceTemplateSelect?.value || "").trim();
+  if (!selectedId) return toast("Selecciona una plantilla para eliminar.");
+  const templates = normalizeQuoteServiceTemplatesCollection(getQuoteServiceTemplatesFromState());
+  const target = templates.find((t) => String(t.id) === selectedId);
+  if (!target) return toast("Plantilla no encontrada.");
+  const ok = await modernConfirm({
+    title: "Eliminar plantilla",
+    message: `Esta seguro de eliminar la plantilla "${target.name}"?`,
+    confirmText: "Si, eliminar",
+    cancelText: "No",
+  });
+  if (!ok) return;
+  state.quoteServiceTemplates = templates.filter((t) => String(t.id) !== selectedId);
+  renderQuoteServiceTemplateSelect("");
+  loadQuoteServiceTemplateManager("");
+  persist();
+  toast("Plantilla eliminada.");
 }
 
 async function applyQuoteServiceTemplateToDraft(templateId) {
@@ -8958,6 +9225,7 @@ async function applyQuoteServiceTemplateToDraft(templateId) {
   }
   quoteDraft.items = normalizeQuoteServiceTemplateItems(target.items);
   if (el.quoteServiceTemplateName) el.quoteServiceTemplateName.value = String(target.name || "");
+  syncPaxQuantityItems();
   renderQuoteItems();
   toast(`Plantilla aplicada: ${target.name}`);
 }
@@ -10200,7 +10468,11 @@ async function handleMmsStageOptionClick(kind, id) {
     const n = Number(id || 0);
     const set = new Set((Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)));
     if (set.has(n)) set.delete(n);
-    else set.add(n);
+    else {
+      set.add(n);
+      const label = namesFromIds(menuMontajeSelectableCatalogCache.salsas, [n])[0] || "Salsa";
+      notifyMmsSelectionAdded("salsa", n, label, 1);
+    }
     mmsSelectedSalsaIds = Array.from(set.values()).filter((x) => Number.isFinite(x) && x > 0);
     refreshMmsDescriptionAuto();
     renderMmsStageOptions();
@@ -10770,14 +11042,23 @@ function flashMmsComandaTag(kind, id) {
 function notifyMmsSelectionAdded(kind, id, label, qty) {
   const kindMap = {
     plato: "Plato fuerte",
+    salsa: "Salsa",
     guarnicion: "Guarnicion",
     postre: "Postre",
     bebida: "Bebida",
   };
+  const guideMap = {
+    plato: "Siguiente paso: agrega salsas o guarniciones para completar el plato.",
+    salsa: "Siguiente paso: continua con guarniciones.",
+    guarnicion: "Siguiente paso: agrega otra guarnicion o continua con postres.",
+    postre: "Siguiente paso: define bebidas o guarda la comanda.",
+    bebida: "Siguiente paso: revisa el resumen y guarda el menu.",
+  };
   const kindLabel = kindMap[String(kind || "").trim()] || "Producto";
   const safeQty = Math.max(1, Math.floor(Number(qty || 1)));
   const suffix = kind === "guarnicion" || kind === "salsa" ? "." : ` x${safeQty}.`;
-  toast(`${kindLabel} agregado: ${String(label || "").trim() || "Producto"}${suffix}`);
+  const message = `${kindLabel} agregado: ${String(label || "").trim() || "Producto"}${suffix} ${guideMap[String(kind || "").trim()] || "Revisa el resumen de comanda."}`;
+  toast(message);
   requestAnimationFrame(() => flashMmsComandaTag(kind, id));
 }
 
@@ -10888,10 +11169,11 @@ function renderMmsComandaTag(container, label, removeKind, removeId, { qty = nul
   tag.className = "mmsComandaTag";
   tag.dataset.mmsTagKind = String(removeKind || "");
   tag.dataset.mmsTagId = String(removeId || "");
+  const safeQty = Math.max(1, Math.floor(Number(qty || 1)));
   const qtyHtml = allowQty && Number.isFinite(Number(qty))
-    ? ` | Cant: ${Math.max(1, Math.floor(Number(qty)))} <button type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="dec" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Disminuir">-</button><button type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="inc" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Aumentar">+</button>`
+    ? `<span class="mmsTagQty"><span class="mmsTagQtyText">Cant. ${safeQty}</span><button class="mmsTagIconBtn mmsTagQtyBtn isDec" type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="dec" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Disminuir" aria-label="Disminuir cantidad"></button><button class="mmsTagIconBtn mmsTagQtyBtn isInc" type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="inc" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Aumentar" aria-label="Aumentar cantidad"></button></span>`
     : "";
-  tag.innerHTML = `${escapeHtml(label)}${qtyHtml} <button type="button" data-mms-remove-kind="${escapeHtml(removeKind)}" data-mms-remove-id="${escapeHtml(String(removeId))}" title="Quitar">x</button>`;
+  tag.innerHTML = `<span class="mmsComandaTagText">${escapeHtml(label)}</span>${qtyHtml}<button class="mmsTagIconBtn mmsTagRemoveBtn" type="button" data-mms-remove-kind="${escapeHtml(removeKind)}" data-mms-remove-id="${escapeHtml(String(removeId))}" title="Quitar" aria-label="Quitar del resumen"></button>`;
   container.appendChild(tag);
   return tag;
 }
@@ -12521,6 +12803,7 @@ function bindEvents() {
   }
   if (el.btnSideDashboardReports) {
     el.btnSideDashboardReports.addEventListener("click", () => {
+      closeBlockingOverlaysForNavigation();
       closeSettingsPanel();
       prepareModuleModalOpen("reports");
       openSalesReportModal();
@@ -12529,6 +12812,7 @@ function bindEvents() {
   }
   if (el.btnSideCalendar) {
     el.btnSideCalendar.addEventListener("click", () => {
+      closeBlockingOverlaysForNavigation();
       closeSettingsPanel();
       showCalendarModule();
       render();
@@ -12536,12 +12820,14 @@ function bindEvents() {
   }
   if (el.btnSideReports) {
     el.btnSideReports.addEventListener("click", () => {
+      closeBlockingOverlaysForNavigation();
       closeSettingsPanel();
       showReportsHub();
     });
   }
   if (el.btnSideSettings) {
     el.btnSideSettings.addEventListener("click", () => {
+      closeBlockingOverlaysForNavigation();
       closeSettingsPanel();
       showSettingsHub();
     });
@@ -12735,6 +13021,68 @@ function bindEvents() {
       });
     }
 
+    if (el.btnManageQuoteServiceTemplates) {
+      el.btnManageQuoteServiceTemplates.addEventListener("click", () => {
+        prepareModuleModalOpen("settings");
+        closeSettingsPanel();
+        openQuoteServiceTemplateManager();
+      });
+    }
+
+    if (el.btnQuoteServiceTemplateManagerClose) {
+      el.btnQuoteServiceTemplateManagerClose.addEventListener("click", closeQuoteServiceTemplateManager);
+    }
+
+    if (el.quoteServiceTemplateManagerBackdrop) {
+      el.quoteServiceTemplateManagerBackdrop.addEventListener("click", (e) => {
+        if (e.target === el.quoteServiceTemplateManagerBackdrop) closeQuoteServiceTemplateManager();
+        const removeBtn = e.target.closest("[data-qstm-remove]");
+        if (removeBtn) {
+          const rowId = String(removeBtn.dataset.qstmRemove || "").trim();
+          quoteServiceTemplateManagerItems = quoteServiceTemplateManagerItems.filter((item) => String(item.rowId || "") !== rowId);
+          renderQuoteServiceTemplateManagerItems();
+        }
+      });
+    }
+
+    if (el.settingsQuoteServiceTemplateSelect) {
+      el.settingsQuoteServiceTemplateSelect.addEventListener("change", () => {
+        loadQuoteServiceTemplateManager(el.settingsQuoteServiceTemplateSelect.value || "");
+      });
+    }
+
+    if (el.btnSettingsQuoteServiceTemplateNew) {
+      el.btnSettingsQuoteServiceTemplateNew.addEventListener("click", () => {
+        loadQuoteServiceTemplateManager("");
+        if (el.settingsQuoteServiceTemplateName) el.settingsQuoteServiceTemplateName.value = "";
+      });
+    }
+
+    if (el.btnSettingsQuoteTemplateServiceAdd) {
+      el.btnSettingsQuoteTemplateServiceAdd.addEventListener("click", addServiceToQuoteServiceTemplateManager);
+    }
+
+    if (el.settingsQuoteTemplateServiceSearch) {
+      el.settingsQuoteTemplateServiceSearch.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          addServiceToQuoteServiceTemplateManager();
+        }
+      });
+    }
+
+    if (el.btnSettingsQuoteServiceTemplateSave) {
+      el.btnSettingsQuoteServiceTemplateSave.addEventListener("click", () => saveQuoteServiceTemplateFromManager(false));
+    }
+
+    if (el.btnSettingsQuoteServiceTemplateUpdate) {
+      el.btnSettingsQuoteServiceTemplateUpdate.addEventListener("click", () => saveQuoteServiceTemplateFromManager(true));
+    }
+
+    if (el.btnSettingsQuoteServiceTemplateDelete) {
+      el.btnSettingsQuoteServiceTemplateDelete.addEventListener("click", deleteQuoteServiceTemplateFromManager);
+    }
+
     if (el.btnReportSales) {
       el.btnReportSales.addEventListener("click", () => {
         prepareModuleModalOpen("reports");
@@ -12841,6 +13189,7 @@ function bindEvents() {
 
   if (el.btnFindEvent) {
     el.btnFindEvent.addEventListener("click", () => {
+      closeBlockingOverlaysForNavigation();
       closeSettingsPanel();
       openEventFinderModal();
     });
@@ -12898,13 +13247,20 @@ function bindEvents() {
     el[id].addEventListener("input", () => validateReservationRequiredFields());
   });
   el.btnAddSlot.addEventListener("click", () => {
-    addSlotRow({ salon: "", slotPax: 0, startTime: "", endTime: "" });
+    addSlotRow({
+      salon: "",
+      slotPax: 0,
+      dateStart: el.eventDate?.value || "",
+      dateEnd: el.eventDateEnd?.value || el.eventDate?.value || "",
+      startTime: "",
+      endTime: "",
+    });
     syncHiddenTimesFromFirstSlot();
     syncEventPaxFromSlots();
     updateRulesAndConflictsUI();
   });
   const onSlotChange = (e) => {
-    if (!e.target.closest(".slotStart, .slotEnd, .slotRoom, .slotPax")) return;
+    if (!e.target.closest(".slotStart, .slotEnd, .slotRoom, .slotPax, .slotDateStart, .slotDateEnd")) return;
     syncHiddenTimesFromFirstSlot();
     syncEventPaxFromSlots();
     updateRulesAndConflictsUI();
@@ -12934,8 +13290,19 @@ function bindEvents() {
   el.eventDate.addEventListener("change", () => {
     if (!el.eventId.value && Array.isArray(pendingCreateDates) && pendingCreateDates.length > 1) {
       pendingCreateDates = [el.eventDate.value];
-      el.eventDateEnd.value = el.eventDate.value;
+      setModernDateValue(el.eventDateEnd, el.eventDate.value);
       el.modalSubtitle.textContent = "Nuevo evento";
+    }
+    for (const input of Array.from(el.slotsBody.querySelectorAll(".slotDateStart"))) {
+      if (!input.value) input.value = el.eventDate.value;
+    }
+    for (const input of Array.from(el.slotsBody.querySelectorAll(".slotDateEnd"))) {
+      if (!input.value) input.value = el.eventDateEnd.value || el.eventDate.value;
+    }
+  });
+  el.eventDateEnd.addEventListener("change", () => {
+    for (const input of Array.from(el.slotsBody.querySelectorAll(".slotDateEnd"))) {
+      if (!input.value) input.value = el.eventDateEnd.value || el.eventDate.value;
     }
   });
 
@@ -15157,12 +15524,12 @@ function openModalForCreate({ date, start, end, salon, rangeDates = null }) {
 
   el.eventId.value = "";
   el.eventName.value = "";
-  el.eventDate.value = toISODate(d);
-  el.eventDateEnd.value = totalDates > 1 ? rangeDates[rangeDates.length - 1] : toISODate(d);
+  setModernDateValue(el.eventDate, toISODate(d));
+  setModernDateValue(el.eventDateEnd, totalDates > 1 ? rangeDates[rangeDates.length - 1] : toISODate(d));
   el.slotsBody.innerHTML = "";
   addSlotRow({ salon: initialSalon, slotPax: 0, startTime, endTime });
   syncHiddenTimesFromFirstSlot();
-  el.eventStatus.value = STATUS.PRIMERA; // default razonable
+  el.eventStatus.value = STATUS.RESERVA_SIN_COTIZACION; // default: apartado sin cotizacion
   const sessionUserId = String(authSession.userId || "").trim();
   const sessionAvailable = (state.users || []).some((u) => String(u.id) === sessionUserId && u.active !== false);
   el.eventUser.value = sessionAvailable ? sessionUserId : (state.users[0]?.id || "");
@@ -15202,16 +15569,16 @@ async function openModalForEdit(id) {
 
   el.modalTitle.textContent = "Editar reserva";
   const series = getEventSeries(ev).sort((a, b) => a.date.localeCompare(b.date));
-  const firstDate = series[0]?.date || ev.date;
-  const lastDate = series[series.length - 1]?.date || ev.date;
+  const firstDate = getEventGeneralDateStart(series[0] || ev) || series[0]?.date || ev.date;
+  const lastDate = getEventGeneralDateEnd(series[0] || ev) || series[series.length - 1]?.date || ev.date;
   el.modalSubtitle.textContent = series.length > 1
     ? `${ev.salon} - ${firstDate} a ${lastDate} - ${ev.startTime}-${ev.endTime}`
     : `${ev.salon} - ${ev.date} - ${ev.startTime}-${ev.endTime}`;
 
   el.eventId.value = ev.id;
   el.eventName.value = ev.name;
-  el.eventDate.value = firstDate;
-  el.eventDateEnd.value = lastDate;
+  setModernDateValue(el.eventDate, firstDate);
+  setModernDateValue(el.eventDateEnd, lastDate);
   const slots = uniqueSlotsFromSeries(series);
   el.slotsBody.innerHTML = "";
   if (slots.length) {
@@ -17358,10 +17725,19 @@ async function saveQuoteFromForm() {
   if (!validItems) return toast("Completa descripcion, cantidad, precio y fecha valida en cada servicio.");
 
   const series = getEventSeries(ev);
+  const isFirstQuote = !previousQuote;
   let movedToSeguimiento = false;
+  let movedToFirstQuote = false;
   for (const item of series) {
     item.quote = deepClone(savedQuote);
-    if (item.status === STATUS.PRIMERA) {
+    if (isFirstQuote && item.status === STATUS.RESERVA_SIN_COTIZACION) {
+      item.status = STATUS.PRIMERA;
+      movedToFirstQuote = true;
+    } else if (
+      !isFirstQuote
+      && !unchangedQuote
+      && (item.status === STATUS.PRIMERA || item.status === STATUS.RESERVA_SIN_COTIZACION)
+    ) {
       item.status = STATUS.SEGUIMIENTO;
       movedToSeguimiento = true;
     }
@@ -17372,9 +17748,11 @@ async function saveQuoteFromForm() {
     ev.userId,
     unchangedQuote
       ? `Cotizacion verificada sin cambios (V${savedQuote.version}). Total ${moneyGT(totalQuote)}.`
-      : (movedToSeguimiento
-        ? `Cotizacion guardada. Total ${moneyGT(totalQuote)}. Estado a Seguimiento.`
-        : `Cotizacion guardada. Total ${moneyGT(totalQuote)}. Estado conservado.`)
+      : (movedToFirstQuote
+        ? `Primera cotizacion guardada. Total ${moneyGT(totalQuote)}. Estado a 1er Cotizacion.`
+        : (movedToSeguimiento
+          ? `Cotizacion actualizada. Total ${moneyGT(totalQuote)}. Estado a Seguimiento.`
+          : `Cotizacion guardada. Total ${moneyGT(totalQuote)}. Estado conservado.`))
   );
 
   persist();
@@ -19771,9 +20149,9 @@ function saveEventFromForm() {
     return toast("Evento de fecha pasada bloqueado. Solicita codigo de administrador.");
   }
   const editingCurrentStatus = String(editingEvent?.status || "").trim();
-  const status = isAutoStatus(rawStatus)
-    ? (editingId ? (editingCurrentStatus || STATUS.PRIMERA) : STATUS.PRIMERA)
-    : (rawStatus || STATUS.PRIMERA);
+  let status = isAutoStatus(rawStatus)
+    ? (editingId ? (editingCurrentStatus || STATUS.RESERVA_SIN_COTIZACION) : STATUS.RESERVA_SIN_COTIZACION)
+    : (rawStatus || STATUS.RESERVA_SIN_COTIZACION);
   const userId = el.eventUser.value;
   const notes = el.eventNotes.value.trim();
   const slots = getSlotsFromForm();
@@ -19785,8 +20163,16 @@ function saveEventFromForm() {
   if (!pax) return toast("Ingresa una cantidad valida de personas por salon.");
   if (!slots.length) return toast("Agrega al menos un bloque de salon/horario.");
   for (const s of slots) {
-    if (!s.salon || !s.startTime || !s.endTime) return toast("Completa salon, inicio y fin en cada bloque.");
+    const slotRange = normalizeSlotDateRange(s, rangeStart, rangeEnd);
+    s.dateStart = slotRange.start;
+    s.dateEnd = slotRange.end;
+    if (!s.salon || !s.dateStart || !s.dateEnd || !s.startTime || !s.endTime) {
+      return toast("Completa salon, fechas, inicio y fin en cada bloque.");
+    }
     if (!s.slotPax || Number(s.slotPax) <= 0) return toast("Completa un PAX valido en cada salon.");
+    if (s.dateStart < rangeStart || s.dateEnd > rangeEnd) {
+      return toast("Las fechas de cada salon deben estar dentro de la fecha inicial y final del evento.");
+    }
     if (!isValidClockTime(s.startTime) || !isValidClockTime(s.endTime)) {
       return toast("Formato de hora invalido. Usa HH:mm.");
     }
@@ -19797,12 +20183,19 @@ function saveEventFromForm() {
     ? getEventSeries(state.events.find(x => x.id === editingId))
     : [];
   const previousStatus = String(replaceEvents[0]?.status || "").trim();
+  if (editingId && previousStatus === STATUS.PERDIDO && rangeEnd >= toISODate(new Date())) {
+    status = reservationStatusFromQuotePresence(replaceEvents[0] || editingEvent);
+  }
   const oldBlockingWindows = buildBlockingWindowsFromEvents(replaceEvents);
   const oldKey = replaceEvents[0] ? reservationKeyFromEvent(replaceEvents[0]) : "";
   const oldSnapshot = buildSeriesSnapshot(replaceEvents);
   const replaceIds = new Set(replaceEvents.map(e => e.id));
   const currentGroupId = replaceEvents[0]?.groupId || null;
-  const targetDates = listDatesBetween(rangeStart, rangeEnd);
+  const slotPlans = slots.map((slot) => ({
+    ...slot,
+    targetDates: listDatesBetween(slot.dateStart, slot.dateEnd),
+  }));
+  const targetDates = Array.from(new Set(slotPlans.flatMap((slot) => slot.targetDates))).sort();
   const needsGroup = targetDates.length > 1 || slots.length > 1 || replaceEvents.length > 1;
   const resultingGroupId = needsGroup ? (currentGroupId || `grp_${uid()}`) : null;
   const existingByKey = new Map(replaceEvents.map(e => [`${e.date}|${e.salon}|${e.startTime}|${e.endTime}`, e]));
@@ -19810,8 +20203,8 @@ function saveEventFromForm() {
   const principalSalon = String(slots[0]?.salon || "").trim();
   const reservationSalones = Array.from(new Set(slots.map((slot) => String(slot?.salon || "").trim()).filter(Boolean)));
   const drafts = [];
-  for (const d of targetDates) {
-    for (const s of slots) {
+  for (const s of slotPlans) {
+    for (const d of s.targetDates) {
       const key = `${d}|${s.salon}|${s.startTime}|${s.endTime}`;
       const existing = existingByKey.get(key);
       drafts.push({
@@ -19821,6 +20214,8 @@ function saveEventFromForm() {
         mainSalon: String(existing?.mainSalon || principalSalon || s.salon || "").trim(),
         salones: reservationSalones.slice(),
         date: d,
+        eventDateStart: rangeStart,
+        eventDateEnd: rangeEnd,
         groupId: resultingGroupId,
         status,
         startTime: s.startTime,
@@ -19966,13 +20361,15 @@ function getEventSeriesFinancialMeta(ev) {
     || null;
   const firstEvent = series[0] || ev || null;
   const lastEvent = series[series.length - 1] || ev || null;
+  const eventDateStart = getEventGeneralDateStart(firstEvent) || String(firstEvent?.date || "").trim();
+  const eventDateEnd = getEventGeneralDateEnd(firstEvent) || String(lastEvent?.date || "").trim();
   return {
     series,
     salones: uniqueSalones,
     mainSalon,
     primaryEvent,
-    startDate: String(firstEvent?.date || "").trim(),
-    endDate: String(lastEvent?.date || "").trim(),
+    startDate: eventDateStart,
+    endDate: eventDateEnd,
     startTime: String(primaryEvent?.startTime || firstEvent?.startTime || "").trim(),
     endTime: String(primaryEvent?.endTime || firstEvent?.endTime || "").trim(),
   };
@@ -20002,9 +20399,18 @@ function uniqueSlotsFromSeries(series) {
       map.set(key, {
         salon: e.salon,
         slotPax: Math.max(0, Number(e?.slotPax || 0)) || 0,
+        dateStart: e.date || "",
+        dateEnd: e.date || "",
         startTime: e.startTime,
         endTime: e.endTime,
       });
+    } else {
+      const slot = map.get(key);
+      const date = String(e?.date || "").trim();
+      if (date) {
+        if (!slot.dateStart || date < slot.dateStart) slot.dateStart = date;
+        if (!slot.dateEnd || date > slot.dateEnd) slot.dateEnd = date;
+      }
     }
   }
   const slots = Array.from(map.values()).sort((a, b) => compareTime(a.startTime, b.startTime));
@@ -20024,26 +20430,39 @@ function uniqueSlotsFromSeries(series) {
 function summarizeSeriesWindow(series) {
   if (!series.length) return "";
   const sorted = series.slice().sort((a, b) => a.date.localeCompare(b.date));
-  const first = sorted[0].date;
-  const last = sorted[sorted.length - 1].date;
+  const first = getEventGeneralDateStart(sorted[0]) || sorted[0].date;
+  const last = getEventGeneralDateEnd(sorted[0]) || sorted[sorted.length - 1].date;
   const slots = uniqueSlotsFromSeries(sorted);
-  const slotText = slots.map(s => `${s.salon} ${s.startTime}-${s.endTime}`).join(", ");
+  const slotText = slots.map(s => {
+    const dates = s.dateStart && s.dateEnd && (s.dateStart !== first || s.dateEnd !== last)
+      ? ` ${s.dateStart}${s.dateStart !== s.dateEnd ? ` a ${s.dateEnd}` : ""}`
+      : "";
+    return `${s.salon}${dates} ${s.startTime}-${s.endTime}`;
+  }).join(", ");
   return `${first}${first !== last ? ` a ${last}` : ""}${slotText ? ` (${slotText})` : ""}`;
 }
 
 function summarizeDraftWindow(drafts) {
   if (!drafts.length) return "";
   const sorted = drafts.slice().sort((a, b) => a.date.localeCompare(b.date));
-  const first = sorted[0].date;
-  const last = sorted[sorted.length - 1].date;
+  const first = getEventGeneralDateStart(sorted[0]) || sorted[0].date;
+  const last = getEventGeneralDateEnd(sorted[0]) || sorted[sorted.length - 1].date;
   const slots = uniqueSlotsFromSeries(sorted);
-  const slotText = slots.map(s => `${s.salon} ${s.startTime}-${s.endTime}`).join(", ");
+  const slotText = slots.map(s => {
+    const dates = s.dateStart && s.dateEnd && (s.dateStart !== first || s.dateEnd !== last)
+      ? ` ${s.dateStart}${s.dateStart !== s.dateEnd ? ` a ${s.dateEnd}` : ""}`
+      : "";
+    return `${s.salon}${dates} ${s.startTime}-${s.endTime}`;
+  }).join(", ");
   return `${first}${first !== last ? ` a ${last}` : ""}${slotText ? ` (${slotText})` : ""}`;
 }
 
 function formatSlotsForHistory(slots) {
   if (!Array.isArray(slots) || !slots.length) return "-";
-  return slots.map(s => `${s.salon} ${s.startTime}-${s.endTime}`).join(" | ");
+  return slots.map(s => {
+    const dates = s.dateStart && s.dateEnd ? ` ${s.dateStart}${s.dateStart !== s.dateEnd ? ` a ${s.dateEnd}` : ""}` : "";
+    return `${s.salon}${dates} ${s.startTime}-${s.endTime}`;
+  }).join(" | ");
 }
 
 function buildSeriesSnapshot(series) {
@@ -20056,8 +20475,8 @@ function buildSeriesSnapshot(series) {
     status: first.status || "",
     userId: first.userId || "",
     notes: String(first.notes || ""),
-    dateStart: first.date || "",
-    dateEnd: last.date || "",
+    dateStart: getEventGeneralDateStart(first) || first.date || "",
+    dateEnd: getEventGeneralDateEnd(first) || last.date || "",
     slots: uniqueSlotsFromSeries(sorted),
   };
 }
@@ -20072,8 +20491,8 @@ function buildDraftSnapshot(drafts) {
     status: first.status || "",
     userId: first.userId || "",
     notes: String(first.notes || ""),
-    dateStart: first.date || "",
-    dateEnd: last.date || "",
+    dateStart: getEventGeneralDateStart(first) || first.date || "",
+    dateEnd: getEventGeneralDateEnd(first) || last.date || "",
     slots: uniqueSlotsFromSeries(sorted),
   };
 }
@@ -20719,7 +21138,7 @@ function renderAppointmentsForEvent(ev) {
   for (const r of rows) {
     const meta = getReminderStatus(r, now);
     const status = meta.status === "soon" ? "Proxima" : (meta.status === "today" ? "Hoy" : "Pendiente");
-    const cls = meta.status === "soon" ? "reminderState soon" : "reminderState";
+    const cls = meta.status === "soon" ? "reminderState soon" : (meta.status === "today" ? "reminderState today" : "reminderState");
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${escapeHtml(`${String(r.date || "")} ${String(r.time || "")}`.trim())}</td>
@@ -21363,7 +21782,10 @@ function isHardBlockingStatus(status) {
 }
 
 function canBeAutoNotifiedForReleasedCapacity(status) {
-  return status === STATUS.LISTA || status === STATUS.PRIMERA || status === STATUS.SEGUIMIENTO;
+  return status === STATUS.LISTA
+    || status === STATUS.RESERVA_SIN_COTIZACION
+    || status === STATUS.PRIMERA
+    || status === STATUS.SEGUIMIENTO;
 }
 
 function buildStatusChangeToast(prevStatus, nextStatus, fallback = "Estado actualizado.") {
@@ -22090,6 +22512,8 @@ function validateReservationRequiredFields() {
     const row = rows[i];
     const roomEl = row?.querySelector(".slotRoom");
     const paxEl = row?.querySelector(".slotPax");
+    const slotDateStartEl = row?.querySelector(".slotDateStart");
+    const slotDateEndEl = row?.querySelector(".slotDateEnd");
     const startEl = row?.querySelector(".slotStart");
     const endEl = row?.querySelector(".slotEnd");
     const okRoom = !!s.salon;
@@ -22098,6 +22522,20 @@ function validateReservationRequiredFields() {
     const okSlotPax = Number(s.slotPax) > 0;
     mark(paxEl, okSlotPax);
     if (!okSlotPax) issues.push(`Bloque ${idx}: PAX`);
+    const slotRange = normalizeSlotDateRange(s, dateStart, dateEnd);
+    const okSlotDateStart = !!slotRange.start;
+    const okSlotDateEnd = !!slotRange.end;
+    mark(slotDateStartEl, okSlotDateStart);
+    mark(slotDateEndEl, okSlotDateEnd);
+    if (!okSlotDateStart) issues.push(`Bloque ${idx}: Fecha desde`);
+    if (!okSlotDateEnd) issues.push(`Bloque ${idx}: Fecha hasta`);
+    if (slotRange.start && slotRange.end && dateStart && dateEnd) {
+      const eventRange = normalizeSlotDateRange({ dateStart, dateEnd });
+      const inEventRange = slotRange.start >= eventRange.start && slotRange.end <= eventRange.end;
+      mark(slotDateStartEl, inEventRange);
+      mark(slotDateEndEl, inEventRange);
+      if (!inEventRange) issues.push(`Bloque ${idx}: Fechas fuera del rango del evento`);
+    }
     const okStart = !!s.startTime && isValidClockTime(s.startTime);
     mark(startEl, okStart);
     if (!s.startTime) issues.push(`Bloque ${idx}: Hora inicio`);
@@ -22135,10 +22573,12 @@ function toast(msg) {
     const successPattern = /\b(agregado|agregada|guardado|guardada|creado|creada|cargado|cargada|movido|movida|eliminado|eliminada|ajustada|ajustado|extendida|extendido|cambiado|cambiada|actualizado|actualizada|listo)\b/i;
     const errorPattern = /\b(no se pudo|error|invalido|invalida|falta|faltan|completa|sin conexion|debe|obligatoria|obligatorio)\b/i;
     const icon = errorPattern.test(text) ? "error" : (successPattern.test(text) ? "success" : "info");
+    const iconHtml = icon === "success" ? "&#10003;" : (icon === "error" ? "&#215;" : "i");
     window.Swal.fire({
       toast: true,
       position: "top",
       icon,
+      iconHtml,
       title: text,
       showConfirmButton: false,
       timer: 2400,
@@ -22369,6 +22809,7 @@ function getEventsInWeek(weekStart, salon, dayCount = 7) {
       return compareTime(a.startTime, b.startTime);
     });
 }
+
 
 
 
