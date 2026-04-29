@@ -179,6 +179,7 @@ const TEMPLATE_SIGNATURE_FALLBACK_H_PCT = 5;
 const TEMPLATE_COORD_BASE_W_PT = 612;
 const TEMPLATE_COORD_BASE_H_PT = 792;
 const PAST_EVENT_ADMIN_EDIT_CODE = "JDL-ADMIN-2026";
+const FALLBACK_MAX_PAX_PER_SLOT = 2000;
 const DEFAULT_TOPBAR_SETTINGS = {
   showLegend: true,
   compactEvents: false,
@@ -192,6 +193,8 @@ let navMode = "week";
 let monthCursor = startOfMonth(new Date());
 let pendingCreateDates = null;
 let quoteDraft = null;
+let quoteSaveInFlight = false;
+let quoteSelectedItemIds = new Set();
 let quoteAdvanceEditingId = "";
 let companyManagersDraft = [];
 let editingCompanyId = "";
@@ -292,6 +295,8 @@ const el = {
   btnSideCalendar: document.getElementById("btnSideCalendar"),
   btnSideReports: document.getElementById("btnSideReports"),
   btnSideSettings: document.getElementById("btnSideSettings"),
+  btnSupportMenu: document.getElementById("btnSupportMenu"),
+  supportOptions: document.getElementById("supportOptions"),
   btnModuleCalendar: document.getElementById("btnModuleCalendar"),
   btnModuleReports: document.getElementById("btnModuleReports"),
   btnModuleSettings: document.getElementById("btnModuleSettings"),
@@ -579,6 +584,7 @@ const el = {
   quoteTemplateSelect: document.getElementById("quoteTemplateSelect"),
   btnLoadQuoteVersion: document.getElementById("btnLoadQuoteVersion"),
   btnToggleQuoteDoc: document.getElementById("btnToggleQuoteDoc"),
+  btnQuoteDocSaveClose: document.getElementById("btnQuoteDocSaveClose"),
   quoteServiceTemplateSelect: document.getElementById("quoteServiceTemplateSelect"),
   quoteServiceTemplateName: document.getElementById("quoteServiceTemplateName"),
   btnQuoteServiceTemplateApply: document.getElementById("btnQuoteServiceTemplateApply"),
@@ -618,6 +624,10 @@ const el = {
   serviceDescriptionsList: document.getElementById("serviceDescriptionsList"),
   btnAddServiceToQuote: document.getElementById("btnAddServiceToQuote"),
   quoteItemsPanel: document.getElementById("quoteItemsPanel"),
+  quoteSelectAllItems: document.getElementById("quoteSelectAllItems"),
+  btnQuoteDuplicateSelected: document.getElementById("btnQuoteDuplicateSelected"),
+  btnQuoteMoveSelectedUp: document.getElementById("btnQuoteMoveSelectedUp"),
+  btnQuoteMoveSelectedDown: document.getElementById("btnQuoteMoveSelectedDown"),
   btnToggleQuoteItemsExpand: document.getElementById("btnToggleQuoteItemsExpand"),
   quoteItemsBody: document.getElementById("quoteItemsBody"),
   quoteDiscountType: document.getElementById("quoteDiscountType"),
@@ -644,6 +654,11 @@ const el = {
   btnQuoteAdvances: document.getElementById("btnQuoteAdvances"),
   btnMenuMontajeSelectable: document.getElementById("btnMenuMontajeSelectable"),
   btnQuotePrintTemplate: document.getElementById("btnQuotePrintTemplate"),
+  btnQuoteSave: document.getElementById("btnQuoteSave"),
+  quoteSaveProgress: document.getElementById("quoteSaveProgress"),
+  quoteSaveProgressText: document.getElementById("quoteSaveProgressText"),
+  quoteSaveProgressBar: document.getElementById("quoteSaveProgressBar"),
+  quoteSaveProgressFill: document.getElementById("quoteSaveProgressFill"),
   quoteAdvanceBackdrop: document.getElementById("quoteAdvanceBackdrop"),
   btnQuoteAdvanceClose: document.getElementById("btnQuoteAdvanceClose"),
   btnQuoteAdvanceDone: document.getElementById("btnQuoteAdvanceDone"),
@@ -4047,7 +4062,13 @@ function exportSalesReportToExcel() {
       <div><b>Filtros aplicados:</b> ${escapeHtml(salesReportFiltersSummaryText())}</div>
       <div><b>Total registros:</b> ${rows.length}</div>
     </div>
-    <table>
+    <table class="quoteItemsTablePrint">
+      <colgroup>
+        <col class="qtyCol" />
+        <col class="descCol" />
+        <col class="priceCol" />
+        <col class="totalCol" />
+      </colgroup>
       <thead>
         <tr>
           <th>Estado</th><th>ID Cotizacion/Reserva</th><th>Vendedor</th><th>Fecha evento</th><th>Tipo evento</th><th>Hora inicio</th><th>Hora final</th><th>Salon</th><th>Institucion</th><th>Encargado evento</th><th>PAX</th><th>Cant Desayunos</th><th>Monto Desayunos</th><th>Cant Refa</th><th>Monto Refa</th><th>Cant Almuerzos</th><th>Monto Almuerzos</th><th>Cant AM Refa</th><th>Monto AM Refa</th><th>Cant PM Refa</th><th>Monto PM Refa</th><th>Cant Cenas Buffet</th><th>Monto Cenas Buffet</th><th>Cant Miscelaneos</th><th>Monto Miscelaneos</th><th>Cat A&B Cant</th><th>Cat A&B Monto</th><th>Cat Hospedaje JDL Cant</th><th>Cat Hospedaje JDL Monto</th><th>Cat Hospedaje Terceros Cant</th><th>Cat Hospedaje Terceros Monto</th><th>Cat Miscelaneos Cant</th><th>Cat Miscelaneos Monto</th><th>Descuento</th><th>Ultima modificacion</th>
@@ -4730,7 +4751,13 @@ function exportAccountingReportToExcel() {
       <div><b>Empresas vencidas:</b> ${overdueCount}</div>
     </div>
     <div class="sectionTitle">Resumen por institucion</div>
-    <table>
+    <table class="quoteItemsTablePrint">
+      <colgroup>
+        <col class="qtyCol" />
+        <col class="descCol" />
+        <col class="priceCol" />
+        <col class="totalCol" />
+      </colgroup>
       <thead>
         <tr>
           <th>Indicador</th><th>Institucion</th><th>Contacto cobro</th><th>Vendedor principal</th><th>Eventos</th><th>Eventos pendientes</th><th>Venta neta</th><th>Cobrado</th><th>Saldo pendiente</th><th>Saldo a favor</th><th>Proximo cobro</th><th>Tiempo sugerido</th><th>Ultimo deposito</th>
@@ -5158,7 +5185,7 @@ function renderOccupancyDayCards(rows) {
         <strong>${count}</strong>
         <span>evento${count === 1 ? "" : "s"}</span>
       </div>
-      <div class="occupancyDayMeta" style="display:flex; align-items:center; gap:8px; margin-top:6px;"><span class="occupancyDayStatChip occupancyDayStatChip--confirmed" style="display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:999px; border:1px solid rgba(34,197,94,.34); background:rgba(34,197,94,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.04);"><b style="color:#d9ffe7; font-size:12px; font-weight:900; line-height:1;">${escapeHtml(String(confirmedCount))}</b><small style="color:#bfe8cf; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1;">Conf.</small></span><span class="occupancyDayStatChip occupancyDayStatChip--pre" style="display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:999px; border:1px solid rgba(56,189,248,.34); background:rgba(56,189,248,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.04);"><b style="color:#def5ff; font-size:12px; font-weight:900; line-height:1;">${escapeHtml(String(preCount))}</b><small style="color:#c8ebff; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1;">Pre</small></span></div>
+      <div class="occupancyDayMeta" style="display:flex; align-items:center; gap:8px; margin-top:6px;"><span class="occupancyDayStatChip occupancyDayStatChip--confirmed" style="display:inline-flex; align-items:center; justify-content:space-between; gap:6px; min-width:84px; padding:5px 9px; border-radius:999px; border:1px solid rgba(34,197,94,.34); background:rgba(34,197,94,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.04);"><b style="color:#14532d; font-size:12px; font-weight:900; line-height:1;">${escapeHtml(String(confirmedCount))}</b><small style="display:inline-block; width:34px; text-align:center; color:#166534; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1;">Conf.</small></span><span class="occupancyDayStatChip occupancyDayStatChip--pre" style="display:inline-flex; align-items:center; justify-content:space-between; gap:6px; min-width:84px; padding:5px 9px; border-radius:999px; border:1px solid rgba(56,189,248,.34); background:rgba(56,189,248,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.04);"><b style="color:#0c4a6e; font-size:12px; font-weight:900; line-height:1;">${escapeHtml(String(preCount))}</b><small style="display:inline-block; width:34px; text-align:center; color:#075985; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1;">Pre</small></span></div>
       <div class="occupancyDayRevenue">${escapeHtml(count ? moneyGT(revenue) : "Sin monto")}</div>
     `;
     card.addEventListener("click", () => {
@@ -5205,7 +5232,7 @@ function renderOccupancyDayDetail(rows) {
       <article class="occupancyEventCard occupancyEventCard--${escapeHtml(rowTone)}">
         <div class="occupancyEventHead">
           <div class="occupancyEventHeading">
-            <span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.18))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.48))};color:${escapeHtml(r.statusColor || "#e2e8f0")}">${escapeHtml(r.status)}</span>
+            <span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.18))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.48))};color:#0f172a">${escapeHtml(r.status)}</span>
             <strong title="${escapeHtml(r.eventName || "-")}">${escapeHtml(r.eventName || "-")}</strong>
             <small>${escapeHtml(r.refId || "Sin referencia")} | ${escapeHtml(r.startTime || "-")} - ${escapeHtml(r.endTime || "-")}</small>
           </div>
@@ -5266,7 +5293,7 @@ function renderOccupancyReportTable() {
     const rowTone = r.status === STATUS.CONFIRMADO ? "confirmed" : "pre";
     tr.className = `occupancyTableRow occupancyTableRow--${rowTone}`;
     tr.innerHTML = `
-      <td class="occupancyTableStatus"><span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.18))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.48))};color:${escapeHtml(r.statusColor || "#e2e8f0")}">${escapeHtml(r.status || "-")}</span></td>
+      <td class="occupancyTableStatus"><span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.18))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.48))};color:#0f172a">${escapeHtml(r.status || "-")}</span></td>
       <td class="occupancyTablePax">${escapeHtml(String(r.pax || 0))}</td>
       <td class="occupancyTableDate">${escapeHtml(r.eventDate || "-")}</td>
       <td class="occupancyTableTime">${escapeHtml(r.startTime || "-")}</td>
@@ -9305,9 +9332,9 @@ function applyQuoteSnapshotToDraft(snapshot) {
   renderQuoteServiceTemplateSelect("");
   fillQuoteHeaderFields(true, true);
   renderQuoteCurrencyPicker();
-  el.quoteDueDate.value = quoteDraft.dueDate || "";
   setQuotePaymentTypesOnForm(quoteDraft.paymentType || "");
-  el.quoteDocDate.value = quoteDraft.docDate || "";
+  if (el.quoteDueDate) el.quoteDueDate.dataset.autoDefault = quoteDraft.dueDate ? "0" : "1";
+  syncQuoteDateDefaults({ forceDueDate: !quoteDraft.dueDate });
   renderQuoteServiceDateSelect();
   renderQuoteItems();
   syncPaxQuantityItems();
@@ -12127,6 +12154,29 @@ function syncQuoteReservationDates(meta = getQuoteEventMeta(el.quoteEventId?.val
   }
 }
 
+function calculateQuoteDueDateDefault(docDateIso, eventDateIso) {
+  const eventDate = String(eventDateIso || "").trim();
+  if (!eventDate) return "";
+  const base = new Date(`${eventDate}T00:00:00`);
+  if (Number.isNaN(base.getTime())) return "";
+  return toISODate(addDays(base, -30));
+}
+
+function syncQuoteDateDefaults({ forceDueDate = false } = {}) {
+  const eventDate = String(el.quoteEventDate?.value || quoteDraft?.eventDate || "").trim();
+  if (el.quoteDocDate && !String(el.quoteDocDate.value || "").trim() && eventDate) {
+    el.quoteDocDate.value = eventDate;
+  }
+  const docDate = String(el.quoteDocDate?.value || eventDate || "").trim();
+  const dueDefault = calculateQuoteDueDateDefault(docDate, eventDate);
+  if (!el.quoteDueDate || !dueDefault) return;
+  const dueLockedAuto = String(el.quoteDueDate.dataset.autoDefault || "1") === "1";
+  if (forceDueDate || !String(el.quoteDueDate.value || "").trim() || dueLockedAuto) {
+    el.quoteDueDate.value = dueDefault;
+    el.quoteDueDate.dataset.autoDefault = "1";
+  }
+}
+
 // Rellena el encabezado de la cotizacion con datos del borrador, del evento,
 // de la empresa y del encargado. Si force=true, sobrescribe el formulario;
 // de lo contrario, solo completa campos vacios para no pisar lo que ya eligio el usuario.
@@ -12150,13 +12200,14 @@ function fillQuoteHeaderFields(force = false, allowContextFallback = true) {
   apply(el.quoteVenue, quoteDraft.venue || (allowContextFallback ? (meta?.ev?.salon || "") : ""));
   apply(el.quoteSchedule, quoteDraft.schedule || (allowContextFallback ? `${meta?.ev?.startTime || ""} a ${meta?.ev?.endTime || ""}`.trim() : ""));
   apply(el.quoteCode, quoteDraft.code || "");
-  apply(el.quoteDocDate, quoteDraft.docDate || (allowContextFallback ? toISODate(new Date()) : ""));
+  apply(el.quoteDocDate, quoteDraft.docDate || (allowContextFallback ? (meta?.startDate || "") : ""));
   apply(el.quotePhone, quoteDraft.phone || (allowContextFallback ? (manager?.phone || company?.phone || "") : ""));
   apply(el.quoteNIT, quoteDraft.nit || (allowContextFallback ? (company?.nit || "") : ""));
   apply(el.quotePeople, quoteDraft.people || "");
   apply(el.quoteEventDate, quoteDraft.eventDate || (allowContextFallback ? (meta?.startDate || "") : ""));
   apply(el.quoteEndDate, quoteDraft.endDate || (allowContextFallback ? (meta?.endDate || "") : ""));
   syncQuoteReservationDates(meta);
+  syncQuoteDateDefaults({ forceDueDate: !quoteDraft.dueDate });
   apply(el.quoteFolio, quoteDraft.folio || "");
   apply(el.quoteInternalNotes, quoteDraft.internalNotes || quoteDraft.notes || "");
   if (force || !getSelectedQuotePaymentTypesFromForm().length) {
@@ -12835,6 +12886,16 @@ function bindEvents() {
   if (el.btnLogout) {
     el.btnLogout.addEventListener("click", () => {
       logoutCurrentSession();
+    });
+  }
+  if (el.btnSupportMenu) {
+    el.btnSupportMenu.setAttribute("aria-expanded", "false");
+    if (el.supportOptions) el.supportOptions.hidden = true;
+    el.btnSupportMenu.addEventListener("click", () => {
+      const expanded = String(el.btnSupportMenu.getAttribute("aria-expanded") || "false") === "true";
+      const next = !expanded;
+      el.btnSupportMenu.setAttribute("aria-expanded", next ? "true" : "false");
+      if (el.supportOptions) el.supportOptions.hidden = !next;
     });
   }
   if (el.btnModuleCalendar) {
@@ -15260,6 +15321,33 @@ function bindEvents() {
       setQuoteItemsExpanded(!quoteItemsExpanded);
     });
   }
+  if (el.quoteSelectAllItems) {
+    el.quoteSelectAllItems.addEventListener("change", () => {
+      if (!quoteDraft) return;
+      const checked = !!el.quoteSelectAllItems.checked;
+      if (checked) {
+        quoteSelectedItemIds = new Set((quoteDraft.items || []).map((item) => String(item.rowId || "")));
+      } else {
+        quoteSelectedItemIds = new Set();
+      }
+      renderQuoteItems();
+    });
+  }
+  if (el.btnQuoteDuplicateSelected) {
+    el.btnQuoteDuplicateSelected.addEventListener("click", () => {
+      duplicateSelectedQuoteItems();
+    });
+  }
+  if (el.btnQuoteMoveSelectedUp) {
+    el.btnQuoteMoveSelectedUp.addEventListener("click", () => {
+      moveSelectedQuoteItems("up");
+    });
+  }
+  if (el.btnQuoteMoveSelectedDown) {
+    el.btnQuoteMoveSelectedDown.addEventListener("click", () => {
+      moveSelectedQuoteItems("down");
+    });
+  }
     el.quoteCompany.addEventListener("change", () => {
     selectCompanyInQuote(el.quoteCompany.value);
   });
@@ -15390,6 +15478,29 @@ function bindEvents() {
       if (nextVisible && el.quoteDocFold) {
         el.quoteDocFold.scrollIntoView({ behavior: "smooth", block: "start" });
       }
+    });
+  }
+  if (el.btnQuoteDocSaveClose) {
+    el.btnQuoteDocSaveClose.addEventListener("click", handleQuoteDocSaveClose);
+  }
+  if (el.quoteDocPanelCard) {
+    el.quoteDocPanelCard.addEventListener("click", (e) => {
+      const btn = e.target.closest("#btnQuoteDocSaveClose");
+      if (!btn) return;
+      e.preventDefault();
+      handleQuoteDocSaveClose();
+    });
+  }
+  if (el.quoteDocDate) {
+    el.quoteDocDate.addEventListener("change", () => {
+      syncQuoteDateDefaults();
+      if (quoteDraft) quoteDraft.docDate = String(el.quoteDocDate.value || "").trim();
+    });
+  }
+  if (el.quoteDueDate) {
+    el.quoteDueDate.addEventListener("input", () => {
+      el.quoteDueDate.dataset.autoDefault = "0";
+      if (quoteDraft) quoteDraft.dueDate = String(el.quoteDueDate.value || "").trim();
     });
   }
   el.quotePeople.addEventListener("input", () => {
@@ -15842,6 +15953,7 @@ async function openQuoteModal(eventId) {
   };
   quoteDraft.version = currentVersion;
   quoteDraft.versions = existingVersions;
+  quoteSelectedItemIds = new Set();
   if (!String(quoteDraft.code || "").trim()) {
     const code = await requestServerQuoteCode();
     quoteDraft.code = code || buildQuoteCode();
@@ -15869,9 +15981,9 @@ async function openQuoteModal(eventId) {
   if (el.quoteServiceTemplateName) el.quoteServiceTemplateName.value = "";
   fillQuoteHeaderFields(true, !!existingQuote);
   renderQuoteCurrencyPicker();
-  el.quoteDueDate.value = quoteDraft.dueDate || "";
   setQuotePaymentTypesOnForm(quoteDraft.paymentType || "");
-  el.quoteDocDate.value = quoteDraft.docDate || "";
+  if (el.quoteDueDate) el.quoteDueDate.dataset.autoDefault = quoteDraft.dueDate ? "0" : "1";
+  syncQuoteDateDefaults({ forceDueDate: !quoteDraft.dueDate });
   if (el.quoteDiscountType) el.quoteDiscountType.value = normalizeDiscountType(quoteDraft.discountType);
   if (el.quoteDiscountValue) el.quoteDiscountValue.value = String(Math.max(0, Number(quoteDraft.discountValue || 0)));
   renderQuoteServiceDateSelect();
@@ -15906,6 +16018,7 @@ function closeQuoteModal() {
   closeMenuMontajeSelectableModal();
   closeServiceModal();
   quoteDraft = null;
+  quoteSelectedItemIds = new Set();
   if (accountingReportReturnAfterPayment && el.accountingReportBackdrop) {
     renderAccountingReportTable();
     document.body.classList.remove("accountingPaymentMode");
@@ -17391,6 +17504,63 @@ function renderQuoteSidebarSummary() {
   }
 }
 
+function syncQuoteItemsSelectionUi() {
+  const ids = quoteDraft?.items?.map((item) => String(item.rowId || "")) || [];
+  quoteSelectedItemIds = new Set(Array.from(quoteSelectedItemIds).filter((id) => ids.includes(id)));
+  const selectedCount = quoteSelectedItemIds.size;
+  if (el.btnQuoteDuplicateSelected) el.btnQuoteDuplicateSelected.disabled = selectedCount === 0;
+  if (el.btnQuoteMoveSelectedUp) el.btnQuoteMoveSelectedUp.disabled = selectedCount === 0;
+  if (el.btnQuoteMoveSelectedDown) el.btnQuoteMoveSelectedDown.disabled = selectedCount === 0;
+  if (el.quoteSelectAllItems) {
+    const total = ids.length;
+    const all = total > 0 && selectedCount === total;
+    const some = selectedCount > 0 && selectedCount < total;
+    el.quoteSelectAllItems.checked = all;
+    el.quoteSelectAllItems.indeterminate = some;
+  }
+}
+
+function duplicateSelectedQuoteItems() {
+  if (!quoteDraft || !quoteDraft.items?.length || !quoteSelectedItemIds.size) return;
+  const next = [];
+  for (const item of quoteDraft.items) {
+    next.push(item);
+    if (!quoteSelectedItemIds.has(String(item.rowId || ""))) continue;
+    const cloned = {
+      ...deepClone(item),
+      rowId: uid(),
+    };
+    next.push(cloned);
+    quoteSelectedItemIds.add(String(cloned.rowId || ""));
+  }
+  quoteDraft.items = next;
+  renderQuoteItems();
+  toast("Servicios duplicados.");
+}
+
+function moveSelectedQuoteItems(direction = "up") {
+  if (!quoteDraft || !quoteDraft.items?.length || !quoteSelectedItemIds.size) return;
+  const arr = quoteDraft.items;
+  if (direction === "up") {
+    for (let i = 1; i < arr.length; i++) {
+      const currentSelected = quoteSelectedItemIds.has(String(arr[i].rowId || ""));
+      const prevSelected = quoteSelectedItemIds.has(String(arr[i - 1].rowId || ""));
+      if (currentSelected && !prevSelected) {
+        [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+      }
+    }
+  } else {
+    for (let i = arr.length - 2; i >= 0; i--) {
+      const currentSelected = quoteSelectedItemIds.has(String(arr[i].rowId || ""));
+      const nextSelected = quoteSelectedItemIds.has(String(arr[i + 1].rowId || ""));
+      if (currentSelected && !nextSelected) {
+        [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+      }
+    }
+  }
+  renderQuoteItems();
+}
+
 // Redibuja la tabla de servicios de la cotizacion y recalcula la vista.
 // Cada vez que cambia cantidad, precio, descuento o moneda,
 // esta funcion refleja el cambio visual y prepara el resumen final.
@@ -17431,7 +17601,7 @@ function renderQuoteItems() {
     const tr = document.createElement("tr");
     tr.className = "quoteItemsEmptyRow";
     tr.innerHTML = `
-      <td colspan="6">
+      <td colspan="7">
         <div class="quoteItemsEmptyState">
           <strong>Tu carrito aun esta vacio</strong>
           <span>Busca un servicio en el panel derecho o crea uno nuevo para comenzar a cotizar.</span>
@@ -17446,6 +17616,8 @@ function renderQuoteItems() {
     for (const item of dayItems) {
       const tr = document.createElement("tr");
       tr.dataset.rowId = item.rowId;
+      const isSelected = quoteSelectedItemIds.has(String(item.rowId || ""));
+      if (isSelected) tr.classList.add("quoteItemSelected");
       const subtotal = Number(item.qty || 0) * Number(item.price || 0);
       const isPaxMode = String(item.quantityMode || "").toUpperCase() === "PAX";
       const qtyValue = Number(item.qty || 0);
@@ -17456,6 +17628,9 @@ function renderQuoteItems() {
       const currentDetail = String(item.description || "").trim();
       const customDetail = currentDetail && currentDetail !== currentName ? currentDetail : "";
       tr.innerHTML = `
+        <td class="quoteItemSelectCell">
+          <input type="checkbox" class="quoteItemSelect" data-action="toggle-select" ${isSelected ? "checked" : ""} />
+        </td>
         <td class="quoteItemDateCell">
           <select class="quoteInput" data-field="serviceDate">
             ${availableDates.map(d => `<option value="${escapeHtml(d)}"${d === item.serviceDate ? " selected" : ""}>${escapeHtml(d)}</option>`).join("")}
@@ -17478,7 +17653,11 @@ function renderQuoteItems() {
           <strong>${money(subtotal)}</strong>
           <span>${qtyValue} x ${money(priceValue)}</span>
         </td>
-        <td class="quoteItemActionCell"><button type="button" class="apptIconBtn apptDelete quoteRemoveBtn" title="Eliminar servicio" aria-label="Eliminar servicio"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></td>
+        <td class="quoteItemActionCell">
+          <button type="button" class="apptIconBtn quoteMoveUpBtn" data-action="move-up" title="Subir servicio" aria-label="Subir servicio"><span class="material-symbols-outlined" aria-hidden="true">keyboard_arrow_up</span></button>
+          <button type="button" class="apptIconBtn quoteMoveDownBtn" data-action="move-down" title="Bajar servicio" aria-label="Bajar servicio"><span class="material-symbols-outlined" aria-hidden="true">keyboard_arrow_down</span></button>
+          <button type="button" class="apptIconBtn apptDelete quoteRemoveBtn" title="Eliminar servicio" aria-label="Eliminar servicio"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+        </td>
       `;
       el.quoteItemsBody.appendChild(tr);
     }
@@ -17487,7 +17666,7 @@ function renderQuoteItems() {
     const subtotalRow = document.createElement("tr");
     subtotalRow.className = "quoteSubtotalRow";
     subtotalRow.innerHTML = `
-      <td colspan="4">Subtotal ${escapeHtml(dateKey)}</td>
+      <td colspan="5">Subtotal ${escapeHtml(dateKey)}</td>
       <td class="quoteMoney">${money(subtotalDay)}</td>
       <td></td>
     `;
@@ -17501,6 +17680,7 @@ function renderQuoteItems() {
   renderQuoteSidebarSummary();
   renderQuoteAccountStatement();
   syncQuoteServiceDateRequired();
+  syncQuoteItemsSelectionUi();
 }
 
 // Procesa cambios directos en los renglones de servicios.
@@ -17556,6 +17736,33 @@ function handleQuoteItemsInput(e) {
 }
 
 async function handleQuoteItemsClick(e) {
+  const selectToggle = e.target.closest(".quoteItemSelect");
+  if (selectToggle && quoteDraft) {
+    const row = selectToggle.closest("tr");
+    const rowId = String(row?.dataset.rowId || "").trim();
+    if (!rowId) return;
+    if (selectToggle.checked) quoteSelectedItemIds.add(rowId);
+    else quoteSelectedItemIds.delete(rowId);
+    syncQuoteItemsSelectionUi();
+    row?.classList.toggle("quoteItemSelected", selectToggle.checked);
+    return;
+  }
+  const moveBtn = e.target.closest("[data-action='move-up'], [data-action='move-down']");
+  if (moveBtn && quoteDraft) {
+    const row = moveBtn.closest("tr");
+    const rowId = String(row?.dataset.rowId || "").trim();
+    if (!rowId) return;
+    const index = quoteDraft.items.findIndex((x) => String(x.rowId || "") === rowId);
+    if (index < 0) return;
+    if (moveBtn.dataset.action === "move-up" && index > 0) {
+      [quoteDraft.items[index - 1], quoteDraft.items[index]] = [quoteDraft.items[index], quoteDraft.items[index - 1]];
+      renderQuoteItems();
+    } else if (moveBtn.dataset.action === "move-down" && index < quoteDraft.items.length - 1) {
+      [quoteDraft.items[index], quoteDraft.items[index + 1]] = [quoteDraft.items[index + 1], quoteDraft.items[index]];
+      renderQuoteItems();
+    }
+    return;
+  }
   const detailBtn = e.target.closest(".quoteDetailBtn");
   if (detailBtn && quoteDraft) {
     const row = detailBtn.closest("tr");
@@ -17588,6 +17795,7 @@ async function handleQuoteItemsClick(e) {
   if (!ok) return;
   const removed = quoteDraft.items.find(x => x.rowId === rowId);
   quoteDraft.items = quoteDraft.items.filter(x => x.rowId !== rowId);
+  quoteSelectedItemIds.delete(String(rowId));
   renderQuoteItems();
   const ctx = getCurrentQuoteHistoryContext();
   if (ctx) {
@@ -17618,11 +17826,54 @@ function focusQuoteValidationTarget(node, message, opts = {}) {
   }, 40);
   return false;
 }
+
+function setQuoteSavingProgress(percent, label = "") {
+  const value = Math.max(0, Math.min(100, Number(percent || 0)));
+  if (el.quoteSaveProgressFill) {
+    el.quoteSaveProgressFill.style.width = `${value}%`;
+  }
+  if (el.quoteSaveProgressBar) {
+    el.quoteSaveProgressBar.setAttribute("aria-valuenow", String(Math.round(value)));
+  }
+  if (el.quoteSaveProgressText && label) {
+    el.quoteSaveProgressText.textContent = String(label);
+  }
+}
+
+function setQuoteSavingState(isSaving, label = "") {
+  const busy = !!isSaving;
+  quoteSaveInFlight = busy;
+  if (el.quoteSaveProgress) {
+    el.quoteSaveProgress.hidden = !busy;
+  }
+  if (el.btnQuoteSave) {
+    el.btnQuoteSave.disabled = busy;
+    el.btnQuoteSave.textContent = busy ? "Guardando..." : "Guardar cotizacion";
+  }
+  if (busy) {
+    setQuoteSavingProgress(5, label || "Iniciando guardado...");
+  } else {
+    setQuoteSavingProgress(0, "Guardando cotizacion...");
+  }
+}
+
+function handleQuoteDocSaveClose() {
+  if (quoteDraft) {
+    quoteDraft.docDate = String(el.quoteDocDate?.value || quoteDraft.docDate || "").trim();
+    quoteDraft.dueDate = String(el.quoteDueDate?.value || quoteDraft.dueDate || "").trim();
+  }
+  setQuoteDocPanelVisible(false);
+  toast("Datos de cotizacion guardados.");
+}
+window.handleQuoteDocSaveClose = handleQuoteDocSaveClose;
 // Guarda la cotizacion tomando el estado actual del formulario.
 // Esta rutina valida los campos obligatorios, normaliza montos y pagos,
 // y decide si debe crear o actualizar versiones dentro del evento actual.
 async function saveQuoteFromForm() {
+  if (quoteSaveInFlight) return;
   if (!quoteDraft) return;
+  setQuoteSavingState(true, "Validando datos...");
+  try {
   const eventId = el.quoteEventId.value;
   const ev = state.events.find(x => x.id === eventId);
   if (!ev) return;
@@ -17656,6 +17907,7 @@ async function saveQuoteFromForm() {
   quoteDraft.currency = normalizeQuoteCurrency(quoteDraft.currency);
   quoteDraft.internalNotes = el.quoteInternalNotes.value.trim();
   quoteDraft.notes = quoteDraft.internalNotes;
+  setQuoteSavingProgress(22, "Revisando validaciones...");
 
   if (!quoteDraft.companyId) return focusQuoteValidationTarget(el.quoteCompanySearch, "Selecciona la institucion en Datos de cotizacion.");
   if (!quoteDraft.managerId) return focusQuoteValidationTarget(el.quoteManagerSelect, "Selecciona Encargado Evento en Datos de cotizacion.");
@@ -17689,6 +17941,7 @@ async function saveQuoteFromForm() {
   quoteDraft.quotedAt = new Date().toISOString();
   const previousQuote = ev.quote ? deepClone(ev.quote) : null;
   const historyVersions = normalizeQuoteVersionHistory(previousQuote?.versions);
+  setQuoteSavingProgress(42, "Preparando version...");
   const unchangedQuote = previousQuote ? areQuotesEquivalentForVersioning(quoteDraft, previousQuote) : false;
   if (previousQuote && !unchangedQuote) {
     const prevVersion = Number(previousQuote.version || (historyVersions.length + 1));
@@ -17723,6 +17976,7 @@ async function saveQuoteFromForm() {
     return nameOk && qtyOk && priceOk && dateOk;
   });
   if (!validItems) return toast("Completa descripcion, cantidad, precio y fecha valida en cada servicio.");
+  setQuoteSavingProgress(58, "Aplicando cambios...");
 
   const series = getEventSeries(ev);
   const isFirstQuote = !previousQuote;
@@ -17755,14 +18009,21 @@ async function saveQuoteFromForm() {
           : `Cotizacion guardada. Total ${moneyGT(totalQuote)}. Estado conservado.`))
   );
 
+  setQuoteSavingProgress(72, "Guardando en sistema...");
   persist();
+  setQuoteSavingProgress(82, "Generando documento...");
   await openQuoteDocument(ev, savedQuote);
+  setQuoteSavingProgress(95, "Finalizando...");
   render();
   closeQuoteModal();
   openModalForEdit(eventId);
   toast(unchangedQuote
     ? `Sin cambios detectados. Se mantiene la version V${savedQuote.version}.`
     : `Cotizacion guardada. Version V${savedQuote.version}.`);
+  setQuoteSavingProgress(100, "Guardado completado.");
+  } finally {
+    setTimeout(() => setQuoteSavingState(false), 450);
+  }
 }
 
 function dataUrlToUint8Array(dataUrl) {
@@ -19051,6 +19312,19 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
   const showPrices = printMeta.includePrices !== false;
   const includeMenuMontaje = printMeta.includeMenuMontaje === true;
   const includeContract = printMeta.includeContract !== false;
+  const isMacClient = /Mac|iPhone|iPad|iPod/i.test(String(window?.navigator?.platform || "")) || /Mac OS X/i.test(String(window?.navigator?.userAgent || ""));
+  const shouldUseStablePdf = selectedVariant === "standard" && !includeMenuMontaje && includeContract;
+  if (shouldUseStablePdf) {
+    try {
+      const opened = await tryOpenCombinedQuotePdf(ev, quote);
+      if (opened) {
+        if (isMacClient) toast("Cotizacion PDF generada correctamente.");
+        return;
+      }
+    } catch (err) {
+      console.warn("Fallback a vista de impresion HTML:", err?.message || err);
+    }
+  }
   const company = (state.companies || []).find(c => c.id === quote.companyId);
   const manager = company?.managers?.find(m => m.id === quote.managerId);
   const items = Array.isArray(quote.items) ? quote.items : [];
@@ -19291,6 +19565,7 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
     <section class="templateAttach contractTemplateAttach">
       <div class="templateAttachHead">Contrato Anexo</div>
       <div class="templateAttachBody contractTemplateBody">${tplStyles}${tplBody}</div>
+      __CONTRACT_SIGNATURES_BLOCK__
     </section>`;
       }
     } catch (err) {
@@ -19479,6 +19754,30 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
   const eventManagerNameDoc = String(quote?.contact || manager?.name || "").trim();
   const eventManagerEmailDoc = String(quote?.email || manager?.email || "").trim();
   const eventManagerPhoneDoc = String(quote?.phone || manager?.phone || "").trim();
+  const contractSignaturesBlockHtml = `
+    <section class="signatureSection contractTailSignatures">
+      <div class="signatureGrid">
+        <div class="signatureCard">
+          <div class="signatureSignArea">${sellerSignatureHtmlDoc}</div>
+          <div class="signatureLine"></div>
+          <div class="signatureRole">Firma Vendedor</div>
+          <div class="signatureData">${escapeHtml(sellerNameDoc || "-")}</div>
+          <div class="signatureData">${escapeHtml(sellerEmailDoc || "-")}</div>
+          <div class="signatureData">${escapeHtml(sellerPhoneDoc || "-")}</div>
+        </div>
+        <div class="signatureCard">
+          <div class="signatureSignArea"></div>
+          <div class="signatureLine"></div>
+          <div class="signatureRole">Firma Encargado Evento</div>
+          <div class="signatureData">${escapeHtml(eventManagerNameDoc || "-")}</div>
+          <div class="signatureData">${escapeHtml(eventManagerEmailDoc || "-")}</div>
+          <div class="signatureData">${escapeHtml(eventManagerPhoneDoc || "-")}</div>
+        </div>
+      </div>
+    </section>`;
+  if (appendedTemplateHtml && appendedTemplateHtml.includes("__CONTRACT_SIGNATURES_BLOCK__")) {
+    appendedTemplateHtml = appendedTemplateHtml.replace("__CONTRACT_SIGNATURES_BLOCK__", contractSignaturesBlockHtml);
+  }
   const html = `<!doctype html>
 <html lang="es">
 <head>
@@ -19741,18 +20040,45 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
       width:18%;
     }
     table{ width:100%; border-collapse:collapse; }
+    .quoteItemsTablePrint{
+      table-layout:fixed;
+    }
+    .quoteItemsTablePrint col.qtyCol{ width:11%; }
+    .quoteItemsTablePrint col.descCol{ width:57%; }
+    .quoteItemsTablePrint col.priceCol{ width:16%; }
+    .quoteItemsTablePrint col.totalCol{ width:16%; }
     thead th{
       background:#e5f5f6;
       border:1px solid #cddde5;
       padding:6px 8px;
-      text-align:left;
+      text-align:center;
       font-size:11.5px;
       font-weight:800;
       color:var(--title);
       text-transform:uppercase;
       letter-spacing:0.2px;
     }
+    .quoteItemsTablePrint thead th:nth-child(1){ text-align:center; }
+    .quoteItemsTablePrint thead th:nth-child(2){ text-align:center; }
+    .quoteItemsTablePrint thead th:nth-child(3),
+    .quoteItemsTablePrint thead th:nth-child(4){ text-align:center; }
     tbody td{ border:1px solid var(--line); padding:7px 9px; font-size:12px; background:var(--surface); color:#1f3b4d; }
+    .quoteItemsTablePrint tbody td:nth-child(1){
+      text-align:center;
+      padding-right:16px;
+      border-right:2px solid #c7d8e2;
+      font-variant-numeric:tabular-nums;
+    }
+    .quoteItemsTablePrint tbody td:nth-child(2){
+      text-align:left;
+      padding-left:14px;
+    }
+    .quoteItemsTablePrint tbody td:nth-child(3),
+    .quoteItemsTablePrint tbody td:nth-child(4){
+      text-align:right;
+      padding-right:12px;
+      font-variant-numeric:tabular-nums;
+    }
     tbody tr:nth-child(even):not(.dayHeaderRow):not(.daySubtotalRow) td{ background:var(--zebra); }
     .dayHeaderRow td{
       background:#215d78;
@@ -19826,7 +20152,12 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
       padding:14px 10px 8px;
       border:1px solid #c7dbe2;
       border-radius:12px;
-      background:#f6fbfc;
+      background:#ffffff;
+    }
+    .contractTailSignatures{
+      margin:12px;
+      border-top:2px solid #d7e1ea;
+      padding-top:14px;
     }
     .signatureGrid{
       display:grid;
@@ -19840,6 +20171,9 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
       align-items:flex-end;
       justify-content:center;
       margin-bottom:8px;
+      background:#ffffff;
+      border:1px solid #d7e1ea;
+      border-radius:6px;
     }
     .signatureImage{
       max-height:68px;
@@ -19848,6 +20182,8 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
       object-fit:contain;
       object-position:center bottom;
       display:block;
+      background:#ffffff;
+      padding:2px 6px;
     }
     .signatureCard{
       padding:6px 10px;
@@ -20142,7 +20478,10 @@ function saveEventFromForm() {
   const dateEnd = el.eventDateEnd.value || dateStart;
   const rangeStart = dateStart <= dateEnd ? dateStart : dateEnd;
   const rangeEnd = dateStart <= dateEnd ? dateEnd : dateStart;
-  const name = el.eventName.value.trim();
+  const normalizedName = String(el.eventName?.value || "").replace(/\s+/g, " ").trim();
+  const normalizedNotes = String(el.eventNotes?.value || "").replace(/\s+/g, " ").trim();
+  const hasVisibleChars = (value) => String(value || "").replace(/[\s\u200B-\u200D\uFEFF]/g, "").length > 0;
+  const name = normalizedName;
   const rawStatus = String(el.eventStatus.value || "").trim();
   const editingEvent = editingId ? state.events.find(x => x.id === editingId) : null;
   if (editingEvent && isEventSeriesInPast(editingEvent) && !hasPastEventEditAuthorization(editingEvent)) {
@@ -20153,13 +20492,22 @@ function saveEventFromForm() {
     ? (editingId ? (editingCurrentStatus || STATUS.RESERVA_SIN_COTIZACION) : STATUS.RESERVA_SIN_COTIZACION)
     : (rawStatus || STATUS.RESERVA_SIN_COTIZACION);
   const userId = el.eventUser.value;
-  const notes = el.eventNotes.value.trim();
+  const notes = normalizedNotes;
   const slots = getSlotsFromForm();
   const pax = syncEventPaxFromSlots() || null;
+  const allowedStatuses = new Set(Object.values(STATUS));
+  const selectedUser = (state.users || []).find((u) => String(u?.id || "") === String(userId || ""));
+  const salonCapacityMap = state?.salonCapacities && typeof state.salonCapacities === "object"
+    ? state.salonCapacities
+    : null;
 
-  if (!name) return toast("Falta nombre del evento.");
+  if (!name || !hasVisibleChars(name)) return toast("Falta nombre del evento.");
+  if (el.eventName) el.eventName.value = name;
+  if (String(el.eventNotes?.value || "") !== notes && el.eventNotes) el.eventNotes.value = notes;
   if (!rangeStart || !rangeEnd) return toast("Falta la fecha.");
   if (!userId) return toast("Selecciona un vendedor.");
+  if (!selectedUser || selectedUser.active === false) return toast("Selecciona un usuario valido y activo.");
+  if (!status || !allowedStatuses.has(status)) return toast("Estado invalido. Selecciona un estado permitido.");
   if (!pax) return toast("Ingresa una cantidad valida de personas por salon.");
   if (!slots.length) return toast("Agrega al menos un bloque de salon/horario.");
   for (const s of slots) {
@@ -20170,6 +20518,14 @@ function saveEventFromForm() {
       return toast("Completa salon, fechas, inicio y fin en cada bloque.");
     }
     if (!s.slotPax || Number(s.slotPax) <= 0) return toast("Completa un PAX valido en cada salon.");
+    const slotPax = Number(s.slotPax || 0);
+    const configuredMax = salonCapacityMap
+      ? Number(salonCapacityMap[String(s.salon || "").trim()] || 0)
+      : 0;
+    const maxAllowedPax = configuredMax > 0 ? configuredMax : FALLBACK_MAX_PAX_PER_SLOT;
+    if (slotPax > maxAllowedPax) {
+      return toast(`El PAX del salon ${s.salon} supera el maximo permitido (${maxAllowedPax}).`);
+    }
     if (s.dateStart < rangeStart || s.dateEnd > rangeEnd) {
       return toast("Las fechas de cada salon deben estar dentro de la fecha inicial y final del evento.");
     }

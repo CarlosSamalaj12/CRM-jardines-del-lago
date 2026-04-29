@@ -675,6 +675,16 @@ table tbody tr:hover td,
   border-radius: 999px !important;
   border: 1px solid transparent !important;
   font-weight: 700 !important;
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+#occupancyReportBackdrop .salesStatusBadge,
+#salesReportBackdrop .salesStatusBadge,
+#accountingReportBackdrop .salesStatusBadge,
+#dashboardReportBackdrop .salesStatusBadge,
+#institutionReportBackdrop .salesStatusBadge {
+  color: #0f172a !important;
 }
 
 .status-success,
@@ -1573,6 +1583,74 @@ body {
   gap: 3px;
 }
 
+#appShell.lum-calendar .lum-helpCard {
+  margin: 8px 10px 6px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  gap: 8px;
+}
+
+#appShell.lum-calendar .lum-helpCard[hidden] {
+  display: none !important;
+}
+
+#appShell.lum-calendar .lum-helpCardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#appShell.lum-calendar .lum-helpAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #ecfeff;
+  background: linear-gradient(135deg, #0ea5e9, #0d9488);
+  border: 1px solid rgba(186, 230, 253, 0.6);
+}
+
+#appShell.lum-calendar .lum-helpIdentity strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+#appShell.lum-calendar .lum-helpIdentity span {
+  display: block;
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+#appShell.lum-calendar .lum-helpLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  border-radius: 9px;
+  padding: 6px 8px;
+  color: #cbd5e1;
+  text-decoration: none;
+  background: rgba(30, 41, 59, 0.56);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#appShell.lum-calendar .lum-helpLink:hover {
+  color: #f8fafc;
+  border-color: rgba(125, 211, 252, 0.5);
+  background: rgba(30, 58, 86, 0.7);
+}
+
 #appShell.lum-calendar .lum-sideNav {
   flex: 1 1 auto;
 }
@@ -1776,7 +1854,8 @@ body {
 
   #appShell.lum-calendar .lum-sidebar .brandText,
   #appShell.lum-calendar .lum-sideItem span:not(.material-symbols-outlined),
-  #appShell.lum-calendar .lum-sideCta .btnPrimary {
+  #appShell.lum-calendar .lum-sideCta .btnPrimary,
+  #appShell.lum-calendar .lum-helpCard {
     display: none;
   }
 
@@ -1930,8 +2009,25 @@ body {
 #modalBackdrop .quoteTableWrap {
   border: 1px solid #d3e4fe !important;
   border-radius: 10px !important;
-  overflow: hidden !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
   background: #ffffff !important;
+  scrollbar-color: #94a3b8 #e2e8f0 !important;
+  scrollbar-width: thin !important;
+}
+
+#modalBackdrop .quoteTableWrap::-webkit-scrollbar {
+  height: 10px !important;
+}
+
+#modalBackdrop .quoteTableWrap::-webkit-scrollbar-track {
+  background: #e2e8f0 !important;
+  border-radius: 999px !important;
+}
+
+#modalBackdrop .quoteTableWrap::-webkit-scrollbar-thumb {
+  background: #94a3b8 !important;
+  border-radius: 999px !important;
 }
 
 #modalBackdrop .quoteTable thead th {
@@ -2772,6 +2868,138 @@ body {
   border-bottom: 1px solid #d3e4fe !important;
 }
 
+#appShell.lum-calendar #quoteBackdrop .quoteItemsHeadActions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemSelectCell {
+  width: 36px !important;
+  text-align: center !important;
+  padding: 6px 4px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemSelect,
+#appShell.lum-calendar #quoteBackdrop #quoteSelectAllItems {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+  accent-color: #2b5da8;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemActionCell {
+  display: flex !important;
+  gap: 6px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-width: 118px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable {
+  table-layout: fixed !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable thead th:nth-child(1),
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable tbody td:nth-child(1) {
+  width: 38px !important;
+  max-width: 38px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable thead th:nth-child(2),
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable tbody td:nth-child(2) {
+  width: 92px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable thead th:nth-child(3),
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable tbody td:nth-child(3) {
+  width: 70px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable thead th:nth-child(5),
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable tbody td:nth-child(5) {
+  width: 142px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable thead th:nth-child(5) {
+  padding-left: 8px !important;
+  padding-right: 14px !important;
+  text-align: right !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable tbody td:nth-child(5) {
+  padding-left: 8px !important;
+  padding-right: 14px !important;
+  text-align: right !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable thead th:nth-child(4),
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable tbody td:nth-child(4) {
+  padding-right: 18px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable thead th:nth-child(6),
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable tbody td:nth-child(6) {
+  width: 116px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable thead th:nth-child(7),
+#appShell.lum-calendar #quoteBackdrop .quoteItemsTable tbody td:nth-child(7) {
+  width: 112px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemServiceRow {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1fr) auto !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemNameInput {
+  min-width: 220px !important;
+  width: 100% !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemPriceCell .quoteInput {
+  width: 126px !important;
+  min-width: 126px !important;
+  margin-left: auto !important;
+  margin-right: 4px !important;
+  text-align: right !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemTotalCell strong {
+  color: #0f2747 !important;
+  font-weight: 800 !important;
+  font-size: 17px !important;
+  line-height: 1.05 !important;
+  display: block !important;
+  opacity: 1 !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemTotalCell span {
+  color: #3f5f86 !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteMoveUpBtn,
+#appShell.lum-calendar #quoteBackdrop .quoteMoveDownBtn {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteItemSelected td {
+  background: #e8f2ff !important;
+}
+
 #appShell.lum-calendar #quoteBackdrop .quoteItemsFooterGrid {
   gap: 12px !important;
   padding: 12px !important;
@@ -3214,6 +3442,21 @@ body {
     overflow: visible !important;
   }
 }
+
+@media (max-width: 1680px) {
+  #appShell.lum-calendar #quoteBackdrop .quoteComposerLayout {
+    grid-template-columns: 1fr !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteWorkbenchStrip,
+  #appShell.lum-calendar #quoteBackdrop .quoteItemsPanel {
+    grid-column: 1 !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteItemsTableWrap {
+    max-height: none !important;
+  }
+}
 /* === END QUOTE VERTICAL WORKFLOW LAYOUT === */
 
 /* === QUOTE FLAT VISUAL OVERRIDE === */
@@ -3441,6 +3684,23 @@ body {
   display: none !important;
 }
 
+#appShell.lum-calendar #quoteBackdrop .quoteDocPanelActions {
+  padding: 10px 14px 2px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop #btnQuoteDocSaveClose {
+  border: 1px solid #9a5b00 !important;
+  background: #f59e0b !important;
+  color: #1f1300 !important;
+  font-weight: 800 !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop #btnQuoteDocSaveClose:hover {
+  background: #d97706 !important;
+  color: #ffffff !important;
+  border-color: #b45309 !important;
+}
+
 #appShell.lum-calendar #quoteBackdrop .quoteComposerLayout {
   display: grid !important;
   grid-template-columns: minmax(320px, 390px) minmax(0, 1fr) !important;
@@ -3538,7 +3798,18 @@ body {
 
 #appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchFields {
   display: grid !important;
+  grid-template-columns: minmax(0, 1fr) max-content !important;
+  align-items: start !important;
   gap: 12px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchFields > .field {
+  min-width: 0 !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchFields > .quoteWorkbenchTemplateActions {
+  align-self: start !important;
+  margin-top: 25px !important;
 }
 
 #appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .field {
@@ -3558,6 +3829,29 @@ body {
   display: block !important;
   width: 100% !important;
   min-height: 42px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel #btnQuoteServiceTemplateApply {
+  min-height: 42px !important;
+  height: 42px !important;
+  width: auto !important;
+  min-width: 124px !important;
+  padding: 0 14px !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 1180px) {
+  #appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchFields {
+    grid-template-columns: 1fr !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel .quoteWorkbenchFields > .quoteWorkbenchTemplateActions {
+    margin-top: 0 !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteTemplatePanel #btnQuoteServiceTemplateApply {
+    width: 100% !important;
+  }
 }
 
 #appShell.lum-calendar #quoteBackdrop .quoteWorkbenchSummary {
@@ -3771,9 +4065,39 @@ body {
 #appShell.lum-calendar #quoteBackdrop .quoteFooterRow .rightActions {
   width: 100% !important;
   display: grid !important;
-  grid-template-columns: repeat(3, max-content) 1fr max-content !important;
+  grid-template-columns: minmax(220px, 1fr) repeat(3, max-content) 1fr max-content !important;
   align-items: center !important;
   gap: 10px !important;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteSaveProgress {
+  min-width: 220px;
+  max-width: 340px;
+  display: grid;
+  gap: 6px;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteSaveProgressText {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d395a;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteSaveProgressTrack {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid #b8c8dc;
+  background: #e8eff8;
+  overflow: hidden;
+}
+
+#appShell.lum-calendar #quoteBackdrop .quoteSaveProgressTrack > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #0d5ea2 0%, #1f7dd3 100%);
+  transition: width 180ms ease;
 }
 
 #appShell.lum-calendar #quoteBackdrop .quoteFooterRow #btnMenuMontaje,
@@ -3810,6 +4134,11 @@ body {
 
   #appShell.lum-calendar #quoteBackdrop .quoteFooterRow .rightActions {
     grid-template-columns: 1fr !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteSaveProgress {
+    max-width: none;
+    width: 100%;
   }
 }
 /* === END QUOTE TARGET MOCKUP THEME (FLAT) === */
@@ -4287,35 +4616,25 @@ body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemServiceStack 
 
 body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemServiceRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   align-items: center;
 }
 
 body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteDetailBtn {
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 10px !important;
-  border: 1px solid #b8cce3 !important;
-  background: #edf4ff !important;
-  color: #1f4b82 !important;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
+  display: none !important;
 }
 
 body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteDetailBtn:hover {
-  background: #e4efff !important;
+  display: none !important;
 }
 
 body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemDetailPreview {
-  border-radius: 10px !important;
-  border: 1px solid #d4e2f4 !important;
-  background: #f8fbff !important;
-  color: #405a7a !important;
-  font-size: 12px !important;
-  padding: 8px 10px;
-  line-height: 1.35;
+  display: none !important;
+}
+
+body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemDescriptionInput {
+  display: none !important;
 }
 
 body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteSimpleInput {
@@ -4327,9 +4646,16 @@ body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteSimpleInput {
 
 body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemQtyCell .quoteSimpleInput,
 body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemPriceCell .quoteSimpleInput {
-  width: 86px !important;
-  min-width: 86px !important;
-  text-align: center !important;
+  width: 126px !important;
+  min-width: 126px !important;
+  margin-right: 4px !important;
+  text-align: right !important;
+}
+
+body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemQtyCell .quoteSimpleInput {
+  width: 64px !important;
+  min-width: 64px !important;
+  margin-right: 0 !important;
 }
 
 body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemDateCell,
@@ -4536,6 +4862,68 @@ body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteCurrencyBtn .mate
 
   #appShell.lum-calendar #quoteBackdrop .quoteFooterRow {
     padding: 10px 12px !important;
+  }
+}
+
+@media (max-width: 1200px) and (min-width: 901px) {
+  #appShell.lum-calendar #quoteBackdrop .quoteComposerLayout {
+    grid-template-columns: 1fr !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteWorkbenchStrip,
+  #appShell.lum-calendar #quoteBackdrop .quoteItemsPanel {
+    grid-column: 1 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteWorkbenchTools {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteItemsTableWrap {
+    max-height: none !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteFooterRow {
+    left: 260px !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1536px), (max-height: 900px) and (min-width: 901px) {
+  #appShell.lum-calendar #quoteBackdrop .quoteComposerLayout {
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr) !important;
+    align-items: start !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteWorkbenchStrip {
+    grid-column: 1 !important;
+    position: sticky !important;
+    top: 8px !important;
+    align-self: start !important;
+    max-height: calc(100vh - 170px) !important;
+    overflow: auto !important;
+    scrollbar-width: thin !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteItemsPanel {
+    grid-column: 2 !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteItemsTableWrap {
+    max-height: 50vh !important;
+    overflow: auto !important;
+  }
+
+  body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteDetailBtn,
+  body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemDetailPreview,
+  body.quoteModeOpen #appShell.lum-calendar #quoteBackdrop .quoteItemDescriptionInput {
+    display: none !important;
+  }
+
+  #appShell.lum-calendar #quoteBackdrop .quoteFooterRow {
+    left: 220px !important;
   }
 }
 

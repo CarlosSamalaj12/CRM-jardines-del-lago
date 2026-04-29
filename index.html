@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slim-select@2.8.0/dist/slimselect.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" />
-<link rel="stylesheet" href="./design-system.css?v=20260429c" />
+<link rel="stylesheet" href="./design-system.css?v=20260429i" />
 </head>
 <body>
   <div class="loginScreen" id="loginScreen" hidden>
@@ -454,7 +454,27 @@
       </div>
 
       <div class="lum-sideFooter">
-        <a class="lum-sideItem" href="#"><span class="material-symbols-outlined" aria-hidden="true">help</span><span>Ayuda</span></a>
+        <button class="lum-sideItem" id="btnSupportMenu" type="button" aria-expanded="false" aria-controls="supportOptions">
+          <span class="material-symbols-outlined" aria-hidden="true">support_agent</span>
+          <span>Soporte</span>
+        </button>
+        <section class="lum-helpCard" id="supportOptions" aria-label="Contacto de soporte" hidden>
+          <div class="lum-helpCardHead">
+            <div class="lum-helpAvatar" aria-hidden="true">CS</div>
+            <div class="lum-helpIdentity">
+              <strong>Carlos Samalaj</strong>
+              <span>Soporte CRM</span>
+            </div>
+          </div>
+          <a class="lum-helpLink" href="https://wa.me/50256325547" target="_blank" rel="noopener noreferrer">
+            <span class="material-symbols-outlined" aria-hidden="true">call</span>
+            <span>+502 5632-5547</span>
+          </a>
+          <a class="lum-helpLink" href="mailto:tsamalaj@gmail.com?subject=soporte">
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            <span>tsamalaj@gmail.com</span>
+          </a>
+        </section>
         <button class="lum-sideItem" id="btnLogout" type="button" title="Cerrar sesion" aria-label="Cerrar sesion"><span class="material-symbols-outlined" aria-hidden="true">logout</span><span>Cerrar sesion</span></button>
       </div>
     </aside>
@@ -982,6 +1002,9 @@
           <section class="quoteDocPanel quoteDocPanelCard quotePageDataSection" id="quoteDocPanelCard">
             <details class="quoteFold quoteDocFold" id="quoteDocFold">
               <summary>Datos de cotizacion</summary>
+              <div class="quoteDocPanelActions">
+                <button class="btn quoteAddBtn" type="button" id="btnQuoteDocSaveClose" onclick="window.handleQuoteDocSaveClose && window.handleQuoteDocSaveClose()">Guardar y cerrar datos</button>
+              </div>
               <div class="quoteDocGrid">
                 <div class="quoteDocCol">
                   <label class="quoteDocRow"><span>Contacto:</span><input id="quoteContact" type="text" required /></label>
@@ -1130,12 +1153,18 @@
                   <div class="quoteCardTitle">Servicios y productos agregados</div>
                   <div class="quoteItemsPanelText">Todo el trabajo principal queda aqui: cantidades, precio, fecha, servicio y total.</div>
                 </div>
-                <button class="btn" type="button" id="btnToggleQuoteItemsExpand" aria-expanded="false">Expandir</button>
+                <div class="quoteItemsHeadActions">
+                  <button class="btn" type="button" id="btnQuoteDuplicateSelected">Duplicar seleccion</button>
+                  <button class="btn" type="button" id="btnQuoteMoveSelectedUp" title="Subir seleccion">Subir</button>
+                  <button class="btn" type="button" id="btnQuoteMoveSelectedDown" title="Bajar seleccion">Bajar</button>
+                  <button class="btn" type="button" id="btnToggleQuoteItemsExpand" aria-expanded="false">Expandir</button>
+                </div>
               </div>
               <div class="quoteTableWrap quoteItemsTableWrap">
                 <table class="quoteTable quoteItemsTable">
                   <thead>
                     <tr>
+                      <th><input type="checkbox" id="quoteSelectAllItems" title="Seleccionar todo" /></th>
                       <th>Fecha</th>
                       <th>Cantidad</th>
                       <th>Servicio</th>
@@ -1218,11 +1247,17 @@
           <div class="modalFooter quoteFooterRow quotePageFooter">
             <div></div>
             <div class="rightActions">
+              <div class="quoteSaveProgress" id="quoteSaveProgress" hidden aria-live="polite">
+                <div class="quoteSaveProgressText" id="quoteSaveProgressText">Guardando cotizacion...</div>
+                <div class="quoteSaveProgressTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="quoteSaveProgressBar">
+                  <span id="quoteSaveProgressFill"></span>
+                </div>
+              </div>
               <button class="btn" type="button" id="btnMenuMontaje">Menu &amp; Montaje</button>
               <button class="btn" type="button" id="btnQuoteAdvances">Anticipos</button>
               <button class="btn" type="button" id="btnMenuMontajeSelectable">Menu &amp; Montaje (Listas)</button>
               
-              <button class="btnPrimary" type="submit">Guardar cotizacion</button>
+              <button class="btnPrimary" type="submit" id="btnQuoteSave">Guardar cotizacion</button>
             </div>
           </div>
         </form>
@@ -3049,7 +3084,7 @@
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/slim-select@2.8.0/dist/slimselect.min.js"></script>
-  <script src="./app.js?v=20260426b"></script>
+  <script src="./app.js?v=20260429a"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
