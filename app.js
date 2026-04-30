@@ -263,10 +263,13 @@ let mmsSelectedBebidaIds = [];
 let mmsGuarnicionQtyById = {};
 let mmsPostreQtyById = {};
 let mmsBebidaQtyById = {};
+const mmsNameMapMemo = new WeakMap();
 let dashboardHoverTipEl = null;
 let menuMontajeSelectableCatalogCache = {
   proteins: [],
   preparationsByProtein: new Map(),
+  suggestionsByPair: new Map(),
+  suggestionsInFlightByPair: new Map(),
   salsas: [],
   guarniciones: [],
   postres: [],
@@ -713,6 +716,7 @@ const el = {
   btnMmsStageMontajeTipo: document.getElementById("btnMmsStageMontajeTipo"),
   btnMmsStageMontajeAdicional: document.getElementById("btnMmsStageMontajeAdicional"),
   mmsStageFilter: document.getElementById("mmsStageFilter"),
+  mmsMenuQtyVisible: document.getElementById("mmsMenuQtyVisible"),
   btnMmsStageMoreOptions: document.getElementById("btnMmsStageMoreOptions"),
   btnMmsStageCancelSelection: document.getElementById("btnMmsStageCancelSelection"),
   btnMmsOpenCatalog: document.getElementById("btnMmsOpenCatalog"),
@@ -2324,9 +2328,54 @@ async function updateMenuCatalog(kind, id, body) {
 async function readMenuSuggestions({ platoId, preparacionId }) {
   const q = `plato_id=${encodeURIComponent(String(platoId || ""))}&preparacion_id=${encodeURIComponent(String(preparacionId || ""))}`;
   const endpoint = buildApiUrlFromStateUrl(activeApiStateUrl, `menu-suggestions?${q}`);
-  const res = await fetch(endpoint, { cache: "no-store" });
+  const res = await fetch(endpoint);
   if (!res.ok) throw new Error("menu_suggestions_read_failed");
   return res.json();
+}
+
+function normalizeMmsSuggestionLinks(raw) {
+  const links = raw && typeof raw === "object" ? raw : {};
+  const normArray = (value) => (Array.isArray(value) ? value : [])
+    .map((x) => Number(x))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  return {
+    salsaIds: normArray(links.salsaIds),
+    postreIds: normArray(links.postreIds),
+    guarnicionIds: normArray(links.guarnicionIds),
+    bebidaIds: normArray(links.bebidaIds),
+    montajeTipoIds: normArray(links.montajeTipoIds),
+    montajeAdicionalIds: normArray(links.montajeAdicionalIds),
+  };
+}
+
+async function readMenuSuggestionsCached(platoId, preparacionId) {
+  ensureMmsCatalogDefaults();
+  const pid = Number(platoId || 0);
+  const prepId = Number(preparacionId || 0);
+  if (!Number.isFinite(pid) || pid <= 0 || !Number.isFinite(prepId) || prepId <= 0) {
+    return normalizeMmsSuggestionLinks(null);
+  }
+  const cache = menuMontajeSelectableCatalogCache;
+  const key = `${pid}:${prepId}`;
+  if (cache.suggestionsByPair.has(key)) {
+    return cache.suggestionsByPair.get(key);
+  }
+  if (cache.suggestionsInFlightByPair.has(key)) {
+    return cache.suggestionsInFlightByPair.get(key);
+  }
+  const pending = readMenuSuggestions({ platoId: pid, preparacionId: prepId })
+    .then((payload) => {
+      const normalized = normalizeMmsSuggestionLinks(payload);
+      cache.suggestionsByPair.set(key, normalized);
+      cache.suggestionsInFlightByPair.delete(key);
+      return normalized;
+    })
+    .catch((err) => {
+      cache.suggestionsInFlightByPair.delete(key);
+      throw err;
+    });
+  cache.suggestionsInFlightByPair.set(key, pending);
+  return pending;
 }
 
 async function saveMenuSuggestions(payload) {
@@ -9900,7 +9949,7 @@ async function saveMenuMontajeFromModal({ updateCurrentVersion = false } = {}) {
         : `Menu & Montaje guardado en borrador (V${targetVersion}).`)));
 }
 
-function buildMenuMontajeReportHtml(ev, quoteLike) {
+function buildMenuMontajeReportHtml(ev, quoteLike, reportMode = "full") {
   const quote = quoteLike || {};
   const entries = (Array.isArray(quote?.menuMontajeEntries) ? quote.menuMontajeEntries : [])
     .filter((x) => String(x?.date || "").trim() && String(x?.salon || "").trim());
@@ -9925,10 +9974,11 @@ function buildMenuMontajeReportHtml(ev, quoteLike) {
         <h2 class="mmReportTitle">MENU - ${escapeHtml(String(r.salon || "").toUpperCase())} - ${escapeHtml(date)}</h2>
         ${renderMenuMontajeRichText(String(r.menuDescription || ""))}
       </div>
+      ${reportMode === "menu_only" ? "" : `
       <div class="mmReportBlock">
         <h2 class="mmReportTitle">MONTAJE - ${escapeHtml(String(r.salon || "").toUpperCase())} - ${escapeHtml(date)}</h2>
         ${renderMenuMontajeRichText(String(r.montajeDescription || ""))}
-      </div>
+      </div>`}
     `).join("");
     return `
       <article class="mmReportCard" style="page-break-after: always;">
@@ -9951,7 +10001,9 @@ function buildMenuMontajeReportHtml(ev, quoteLike) {
   }).join("");
 
   const liveStyles = collectCurrentDocumentStyles();
-  const docTitle = `${institutionName} - MENU & MONTAJE`;
+  const docTitle = reportMode === "menu_only"
+    ? `${institutionName} - INFORME MENU`
+    : `${institutionName} - MENU & MONTAJE`;
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -10131,8 +10183,8 @@ function collectCurrentDocumentStyles() {
   }
 }
 
-function openMenuMontajeReportDocument(ev, quoteLike) {
-  const html = buildMenuMontajeReportHtml(ev, quoteLike);
+function openMenuMontajeReportDocument(ev, quoteLike, reportMode = "full") {
+  const html = buildMenuMontajeReportHtml(ev, quoteLike, reportMode);
   if (!html) return toast("No hay datos de menu/montaje para imprimir.");
   const w = window.open("about:blank", "_blank");
   if (!w) return toast("Habilita ventanas emergentes para generar el informe.");
@@ -10149,7 +10201,7 @@ function printMenuMontajeByDay() {
   if (!ev) return toast("No se encontro el evento para imprimir.");
   const entries = ensureMenuMontajeDraft().filter((x) => String(x.date || "").trim() && String(x.salon || "").trim());
   if (!entries.length) return toast("No hay datos de menu/montaje para imprimir.");
-  openMenuMontajeReportDocument(ev, quoteDraft);
+  openMenuMontajeReportDocument(ev, quoteDraft, "full");
 }
 
 function openMenuMontajeModal() {
@@ -10205,6 +10257,8 @@ function ensureMmsCatalogDefaults() {
     menuMontajeSelectableCatalogCache = {
       proteins: [],
       preparationsByProtein: new Map(),
+      suggestionsByPair: new Map(),
+      suggestionsInFlightByPair: new Map(),
       salsas: [],
       guarniciones: [],
       postres: [],
@@ -10216,6 +10270,12 @@ function ensureMmsCatalogDefaults() {
   }
   if (!(menuMontajeSelectableCatalogCache.preparationsByProtein instanceof Map)) {
     menuMontajeSelectableCatalogCache.preparationsByProtein = new Map();
+  }
+  if (!(menuMontajeSelectableCatalogCache.suggestionsByPair instanceof Map)) {
+    menuMontajeSelectableCatalogCache.suggestionsByPair = new Map();
+  }
+  if (!(menuMontajeSelectableCatalogCache.suggestionsInFlightByPair instanceof Map)) {
+    menuMontajeSelectableCatalogCache.suggestionsInFlightByPair = new Map();
   }
 }
 
@@ -10379,10 +10439,6 @@ function renderMmsStageOptions() {
   if (!el.mmsStageOptions) return;
 
   const filter = String(el.mmsStageFilter?.value || "").trim().toLowerCase();
-  const selectedGuarnicionSet = new Set(getMmsSelectedGuarnicionIds().map((x) => Number(x)));
-  const selectedPostreSet = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
-  const selectedSalsaSet = new Set((Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)));
-  const selectedBebidaSet = new Set((Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
   let rows = [];
   let selected = new Set();
   let kind = mmsCurrentStage;
@@ -10399,24 +10455,28 @@ function renderMmsStageOptions() {
       .filter((n) => Number.isFinite(n) && n > 0));
   } else if (mmsCurrentStage === "salsa") {
     const all = menuMontajeSelectableCatalogCache.salsas || [];
+    const selectedSalsaSet = new Set((Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)));
     const suggestedSet = new Set(getMmsSuggestedSalsaIds().map((x) => Number(x)));
     const suggestedRows = all.filter((x) => suggestedSet.has(Number(x.id || 0)));
     rows = mmsShowAllGuarniciones ? all : (suggestedRows.length ? suggestedRows : all);
     selected = selectedSalsaSet;
   } else if (mmsCurrentStage === "guarnicion") {
     const all = menuMontajeSelectableCatalogCache.guarniciones || [];
+    const selectedGuarnicionSet = new Set(getMmsSelectedGuarnicionIds().map((x) => Number(x)));
     const suggestedSet = new Set(listAllCheckboxIds(el.mmsGuarnicionesSuggested));
     const suggestedRows = all.filter((x) => suggestedSet.has(Number(x.id || 0)));
     rows = mmsShowAllGuarniciones ? all : (suggestedRows.length ? suggestedRows : all);
     selected = selectedGuarnicionSet;
   } else if (mmsCurrentStage === "postre") {
     const all = menuMontajeSelectableCatalogCache.postres || [];
+    const selectedPostreSet = new Set(getMmsSelectedPostreIds().map((x) => Number(x)));
     const suggestedSet = new Set(listAllCheckboxIds(el.mmsPostresSuggested));
     const suggestedRows = all.filter((x) => suggestedSet.has(Number(x.id || 0)));
     rows = mmsShowAllPostres ? all : (suggestedRows.length ? suggestedRows : all);
     selected = selectedPostreSet;
   } else if (mmsCurrentStage === "bebida") {
     rows = menuMontajeSelectableCatalogCache.bebidas || [];
+    const selectedBebidaSet = new Set((Array.isArray(mmsSelectedBebidaIds) ? mmsSelectedBebidaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
     selected = selectedBebidaSet;
     kind = "bebida";
   } else if (mmsCurrentStage === "montaje_tipo") {
@@ -10442,12 +10502,11 @@ async function handleMmsStageOptionClick(kind, id) {
     if (!Number.isFinite(nextId) || nextId <= 0) return;
     ensureMmsCatalogDefaults();
     const plateName = namesFromIds(menuMontajeSelectableCatalogCache.proteins, [nextId])[0] || "Plato fuerte";
-    const qty = await requestMmsItemQty(plateName, 1, "platos fuertes");
-    if (qty === null) return;
+    const qty = getFastMmsPlatoQty();
     mmsPlatoQty = qty;
     if (el.mmsMenuQty) el.mmsMenuQty.value = String(qty);
     if (el.mmsProtein) el.mmsProtein.value = String(nextId);
-    await refreshMmsByProteinPreparation({ preserveSelection: false }).catch(() => { });
+    await populateMmsPreparationsForProtein(nextId, { preserveSelection: false }).catch(() => []);
     const prepOptions = Array.from(el.mmsPreparation?.options || []).filter((opt) => String(opt.value || "").trim());
     if (!prepOptions.length) {
       commitCurrentMmsLineItem();
@@ -10474,7 +10533,6 @@ async function handleMmsStageOptionClick(kind, id) {
     const prepId = Number(id || 0);
     if (!Number.isFinite(prepId) || prepId <= 0) return;
     if (el.mmsPreparation) el.mmsPreparation.value = String(prepId);
-    await refreshMmsByProteinPreparation({ preserveSelection: true }).catch(() => { });
     const platoId = Number(el.mmsProtein?.value || 0);
     if (!Number.isFinite(platoId) || platoId <= 0) return;
     const label = [namesFromIds(menuMontajeSelectableCatalogCache.proteins, [platoId])[0] || "", String(el.mmsPreparation?.selectedOptions?.[0]?.textContent || "").trim()].filter(Boolean).join(" - ") || "Plato fuerte";
@@ -10489,6 +10547,7 @@ async function handleMmsStageOptionClick(kind, id) {
     if (item) notifyMmsSelectionAdded("plato", item.key, label, qty);
     setMmsStage("guarnicion");
     modernGuideToast("Plato fuerte agregado. Ahora puedes elegir guarniciones.");
+    refreshMmsByProteinPreparation({ preserveSelection: true }).catch(() => { });
     return;
   }
   if (kind === "salsa") {
@@ -10611,7 +10670,7 @@ async function ensureMenuMontajeSelectableCatalogLoaded(force = false) {
   ensureMmsCatalogDefaults();
   const cache = menuMontajeSelectableCatalogCache;
   if (!force && cache.proteins.length) return cache;
-  const [proteins, salsas, guarniciones, postres, bebidas, comentarios, montajeTipos, montajeAdicionales] = await Promise.all([
+  const [proteins, salsas, guarniciones, postres, bebidas, comentarios, montajeTipos, montajeAdicionales, preparaciones] = await Promise.all([
     readMenuCatalog("plato_fuerte"),
     readMenuCatalog("salsa"),
     readMenuCatalog("guarnicion"),
@@ -10620,6 +10679,7 @@ async function ensureMenuMontajeSelectableCatalogLoaded(force = false) {
     readMenuCatalog("comentario"),
     readMenuCatalog("montaje_tipo"),
     readMenuCatalog("montaje_adicional"),
+    readMenuCatalog("preparacion"),
   ]);
   cache.proteins = Array.isArray(proteins) ? proteins.filter((x) => x && x.activo !== false) : [];
   cache.salsas = Array.isArray(salsas) ? salsas.filter((x) => x && x.activo !== false) : [];
@@ -10629,7 +10689,15 @@ async function ensureMenuMontajeSelectableCatalogLoaded(force = false) {
   cache.comentarios = Array.isArray(comentarios) ? comentarios.filter((x) => x && x.activo !== false) : [];
   cache.montajeTipos = Array.isArray(montajeTipos) ? montajeTipos.filter((x) => x && x.activo !== false) : [];
   cache.montajeAdicionales = Array.isArray(montajeAdicionales) ? montajeAdicionales.filter((x) => x && x.activo !== false) : [];
-  cache.preparationsByProtein = new Map();
+  const prepsByProtein = new Map();
+  for (const prep of Array.isArray(preparaciones) ? preparaciones : []) {
+    if (!prep || prep.activo === false) continue;
+    const platoId = Number(prep?.plato_id || prep?.platoId || 0);
+    if (!Number.isFinite(platoId) || platoId <= 0) continue;
+    if (!prepsByProtein.has(platoId)) prepsByProtein.set(platoId, []);
+    prepsByProtein.get(platoId).push(prep);
+  }
+  cache.preparationsByProtein = prepsByProtein;
   return cache;
 }
 
@@ -10646,12 +10714,16 @@ async function loadMmsPreparationsByProtein(proteinId) {
 }
 
 function buildMmsNameMap(rows) {
+  if (Array.isArray(rows) && mmsNameMapMemo.has(rows)) {
+    return mmsNameMapMemo.get(rows);
+  }
   const m = new Map();
   for (const row of Array.isArray(rows) ? rows : []) {
     const id = Number(row?.id || 0);
     if (!Number.isFinite(id) || id <= 0) continue;
     m.set(id, String(row?.nombre || "").trim());
   }
+  if (Array.isArray(rows)) mmsNameMapMemo.set(rows, m);
   return m;
 }
 
@@ -10741,6 +10813,11 @@ function getMmsItemQty(kind, id) {
   if (kind === "guarnicion") return Math.max(1, Math.floor(Number(mmsGuarnicionQtyById[itemId] || 1)));
   if (kind === "bebida") return Math.max(1, Math.floor(Number(mmsBebidaQtyById[itemId] || 1)));
   return Math.max(1, Math.floor(Number(mmsPostreQtyById[itemId] || 1)));
+}
+
+function getFastMmsPlatoQty() {
+  const direct = Math.floor(Number(el.mmsMenuQtyVisible?.value || el.mmsMenuQty?.value || mmsPlatoQty || 1));
+  return Number.isFinite(direct) && direct > 0 ? direct : 1;
 }
 
 function normalizeMmsPlatoItems(raw, fallback = null) {
@@ -10845,9 +10922,11 @@ function getMmsTotalPlatoQty() {
 }
 
 function syncMmsMenuQtyField() {
-  if (!el.mmsMenuQty) return;
   const total = getMmsTotalPlatoQty();
-  el.mmsMenuQty.value = total > 0 ? String(total) : "";
+  const fallback = Math.max(1, Math.floor(Number(mmsPlatoQty || 1)));
+  const value = total > 0 ? String(total) : String(fallback);
+  if (el.mmsMenuQty) el.mmsMenuQty.value = value;
+  if (el.mmsMenuQtyVisible) el.mmsMenuQtyVisible.value = value;
 }
 
 function upsertMmsPlatoItem({ platoId, preparacionId = null, qty = 1 } = {}) {
@@ -11705,27 +11784,12 @@ async function refreshMmsByProteinPreparation({ preserveSelection = true } = {})
   ensureMmsCatalogDefaults();
   const cache = menuMontajeSelectableCatalogCache;
   const platoId = Number(el.mmsProtein?.value || 0);
-  const previousPrep = Number(el.mmsPreparation?.value || 0);
-  const preps = await loadMmsPreparationsByProtein(platoId);
-  if (el.mmsPreparation) {
-    el.mmsPreparation.innerHTML = "";
-    for (const p of preps) {
-      const opt = document.createElement("option");
-      opt.value = String(p.id);
-      opt.textContent = String(p.nombre || "");
-      el.mmsPreparation.appendChild(opt);
-    }
-    const keepPrep = preserveSelection && previousPrep > 0 && preps.some((x) => Number(x.id) === previousPrep);
-    if (keepPrep) el.mmsPreparation.value = String(previousPrep);
-    if (!el.mmsPreparation.options.length) {
-      el.mmsPreparation.innerHTML = `<option value="">Sin preparaciones para esta proteina</option>`;
-    }
-  }
+  await populateMmsPreparationsForProtein(platoId, { preserveSelection });
   const prepId = Number(el.mmsPreparation?.value || 0);
-  let links = { salsaIds: [], postreIds: [], guarnicionIds: [], bebidaIds: [], montajeTipoIds: [], montajeAdicionalIds: [] };
+  let links = normalizeMmsSuggestionLinks(null);
   if (platoId > 0 && prepId > 0) {
     try {
-      links = await readMenuSuggestions({ platoId, preparacionId: prepId });
+      links = await readMenuSuggestionsCached(platoId, prepId);
     } catch (_) { }
   }
 
@@ -11738,9 +11802,7 @@ async function refreshMmsByProteinPreparation({ preserveSelection = true } = {})
     .map((x) => Number(x))
     .filter((n) => Number.isFinite(n) && n > 0);
 
-  cache.suggestedSalsaIds = Array.isArray(links.salsaIds)
-    ? links.salsaIds.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0)
-    : [];
+  cache.suggestedSalsaIds = Array.isArray(links.salsaIds) ? links.salsaIds : [];
 
   const guarnicionSet = new Set([...(Array.isArray(links.guarnicionIds) ? links.guarnicionIds : []), ...selectedGuarniciones].map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
   const postreSet = new Set([...(Array.isArray(links.postreIds) ? links.postreIds : []), ...selectedPostres].map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0));
@@ -11781,6 +11843,26 @@ async function refreshMmsByProteinPreparation({ preserveSelection = true } = {})
   refreshMmsDescriptionAuto();
   renderMmsSelectionSummary();
   renderMmsComandaPreview();
+}
+
+async function populateMmsPreparationsForProtein(platoIdRaw, { preserveSelection = true } = {}) {
+  const platoId = Number(platoIdRaw || 0);
+  const previousPrep = Number(el.mmsPreparation?.value || 0);
+  const preps = await loadMmsPreparationsByProtein(platoId);
+  if (!el.mmsPreparation) return preps;
+  el.mmsPreparation.innerHTML = "";
+  for (const p of preps) {
+    const opt = document.createElement("option");
+    opt.value = String(p.id);
+    opt.textContent = String(p.nombre || "");
+    el.mmsPreparation.appendChild(opt);
+  }
+  const keepPrep = preserveSelection && previousPrep > 0 && preps.some((x) => Number(x.id) === previousPrep);
+  if (keepPrep) el.mmsPreparation.value = String(previousPrep);
+  if (!el.mmsPreparation.options.length) {
+    el.mmsPreparation.innerHTML = `<option value="">Sin preparaciones para esta proteina</option>`;
+  }
+  return preps;
 }
 
 async function loadMmsFormByKey(key) {
@@ -14013,7 +14095,16 @@ function bindEvents() {
   }
   if (el.mmsMenuQty) {
     el.mmsMenuQty.addEventListener("input", () => {
-      syncMmsMenuQtyField();
+      const qty = Math.max(1, Math.floor(Number(el.mmsMenuQty?.value || 1)));
+      mmsPlatoQty = qty;
+      if (el.mmsMenuQtyVisible) el.mmsMenuQtyVisible.value = String(qty);
+    });
+  }
+  if (el.mmsMenuQtyVisible) {
+    el.mmsMenuQtyVisible.addEventListener("input", () => {
+      const qty = Math.max(1, Math.floor(Number(el.mmsMenuQtyVisible?.value || 1)));
+      mmsPlatoQty = qty;
+      if (el.mmsMenuQty) el.mmsMenuQty.value = String(qty);
     });
   }
   if (el.mmsMenuDescription) {
@@ -14510,6 +14601,14 @@ function bindEvents() {
         montajeTipoIds: selectedIdsFromChecklist(el.menuSuggestionsMontajeTipos),
         montajeAdicionalIds: selectedIdsFromChecklist(el.menuSuggestionsMontajeAdicionales),
       });
+      const pairKey = `${platoId}:${preparacionId}`;
+      ensureMmsCatalogDefaults();
+      if (menuMontajeSelectableCatalogCache.suggestionsByPair instanceof Map) {
+        menuMontajeSelectableCatalogCache.suggestionsByPair.delete(pairKey);
+      }
+      if (menuMontajeSelectableCatalogCache.suggestionsInFlightByPair instanceof Map) {
+        menuMontajeSelectableCatalogCache.suggestionsInFlightByPair.delete(pairKey);
+      }
       toast("Combinacion de platillo actualizada.");
     });
   }

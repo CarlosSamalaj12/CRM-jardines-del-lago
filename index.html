@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slim-select@2.8.0/dist/slimselect.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" />
-<link rel="stylesheet" href="./design-system.css?v=20260429i" />
+<link rel="stylesheet" href="./design-system.css?v=20260429j" />
 </head>
 <body>
   <div class="loginScreen" id="loginScreen" hidden>
@@ -1514,6 +1514,10 @@
                   </div>
                   <div class="quoteServiceActions">
                     <input id="mmsStageFilter" type="text" placeholder="Filtrar opcion..." />
+                    <label class="mmsQuickQtyField" for="mmsMenuQtyVisible">
+                      <span>Cantidad</span>
+                      <input id="mmsMenuQtyVisible" type="number" min="1" step="1" value="1" />
+                    </label>
                     <button class="btn" id="btnMmsStageMoreOptions" type="button">Mas opciones</button>
                     <button class="btnDanger" id="btnMmsStageCancelSelection" type="button">Anular</button>
                     <button class="btn btnCatalogAccent" id="btnMmsOpenCatalog" type="button">Gestionar catalogo</button>
@@ -1608,10 +1612,9 @@
           </section>
         </div>
         <div class="modalFooter">
-          <div class="leftActions">
-            <button class="btn" id="btnMmsPrintDay" type="button">Imprimir/PDF por dia</button>
-          </div>
+          <div class="leftActions"></div>
           <div class="rightActions">
+            <button class="btn" id="btnMmsPrintDay" type="button">Imprimir/PDF por dia</button>
             <button class="btn" id="btnMmsSaveCurrent" type="button">Actualizar version</button>
             <button class="btnPrimary" id="btnMmsSave" type="button">Guardar Menu &amp; Montaje</button>
           </div>
@@ -3084,7 +3087,7 @@
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/slim-select@2.8.0/dist/slimselect.min.js"></script>
-  <script src="./app.js?v=20260429a"></script>
+  <script src="./app.js?v=20260429f"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

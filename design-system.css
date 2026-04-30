@@ -1651,6 +1651,35 @@ body {
   background: rgba(30, 58, 86, 0.7);
 }
 
+#menuMontajeSelectableBackdrop .mmsQuickQtyField {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid #d3e4fe;
+  border-radius: 10px;
+  background: #eff4ff;
+}
+
+#menuMontajeSelectableBackdrop .mmsQuickQtyField > span {
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+}
+
+#menuMontajeSelectableBackdrop #mmsMenuQtyVisible {
+  width: 88px;
+  min-width: 88px;
+  height: 32px;
+  border: 1px solid #c7d5ea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
+  text-align: center;
+}
+
 #appShell.lum-calendar .lum-sideNav {
   flex: 1 1 auto;
 }
