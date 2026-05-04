@@ -6486,7 +6486,15 @@ input[type="number"]::-webkit-outer-spin-button{
 }
 #menuMontajeSelectableBackdrop .mmsComandaTagText{
   min-width:0;
-  overflow-wrap:anywhere;
+  overflow-wrap:break-word;
+  word-break:normal;
+  white-space:normal;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTagControls{
+  display:inline-flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
 }
 #menuMontajeSelectableBackdrop .mmsComandaTag.isFresh{
   animation:mmsFreshPulse 1.4s ease-out 1;
@@ -6542,6 +6550,12 @@ input[type="number"]::-webkit-outer-spin-button{
   color:#047857 !important;
 }
 #menuMontajeSelectableBackdrop .mmsTagQtyBtn.isInc::before{content:"+"; font-size:14px; font-weight:950;}
+#menuMontajeSelectableBackdrop .mmsTagTimeBtn{
+  background:#eff6ff !important;
+  border-color:#bfdbfe !important;
+  color:#1d4ed8 !important;
+}
+#menuMontajeSelectableBackdrop .mmsTagTimeBtn::before{content:"\23F0"; font-size:13px; font-weight:900;}
 #menuMontajeSelectableBackdrop .mmsTagRemoveBtn{
   background:#eef4fb !important;
   border-color:#cfe0f7 !important;
@@ -6553,10 +6567,147 @@ input[type="number"]::-webkit-outer-spin-button{
   border-color:#fecaca !important;
   color:#b91c1c !important;
 }
+#menuMontajeSelectableBackdrop .mmsTagEditBtn{
+  background:#eef2ff !important;
+  border-color:#c7d2fe !important;
+  color:#3730a3 !important;
+}
+#menuMontajeSelectableBackdrop .mmsTagEditBtn::before{
+  content:"\270E";
+  font-size:12px;
+  font-weight:900;
+}
 #menuMontajeSelectableBackdrop .mmsComandaTag.isPlateSelector{
   width:100% !important;
-  justify-content:space-between !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:8px !important;
   border-color:#9fc2f5 !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag.isPlateSelector .mmsComandaTagText{
+  width:100%;
+  font-weight:800;
+  line-height:1.35 !important;
+}
+#menuMontajeSelectableBackdrop .mmsComandaTag.isPlateSelector .mmsComandaTagControls{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  flex-wrap:wrap;
+  gap:8px;
+}
+#menuMontajeSelectableBackdrop .mmsPlateGroupCard{
+  width:100%;
+  border:1px solid #cfe0f7;
+  border-radius:12px;
+  background:#ffffff;
+  padding:8px;
+  display:grid;
+  gap:8px;
+}
+#menuMontajeSelectableBackdrop .mmsPlateGroupCard.isActive{
+  border-color:#8ab6ef;
+  box-shadow:inset 0 0 0 1px rgba(11,99,206,.14);
+  background:linear-gradient(180deg,#f8fbff,#f1f7ff);
+}
+#menuMontajeSelectableBackdrop .mmsPlateGroupHead{
+  width:100%;
+  border:1px solid #dbe7f8;
+  background:#f8fbff;
+  border-radius:10px;
+  padding:7px 10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  cursor:pointer;
+  color:#0f1b33;
+}
+#menuMontajeSelectableBackdrop .mmsPlateGroupHead:hover{
+  border-color:#b8cff0;
+  background:#f1f7ff;
+}
+#menuMontajeSelectableBackdrop .mmsPlateGroupTitle{
+  font-size:12.5px;
+  font-weight:850;
+  line-height:1.3;
+  text-align:left;
+}
+#menuMontajeSelectableBackdrop .mmsPlateGroupMeta{
+  font-size:11px;
+  font-weight:800;
+  color:#335a8a;
+  white-space:nowrap;
+}
+#menuMontajeSelectableBackdrop .mmsPlateGroupItems{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+#menuMontajeSelectableBackdrop .mmsPlateGroupCard:not(.isActive) .mmsComandaTag{
+  background:#f8fbff !important;
+}
+#menuMontajeSelectableBackdrop .mmsPlateBundle{
+  width:100%;
+  border:1px solid #c7d8ef;
+  border-radius:12px;
+  background:#ffffff;
+  padding:8px;
+  display:grid;
+  gap:8px;
+}
+#menuMontajeSelectableBackdrop .mmsPlateBundle.isActive{
+  border-color:#8ab6ef;
+  background:linear-gradient(180deg,#f8fbff,#f1f7ff);
+  box-shadow:inset 0 0 0 1px rgba(11,99,206,.14);
+}
+#menuMontajeSelectableBackdrop .mmsPlateBundleHead{
+  width:100%;
+  border:1px solid #dbe7f8;
+  border-radius:10px;
+  background:#f7faff;
+  padding:7px 10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+  color:#0f1b33;
+}
+#menuMontajeSelectableBackdrop .mmsPlateBundleHead:hover{
+  border-color:#b8cff0;
+  background:#eef5ff;
+}
+#menuMontajeSelectableBackdrop .mmsPlateBundleTitle{
+  font-size:12.5px;
+  font-weight:900;
+  text-align:left;
+}
+#menuMontajeSelectableBackdrop .mmsPlateBundleMeta{
+  font-size:11px;
+  font-weight:800;
+  color:#335a8a;
+  white-space:nowrap;
+}
+#menuMontajeSelectableBackdrop .mmsPlateBundleControls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+#menuMontajeSelectableBackdrop .mmsPlateBundleDetails{
+  border:1px solid #dbe7f8;
+  border-radius:10px;
+  background:#fcfdff;
+  padding:8px 10px;
+  display:grid;
+  gap:4px;
+}
+#menuMontajeSelectableBackdrop .mmsPlateBundleLine{
+  font-size:12px;
+  color:#1f3657;
+  line-height:1.35;
 }
 #menuMontajeSelectableBackdrop .swal-ios-toast .swal2-title,
 .swal2-popup.swal-ios-toast .swal2-title{
@@ -6686,3 +6837,157 @@ input[type="number"]::-webkit-outer-spin-button{
   box-shadow:0 0 0 4px rgba(34,197,94,.18) !important;
 }
 /* === END MENU Y MONTAJE MODE ACTIVE CHECK === */
+/* === LOGIN REDESIGN JDL === */
+.loginScreen.loginScreen{position:fixed;inset:0;z-index:9000;display:grid;place-items:center;padding:28px;background:linear-gradient(135deg,rgba(240,244,248,.92),rgba(220,230,238,.96)),#eef1f5;overflow:auto}
+.loginScreen.loginScreen::before{content:"";position:fixed;inset:0;background:radial-gradient(900px 520px at 18% 8%,rgba(51,182,222,.18),transparent 60%),radial-gradient(840px 500px at 86% 78%,rgba(20,156,198,.16),transparent 58%);pointer-events:none}
+.loginScreen[hidden]{display:none!important}
+.loginShell.loginShell{width:min(980px,100%);min-height:620px;display:grid;grid-template-columns:minmax(320px,.82fr) minmax(360px,1fr);position:relative;border:1px solid rgba(148,163,184,.26);border-radius:8px;background:rgba(255,255,255,.92);box-shadow:0 30px 70px rgba(15,23,42,.18);overflow:hidden}
+.loginVisualPanel.loginVisualPanel{position:relative;min-height:620px;overflow:hidden;background:linear-gradient(160deg,#0f3c52,#12384a 42%,#071827)}
+.loginVisualImage.loginVisualImage{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.04);filter:saturate(1.04) contrast(1.02)}
+.loginVisualShade.loginVisualShade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(3,7,18,.18),rgba(3,7,18,.28) 44%,rgba(3,7,18,.76))}
+.loginVisualBrand.loginVisualBrand{position:relative;z-index:1;display:flex;align-items:center;gap:10px;padding:24px;color:#fff}
+.loginVisualLogo.loginVisualLogo{width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(0,0,0,.24))}
+.loginVisualBrand strong,.loginVisualBrand span{display:block}
+.loginVisualBrand strong{font-size:13px;letter-spacing:.02em}
+.loginVisualBrand span{margin-top:2px;font-size:11px;color:rgba(255,255,255,.76)}
+.loginVisualQuote.loginVisualQuote{position:absolute;left:24px;right:24px;bottom:86px;z-index:1;color:#fff}
+.loginVisualQuote span{display:block;margin-bottom:10px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(186,230,253,.94)}
+.loginVisualQuote strong{display:block;max-width:360px;font-size:clamp(24px,3.1vw,34px);line-height:1.05;letter-spacing:0}
+.loginCard.loginCard{width:100%;display:flex;flex-direction:column;justify-content:center;padding:clamp(28px,5vw,58px);background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,251,253,.98));color:#0f172a}
+.loginBrand.loginBrand{display:flex;align-items:center;gap:16px;text-align:left}
+.loginBrandBadge.loginBrandBadge{width:86px;height:86px;flex:0 0 86px;margin:0;border-radius:8px;display:grid;place-items:center;border:1px solid rgba(14,116,144,.18);background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(232,247,252,.92));box-shadow:0 14px 32px rgba(8,47,73,.12)}
+.loginLogoImg.loginLogoImg{width:70px;height:70px;object-fit:contain}
+.loginBrandEyebrow.loginBrandEyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#149cc6}
+.loginBrandTitle.loginBrandTitle{margin:4px 0 0;font-size:clamp(26px,3vw,38px);line-height:1.02;font-weight:900;letter-spacing:0;color:#102033}
+.loginBrandSub.loginBrandSub{margin-top:8px;color:#64748b;font-size:13px}
+.loginAvatarWrap.loginAvatarWrap{display:flex;justify-content:center;margin:26px 0 20px}
+.loginAvatar.loginAvatar{width:104px;height:104px;border-radius:999px;border:4px solid #fff;object-fit:cover;background:rgba(226,232,240,.9);box-shadow:0 14px 34px rgba(15,23,42,.14),0 0 0 1px rgba(14,116,144,.12)}
+.loginForm.loginForm{display:flex;flex-direction:column;gap:12px}
+.loginField.loginField{color:#334155}
+.loginField.loginField span:first-child{font-weight:800;color:#334155}
+.loginField.loginField input,.loginField.loginField select{min-height:46px;border-radius:8px;border-color:rgba(148,163,184,.36);background:#fff;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.loginField.loginField input:focus,.loginField.loginField select:focus{border-color:rgba(20,156,198,.78);box-shadow:0 0 0 4px rgba(51,182,222,.14);transform:translateY(-1px)}
+.loginPasswordControl.loginPasswordControl{position:relative;display:block}
+.loginPasswordControl.loginPasswordControl input{width:100%;padding-right:48px}
+.loginPasswordToggle.loginPasswordToggle{position:absolute;top:50%;right:8px;width:34px;height:34px;border:0;border-radius:8px;transform:translateY(-50%);background:rgba(226,232,240,.72);color:#334155;display:grid;place-items:center;cursor:pointer;transition:background .18s ease,color .18s ease,transform .18s ease}
+.loginPasswordToggle.loginPasswordToggle:hover{background:rgba(51,182,222,.16);color:#0f7897;transform:translateY(-50%) scale(1.04)}
+.loginPasswordToggle svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.loginPasswordToggle.isVisible{color:#149cc6;background:rgba(51,182,222,.18)}
+.loginBtn.loginBtn{width:100%;height:48px;margin-top:8px;border-radius:8px;font-size:14px;letter-spacing:.02em;font-weight:900;box-shadow:0 16px 28px rgba(20,156,198,.24)}
+.loginGoogleBtn.loginGoogleBtn{width:100%;min-height:46px;border:1px solid rgba(148,163,184,.34);border-radius:8px;background:#fff;color:#1f2937;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:800;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.loginGoogleBtn.loginGoogleBtn:hover{transform:translateY(-2px);border-color:rgba(20,156,198,.48);box-shadow:0 14px 24px rgba(15,23,42,.1)}
+.googleMark.googleMark{width:24px;height:24px;border-radius:999px;display:grid;place-items:center;font-weight:900;color:#4285f4}
+.loginError.loginError{min-height:18px;text-align:center;font-size:12px;font-weight:700;color:#dc2626}
+.loginSupportWidget.loginSupportWidget{position:absolute;left:22px;bottom:22px;z-index:3}
+.loginSupportBtn.loginSupportBtn{min-height:42px;border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:0 14px;display:inline-flex;align-items:center;gap:8px;color:#fff;background:rgba(15,23,42,.48);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);cursor:pointer;font-weight:800;box-shadow:0 12px 26px rgba(0,0,0,.22)}
+.loginSupportBtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.loginSupportPanel.loginSupportPanel{position:absolute;left:0;bottom:calc(100% + 10px);width:250px;padding:14px;border-radius:8px;border:1px solid rgba(255,255,255,.26);background:rgba(15,23,42,.88);color:#f8fafc;box-shadow:0 18px 40px rgba(0,0,0,.3);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.loginSupportPanel strong,.loginSupportPanel span,.loginSupportPanel a,.loginSupportPanel small{display:block}
+.loginSupportPanel strong{font-size:13px;margin-bottom:8px}
+.loginSupportPanel span,.loginSupportPanel a{margin-top:5px;font-size:12px}
+.loginSupportPanel a{color:#bae6fd;text-decoration:none;overflow-wrap:anywhere}
+.loginSupportPanel small{margin-top:10px;color:rgba(226,232,240,.7)}
+@media (max-width:760px){.loginScreen.loginScreen{padding:14px}.loginShell.loginShell{grid-template-columns:1fr;min-height:0}.loginVisualPanel.loginVisualPanel{min-height:250px}.loginCard.loginCard{padding:26px 20px 32px}.loginBrand.loginBrand{align-items:flex-start}.loginBrandBadge.loginBrandBadge{width:72px;height:72px;flex-basis:72px}.loginLogoImg.loginLogoImg{width:58px;height:58px}.loginSupportWidget.loginSupportWidget{left:16px;bottom:16px}.loginVisualQuote.loginVisualQuote{bottom:72px}}
+/* === END LOGIN REDESIGN JDL === */
+/* === LOGIN JDL CENTERED BRAND UPDATE === */
+.loginVisualImage.loginVisualImage{object-position:center center;opacity:1}
+.loginVisualShade.loginVisualShade{background:linear-gradient(180deg,rgba(3,7,18,.10),rgba(3,7,18,.18) 42%,rgba(3,7,18,.62))}
+.loginVisualQuote.loginVisualQuote{text-align:left;bottom:92px}
+.loginVisualQuote span{color:rgba(255,255,255,.82)}
+.loginVisualQuote strong{font-size:clamp(34px,4.2vw,52px);line-height:.98;max-width:340px}
+.loginBrand.loginBrand{flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px}
+.loginBrandBadge.loginBrandBadge{width:118px;height:118px;flex:0 0 118px;border-radius:10px}
+.loginLogoImg.loginLogoImg{width:98px;height:98px}
+.loginBrandEyebrow.loginBrandEyebrow{font-size:13px}
+.loginBrandTitle.loginBrandTitle{font-size:clamp(30px,3.4vw,44px);max-width:470px}
+.loginBrandSub.loginBrandSub{text-align:center}
+@media (max-width:760px){.loginBrandBadge.loginBrandBadge{width:96px;height:96px;flex-basis:96px}.loginLogoImg.loginLogoImg{width:80px;height:80px}.loginVisualQuote.loginVisualQuote{text-align:left}.loginVisualQuote strong{font-size:34px}}
+/* === END LOGIN JDL CENTERED BRAND UPDATE === */
+/* === LOGIN POLISH GMAIL AND PASSWORD EYE === */
+.loginPasswordControl.loginPasswordControl input{padding-right:58px}
+.loginPasswordToggle.loginPasswordToggle{
+  right:10px;
+  width:40px;
+  height:40px;
+  border:1px solid rgba(20,156,198,.24);
+  border-radius:12px;
+  background:linear-gradient(180deg,#fff,rgba(232,247,252,.92));
+  color:#0f7897;
+  box-shadow:0 8px 18px rgba(15,23,42,.08),inset 0 1px 0 rgba(255,255,255,.9);
+}
+.loginPasswordToggle.loginPasswordToggle:hover{
+  background:linear-gradient(180deg,#eefaff,#fff);
+  color:#075f78;
+  border-color:rgba(20,156,198,.46);
+  transform:translateY(-50%) scale(1.03);
+}
+.loginPasswordToggle svg{width:22px;height:22px;stroke-width:2.25}
+.loginPasswordToggle.isVisible{
+  background:linear-gradient(180deg,#dff7ff,#fff);
+  border-color:rgba(20,156,198,.62);
+  color:#149cc6;
+}
+.loginGoogleBtn.loginGoogleBtn{
+  gap:12px;
+  background:linear-gradient(180deg,#fff,#f8fbff);
+  border-color:rgba(148,163,184,.42);
+}
+.googleMark.googleMark{
+  width:22px;
+  height:22px;
+  display:block;
+  object-fit:contain;
+  color:initial;
+  border-radius:0;
+}
+/* === END LOGIN POLISH GMAIL AND PASSWORD EYE === */
+/* === LOGIN ICON FIXES === */
+.loginPasswordControl.loginPasswordControl{display:block;position:relative}
+.loginPasswordToggle.loginPasswordToggle{
+  top:50%;
+  right:8px;
+  width:42px;
+  height:42px;
+  min-width:42px;
+  min-height:42px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:0;
+  transform:translateY(-50%);
+}
+.loginPasswordToggle.loginPasswordToggle:hover{transform:translateY(-50%) scale(1.03)}
+.loginPasswordToggle.loginPasswordToggle svg{
+  width:21px;
+  height:21px;
+  display:block;
+  margin:0;
+  flex:0 0 auto;
+}
+.loginPasswordToggle.loginPasswordToggle svg path{vector-effect:non-scaling-stroke}
+.loginGoogleBtn.loginGoogleBtn{
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.gmailIcon.gmailIcon{
+  width:24px;
+  height:24px;
+  display:block;
+  flex:0 0 24px;
+  object-fit:contain;
+}
+/* === END LOGIN ICON FIXES === */
+/* === LOGIN AUTHENTICATING STATE === */
+.loginBtn.loginBtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
+.loginBtnText,.loginBtnLoading{transition:opacity .18s ease,transform .18s ease}
+.loginBtnLoading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;opacity:0;transform:translateY(8px);pointer-events:none}
+.loginBtn.isLoading .loginBtnText{opacity:0;transform:translateY(-8px)}
+.loginBtn.isLoading .loginBtnLoading{opacity:1;transform:translateY(0)}
+.loginBtn.isLoading{cursor:wait;filter:saturate(.96);box-shadow:0 16px 32px rgba(20,156,198,.28)}
+.loginSpinner{width:18px;height:18px;border-radius:999px;border:3px solid rgba(255,255,255,.45);border-top-color:#fff;animation:loginSpin .75s linear infinite}
+.loginGoogleBtn:disabled,.loginPasswordToggle:disabled,.loginField select:disabled,.loginField input:disabled{cursor:wait;opacity:.72}
+@keyframes loginSpin{to{transform:rotate(360deg)}}
+/* === END LOGIN AUTHENTICATING STATE === */

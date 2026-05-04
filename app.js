@@ -194,6 +194,7 @@ let monthCursor = startOfMonth(new Date());
 let pendingCreateDates = null;
 let quoteDraft = null;
 let quoteSaveInFlight = false;
+let lastQuotePrintHtml = "";
 let quoteSelectedItemIds = new Set();
 let quoteAdvanceEditingId = "";
 let companyManagersDraft = [];
@@ -287,8 +288,13 @@ const el = {
   appShell: document.getElementById("appShell"),
   loginScreen: document.getElementById("loginScreen"),
   loginForm: document.getElementById("loginForm"),
+  btnLoginSubmit: document.getElementById("btnLoginSubmit"),
   loginUserSelect: document.getElementById("loginUserSelect"),
   loginPassword: document.getElementById("loginPassword"),
+  btnToggleLoginPassword: document.getElementById("btnToggleLoginPassword"),
+  btnGoogleLogin: document.getElementById("btnGoogleLogin"),
+  btnLoginSupport: document.getElementById("btnLoginSupport"),
+  loginSupportPanel: document.getElementById("loginSupportPanel"),
   loginAvatar: document.getElementById("loginAvatar"),
   loginError: document.getElementById("loginError"),
   moduleHubScreen: document.getElementById("moduleHubScreen"),
@@ -656,6 +662,7 @@ const el = {
   btnMenuMontaje: document.getElementById("btnMenuMontaje"),
   btnQuoteAdvances: document.getElementById("btnQuoteAdvances"),
   btnMenuMontajeSelectable: document.getElementById("btnMenuMontajeSelectable"),
+  btnQuoteReprint: document.getElementById("btnQuoteReprint"),
   btnQuotePrintTemplate: document.getElementById("btnQuotePrintTemplate"),
   btnQuoteSave: document.getElementById("btnQuoteSave"),
   quoteSaveProgress: document.getElementById("quoteSaveProgress"),
@@ -1483,6 +1490,78 @@ function applyBuiltInTemplateAssets(htmlText, meta) {
   return out.replace(/Encabezadojdl\.png/g, String(meta.headerImage).trim());
 }
 
+function ensurePrintableBaseTag(htmlText) {
+  const html = String(htmlText || "");
+  if (/<base\s/i.test(html)) return html;
+  const baseHref = escapeHtml(String(window.location.href || ""));
+  return html.replace(/<head([^>]*)>/i, `<head$1><base href="${baseHref}" />`);
+}
+
+function writePrintableHtmlToWindow(win, htmlText) {
+  if (!win) return false;
+  const html = ensurePrintableBaseTag(htmlText);
+  try {
+    win.document.open("text/html", "replace");
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => {
+      try {
+        const hasContent = !!win.document?.body?.children?.length;
+        if (hasContent) return;
+        const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        win.location.replace(url);
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      } catch (_) { }
+    }, 350);
+    return true;
+  } catch (_) {
+    try {
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      win.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      return true;
+    } catch (__) {
+      return false;
+    }
+  }
+}
+
+function reservePrintableWindow(message = "Preparando cotizacion...") {
+  let win = null;
+  try {
+    win = window.open("about:blank", "_blank");
+  } catch (_) {
+    win = null;
+  }
+  if (!win) return null;
+  try {
+    win.document.open("text/html", "replace");
+    win.document.write(`<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(message)}</title>
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f8fbff;color:#10243b;font-family:Arial,sans-serif}
+    div{font-size:16px;font-weight:700}
+  </style>
+</head>
+<body><div>${escapeHtml(message)}</div></body>
+</html>`);
+    win.document.close();
+  } catch (_) { }
+  return win;
+}
+
+function closeReservedPrintableWindow(win) {
+  try {
+    if (win && !win.closed) win.close();
+  } catch (_) { }
+}
+
 async function printSelectedQuoteTemplate() {
   const selectedTemplateId = String(el.quoteTemplateSelect?.value || quoteDraft?.templateId || "").trim();
   if (!selectedTemplateId) return toast("Selecciona una plantilla.");
@@ -1498,9 +1577,10 @@ async function printSelectedQuoteTemplate() {
     html = html.replace("<head>", `<head><base href="${escapeHtml(String(window.location.href || ""))}" />`);
     const ctx = buildTemplatePrintContextFromQuoteForm();
     html = fillTemplateHtmlTokens(html, ctx);
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
+    if (!writePrintableHtmlToWindow(win, html)) {
+      toast("No se pudo abrir la plantilla imprimible.");
+      return;
+    }
     setTimeout(() => {
       try {
         win.focus();
@@ -7773,6 +7853,19 @@ function setLoginError(message = "") {
   el.loginError.textContent = String(message || "").trim();
 }
 
+function setLoginLoading(isLoading = false) {
+  const loading = Boolean(isLoading);
+  if (el.btnLoginSubmit) {
+    el.btnLoginSubmit.classList.toggle("isLoading", loading);
+    el.btnLoginSubmit.disabled = loading;
+    el.btnLoginSubmit.setAttribute("aria-busy", loading ? "true" : "false");
+  }
+  if (el.btnGoogleLogin) el.btnGoogleLogin.disabled = loading;
+  if (el.loginUserSelect) el.loginUserSelect.disabled = loading;
+  if (el.loginPassword) el.loginPassword.disabled = loading;
+  if (el.btnToggleLoginPassword) el.btnToggleLoginPassword.disabled = loading;
+}
+
 function renderTopbarWelcome() {
   if (!el.topbarWelcome) return;
   const displayName = String(authSession.fullName || authSession.username || "").trim();
@@ -7822,6 +7915,7 @@ async function loadLoginUsers() {
 
 async function doLogin() {
   if (!el.loginForm || !el.loginScreen) return;
+  if (el.btnLoginSubmit?.classList.contains("isLoading")) return;
   const userId = String(el.loginUserSelect?.value || "").trim();
   const password = String(el.loginPassword?.value || "");
   if (!userId) {
@@ -7833,14 +7927,21 @@ async function doLogin() {
     return;
   }
   setLoginError("");
+  setLoginLoading(true);
   const loginUrl = buildApiUrlFromStateUrl(activeApiStateUrl, "login");
   const response = await fetch(loginUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, password }),
-  });
+  }).catch(() => null);
+  if (!response) {
+    setLoginLoading(false);
+    setLoginError("No se pudo autenticar. Revisa la conexion e intenta de nuevo.");
+    return;
+  }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload?.ok !== true) {
+    setLoginLoading(false);
     setLoginError(payload?.message || "Contrasena incorrecta.");
     return;
   }
@@ -7860,7 +7961,62 @@ async function doLogin() {
   if (el.eventUser && authSession.userId) {
     syncEnhancedSelectValue(el.eventUser, authSession.userId);
   }
+  setLoginLoading(false);
   toast(`Sesion iniciada: ${authSession.fullName || authSession.username}`);
+}
+
+function toggleLoginPasswordVisibility() {
+  if (!el.loginPassword) return;
+  const shouldShow = el.loginPassword.type === "password";
+  el.loginPassword.type = shouldShow ? "text" : "password";
+  if (el.btnToggleLoginPassword) {
+    el.btnToggleLoginPassword.classList.toggle("isVisible", shouldShow);
+    el.btnToggleLoginPassword.setAttribute("aria-label", shouldShow ? "Ocultar contrasena" : "Mostrar contrasena");
+    el.btnToggleLoginPassword.title = shouldShow ? "Ocultar contrasena" : "Mostrar contrasena";
+  }
+  el.loginPassword.focus();
+}
+
+function toggleLoginSupportPanel(forceOpen = null) {
+  if (!el.btnLoginSupport || !el.loginSupportPanel) return;
+  const isOpen = !el.loginSupportPanel.hidden;
+  const nextOpen = forceOpen === null ? !isOpen : Boolean(forceOpen);
+  el.loginSupportPanel.hidden = !nextOpen;
+  el.btnLoginSupport.setAttribute("aria-expanded", nextOpen ? "true" : "false");
+}
+
+function setupLoginVisualImageFallback() {
+  const image = document.querySelector(".loginVisualImage");
+  if (!image) return;
+  const sources = [
+    "./montaje.jpg",
+    "./montaje%20Gestion%20de%20Reservas.jpg",
+    "./montaje%20Gestion%20de%20Reservas.png",
+    "./montaje%20Gestion%20de%20Reservas.webp",
+    "./montaje%20Gestion%20de%20Reservas.jpeg",
+    "./montaje%20Gestion%20de%20Reservas",
+    "./login-jardines-lago.jpg",
+  ];
+  let index = sources.indexOf(image.getAttribute("src"));
+  if (index < 0) index = 0;
+  image.addEventListener("error", () => {
+    index += 1;
+    if (index < sources.length) image.src = sources[index];
+  });
+}
+
+async function loginWithGoogleGmail() {
+  setLoginError("");
+  const googleLoginUrl = buildApiUrlFromStateUrl(activeApiStateUrl, "auth/google");
+  try {
+    const response = await fetch(googleLoginUrl, { method: "HEAD", cache: "no-store" });
+    if (response.ok || response.status === 405) {
+      window.location.href = googleLoginUrl;
+      return;
+    }
+  } catch (_) { }
+  setLoginError("Inicio con Google/Gmail listo en interfaz. Falta configurar OAuth en el servidor.");
+  toast("Configura Google OAuth en el backend para activar este acceso.");
 }
 
 function salonOptionsHtml(selected = "", includePlaceholder = false) {
@@ -10852,6 +11008,7 @@ function normalizeMmsLineItems(raw, fallback = null) {
         platoId,
         preparacionId: Number(item?.preparacionId || 0) || null,
         qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
+        servicioHora: String(item?.servicioHora || "").trim(),
         salsaIds: (Array.isArray(item?.salsaIds) ? item.salsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
         guarnicionIds: (Array.isArray(item?.guarnicionIds) ? item.guarnicionIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
         guarnicionQtys: normalizeMmsQtyMap(item?.guarnicionQtys),
@@ -10881,6 +11038,7 @@ function normalizeMmsLineItems(raw, fallback = null) {
     platoId: Number(plato.platoId || 0),
     preparacionId: Number(plato.preparacionId || 0) || null,
     qty: Math.max(1, Math.floor(Number(plato.qty || 1))),
+    servicioHora: "",
     salsaIds: [...salsaIds],
     guarnicionIds: [...guarnicionIds],
     guarnicionQtys: { ...guarnicionQtys },
@@ -10982,6 +11140,19 @@ function updateMmsPlatoItemQtyByKey(key, nextQty) {
   return changed;
 }
 
+function applyMmsQtyToActivePlato(qtyRaw) {
+  const qty = Math.max(1, Math.floor(Number(qtyRaw || 1)));
+  mmsPlatoQty = qty;
+  const activeKey = String(mmsActiveLineKey || "").trim();
+  if (activeKey) {
+    updateMmsPlatoItemQtyByKey(activeKey, qty);
+  }
+  syncMmsMenuQtyField();
+  refreshMmsDescriptionAuto();
+  renderMmsSelectionSummary();
+  renderMmsComandaPreview();
+}
+
 function clearMmsActiveComplements({ keepComment = false } = {}) {
   mmsSelectedSalsaIds = [];
   mmsSelectedBebidaIds = [];
@@ -11000,11 +11171,13 @@ function buildCurrentMmsLineItemSnapshot() {
   if (!activeKey) return null;
   const plate = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).find((item) => String(item?.key || "") === activeKey);
   if (!plate) return null;
+  const currentLine = (Array.isArray(mmsLineItemsDraft) ? mmsLineItemsDraft : []).find((item) => String(item?.key || "") === activeKey);
   return {
     key: activeKey,
     platoId: Number(plate.platoId || 0) || null,
     preparacionId: Number(plate.preparacionId || 0) || null,
     qty: Math.max(1, Math.floor(Number(plate.qty || 1))),
+    servicioHora: String(currentLine?.servicioHora || "").trim(),
     salsaIds: (Array.isArray(mmsSelectedSalsaIds) ? mmsSelectedSalsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
     guarnicionIds: getMmsSelectedGuarnicionIds(),
     guarnicionQtys: {},
@@ -11052,7 +11225,7 @@ function loadMmsLineItemIntoEditor(key) {
   if (!line || !plate) return;
   mmsActiveLineKey = targetKey;
   mmsPlatoQty = Math.max(1, Math.floor(Number(plate.qty || 1)));
-  if (el.mmsMenuQty) el.mmsMenuQty.value = String(mmsPlatoQty);
+  syncMmsMenuQtyField();
   if (el.mmsProtein) el.mmsProtein.value = String(plate.platoId || "");
   refreshMmsByProteinPreparation({ preserveSelection: false }).catch(() => { });
   mmsSelectedSalsaIds = (Array.isArray(line.salsaIds) ? line.salsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
@@ -11168,6 +11341,19 @@ function notifyMmsSelectionAdded(kind, id, label, qty) {
   requestAnimationFrame(() => flashMmsComandaTag(kind, id));
 }
 
+function formatMmsServeTimeLabel(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return "";
+  const m = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return value;
+  const hh = Number(m[1]);
+  const mm = Number(m[2]);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return value;
+  const suffix = hh >= 12 ? "PM" : "AM";
+  const h12 = hh % 12 === 0 ? 12 : (hh % 12);
+  return `${h12}:${String(mm).padStart(2, "0")} ${suffix}`;
+}
+
 function renderMmsQuickButtonsGroup(container, rows, selectedSet, kind) {
   if (!container) return;
   container.innerHTML = "";
@@ -11269,17 +11455,36 @@ async function toggleMmsQuickItem(kind, id) {
   renderMmsComandaPreview();
 }
 
-function renderMmsComandaTag(container, label, removeKind, removeId, { qty = null, allowQty = false } = {}) {
+function renderMmsComandaTag(container, label, removeKind, removeId, {
+  qty = null,
+  allowQty = false,
+  timeValue = "",
+  allowTime = false,
+  allowRemove = true,
+  allowEditQty = false,
+  editLabel = "",
+} = {}) {
   if (!container) return;
   const tag = document.createElement("span");
   tag.className = "mmsComandaTag";
   tag.dataset.mmsTagKind = String(removeKind || "");
   tag.dataset.mmsTagId = String(removeId || "");
   const safeQty = Math.max(1, Math.floor(Number(qty || 1)));
+  const timeText = formatMmsServeTimeLabel(timeValue);
   const qtyHtml = allowQty && Number.isFinite(Number(qty))
     ? `<span class="mmsTagQty"><span class="mmsTagQtyText">Cant. ${safeQty}</span><button class="mmsTagIconBtn mmsTagQtyBtn isDec" type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="dec" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Disminuir" aria-label="Disminuir cantidad"></button><button class="mmsTagIconBtn mmsTagQtyBtn isInc" type="button" data-mms-qty-kind="${escapeHtml(removeKind)}" data-mms-qty-action="inc" data-mms-qty-id="${escapeHtml(String(removeId))}" title="Aumentar" aria-label="Aumentar cantidad"></button></span>`
     : "";
-  tag.innerHTML = `<span class="mmsComandaTagText">${escapeHtml(label)}</span>${qtyHtml}<button class="mmsTagIconBtn mmsTagRemoveBtn" type="button" data-mms-remove-kind="${escapeHtml(removeKind)}" data-mms-remove-id="${escapeHtml(String(removeId))}" title="Quitar" aria-label="Quitar del resumen"></button>`;
+  const timeHtml = allowTime
+    ? `<span class="mmsTagQty"><span class="mmsTagQtyText">Hora ${escapeHtml(timeText || "Sin hora")}</span><button class="mmsTagIconBtn mmsTagTimeBtn" type="button" data-mms-time-kind="${escapeHtml(removeKind)}" data-mms-time-id="${escapeHtml(String(removeId))}" title="Editar horario" aria-label="Editar horario"></button></span>`
+    : "";
+  const editHtml = allowEditQty
+    ? `<button class="mmsTagIconBtn mmsTagEditBtn" type="button" data-mms-edit-kind="${escapeHtml(removeKind)}" data-mms-edit-id="${escapeHtml(String(removeId))}" data-mms-edit-label="${escapeHtml(String(editLabel || label || "").trim())}" title="Editar cantidad" aria-label="Editar cantidad"></button>`
+    : "";
+  const removeHtml = allowRemove
+    ? `<button class="mmsTagIconBtn mmsTagRemoveBtn" type="button" data-mms-remove-kind="${escapeHtml(removeKind)}" data-mms-remove-id="${escapeHtml(String(removeId))}" title="Quitar" aria-label="Quitar del resumen"></button>`
+    : "";
+  const controlsHtml = `<span class="mmsComandaTagControls">${qtyHtml}${timeHtml}${editHtml}${removeHtml}</span>`;
+  tag.innerHTML = `<span class="mmsComandaTagText">${escapeHtml(label)}</span>${controlsHtml}`;
   container.appendChild(tag);
   return tag;
 }
@@ -11287,14 +11492,18 @@ function renderMmsComandaTag(container, label, removeKind, removeId, { qty = nul
 function renderMmsComandaPreview() {
   ensureMmsCatalogDefaults();
   const cache = menuMontajeSelectableCatalogCache;
+  const activeDateSalon = String(el.mmsDateSalonSelect?.selectedOptions?.[0]?.textContent || "").trim();
   if (el.mmsActivePlateHint) {
     const activeItem = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).find((item) => String(item?.key || "") === String(mmsActiveLineKey || ""));
     if (!activeItem) {
-      el.mmsActivePlateHint.textContent = "Toca un plato para editarlo.";
+      el.mmsActivePlateHint.textContent = activeDateSalon
+        ? `Dia/Salon: ${activeDateSalon}. Toca un plato para editarlo.`
+        : "Toca un plato para editarlo.";
     } else {
       const index = (Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : []).findIndex((item) => String(item?.key || "") === String(mmsActiveLineKey || ""));
       const plateNo = index >= 0 ? index + 1 : 1;
-      el.mmsActivePlateHint.textContent = `Editando Plato ${plateNo}: ${getMmsPlatoItemLabel(activeItem)}. Toca otro plato para cambiar.`;
+      const prefix = activeDateSalon ? `Dia/Salon: ${activeDateSalon}. ` : "";
+      el.mmsActivePlateHint.textContent = `${prefix}Editando Plato ${plateNo}: ${getMmsPlatoItemLabel(activeItem)}. Ajusta cantidad, horario, guarniciones y postres para este plato, o toca otro plato para cambiar.`;
     }
   }
   if (el.mmsComandaPlato) {
@@ -11308,29 +11517,84 @@ function renderMmsComandaPreview() {
     } else {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        const label = `Plato ${i + 1} | Cant ${Math.max(1, Math.floor(Number(item?.qty || 1)))} | ${getMmsPlatoItemLabel(item)}`;
-        const tag = renderMmsComandaTag(el.mmsComandaPlato, label, "plato", item.key, {
+        const line = getCombinedMmsLineItems().find((x) => String(x?.key || "") === String(item?.key || "")) || {};
+        const plateNo = i + 1;
+        const plateTime = getMmsLineServeTimeByKey(item?.key);
+        const prep = getMmsPreparationName(item) || "Por definir";
+        const salsaNames = namesFromIds(cache.salsas, Array.isArray(line?.salsaIds) ? line.salsaIds : []);
+        const guarnicionNames = namesFromIds(cache.guarniciones, Array.isArray(line?.guarnicionIds) ? line.guarnicionIds : []);
+        const postreNames = namesFromIds(cache.postres, Array.isArray(line?.postreIds) ? line.postreIds : []);
+        const bebidaNames = namesFromIds(cache.bebidas, Array.isArray(line?.bebidaIds) ? line.bebidaIds : []);
+        const comentarioNames = namesFromIds(cache.comentarios, Array.isArray(line?.comentarioIds) ? line.comentarioIds : []);
+        const comentarioLibre = String(line?.comentarioLibre || "").trim();
+        const extras = [...comentarioNames, ...(comentarioLibre ? [comentarioLibre] : [])];
+        const card = document.createElement("div");
+        card.className = `mmsPlateBundle${String(item?.key || "") === String(mmsActiveLineKey || "") ? " isActive" : ""}`;
+        card.innerHTML = `
+          <button type="button" class="mmsPlateBundleHead" data-mms-switch-plate="${escapeHtml(String(item?.key || ""))}">
+            <span class="mmsPlateBundleTitle">Plato ${plateNo}: ${escapeHtml(getMmsPlatoBaseName(item) || "Por definir")}</span>
+            <span class="mmsPlateBundleMeta">${String(item?.key || "") === String(mmsActiveLineKey || "") ? "Editando" : "Editar"}</span>
+          </button>
+        `;
+        const topTag = renderMmsComandaTag(document.createElement("div"), `Cant ${Math.max(1, Math.floor(Number(item?.qty || 1)))} | ${getMmsPlatoItemLabel(item)}`, "plato", item.key, {
           qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
-          allowQty: false,
+          allowQty: true,
+          timeValue: plateTime,
+          allowTime: true,
         });
-        tag?.classList.add("isPlateSelector");
-        if (String(item?.key || "") === String(mmsActiveLineKey || "")) tag?.classList.add("isActiveLine");
+        topTag?.classList.add("isPlateSelector");
+        if (String(item?.key || "") === String(mmsActiveLineKey || "")) topTag?.classList.add("isActiveLine");
+        const controlsWrap = document.createElement("div");
+        controlsWrap.className = "mmsPlateBundleControls";
+        if (topTag) controlsWrap.appendChild(topTag);
+        card.appendChild(controlsWrap);
+        const detail = document.createElement("div");
+        detail.className = "mmsPlateBundleDetails";
+        const rows = [
+          `Preparacion: ${prep}`,
+          `Guarnicion: ${guarnicionNames.length ? guarnicionNames.join(", ") : "Sin definir"}`,
+          `Salsas: ${salsaNames.length ? salsaNames.join(", ") : "Sin definir"}`,
+          `Postres: ${postreNames.length ? postreNames.join(", ") : "Sin definir"}`,
+          `Bebidas: ${bebidaNames.length ? bebidaNames.join(", ") : "Sin definir"}`,
+          `Tortilla/Pan y extras: ${extras.length ? extras.join(", ") : "Sin definir"}`,
+        ];
+        detail.innerHTML = rows.map((txt) => `<div class="mmsPlateBundleLine">${escapeHtml(txt)}</div>`).join("");
+        card.appendChild(detail);
+        el.mmsComandaPlato.appendChild(card);
       }
     }
   }
 
   if (el.mmsComandaGuarniciones) {
     el.mmsComandaGuarniciones.innerHTML = "";
-    const ids = getMmsSelectedGuarnicionIds();
-    const names = namesFromIds(cache.guarniciones, ids);
-    if (!names.length) {
+    const lineItems = getCombinedMmsLineItems();
+    if (!lineItems.length) {
       const empty = document.createElement("span");
       empty.className = "muted";
       empty.textContent = "Sin guarniciones";
       el.mmsComandaGuarniciones.appendChild(empty);
     } else {
-      for (let i = 0; i < names.length; i++) {
-        renderMmsComandaTag(el.mmsComandaGuarniciones, names[i], "guarnicion", ids[i]);
+      let hasAny = false;
+      for (let i = 0; i < lineItems.length; i++) {
+        const line = lineItems[i];
+        const ids = (Array.isArray(line?.guarnicionIds) ? line.guarnicionIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+        if (!ids.length) continue;
+        const names = namesFromIds(cache.guarniciones, ids).filter(Boolean);
+        if (!names.length) continue;
+        hasAny = true;
+        const plateLabel = getMmsPlatoItemLabel(line) || `Plato ${i + 1}`;
+        const qty = Math.max(1, Math.floor(Number(line?.qty || 1)));
+        const time = formatMmsServeTimeLabel(line?.servicioHora || "");
+        const tag = document.createElement("span");
+        tag.className = "mmsComandaTag";
+        tag.textContent = `Plato ${i + 1} (Cant ${qty}${time ? ` | Hora ${time}` : ""}) ${plateLabel}: ${names.join(", ")}`;
+        el.mmsComandaGuarniciones.appendChild(tag);
+      }
+      if (!hasAny) {
+        const empty = document.createElement("span");
+        empty.className = "muted";
+        empty.textContent = "Sin guarniciones";
+        el.mmsComandaGuarniciones.appendChild(empty);
       }
     }
   }
@@ -11351,21 +11615,49 @@ function renderMmsComandaPreview() {
 
   if (el.mmsComandaPostres) {
     el.mmsComandaPostres.innerHTML = "";
-    const ids = getMmsSelectedPostreIds();
-    if (!ids.length) {
+    const lines = getCombinedMmsLineItems();
+    const postreMap = new Map((cache.postres || []).map((p) => [Number(p.id), String(p.nombre || "").trim()]));
+    if (!lines.length) {
       const empty = document.createElement("span");
       empty.className = "muted";
-      empty.textContent = "Sin postres";
+      empty.textContent = "Sin platos para asignar postres.";
       el.mmsComandaPostres.appendChild(empty);
     } else {
-      const map = new Map((cache.postres || []).map((p) => [Number(p.id), String(p.nombre || "").trim()]));
-      for (const id of ids) {
-        const name = String(map.get(Number(id)) || "").trim();
-        if (!name) continue;
-        renderMmsComandaTag(el.mmsComandaPostres, name, "postre", id, {
-          qty: getMmsItemQty("postre", id),
-          allowQty: true,
-        });
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const plateNo = i + 1;
+        const isActive = String(line?.key || "") === String(mmsActiveLineKey || "");
+        const card = document.createElement("div");
+        card.className = `mmsPlateGroupCard${isActive ? " isActive" : ""}`;
+        card.innerHTML = `
+          <button type="button" class="mmsPlateGroupHead" data-mms-switch-plate="${escapeHtml(String(line?.key || ""))}">
+            <span class="mmsPlateGroupTitle">Plato ${plateNo}: ${escapeHtml(getMmsPlatoItemLabel(line) || "Por definir")}</span>
+            <span class="mmsPlateGroupMeta">${isActive ? "Editando" : "Tocar para editar"}</span>
+          </button>
+        `;
+        const itemsWrap = document.createElement("div");
+        itemsWrap.className = "mmsPlateGroupItems";
+        const idsByLine = (Array.isArray(line?.postreIds) ? line.postreIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+        if (!idsByLine.length) {
+          const empty = document.createElement("span");
+          empty.className = "muted";
+          empty.textContent = "Sin postres";
+          itemsWrap.appendChild(empty);
+        } else {
+          for (const id of idsByLine) {
+            const name = String(postreMap.get(Number(id)) || "").trim();
+            if (!name) continue;
+            renderMmsComandaTag(itemsWrap, name, "postre", id, {
+              qty: isActive ? getMmsItemQty("postre", id) : Math.max(1, Math.floor(Number(line?.postreQtys?.[id] || 1))),
+              allowQty: isActive,
+              allowEditQty: isActive,
+              allowRemove: isActive,
+              editLabel: name,
+            });
+          }
+        }
+        card.appendChild(itemsWrap);
+        el.mmsComandaPostres.appendChild(card);
       }
     }
   }
@@ -11721,8 +12013,10 @@ function buildMmsMenuDescriptionFromForm() {
     const guarniciones = mapNames(cache.guarniciones, line.guarnicionIds || []);
     const postres = mapItemsWithQtyFromMap(cache.postres, line.postreIds || [], line.postreQtys);
     const bebidas = mapItemsWithQtyFromMap(cache.bebidas, line.bebidaIds || [], line.bebidaQtys);
+    const servicioHora = formatMmsServeTimeLabel(line?.servicioHora || "");
     const compactParts = [
       `PLATO FUERTE (Cant ${Math.max(1, Math.floor(Number(line?.qty || 1)))} - ${platoFuerte})`,
+      `HORARIO (${servicioHora || "Por definir"})`,
       `PREPARACION (${preparacion})`,
       `SALSAS (${salsaNames.length ? salsaNames.join(", ") : "Por definir"})`,
       `GUARNICIONES (${guarniciones.length ? guarniciones.join(", ") : "Por definir"})`,
@@ -11840,6 +12134,64 @@ async function refreshMmsByProteinPreparation({ preserveSelection = true } = {})
   renderMmsQuickSelectors();
   renderMmsStageOptions();
   maybeAutofillMmsTitle();
+  refreshMmsDescriptionAuto();
+  renderMmsSelectionSummary();
+  renderMmsComandaPreview();
+}
+
+function getMmsLineServeTimeByKey(key) {
+  const target = String(key || "").trim();
+  if (!target) return "";
+  const line = getCombinedMmsLineItems().find((item) => String(item?.key || "") === target);
+  return String(line?.servicioHora || "").trim();
+}
+
+async function requestMmsPlateServeTime(currentValue = "", plateLabel = "Plato") {
+  const current = String(currentValue || "").trim();
+  if (window.Swal && typeof window.Swal.fire === "function") {
+    const result = await window.Swal.fire({
+      title: `Horario de ${plateLabel}`,
+      html: `<div style="font-size:12.5px;opacity:.92">Ingresa la hora de servicio de este plato.</div>`,
+      input: "time",
+      inputValue: current,
+      inputAttributes: {
+        step: "60",
+      },
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: "Guardar",
+      denyButtonText: "Quitar",
+      cancelButtonText: "Cancelar",
+      background: "#f8fbff",
+      color: "#10243b",
+      confirmButtonColor: "#0f766e",
+      denyButtonColor: "#dc2626",
+      cancelButtonColor: "#94a3b8",
+    });
+    if (result?.isDismissed) return null;
+    if (result?.isDenied) return "";
+    return String(result?.value || "").trim();
+  }
+  const raw = window.prompt(`Horario para ${plateLabel} (HH:MM):`, current || "");
+  if (raw === null) return null;
+  return String(raw || "").trim();
+}
+
+async function setMmsPlateServeTimeByKey(key) {
+  const targetKey = String(key || "").trim();
+  if (!targetKey) return;
+  const plateList = Array.isArray(mmsSelectedPlatoItems) ? mmsSelectedPlatoItems : [];
+  const plateIndex = plateList.findIndex((item) => String(item?.key || "") === targetKey);
+  const plate = plateList[plateIndex];
+  if (!plate) return;
+  const current = getMmsLineServeTimeByKey(targetKey);
+  const next = await requestMmsPlateServeTime(current, `Plato ${plateIndex + 1}`);
+  if (next === null) return;
+  const lines = getCombinedMmsLineItems();
+  const idx = lines.findIndex((item) => String(item?.key || "") === targetKey);
+  if (idx < 0) return;
+  lines[idx] = { ...lines[idx], servicioHora: String(next || "").trim() };
+  mmsLineItemsDraft = lines;
   refreshMmsDescriptionAuto();
   renderMmsSelectionSummary();
   renderMmsComandaPreview();
@@ -12025,6 +12377,7 @@ function buildMmsSelectionPayload() {
       platoId: Number(item?.platoId || 0) || null,
       preparacionId: Number(item?.preparacionId || 0) || null,
       qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
+      servicioHora: String(item?.servicioHora || "").trim(),
       salsaIds: (Array.isArray(item?.salsaIds) ? item.salsaIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
       guarnicionIds: (Array.isArray(item?.guarnicionIds) ? item.guarnicionIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0),
       guarnicionQtys: {},
@@ -12918,6 +13271,7 @@ function revealEventInCalendar(eventId) {
 
 function bindEvents() {
   setupStyledInvalidAlerts();
+  setupLoginVisualImageFallback();
   if (el.navMode) el.navMode.value = navMode;
   if (el.loginForm) {
     el.loginForm.addEventListener("submit", async (e) => {
@@ -12934,6 +13288,22 @@ function bindEvents() {
   if (el.loginPassword) {
     el.loginPassword.addEventListener("input", () => setLoginError(""));
   }
+  if (el.btnToggleLoginPassword) {
+    el.btnToggleLoginPassword.addEventListener("click", toggleLoginPasswordVisibility);
+  }
+  if (el.btnGoogleLogin) {
+    el.btnGoogleLogin.addEventListener("click", loginWithGoogleGmail);
+  }
+  if (el.btnLoginSupport) {
+    el.btnLoginSupport.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleLoginSupportPanel();
+    });
+  }
+  if (el.loginSupportPanel) {
+    el.loginSupportPanel.addEventListener("click", (event) => event.stopPropagation());
+  }
+  document.addEventListener("click", () => toggleLoginSupportPanel(false));
   if (el.btnSideDashboardReports) {
     el.btnSideDashboardReports.addEventListener("click", () => {
       closeBlockingOverlaysForNavigation();
@@ -13644,6 +14014,15 @@ function bindEvents() {
       await printSelectedQuoteTemplate();
     });
   }
+  if (el.btnQuoteReprint) {
+    el.btnQuoteReprint.addEventListener("click", async () => {
+      try {
+        await reprintCurrentQuoteDocument();
+      } catch (_) {
+        toast("No se pudo reimprimir la cotizacion.");
+      }
+    });
+  }
   if (el.btnQuotePaymentAdd) {
     el.btnQuotePaymentAdd.addEventListener("click", () => {
       addQuotePaymentTypeFromPicker();
@@ -13943,6 +14322,12 @@ function bindEvents() {
   }
   if (el.mmsComandaPreview) {
     el.mmsComandaPreview.addEventListener("click", (e) => {
+      const switchPlateBtn = e.target.closest("[data-mms-switch-plate]");
+      if (switchPlateBtn) {
+        const key = String(switchPlateBtn.dataset.mmsSwitchPlate || "").trim();
+        if (key) loadMmsLineItemIntoEditor(key);
+        return;
+      }
       const plateTag = e.target.closest(".mmsComandaTag[data-mms-tag-kind='plato']");
       if (plateTag && !e.target.closest("button")) {
         loadMmsLineItemIntoEditor(String(plateTag.dataset.mmsTagId || ""));
@@ -13987,6 +14372,33 @@ function bindEvents() {
           refreshMmsDescriptionAuto();
           renderMmsSelectionSummary();
           renderMmsComandaPreview();
+        }
+        return;
+      }
+      const editBtn = e.target.closest("[data-mms-edit-kind]");
+      if (editBtn) {
+        const kind = String(editBtn.dataset.mmsEditKind || "");
+        const id = Number(editBtn.dataset.mmsEditId || 0);
+        const label = String(editBtn.dataset.mmsEditLabel || "Producto").trim();
+        if ((kind === "postre" || kind === "bebida") && Number.isFinite(id) && id > 0) {
+          requestMmsItemQty(label, getMmsItemQty(kind, id), kind === "postre" ? "postres" : "bebidas").then((qty) => {
+            if (qty === null) return;
+            setMmsItemQty(kind, id, qty);
+            refreshMmsDescriptionAuto();
+            renderMmsSelectionSummary();
+            renderMmsComandaPreview();
+          });
+        }
+        return;
+      }
+      const timeBtn = e.target.closest("[data-mms-time-kind]");
+      if (timeBtn) {
+        const kind = String(timeBtn.dataset.mmsTimeKind || "");
+        const idRaw = String(timeBtn.dataset.mmsTimeId || "").trim();
+        if (kind === "plato" && idRaw) {
+          setMmsPlateServeTimeByKey(idRaw).catch(() => {
+            toast("No se pudo actualizar el horario del plato.");
+          });
         }
         return;
       }
@@ -14095,16 +14507,12 @@ function bindEvents() {
   }
   if (el.mmsMenuQty) {
     el.mmsMenuQty.addEventListener("input", () => {
-      const qty = Math.max(1, Math.floor(Number(el.mmsMenuQty?.value || 1)));
-      mmsPlatoQty = qty;
-      if (el.mmsMenuQtyVisible) el.mmsMenuQtyVisible.value = String(qty);
+      applyMmsQtyToActivePlato(el.mmsMenuQty?.value || 1);
     });
   }
   if (el.mmsMenuQtyVisible) {
     el.mmsMenuQtyVisible.addEventListener("input", () => {
-      const qty = Math.max(1, Math.floor(Number(el.mmsMenuQtyVisible?.value || 1)));
-      mmsPlatoQty = qty;
-      if (el.mmsMenuQty) el.mmsMenuQty.value = String(qty);
+      applyMmsQtyToActivePlato(el.mmsMenuQtyVisible?.value || 1);
     });
   }
   if (el.mmsMenuDescription) {
@@ -19174,7 +19582,7 @@ function getQuotePrintVariantMeta(rawVariant) {
   };
 }
 
-async function promptQuotePrintVariant(ev, quote) {
+async function promptQuotePrintVariant(ev, quote, options = {}) {
   const hasMenuMontaje = Array.isArray(quote?.menuMontajeEntries)
     && quote.menuMontajeEntries.some((row) => String(row?.date || "").trim() && String(row?.salon || "").trim());
 
@@ -19210,6 +19618,7 @@ async function promptQuotePrintVariant(ev, quote) {
         data-quote-print-value="${opt.value}"
         ${opt.disabled ? 'disabled aria-disabled="true"' : ''}
       >
+        <span class="quotePrintOptionCheck" aria-hidden="true">&check;</span>
         <span class="quotePrintOptionTitle">${opt.title}</span>
         <span class="quotePrintOptionText">${opt.description}</span>
         ${opt.disabled ? '<span class="quotePrintOptionNote">Requiere Menu & Montaje guardado</span>' : ''}
@@ -19232,25 +19641,55 @@ async function promptQuotePrintVariant(ev, quote) {
             cursor:pointer;
             display:grid;
             gap:6px;
+            position:relative;
+            padding-right:54px;
           }
           .quotePrintOptionCard:hover:not(.isDisabled){
             transform:translateY(-1px);
             box-shadow:inset 0 0 0 1px rgba(147,197,253,.65), 0 10px 24px rgba(37,99,235,.12);
           }
           .quotePrintOptionCard.isActive{
-            box-shadow:inset 0 0 0 2px rgba(148,163,184,.4), 0 12px 28px rgba(15,23,42,.1);
+            transform:translateY(-1px);
+            box-shadow:inset 0 0 0 3px rgba(37,99,235,.75), 0 16px 32px rgba(37,99,235,.18);
           }
           .quotePrintOptionCard--slate.isActive{
-            background:#f1f5f9;
-            box-shadow:inset 0 0 0 2px rgba(148,163,184,.46), 0 12px 28px rgba(2,6,23,.24);
+            background:linear-gradient(180deg,#eff6ff,#dbeafe);
+            box-shadow:inset 0 0 0 3px rgba(37,99,235,.78), 0 16px 32px rgba(37,99,235,.22);
           }
           .quotePrintOptionCard--blue.isActive{
-            background:#eff6ff;
-            box-shadow:inset 0 0 0 2px rgba(96,165,250,.56), 0 12px 28px rgba(2,6,23,.24);
+            background:linear-gradient(180deg,#eff6ff,#dbeafe);
+            box-shadow:inset 0 0 0 3px rgba(37,99,235,.78), 0 16px 32px rgba(37,99,235,.22);
           }
           .quotePrintOptionCard--green.isActive{
-            background:#ecfdf5;
-            box-shadow:inset 0 0 0 2px rgba(52,211,153,.48), 0 12px 28px rgba(2,6,23,.24);
+            background:linear-gradient(180deg,#ecfdf5,#d1fae5);
+            box-shadow:inset 0 0 0 3px rgba(16,185,129,.72), 0 16px 32px rgba(16,185,129,.18);
+          }
+          .quotePrintOptionCheck{
+            position:absolute;
+            top:14px;
+            right:16px;
+            width:28px;
+            height:28px;
+            border-radius:999px;
+            display:grid;
+            place-items:center;
+            background:#ffffff;
+            border:2px solid rgba(148,163,184,.62);
+            color:transparent;
+            font-size:16px;
+            font-weight:900;
+            box-shadow:0 6px 14px rgba(15,23,42,.08);
+            transition:background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+          }
+          .quotePrintOptionCard.isActive .quotePrintOptionCheck{
+            background:#2563eb;
+            border-color:#2563eb;
+            color:#ffffff;
+            transform:scale(1.06);
+          }
+          .quotePrintOptionCard--green.isActive .quotePrintOptionCheck{
+            background:#10b981;
+            border-color:#10b981;
           }
           .quotePrintOptionCard.isDisabled{
             opacity:.58;
@@ -19320,10 +19759,19 @@ async function promptQuotePrintVariant(ev, quote) {
           window.Swal.showValidationMessage('Esta cotizacion aun no tiene Menu & Montaje guardado.');
           return false;
         }
-        return value;
+        return {
+          variant: value,
+          targetWindow: options.reserveWindow ? reservePrintableWindow("Preparando cotizacion...") : null,
+        };
       },
     });
     if (!result?.isConfirmed) return null;
+    if (result.value && typeof result.value === "object") {
+      return {
+        variant: normalizeQuotePrintVariant(result.value.variant),
+        targetWindow: result.value.targetWindow || null,
+      };
+    }
     return normalizeQuotePrintVariant(result.value);
   }
 
@@ -19333,12 +19781,16 @@ async function promptQuotePrintVariant(ev, quote) {
       : "Elige formato: standard (Menu & Montaje no esta disponible aun)",
     "standard"
   );
+  if (answer === null) return null;
   answer = normalizeQuotePrintVariant(answer);
   if ((answer === "with_menu" || answer === "without_prices") && !hasMenuMontaje) {
     toast("Esta cotizacion aun no tiene Menu & Montaje guardado.");
     return null;
   }
-  return answer;
+  return {
+    variant: answer,
+    targetWindow: options.reserveWindow ? reservePrintableWindow("Preparando cotizacion...") : null,
+  };
 }
 
 function buildQuoteMenuMontajeAttachmentHtml(ev, quoteLike) {
@@ -19401,22 +19853,54 @@ function buildQuoteMenuMontajeAttachmentHtml(ev, quoteLike) {
     </section>`;
 }
 
+async function reprintCurrentQuoteDocument(targetWindow = null) {
+  const eventId = String(el.quoteEventId?.value || quoteDraft?.eventId || "").trim();
+  const ev = (state.events || []).find((x) => String(x.id || "") === eventId);
+  const quote = quoteDraft || getLatestQuoteSnapshotForEvent(ev) || ev?.quote || null;
+  if (ev && quote) {
+    await openQuoteDocument(ev, quote, { targetWindow });
+    return;
+  }
+  if (lastQuotePrintHtml) {
+    const win = targetWindow || reservePrintableWindow("Preparando cotizacion...");
+    if (!win || !writePrintableHtmlToWindow(win, lastQuotePrintHtml)) {
+      toast("No se pudo reabrir la cotizacion. Habilita ventanas emergentes.");
+    }
+    return;
+  }
+  closeReservedPrintableWindow(targetWindow);
+  toast("No hay una cotizacion cargada para reimprimir.");
+}
+
 async function openQuoteDocument(ev, quote, printOptions = null) {
-  if (!ev || !quote) return;
-  const selectedVariant = printOptions?.variant
+  let targetWindow = printOptions?.targetWindow || null;
+  if (!ev || !quote) {
+    closeReservedPrintableWindow(targetWindow);
+    return;
+  }
+  const promptResult = printOptions?.variant
     ? normalizeQuotePrintVariant(printOptions.variant)
-    : await promptQuotePrintVariant(ev, quote);
-  if (!selectedVariant) return;
+    : await promptQuotePrintVariant(ev, quote, { reserveWindow: true });
+  let selectedVariant = promptResult;
+  if (promptResult && typeof promptResult === "object") {
+    selectedVariant = normalizeQuotePrintVariant(promptResult.variant);
+    targetWindow = targetWindow || promptResult.targetWindow || null;
+  }
+  if (!selectedVariant) {
+    closeReservedPrintableWindow(targetWindow);
+    return;
+  }
   const printMeta = getQuotePrintVariantMeta(selectedVariant);
   const showPrices = printMeta.includePrices !== false;
   const includeMenuMontaje = printMeta.includeMenuMontaje === true;
   const includeContract = printMeta.includeContract !== false;
   const isMacClient = /Mac|iPhone|iPad|iPod/i.test(String(window?.navigator?.platform || "")) || /Mac OS X/i.test(String(window?.navigator?.userAgent || ""));
-  const shouldUseStablePdf = selectedVariant === "standard" && !includeMenuMontaje && includeContract;
+  const shouldUseStablePdf = !isMacClient && selectedVariant === "standard" && !includeMenuMontaje && includeContract;
   if (shouldUseStablePdf) {
     try {
       const opened = await tryOpenCombinedQuotePdf(ev, quote);
       if (opened) {
+        closeReservedPrintableWindow(targetWindow);
         if (isMacClient) toast("Cotizacion PDF generada correctamente.");
         return;
       }
@@ -20555,14 +21039,15 @@ async function openQuoteDocument(ev, quote, printOptions = null) {
 </body>
 </html>`;
 
-  const win = window.open("", "_blank");
+  lastQuotePrintHtml = html;
+  const win = targetWindow || reservePrintableWindow("Preparando cotizacion...");
   if (!win) {
     toast("Cotizacion guardada. Habilita ventanas emergentes para ver el documento.");
     return;
   }
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
+  if (!writePrintableHtmlToWindow(win, html)) {
+    toast("Cotizacion guardada, pero no se pudo abrir el documento imprimible.");
+  }
 }
 
 function saveEventFromForm() {
@@ -22237,10 +22722,7 @@ function isHardBlockingStatus(status) {
 }
 
 function canBeAutoNotifiedForReleasedCapacity(status) {
-  return status === STATUS.LISTA
-    || status === STATUS.RESERVA_SIN_COTIZACION
-    || status === STATUS.PRIMERA
-    || status === STATUS.SEGUIMIENTO;
+  return status === STATUS.LISTA;
 }
 
 function buildStatusChangeToast(prevStatus, nextStatus, fallback = "Estado actualizado.") {
@@ -22324,17 +22806,6 @@ function notifyReleasedCapacityForWaitingReservations({
     const sourceLabel = String(sourceEvent?.name || "una reserva");
     const notes = `Se libero horario (${releaseSummary}) porque "${sourceLabel}" ${reasonText}. Ya puedes intentar mover tu reserva a Confirmado/Pre reserva.`;
 
-    addGlobalNotification({
-      title: "Horario disponible",
-      notes,
-      eventId: sourceId,
-      salon: String(windows[0]?.salon || sourceEvent?.salon || ""),
-      date: String(windows[0]?.date || sourceEvent?.date || ""),
-      time: String(windows[0]?.startTime || sourceEvent?.startTime || ""),
-      releasedWindows: windows,
-    });
-    toast("Aviso global enviado: se libero un horario.");
-
     const notifiedByReservation = new Map();
     for (const ev of state.events || []) {
       if (!ev) continue;
@@ -22365,6 +22836,9 @@ function notifyReleasedCapacityForWaitingReservations({
       if (String(authSession.userId || "").trim() === String(ev.userId || "").trim()) {
         toast(`Aviso: se libero horario para tu reserva (${ev.date} ${ev.salon}).`);
       }
+    }
+    if (!notifiedByReservation.size) {
+      toast("Horario liberado. No hay reservas en lista de espera para ese bloque.");
     }
     return notifiedByReservation.size;
   } catch (err) {
