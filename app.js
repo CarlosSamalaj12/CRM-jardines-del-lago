@@ -145,6 +145,18 @@ function statusColor(status) {
   return meta ? cssVar(meta.colorVar) : "rgba(255,255,255,0.35)";
 }
 
+function statusOptionsHtml(selected = "", { includeAuto = true } = {}) {
+  return STATUS_META
+    .filter((s) => includeAuto || !isAutoStatus(s.key))
+    .map((s) => {
+      const disabled = isAutoStatus(s.key) ? " disabled" : "";
+      const selectedAttr = String(s.key) === String(selected) ? " selected" : "";
+      const color = cssVar(s.colorVar) || statusColor(s.key);
+      return `<option value="${escapeHtml(s.key)}" data-status-color="${escapeHtml(color)}"${selectedAttr}${disabled}>${escapeHtml(s.key)}</option>`;
+    })
+    .join("");
+}
+
 const SALONES_DEFAULT = [];
 const USERS_DEFAULT = [];
 const COMPANIES_DEFAULT = [];
@@ -214,6 +226,7 @@ let userModalEditingId = "";
 let userMonthlyGoalsDraft = [];
 let editingUserGoalMonth = "";
 let occupancySelectedDayIso = "";
+let occupancySelectedEventId = "";
 let authSession = loadPersistedAuthSession();
 let userSignatureNormalizedDataUrl = "";
 let checklistTemplateDraft = [];
@@ -347,6 +360,15 @@ const el = {
   btnQuickAddChecklist: document.getElementById("btnQuickAddChecklist"),
   btnQuickOpenMenuCatalog: document.getElementById("btnQuickOpenMenuCatalog"),
   btnManageQuoteServiceTemplates: document.getElementById("btnManageQuoteServiceTemplates"),
+  btnSettingsExportEventsExcel: document.getElementById("btnSettingsExportEventsExcel"),
+  btnSettingsExportCompaniesExcel: document.getElementById("btnSettingsExportCompaniesExcel"),
+  btnSettingsExportManagersExcel: document.getElementById("btnSettingsExportManagersExcel"),
+  btnSettingsDownloadEventsTemplate: document.getElementById("btnSettingsDownloadEventsTemplate"),
+  btnSettingsImportEventsCsv: document.getElementById("btnSettingsImportEventsCsv"),
+  settingsImportEventsFile: document.getElementById("settingsImportEventsFile"),
+  btnSettingsDownloadManagersTemplate: document.getElementById("btnSettingsDownloadManagersTemplate"),
+  btnSettingsImportManagersCsv: document.getElementById("btnSettingsImportManagersCsv"),
+  settingsImportManagersFile: document.getElementById("settingsImportManagersFile"),
   quoteServiceTemplateManagerBackdrop: document.getElementById("quoteServiceTemplateManagerBackdrop"),
   btnQuoteServiceTemplateManagerClose: document.getElementById("btnQuoteServiceTemplateManagerClose"),
   settingsQuoteServiceTemplateSelect: document.getElementById("settingsQuoteServiceTemplateSelect"),
@@ -3708,6 +3730,23 @@ function closeBlockingOverlaysForNavigation() {
   moduleModalReturnScreen = "";
 }
 
+function ensureQuoteModalPortals() {
+  const appShell = document.getElementById("appShell");
+  if (!appShell) return;
+  [
+    el.quoteBackdrop,
+    el.quoteAdvanceBackdrop,
+    el.menuMontajeBackdrop,
+    el.menuMontajeSelectableBackdrop,
+    el.menuSuggestionsBackdrop,
+    el.menuCatalogBackdrop,
+  ].forEach((node) => {
+    if (node && node.parentElement === document.body) {
+      appShell.appendChild(node);
+    }
+  });
+}
+
 function setSettingsPanelOpen(open) {
   if (!el.settingsPanel) return;
   if (el.settingsScreen) el.settingsScreen.hidden = !open;
@@ -3931,7 +3970,7 @@ function buildSalesReportRows() {
       salones: Array.isArray(financialMeta.salones) ? financialMeta.salones.slice() : [],
       salonesLabel: Array.isArray(financialMeta.salones) ? financialMeta.salones.join(", ") : "",
       company: String(company?.name || quote?.companyName || ""),
-      manager: String(manager?.phone || quote?.managerPhone || ""),
+      manager: String(manager?.name || quote?.contact || quote?.manager || ""),
       pax: Number(primaryEvent?.pax || ev?.pax || quote?.people || 0),
       paymentType: String(quote?.paymentType || "").trim(),
       dueDate: String(quote?.dueDate || "").trim(),
@@ -4219,6 +4258,685 @@ function exportSalesReportToExcel() {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function settingsExportGeneratedAt() {
+  return new Date().toLocaleString("es-GT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function settingsExportDownloadExcel({ title, subtitle, columns, example, rows, fileBase }) {
+  const generatedAt = settingsExportGeneratedAt();
+  const emittedBy = String(authSession.fullName || authSession.username || "Sistema").trim();
+  const headerCells = columns.map((col) => `<th>${escapeHtml(col.label)}</th>`).join("");
+  const exampleCells = columns.map((col) => `<td>${escapeHtml(example?.[col.key] ?? "")}</td>`).join("");
+  const columnRows = columns.map((col) => `
+    <tr>
+      <td>${escapeHtml(col.key)}</td>
+      <td>${escapeHtml(col.label)}</td>
+      <td>${escapeHtml(col.description || "")}</td>
+      <td>${escapeHtml(example?.[col.key] ?? "")}</td>
+    </tr>
+  `).join("");
+  const dataRows = rows.map((row) => `
+    <tr>${columns.map((col) => `<td>${escapeHtml(row?.[col.key] ?? "")}</td>`).join("")}</tr>
+  `).join("");
+  const html = `<!doctype html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8" />
+  <meta name="ProgId" content="Excel.Sheet" />
+  <meta name="Generator" content="CRM Jardines" />
+  <style>
+    body{ font-family: Calibri, Arial, sans-serif; background:#eef3fb; margin:0; padding:16px; color:#0f172a; }
+    .card{ background:#ffffff; border:1px solid #c5d4ea; border-radius:10px; overflow:hidden; margin-bottom:14px; }
+    .titleCell{ border:1px solid #c7d5ea; background:#d8e3f3; color:#000; font-weight:800; font-size:20px; padding:12px 14px; text-transform:uppercase; }
+    .meta{ padding:10px 14px; border-top:1px solid #bfd3ee; border-bottom:1px solid #bfd3ee; background:#eaf3ff; font-size:12px; }
+    .sectionTitle{ background:#0f3c67; color:#fff; font-weight:700; font-size:13px; padding:8px 10px; text-transform:uppercase; }
+    table{ width:100%; border-collapse:collapse; }
+    th,td{ border:1px solid #c7d5ea; padding:6px 7px; font-size:10.5px; white-space:nowrap; }
+    thead th{ background:#0f3c67; color:#fff; font-weight:700; text-transform:uppercase; }
+    .example td{ background:#fff7d6; font-weight:700; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <table><tr><td class="titleCell">${escapeHtml(title)}</td></tr></table>
+    <div class="meta">
+      <div><b>Descripcion:</b> ${escapeHtml(subtitle)}</div>
+      <div><b>Fecha:</b> ${escapeHtml(generatedAt)}</div>
+      <div><b>Quien emitio el reporte:</b> ${escapeHtml(emittedBy)}</div>
+      <div><b>Total registros exportados:</b> ${rows.length}</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="sectionTitle">Columnas recomendadas para el nuevo sistema</div>
+    <table>
+      <thead><tr><th>Campo tecnico</th><th>Columna Excel</th><th>Uso recomendado</th><th>Ejemplo</th></tr></thead>
+      <tbody>${columnRows}</tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="sectionTitle">Ejemplo de fila</div>
+    <table>
+      <thead><tr>${headerCells}</tr></thead>
+      <tbody><tr class="example">${exampleCells}</tr></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="sectionTitle">Datos CRM</div>
+    <table>
+      <thead><tr>${headerCells}</tr></thead>
+      <tbody>${dataRows}</tbody>
+    </table>
+  </div>
+</body>
+</html>`;
+  const blob = new Blob([`\uFEFF${html}`], { type: "application/vnd.ms-excel;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `${fileBase}_${stamp}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportSettingsCompaniesToExcel() {
+  const columns = [
+    { key: "empresa_id", label: "Empresa ID", description: "Identificador unico para relacionar eventos y encargados." },
+    { key: "nombre_comercial", label: "Nombre comercial", description: "Nombre visible de la institucion o cliente." },
+    { key: "razon_social_facturar", label: "Razon social / Facturar a", description: "Nombre fiscal usado para documentos." },
+    { key: "nit", label: "NIT", description: "NIT de facturacion; usar CF si no existe." },
+    { key: "correo_empresa", label: "Correo empresa", description: "Correo general de la empresa." },
+    { key: "telefono_empresa", label: "Telefono empresa", description: "Telefono general de contacto." },
+    { key: "direccion_empresa", label: "Direccion empresa", description: "Direccion fiscal o comercial." },
+    { key: "tipo_evento_preferido", label: "Tipo evento preferido", description: "Clasificacion habitual: Social, Corporativo, Individual, etc." },
+    { key: "notas", label: "Notas", description: "Observaciones internas para migracion." },
+    { key: "estado", label: "Estado", description: "Activa o Inactiva segun configuracion actual." },
+  ];
+  const example = {
+    empresa_id: "cmp_001",
+    nombre_comercial: "Empresa Ejemplo, S.A.",
+    razon_social_facturar: "Empresa Ejemplo Sociedad Anonima",
+    nit: "1234567-8",
+    correo_empresa: "compras@empresa.com",
+    telefono_empresa: "5555-1234",
+    direccion_empresa: "Ciudad de Guatemala",
+    tipo_evento_preferido: "Corporativo",
+    notas: "Cliente frecuente",
+    estado: "Activa",
+  };
+  const rows = (state.companies || []).map((company) => ({
+    empresa_id: String(company.id || ""),
+    nombre_comercial: String(company.name || ""),
+    razon_social_facturar: String(company.billTo || company.businessName || company.name || ""),
+    nit: String(company.nit || "CF"),
+    correo_empresa: String(company.email || ""),
+    telefono_empresa: String(company.phone || ""),
+    direccion_empresa: String(company.address || ""),
+    tipo_evento_preferido: String(company.eventType || ""),
+    notas: String(company.notes || ""),
+    estado: isCompanyDisabled(company.id) ? "Inactiva" : "Activa",
+  }));
+  if (!rows.length) return toast("No hay empresas para exportar.");
+  settingsExportDownloadExcel({
+    title: "CRM Jardines - Exportacion de empresas",
+    subtitle: "Catalogo de empresas preparado para importarse al nuevo sistema.",
+    columns,
+    example,
+    rows,
+    fileBase: "exportacion_empresas_nuevo_sistema",
+  });
+}
+
+function exportSettingsManagersToExcel() {
+  const columns = [
+    { key: "encargado_id", label: "Encargado ID", description: "Identificador unico del responsable." },
+    { key: "empresa_id", label: "Empresa ID", description: "Identificador de la empresa a la que pertenece." },
+    { key: "empresa_nombre", label: "Empresa nombre", description: "Nombre comercial para validacion humana." },
+    { key: "nombre_encargado", label: "Nombre encargado", description: "Nombre completo del contacto." },
+    { key: "telefono", label: "Telefono", description: "Telefono directo del encargado." },
+    { key: "correo", label: "Correo", description: "Correo directo del encargado." },
+    { key: "direccion", label: "Direccion", description: "Direccion del encargado si aplica." },
+    { key: "estado", label: "Estado", description: "Activo o Inactivo segun configuracion actual." },
+  ];
+  const example = {
+    encargado_id: "mgr_001",
+    empresa_id: "cmp_001",
+    empresa_nombre: "Empresa Ejemplo, S.A.",
+    nombre_encargado: "Ana Lopez",
+    telefono: "5555-5678",
+    correo: "ana@empresa.com",
+    direccion: "Ciudad de Guatemala",
+    estado: "Activo",
+  };
+  const rows = [];
+  for (const company of state.companies || []) {
+    for (const manager of company.managers || []) {
+      rows.push({
+        encargado_id: String(manager.id || ""),
+        empresa_id: String(company.id || ""),
+        empresa_nombre: String(company.name || ""),
+        nombre_encargado: String(manager.name || ""),
+        telefono: String(manager.phone || ""),
+        correo: String(manager.email || ""),
+        direccion: String(manager.address || ""),
+        estado: isManagerDisabled(manager.id) ? "Inactivo" : "Activo",
+      });
+    }
+  }
+  if (!rows.length) return toast("No hay encargados para exportar.");
+  settingsExportDownloadExcel({
+    title: "CRM Jardines - Exportacion de encargados",
+    subtitle: "Contactos responsables vinculados a empresas para importarse al nuevo sistema.",
+    columns,
+    example,
+    rows,
+    fileBase: "exportacion_encargados_nuevo_sistema",
+  });
+}
+
+function exportSettingsEventsToExcel() {
+  const columns = [
+    { key: "evento_id", label: "Evento ID", description: "Identificador unico del bloque o reserva." },
+    { key: "grupo_id", label: "Grupo ID", description: "Agrupa eventos con varias fechas o salones." },
+    { key: "nombre_evento", label: "Nombre evento", description: "Nombre de la reserva o actividad." },
+    { key: "estado", label: "Estado", description: "Estado comercial/operativo actual." },
+    { key: "fecha_inicio_evento", label: "Fecha inicio evento", description: "Inicio general del evento." },
+    { key: "fecha_fin_evento", label: "Fecha fin evento", description: "Fin general del evento." },
+    { key: "fecha_bloque", label: "Fecha bloque", description: "Fecha especifica de este salon/horario." },
+    { key: "hora_inicio", label: "Hora inicio", description: "Hora inicial del bloque." },
+    { key: "hora_final", label: "Hora final", description: "Hora final del bloque." },
+    { key: "salon_principal", label: "Salon principal", description: "Salon base del evento." },
+    { key: "salones", label: "Salones", description: "Salones asociados, separados por coma." },
+    { key: "vendedor_id", label: "Vendedor ID", description: "Usuario responsable." },
+    { key: "vendedor", label: "Vendedor", description: "Nombre del usuario responsable." },
+    { key: "pax_total", label: "PAX total", description: "Personas totales del evento." },
+    { key: "pax_bloque", label: "PAX bloque", description: "Personas asignadas al bloque si aplica." },
+    { key: "empresa_id", label: "Empresa ID", description: "Identificador de empresa para relacionar." },
+    { key: "empresa", label: "Empresa", description: "Nombre de la empresa/institucion." },
+    { key: "encargado_id", label: "Encargado ID", description: "Identificador del encargado relacionado." },
+    { key: "encargado", label: "Encargado", description: "Nombre del encargado del evento." },
+    { key: "tipo_evento", label: "Tipo evento", description: "Clasificacion del evento." },
+    { key: "notas", label: "Notas", description: "Notas internas del evento." },
+    { key: "cotizacion_version", label: "Cotizacion version", description: "Ultima version cotizada disponible." },
+    { key: "subtotal_cotizacion", label: "Subtotal cotizacion", description: "Subtotal calculado de la cotizacion." },
+    { key: "descuento_cotizacion", label: "Descuento cotizacion", description: "Descuento calculado." },
+    { key: "total_cotizacion", label: "Total cotizacion", description: "Total final calculado." },
+    { key: "ultima_cotizacion", label: "Ultima cotizacion", description: "Fecha/hora de la ultima cotizacion enviada o guardada." },
+  ];
+  const example = {
+    evento_id: "evt_001",
+    grupo_id: "grp_001",
+    nombre_evento: "Capacitacion anual",
+    estado: "Confirmado",
+    fecha_inicio_evento: "2026-05-20",
+    fecha_fin_evento: "2026-05-20",
+    fecha_bloque: "2026-05-20",
+    hora_inicio: "08:00",
+    hora_final: "12:00",
+    salon_principal: "Atitlan",
+    salones: "Atitlan, Toliman",
+    vendedor_id: "usr_001",
+    vendedor: "Maria Perez",
+    pax_total: "120",
+    pax_bloque: "60",
+    empresa_id: "cmp_001",
+    empresa: "Empresa Ejemplo, S.A.",
+    encargado_id: "mgr_001",
+    encargado: "Ana Lopez",
+    tipo_evento: "Corporativo",
+    notas: "Montaje escuela",
+    cotizacion_version: "2",
+    subtotal_cotizacion: "15000.00",
+    descuento_cotizacion: "500.00",
+    total_cotizacion: "14500.00",
+    ultima_cotizacion: "2026-05-01 10:30",
+  };
+  const rows = (state.events || [])
+    .slice()
+    .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.startTime || "").localeCompare(String(b.startTime || "")))
+    .map((ev) => {
+      const latestQuote = getLatestQuoteSnapshotForEvent(ev) || ev.quote || {};
+      const totals = latestQuote ? getQuoteTotals(latestQuote) : { subtotal: 0, discountAmount: 0, total: 0 };
+      const companyId = String(latestQuote.companyId || ev.quote?.companyId || "").trim();
+      const company = companyId ? (state.companies || []).find((c) => String(c.id || "") === companyId) : null;
+      const managerId = String(latestQuote.managerId || ev.quote?.managerId || "").trim();
+      const manager = company?.managers?.find((m) => String(m.id || "") === managerId) || null;
+      const user = (state.users || []).map(normalizeUserRecord).find((u) => String(u.id || "") === String(ev.userId || "")) || null;
+      const meta = getEventSeriesFinancialMeta(ev);
+      const salones = Array.isArray(meta.salones) && meta.salones.length ? meta.salones : (Array.isArray(ev.salones) ? ev.salones : [ev.salon]);
+      return {
+        evento_id: String(ev.id || ""),
+        grupo_id: String(ev.groupId || ""),
+        nombre_evento: String(ev.name || ""),
+        estado: String(ev.status || ""),
+        fecha_inicio_evento: String(meta.startDate || ev.eventDateStart || ev.date || ""),
+        fecha_fin_evento: String(meta.endDate || ev.eventDateEnd || ev.date || ""),
+        fecha_bloque: String(ev.date || ""),
+        hora_inicio: String(ev.startTime || ""),
+        hora_final: String(ev.endTime || ""),
+        salon_principal: String(meta.mainSalon || ev.mainSalon || ev.salon || ""),
+        salones: salones.map((s) => String(s || "").trim()).filter(Boolean).join(", "),
+        vendedor_id: String(ev.userId || ""),
+        vendedor: String(user?.fullName || user?.name || ""),
+        pax_total: String(ev.pax || ""),
+        pax_bloque: String(ev.slotPax || ""),
+        empresa_id: companyId,
+        empresa: String(company?.name || latestQuote.companyName || ""),
+        encargado_id: managerId,
+        encargado: String(manager?.name || latestQuote.contact || latestQuote.manager || ""),
+        tipo_evento: String(latestQuote.eventType || company?.eventType || ""),
+        notas: String(ev.notes || ""),
+        cotizacion_version: latestQuote?.version ? String(latestQuote.version) : "",
+        subtotal_cotizacion: Number(totals.subtotal || 0).toFixed(2),
+        descuento_cotizacion: Number(totals.discountAmount || 0).toFixed(2),
+        total_cotizacion: Number(totals.total || 0).toFixed(2),
+        ultima_cotizacion: String(latestQuote.quotedAt || ""),
+      };
+    });
+  if (!rows.length) return toast("No hay eventos para exportar.");
+  settingsExportDownloadExcel({
+    title: "CRM Jardines - Exportacion de eventos",
+    subtitle: "Eventos y reservas preparados para importarse al nuevo sistema. Cada fila representa un bloque de fecha, salon y horario.",
+    columns,
+    example,
+    rows,
+    fileBase: "exportacion_eventos_nuevo_sistema",
+  });
+}
+
+const SETTINGS_IMPORT_EVENT_COLUMNS = [
+  "evento_id",
+  "grupo_id",
+  "nombre_evento",
+  "estado",
+  "fecha_inicio_evento",
+  "fecha_fin_evento",
+  "fecha_bloque",
+  "hora_inicio",
+  "hora_final",
+  "salon_principal",
+  "salones",
+  "vendedor_id",
+  "vendedor",
+  "pax_total",
+  "pax_bloque",
+  "empresa_id",
+  "empresa",
+  "encargado_id",
+  "encargado",
+  "tipo_evento",
+  "notas",
+  "total_cotizacion",
+];
+
+const SETTINGS_IMPORT_MANAGER_COLUMNS = [
+  "empresa_id",
+  "nombre_comercial",
+  "razon_social_facturar",
+  "nit",
+  "correo_empresa",
+  "telefono_empresa",
+  "direccion_empresa",
+  "tipo_evento_preferido",
+  "notas_empresa",
+  "encargado_id",
+  "nombre_encargado",
+  "telefono_encargado",
+  "correo_encargado",
+  "direccion_encargado",
+];
+
+function csvEscapeCell(value) {
+  const text = String(value ?? "");
+  return /[",\r\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function downloadCsvTemplate(fileBase, columns, exampleRow) {
+  const rows = [
+    columns,
+    columns.map((key) => exampleRow?.[key] ?? ""),
+  ];
+  const csv = rows.map((row) => row.map(csvEscapeCell).join(",")).join("\r\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${fileBase}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadImportEventsTemplate() {
+  downloadCsvTemplate("plantilla_importar_eventos_crm", SETTINGS_IMPORT_EVENT_COLUMNS, {
+    evento_id: "evt_001",
+    grupo_id: "",
+    nombre_evento: "Capacitacion anual",
+    estado: "Confirmado",
+    fecha_inicio_evento: "2026-05-20",
+    fecha_fin_evento: "2026-05-20",
+    fecha_bloque: "2026-05-20",
+    hora_inicio: "08:00",
+    hora_final: "12:00",
+    salon_principal: "Atitlan",
+    salones: "Atitlan, Toliman",
+    vendedor_id: "",
+    vendedor: "Maria Perez",
+    pax_total: "120",
+    pax_bloque: "60",
+    empresa_id: "cmp_001",
+    empresa: "Empresa Ejemplo, S.A.",
+    encargado_id: "mgr_001",
+    encargado: "Ana Lopez",
+    tipo_evento: "Corporativo",
+    notas: "Montaje escuela",
+    total_cotizacion: "14500.00",
+  });
+}
+
+function downloadImportManagersTemplate() {
+  downloadCsvTemplate("plantilla_importar_encargados_empresas_crm", SETTINGS_IMPORT_MANAGER_COLUMNS, {
+    empresa_id: "cmp_001",
+    nombre_comercial: "Empresa Ejemplo, S.A.",
+    razon_social_facturar: "Empresa Ejemplo Sociedad Anonima",
+    nit: "1234567-8",
+    correo_empresa: "compras@empresa.com",
+    telefono_empresa: "5555-1234",
+    direccion_empresa: "Ciudad de Guatemala",
+    tipo_evento_preferido: "Corporativo",
+    notas_empresa: "Cliente frecuente",
+    encargado_id: "mgr_001",
+    nombre_encargado: "Ana Lopez",
+    telefono_encargado: "5555-5678",
+    correo_encargado: "ana@empresa.com",
+    direccion_encargado: "Ciudad de Guatemala",
+  });
+}
+
+function parseCsvRows(text) {
+  const clean = String(text || "").replace(/^\uFEFF/, "");
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i];
+    const next = clean[i + 1];
+    if (ch === '"') {
+      if (inQuotes && next === '"') {
+        cell += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (!inQuotes && (ch === "," || ch === ";")) {
+      row.push(cell);
+      cell = "";
+      continue;
+    }
+    if (!inQuotes && (ch === "\n" || ch === "\r")) {
+      if (ch === "\r" && next === "\n") i++;
+      row.push(cell);
+      if (row.some((value) => String(value || "").trim())) rows.push(row);
+      row = [];
+      cell = "";
+      continue;
+    }
+    cell += ch;
+  }
+  row.push(cell);
+  if (row.some((value) => String(value || "").trim())) rows.push(row);
+  if (!rows.length) return [];
+  const headers = rows[0].map((h) => normalizeImportHeader(h));
+  return rows.slice(1).map((values) => {
+    const obj = {};
+    headers.forEach((header, idx) => {
+      if (header) obj[header] = String(values[idx] || "").trim();
+    });
+    return obj;
+  }).filter((obj) => Object.values(obj).some((value) => String(value || "").trim()));
+}
+
+function normalizeImportHeader(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+}
+
+function importGeneratedId(prefix) {
+  return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
+}
+
+function normalizeImportDate(value) {
+  const raw = String(value || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const slash = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (slash) return `${slash[3]}-${pad2(Number(slash[2]))}-${pad2(Number(slash[1]))}`;
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) return toISODate(parsed);
+  return "";
+}
+
+function normalizeImportTime(value) {
+  const raw = String(value || "").trim();
+  const m = raw.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return "";
+  const time = `${pad2(Number(m[1]))}:${m[2]}`;
+  return isValidClockTime(time) ? time : "";
+}
+
+function normalizeImportNumber(value) {
+  const raw = String(value || "").replace(/[Q,\s]/g, "").trim();
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+
+function findCompanyForImport(row) {
+  const id = String(row.empresa_id || "").trim();
+  const name = String(row.nombre_comercial || row.empresa || "").trim();
+  let company = id ? (state.companies || []).find((c) => String(c.id || "") === id) : null;
+  if (!company && name) {
+    const norm = normalizeBucketKey(name);
+    company = (state.companies || []).find((c) => normalizeBucketKey(c.name || "") === norm) || null;
+  }
+  if (!company && (id || name)) {
+    company = normalizeCompanyRecord({
+      id: id || importGeneratedId("cmp"),
+      name: name || "Empresa importada",
+      businessName: row.razon_social_facturar || name,
+      billTo: row.razon_social_facturar || name,
+      nit: row.nit || "CF",
+      email: row.correo_empresa || "",
+      phone: row.telefono_empresa || "",
+      address: row.direccion_empresa || "",
+      eventType: row.tipo_evento_preferido || row.tipo_evento || "Corporativo",
+      notes: row.notas_empresa || "",
+      managers: [{
+        id: importGeneratedId("mgr"),
+        name: "Encargado",
+        phone: "",
+        email: "",
+        address: "",
+      }],
+    });
+    state.companies.push(company);
+  }
+  if (company) {
+    company.name = String(row.nombre_comercial || row.empresa || company.name || "").trim() || company.name;
+    company.businessName = String(row.razon_social_facturar || company.businessName || company.name || "").trim();
+    company.billTo = String(row.razon_social_facturar || company.billTo || company.businessName || company.name || "").trim();
+    company.nit = String(row.nit || company.nit || "CF").trim();
+    company.email = String(row.correo_empresa || company.email || "").trim();
+    company.phone = String(row.telefono_empresa || company.phone || "").trim();
+    company.address = String(row.direccion_empresa || company.address || "").trim();
+    company.eventType = String(row.tipo_evento_preferido || row.tipo_evento || company.eventType || "Corporativo").trim();
+    company.notes = String(row.notas_empresa || company.notes || "").trim();
+    company.managers = Array.isArray(company.managers) ? company.managers : [];
+  }
+  return company || null;
+}
+
+function upsertManagerForImport(company, row) {
+  if (!company) return null;
+  const id = String(row.encargado_id || "").trim();
+  const name = String(row.nombre_encargado || row.encargado || "").trim();
+  if (!name && !id) return null;
+  company.managers = Array.isArray(company.managers) ? company.managers : [];
+  let manager = id ? company.managers.find((m) => String(m.id || "") === id) : null;
+  if (!manager && name) {
+    const norm = normalizeBucketKey(name);
+    manager = company.managers.find((m) => normalizeBucketKey(m.name || "") === norm) || null;
+  }
+  if (!manager) {
+    manager = { id: id || importGeneratedId("mgr"), name: name || "Encargado", phone: "", email: "", address: "" };
+    company.managers.push(manager);
+  }
+  manager.name = name || manager.name;
+  manager.phone = String(row.telefono_encargado || row.telefono || manager.phone || "").trim();
+  manager.email = String(row.correo_encargado || row.correo || manager.email || "").trim();
+  manager.address = String(row.direccion_encargado || row.direccion || manager.address || "").trim();
+  return manager;
+}
+
+function findUserForImport(row) {
+  const id = String(row.vendedor_id || "").trim();
+  if (id) {
+    const byId = (state.users || []).find((u) => String(u.id || "") === id);
+    if (byId) return byId;
+  }
+  const name = String(row.vendedor || "").trim();
+  if (name) {
+    const norm = normalizeBucketKey(name);
+    const byName = (state.users || []).find((u) => normalizeBucketKey(u.fullName || u.name || "") === norm);
+    if (byName) return byName;
+  }
+  return (state.users || []).find((u) => u.active !== false) || (state.users || [])[0] || null;
+}
+
+function importManagersCompaniesRows(rows) {
+  let companiesTouched = 0;
+  let managersTouched = 0;
+  for (const row of rows) {
+    const companyBefore = (state.companies || []).length;
+    const company = findCompanyForImport(row);
+    if (!company) continue;
+    if ((state.companies || []).length > companyBefore || company) companiesTouched++;
+    const manager = upsertManagerForImport(company, row);
+    if (manager) managersTouched++;
+  }
+  state.companies = (state.companies || []).map(normalizeCompanyRecord);
+  persist();
+  renderCompaniesSelect();
+  render();
+  toast(`Importacion lista: ${companiesTouched} empresa(s), ${managersTouched} encargado(s).`);
+}
+
+function importEventRows(rows) {
+  let imported = 0;
+  let skipped = 0;
+  for (const row of rows) {
+    const date = normalizeImportDate(row.fecha_bloque || row.fecha_inicio_evento);
+    const startTime = normalizeImportTime(row.hora_inicio);
+    const endTime = normalizeImportTime(row.hora_final);
+    const salon = String(row.salon_principal || row.salon || "").trim();
+    const name = String(row.nombre_evento || "").trim();
+    if (!date || !startTime || !endTime || !salon || !name || compareTime(endTime, startTime) <= 0) {
+      skipped++;
+      continue;
+    }
+    if (!(state.salones || []).some((s) => String(s || "").toLowerCase() === salon.toLowerCase())) {
+      state.salones.push(salon);
+    }
+    const company = findCompanyForImport(row);
+    const manager = upsertManagerForImport(company, row);
+    const user = findUserForImport(row);
+    const total = normalizeImportNumber(row.total_cotizacion);
+    const salones = String(row.salones || salon)
+      .split(",")
+      .map((s) => String(s || "").trim())
+      .filter(Boolean);
+    const eventId = String(row.evento_id || "").trim() || importGeneratedId("evt");
+    const event = {
+      id: eventId,
+      groupId: String(row.grupo_id || "").trim() || null,
+      name,
+      salon,
+      mainSalon: salon,
+      salones: Array.from(new Set([...salones, salon])),
+      date,
+      eventDateStart: normalizeImportDate(row.fecha_inicio_evento) || date,
+      eventDateEnd: normalizeImportDate(row.fecha_fin_evento) || normalizeImportDate(row.fecha_inicio_evento) || date,
+      status: String(row.estado || STATUS.PRERESERVA).trim(),
+      startTime,
+      endTime,
+      userId: String(user?.id || ""),
+      pax: Math.max(0, Math.floor(normalizeImportNumber(row.pax_total))),
+      slotPax: Math.max(0, Math.floor(normalizeImportNumber(row.pax_bloque))),
+      notes: String(row.notas || "").trim(),
+    };
+    if (company && manager) {
+      event.quote = {
+        companyId: company.id,
+        managerId: manager.id,
+        companyName: company.name,
+        contact: manager.name,
+        eventType: String(row.tipo_evento || company.eventType || "").trim(),
+        eventDate: event.eventDateStart,
+        people: event.pax,
+        pax: event.pax,
+        quotedAt: "",
+        version: 1,
+        discountType: "FIXED",
+        discountValue: 0,
+        items: total > 0 ? [{ name: "Importado", qty: 1, price: total, category: "Miscelaneos" }] : [],
+      };
+    }
+    const idx = (state.events || []).findIndex((ev) => String(ev.id || "") === eventId);
+    if (idx >= 0) state.events[idx] = { ...state.events[idx], ...event, quote: event.quote || state.events[idx].quote };
+    else state.events.push(event);
+    imported++;
+  }
+  state.salones = Array.from(new Set((state.salones || []).map((s) => String(s || "").trim()).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+  state.companies = (state.companies || []).map(normalizeCompanyRecord);
+  persist();
+  renderCompaniesSelect();
+  render();
+  toast(`Importacion lista: ${imported} evento(s)${skipped ? `, ${skipped} fila(s) omitida(s)` : ""}.`);
+}
+
+function readImportCsvFile(file, handler) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const rows = parseCsvRows(reader.result || "");
+      if (!rows.length) return toast("El archivo no tiene filas para importar.");
+      handler(rows);
+    } catch (err) {
+      console.error("Error importando CSV:", err);
+      toast("No se pudo leer el archivo CSV.");
+    }
+  };
+  reader.onerror = () => toast("No se pudo abrir el archivo CSV.");
+  reader.readAsText(file, "utf-8");
 }
 
 function resetSalesReportFilters() {
@@ -4982,6 +5700,7 @@ function getOccupancyWeekRange() {
 function updateOccupancyReportWeekUi() {
   const { monday, sunday } = getOccupancyWeekRange();
   occupancySelectedDayIso = toISODate(monday);
+  occupancySelectedEventId = "";
   if (el.occupancyReportWeek) {
     el.occupancyReportWeek.value = weekInputFromDate(monday);
   }
@@ -5284,6 +6003,10 @@ function formatDayCardLabel(isoDate) {
   return d.toLocaleDateString("es-GT", { weekday: "short", day: "2-digit", month: "2-digit" }).toUpperCase();
 }
 
+function occupancyStatusTone(status) {
+  return String(status || "") === STATUS.CONFIRMADO ? "confirmed" : "pre";
+}
+
 function renderOccupancyDayCards(rows) {
   if (!el.occupancyDaysStrip) return;
   const { monday } = getOccupancyWeekRange();
@@ -5291,6 +6014,8 @@ function renderOccupancyDayCards(rows) {
   if (!occupancySelectedDayIso || !dates.includes(occupancySelectedDayIso)) {
     occupancySelectedDayIso = dates[0];
   }
+  const selectedRowStillVisible = rows.some((r) => String(r.eventId || "") === String(occupancySelectedEventId || ""));
+  if (!selectedRowStillVisible) occupancySelectedEventId = "";
   el.occupancyDaysStrip.innerHTML = "";
   for (const d of dates) {
     const dayRows = rows.filter((r) => r.eventDate === d);
@@ -5298,29 +6023,57 @@ function renderOccupancyDayCards(rows) {
     const confirmedCount = dayRows.filter((r) => r.status === STATUS.CONFIRMADO).length;
     const preCount = dayRows.filter((r) => r.status === STATUS.PRERESERVA).length;
     const revenue = getOccupancyUniqueReservationTotal(dayRows, "totalEvent");
-    const label = formatDayCardLabel(d);
-    const parts = label.split(",");
-    const dayName = String(parts[0] || label).trim();
-    const dayDate = String(parts[1] || d).trim();
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `occupancyDayCard${d === occupancySelectedDayIso ? " active" : ""}${count ? " hasEvents" : ""}`;
+    const dateObj = new Date(`${d}T00:00:00`);
+    const dayName = Number.isNaN(dateObj.getTime()) ? d : dateObj.toLocaleDateString("es-GT", { weekday: "long" });
+    const dayNumber = Number.isNaN(dateObj.getTime()) ? "" : String(dateObj.getDate());
+    const monthLabel = Number.isNaN(dateObj.getTime()) ? "" : dateObj.toLocaleDateString("es-GT", { month: "short" }).replace(".", "");
+    const card = document.createElement("article");
+    card.className = `occupancyWeekColumn${d === occupancySelectedDayIso ? " active" : ""}${count ? " hasEvents" : ""}`;
+    const eventCards = dayRows.length ? dayRows.map((r) => {
+      const tone = occupancyStatusTone(r.status);
+      const selected = String(r.eventId || "") === String(occupancySelectedEventId || "");
+      const color = String(r.statusColor || statusColor(r.status) || "#2563eb").trim();
+      const soft = hexToRgba(color, 0.13);
+      const softer = hexToRgba(color, 0.07);
+      return `
+        <button type="button" class="occupancyWeekEvent occupancyWeekEvent--${escapeHtml(tone)}${selected ? " selected" : ""}" style="--occupancy-event-color:${escapeHtml(color)};--occupancy-event-soft:${escapeHtml(soft)};--occupancy-event-softer:${escapeHtml(softer)};" data-occupancy-event-id="${escapeHtml(String(r.eventId || ""))}" data-occupancy-event-date="${escapeHtml(d)}">
+          <span class="occupancyWeekEventTop">
+            <span class="occupancyWeekEventTime">${escapeHtml(`${r.startTime || "--:--"} - ${r.endTime || "--:--"}`)}</span>
+            <span class="occupancyWeekEventStatus">${escapeHtml(r.status || "-")}</span>
+          </span>
+          <strong>${escapeHtml(r.eventName || "Evento sin nombre")}</strong>
+          <span>${escapeHtml(r.salon || "-")}</span>
+          <small>${escapeHtml(r.company || r.seller || "-")}</small>
+        </button>
+      `;
+    }).join("") : `<div class="occupancyWeekEmpty">Sin eventos</div>`;
     card.innerHTML = `
-      <div class="occupancyDayCardTop">
-        <small>${escapeHtml(dayName)}</small>
-        <span class="occupancyDayDate">${escapeHtml(dayDate)}</span>
+      <button type="button" class="occupancyWeekDayHead" data-occupancy-day="${escapeHtml(d)}">
+        <span>${escapeHtml(dayName)}</span>
+        <strong>${escapeHtml(dayNumber)}</strong>
+        <small>${escapeHtml(monthLabel)}</small>
+      </button>
+      <div class="occupancyWeekDayStats">
+        <span><b>${escapeHtml(String(count))}</b> eventos</span>
+        <span><b>${escapeHtml(String(confirmedCount))}</b> conf.</span>
+        <span><b>${escapeHtml(String(preCount))}</b> pre</span>
       </div>
-      <div class="occupancyDayPrimary">
-        <strong>${count}</strong>
-        <span>evento${count === 1 ? "" : "s"}</span>
-      </div>
-      <div class="occupancyDayMeta" style="display:flex; align-items:center; gap:8px; margin-top:6px;"><span class="occupancyDayStatChip occupancyDayStatChip--confirmed" style="display:inline-flex; align-items:center; justify-content:space-between; gap:6px; min-width:84px; padding:5px 9px; border-radius:999px; border:1px solid rgba(34,197,94,.34); background:rgba(34,197,94,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.04);"><b style="color:#14532d; font-size:12px; font-weight:900; line-height:1;">${escapeHtml(String(confirmedCount))}</b><small style="display:inline-block; width:34px; text-align:center; color:#166534; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1;">Conf.</small></span><span class="occupancyDayStatChip occupancyDayStatChip--pre" style="display:inline-flex; align-items:center; justify-content:space-between; gap:6px; min-width:84px; padding:5px 9px; border-radius:999px; border:1px solid rgba(56,189,248,.34); background:rgba(56,189,248,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.04);"><b style="color:#0c4a6e; font-size:12px; font-weight:900; line-height:1;">${escapeHtml(String(preCount))}</b><small style="display:inline-block; width:34px; text-align:center; color:#075985; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1;">Pre</small></span></div>
-      <div class="occupancyDayRevenue">${escapeHtml(count ? moneyGT(revenue) : "Sin monto")}</div>
+      <div class="occupancyWeekRevenue">${escapeHtml(count ? moneyGT(revenue) : "Sin monto")}</div>
+      <div class="occupancyWeekEvents">${eventCards}</div>
     `;
-    card.addEventListener("click", () => {
+    card.querySelector(".occupancyWeekDayHead")?.addEventListener("click", () => {
       occupancySelectedDayIso = d;
+      occupancySelectedEventId = dayRows[0]?.eventId || "";
       renderOccupancyDayCards(rows);
       renderOccupancyDayDetail(rows);
+    });
+    card.querySelectorAll("[data-occupancy-event-id]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        occupancySelectedDayIso = btn.getAttribute("data-occupancy-event-date") || d;
+        occupancySelectedEventId = btn.getAttribute("data-occupancy-event-id") || "";
+        renderOccupancyDayCards(rows);
+        renderOccupancyDayDetail(rows);
+      });
     });
     el.occupancyDaysStrip.appendChild(card);
   }
@@ -5331,6 +6084,8 @@ function renderOccupancyDayDetail(rows) {
   const target = String(occupancySelectedDayIso || "").trim();
   const dayRows = rows.filter((r) => r.eventDate === target);
   const title = target ? `Detalle ${target}` : "Detalle del dia";
+  if (!occupancySelectedEventId && dayRows.length) occupancySelectedEventId = String(dayRows[0].eventId || "");
+  const selectedRow = dayRows.find((r) => String(r.eventId || "") === String(occupancySelectedEventId || "")) || dayRows[0] || null;
   const confirmedCount = dayRows.filter((r) => r.status === STATUS.CONFIRMADO).length;
   const preCount = dayRows.filter((r) => r.status === STATUS.PRERESERVA).length;
   const pax = dayRows.reduce((acc, r) => acc + Math.max(0, Number(r.pax || 0)), 0);
@@ -5355,10 +6110,20 @@ function renderOccupancyDayDetail(rows) {
     `;
     return;
   }
-  const cards = dayRows.map((r) => {
-    const rowTone = r.status === STATUS.CONFIRMADO ? "confirmed" : "pre";
+  const dayEventTabs = dayRows.length > 1 ? `
+    <div class="occupancyDetailEventTabs">
+      ${dayRows.map((row) => `
+        <button type="button" class="${String(row.eventId || "") === String(selectedRow?.eventId || "") ? "active" : ""}" data-occupancy-detail-event="${escapeHtml(String(row.eventId || ""))}">
+          <span>${escapeHtml(row.startTime || "--:--")}</span>
+          <strong>${escapeHtml(row.eventName || "Evento")}</strong>
+        </button>
+      `).join("")}
+    </div>
+  ` : "";
+  const cards = selectedRow ? [selectedRow].map((r) => {
+    const rowTone = occupancyStatusTone(r.status);
     return `
-      <article class="occupancyEventCard occupancyEventCard--${escapeHtml(rowTone)}">
+      <article class="occupancyEventCard occupancyEventCard--${escapeHtml(rowTone)} occupancyEventCard--selected">
         <div class="occupancyEventHead">
           <div class="occupancyEventHeading">
             <span class="salesStatusBadge" style="background:${escapeHtml(hexToRgba(r.statusColor, 0.18))};border-color:${escapeHtml(hexToRgba(r.statusColor, 0.48))};color:#0f172a">${escapeHtml(r.status)}</span>
@@ -5391,17 +6156,25 @@ function renderOccupancyDayDetail(rows) {
         </div>
       </article>
     `;
-  }).join("");
+  }).join("") : "";
   el.occupancyDayDetail.innerHTML = `
     <div class="occupancyDetailHeader">
       <div>
         <div class="occupancyDayDetailTitle">${escapeHtml(title)}</div>
-        <div class="occupancyDayDetailText">Lectura rapida del dia seleccionado con eventos, responsables y acciones relacionadas.</div>
+        <div class="occupancyDayDetailText">Selecciona un evento en el calendario semanal para ver responsable, salon, montos y acciones.</div>
       </div>
       <div class="occupancyDetailStats">${metrics}</div>
     </div>
+    ${dayEventTabs}
     <div class="occupancyEventCards">${cards}</div>
   `;
+  el.occupancyDayDetail.querySelectorAll("[data-occupancy-detail-event]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      occupancySelectedEventId = btn.getAttribute("data-occupancy-detail-event") || "";
+      renderOccupancyDayCards(rows);
+      renderOccupancyDayDetail(rows);
+    });
+  });
 }
 
 function renderOccupancyReportTable() {
@@ -7428,14 +8201,53 @@ function closeOpenCustomTopbarSelect() {
   if (!comp) return;
   comp.root.classList.remove("open");
   comp.menu.hidden = true;
+  comp.menu.classList.remove("cselectMenuFloating");
+  comp.menu.style.left = "";
+  comp.menu.style.top = "";
+  comp.menu.style.width = "";
+  comp.menu.style.maxHeight = "";
   uiEnhancers.openCustomSelect = null;
+}
+
+function shouldFloatCustomSelectMenu(select) {
+  return !!select?.classList?.contains("statusDecoratedSelect") && !!select.closest?.("#modalBackdrop");
+}
+
+function positionFloatingCustomSelectMenu(select) {
+  const comp = uiEnhancers.customTopbarSelects.get(select);
+  if (!comp) return;
+  const rect = comp.button.getBoundingClientRect();
+  const gap = 6;
+  const viewportPad = 10;
+  const width = Math.max(rect.width, 190);
+  const spaceBelow = window.innerHeight - rect.bottom - viewportPad;
+  const spaceAbove = rect.top - viewportPad;
+  const maxHeight = Math.max(150, Math.min(280, Math.max(spaceBelow, spaceAbove) - gap));
+  const openAbove = spaceBelow < 180 && spaceAbove > spaceBelow;
+  comp.menu.classList.add("cselectMenuFloating");
+  comp.menu.style.width = `${width}px`;
+  comp.menu.style.left = `${Math.min(Math.max(viewportPad, rect.left), window.innerWidth - width - viewportPad)}px`;
+  comp.menu.style.maxHeight = `${maxHeight}px`;
+  if (openAbove) {
+    comp.menu.style.top = `${Math.max(viewportPad, rect.top - maxHeight - gap)}px`;
+  } else {
+    comp.menu.style.top = `${Math.min(rect.bottom + gap, window.innerHeight - maxHeight - viewportPad)}px`;
+  }
 }
 
 function updateCustomTopbarSelectFromNative(select) {
   const comp = uiEnhancers.customTopbarSelects.get(select);
   if (!comp) return;
   const selectedOpt = select.options[select.selectedIndex] || null;
-  comp.button.textContent = selectedOpt?.textContent?.trim() || "Selecciona";
+  const label = selectedOpt?.textContent?.trim() || "Selecciona";
+  const color = selectedOpt?.dataset?.statusColor || "";
+  if (select.classList?.contains("statusDecoratedSelect") && color) {
+    comp.button.innerHTML = `<span class="statusSelectDot" style="background:${escapeHtml(color)}"></span><span>${escapeHtml(label)}</span>`;
+    comp.root.style.setProperty("--status-select-color", color);
+  } else {
+    comp.button.textContent = label;
+    comp.root.style.removeProperty("--status-select-color");
+  }
   const items = comp.menu.querySelectorAll(".cselectItem");
   for (const item of items) {
     const isSelected = item.dataset.value === String(select.value || "");
@@ -7451,7 +8263,14 @@ function rebuildCustomTopbarSelectOptions(select) {
     const item = document.createElement("button");
     item.type = "button";
     item.className = "cselectItem";
-    item.textContent = String(opt.textContent || "").trim();
+    const color = opt.dataset?.statusColor || "";
+    const label = String(opt.textContent || "").trim();
+    if (select.classList?.contains("statusDecoratedSelect") && color) {
+      item.classList.add("statusCselectItem");
+      item.innerHTML = `<span class="statusSelectDot" style="background:${escapeHtml(color)}"></span><span>${escapeHtml(label)}</span>`;
+    } else {
+      item.textContent = label;
+    }
     item.dataset.value = String(opt.value || "");
     if (opt.disabled) item.disabled = true;
     item.addEventListener("click", () => {
@@ -7484,6 +8303,9 @@ function ensureCustomTopbarSelect(select) {
   root.appendChild(menu);
   select.style.display = "none";
   select.insertAdjacentElement("afterend", root);
+  if (shouldFloatCustomSelectMenu(select)) {
+    document.body.appendChild(menu);
+  }
 
   button.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -7493,6 +8315,10 @@ function ensureCustomTopbarSelect(select) {
     root.classList.add("open");
     menu.hidden = false;
     uiEnhancers.openCustomSelect = select;
+    if (shouldFloatCustomSelectMenu(select)) {
+      if (menu.parentElement !== document.body) document.body.appendChild(menu);
+      positionFloatingCustomSelectMenu(select);
+    }
   });
   select.addEventListener("change", () => updateCustomTopbarSelectFromNative(select));
 
@@ -7799,26 +8625,9 @@ function renderRoomSelects() {
 
 function renderStatusSelect() {
   el.eventStatus.innerHTML = "";
-  // Orden visual importante
-  const order = [
-    STATUS.RESERVA_SIN_COTIZACION,
-    STATUS.PRIMERA,
-    STATUS.PERDIDO,
-    STATUS.SEGUIMIENTO,
-    STATUS.LISTA,
-    STATUS.PRERESERVA,
-    STATUS.CONFIRMADO,
-    STATUS.CANCELADO,
-    STATUS.MANTENIMIENTO,
-  ];
-
-  for (const st of order) {
-    const opt = document.createElement("option");
-    opt.value = st;
-    opt.textContent = st;
-    if (isAutoStatus(st)) opt.disabled = true;
-    el.eventStatus.appendChild(opt);
-  }
+  el.eventStatus.classList.add("statusDecoratedSelect");
+  el.eventStatus.innerHTML = statusOptionsHtml("", { includeAuto: true });
+  ensureCustomTopbarSelect(el.eventStatus);
   applyStatusSelectTheme();
 }
 
@@ -7828,6 +8637,7 @@ function applyStatusSelectTheme() {
   el.eventStatus.style.borderColor = hexToRgba(color, 0.6);
   el.eventStatus.style.background = `linear-gradient(135deg, ${hexToRgba(color, 0.32)}, rgba(255,255,255,0.06))`;
   el.eventStatus.style.boxShadow = `inset 0 0 0 1px ${hexToRgba(color, 0.28)}`;
+  updateCustomTopbarSelectFromNative(el.eventStatus);
 }
 
 function renderUsersSelect() {
@@ -8166,6 +8976,7 @@ function addSlotRow(slot = null) {
   const slotDateEnd = slot?.dateEnd || slot?.endDate || el.eventDateEnd?.value || slotDateStart;
   const start = slot?.startTime || "";
   const end = slot?.endTime || "";
+  const slotStatus = String(slot?.status || el.eventStatus?.value || STATUS.RESERVA_SIN_COTIZACION).trim();
   row.innerHTML = `
     <td><select class="quoteInput slotRoom">${salonOptionsHtml(salon, true)}</select></td>
     <td><input class="quoteInput slotPax" type="number" min="1" step="1" placeholder="PAX" value="${escapeHtml(pax)}" /></td>
@@ -8173,15 +8984,18 @@ function addSlotRow(slot = null) {
     <td><input class="quoteInput slotDateEnd" type="date" value="${escapeHtml(slotDateEnd)}" /></td>
     <td><input class="quoteInput slotStart" type="text" inputmode="numeric" placeholder="HH:mm" value="${escapeHtml(start)}" /></td>
     <td><input class="quoteInput slotEnd" type="text" inputmode="numeric" placeholder="HH:mm" value="${escapeHtml(end)}" /></td>
+    <td><select class="quoteInput slotStatus statusDecoratedSelect">${statusOptionsHtml(slotStatus, { includeAuto: true })}</select></td>
     <td><button type="button" class="btnDanger slotRemoveBtn">X</button></td>
   `;
   el.slotsBody.appendChild(row);
   const slotRoomSelect = row.querySelector(".slotRoom");
+  const slotStatusSelect = row.querySelector(".slotStatus");
   initModernDatePicker(row.querySelector(".slotDateStart"));
   initModernDatePicker(row.querySelector(".slotDateEnd"));
   initModernTimePicker(row.querySelector(".slotStart"));
   initModernTimePicker(row.querySelector(".slotEnd"));
   queueSelectEnhancement(slotRoomSelect, true);
+  ensureCustomTopbarSelect(slotStatusSelect);
 }
 
 function rerenderSlotRoomOptions() {
@@ -8206,6 +9020,7 @@ function getSlotsFromForm() {
     dateEnd: row.querySelector(".slotDateEnd")?.value || "",
     startTime: row.querySelector(".slotStart")?.value || "",
     endTime: row.querySelector(".slotEnd")?.value || "",
+    status: row.querySelector(".slotStatus")?.value || "",
   }));
 }
 
@@ -13467,6 +14282,42 @@ function bindEvents() {
       });
     }
 
+    if (el.btnSettingsExportEventsExcel) {
+      el.btnSettingsExportEventsExcel.addEventListener("click", () => exportSettingsEventsToExcel());
+    }
+
+    if (el.btnSettingsExportCompaniesExcel) {
+      el.btnSettingsExportCompaniesExcel.addEventListener("click", () => exportSettingsCompaniesToExcel());
+    }
+
+    if (el.btnSettingsExportManagersExcel) {
+      el.btnSettingsExportManagersExcel.addEventListener("click", () => exportSettingsManagersToExcel());
+    }
+
+    if (el.btnSettingsDownloadEventsTemplate) {
+      el.btnSettingsDownloadEventsTemplate.addEventListener("click", () => downloadImportEventsTemplate());
+    }
+
+    if (el.btnSettingsDownloadManagersTemplate) {
+      el.btnSettingsDownloadManagersTemplate.addEventListener("click", () => downloadImportManagersTemplate());
+    }
+
+    if (el.btnSettingsImportEventsCsv && el.settingsImportEventsFile) {
+      el.btnSettingsImportEventsCsv.addEventListener("click", () => el.settingsImportEventsFile.click());
+      el.settingsImportEventsFile.addEventListener("change", () => {
+        readImportCsvFile(el.settingsImportEventsFile.files?.[0], importEventRows);
+        el.settingsImportEventsFile.value = "";
+      });
+    }
+
+    if (el.btnSettingsImportManagersCsv && el.settingsImportManagersFile) {
+      el.btnSettingsImportManagersCsv.addEventListener("click", () => el.settingsImportManagersFile.click());
+      el.settingsImportManagersFile.addEventListener("change", () => {
+        readImportCsvFile(el.settingsImportManagersFile.files?.[0], importManagersCompaniesRows);
+        el.settingsImportManagersFile.value = "";
+      });
+    }
+
     if (el.btnQuickAddInstitution) {
       el.btnQuickAddInstitution.addEventListener("click", () => {
         prepareModuleModalOpen("settings");
@@ -13754,6 +14605,14 @@ function bindEvents() {
     el[id].addEventListener("change", updateRulesAndConflictsUI);
     el[id].addEventListener("input", updateRulesAndConflictsUI);
   });
+  el.eventStatus.addEventListener("change", () => {
+    const nextStatus = String(el.eventStatus.value || "").trim();
+    for (const select of Array.from(el.slotsBody.querySelectorAll(".slotStatus"))) {
+      select.value = nextStatus;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      updateCustomTopbarSelectFromNative(select);
+    }
+  });
   ["eventName", "eventDate", "eventDateEnd", "eventUser", "eventPax"].forEach(id => {
     if (!el[id]) return;
     el[id].addEventListener("change", () => validateReservationRequiredFields());
@@ -13767,13 +14626,14 @@ function bindEvents() {
       dateEnd: el.eventDateEnd?.value || el.eventDate?.value || "",
       startTime: "",
       endTime: "",
+      status: el.eventStatus?.value || STATUS.RESERVA_SIN_COTIZACION,
     });
     syncHiddenTimesFromFirstSlot();
     syncEventPaxFromSlots();
     updateRulesAndConflictsUI();
   });
   const onSlotChange = (e) => {
-    if (!e.target.closest(".slotStart, .slotEnd, .slotRoom, .slotPax, .slotDateStart, .slotDateEnd")) return;
+    if (!e.target.closest(".slotStart, .slotEnd, .slotRoom, .slotPax, .slotDateStart, .slotDateEnd, .slotStatus")) return;
     syncHiddenTimesFromFirstSlot();
     syncEventPaxFromSlots();
     updateRulesAndConflictsUI();
@@ -16145,9 +17005,9 @@ function openModalForCreate({ date, start, end, salon, rangeDates = null }) {
   setModernDateValue(el.eventDate, toISODate(d));
   setModernDateValue(el.eventDateEnd, totalDates > 1 ? rangeDates[rangeDates.length - 1] : toISODate(d));
   el.slotsBody.innerHTML = "";
+  el.eventStatus.value = STATUS.RESERVA_SIN_COTIZACION; // default: apartado sin cotizacion
   addSlotRow({ salon: initialSalon, slotPax: 0, startTime, endTime });
   syncHiddenTimesFromFirstSlot();
-  el.eventStatus.value = STATUS.RESERVA_SIN_COTIZACION; // default: apartado sin cotizacion
   const sessionUserId = String(authSession.userId || "").trim();
   const sessionAvailable = (state.users || []).some((u) => String(u.id) === sessionUserId && u.active !== false);
   el.eventUser.value = sessionAvailable ? sessionUserId : (state.users[0]?.id || "");
@@ -16417,6 +17277,7 @@ function closeUserModal() {
 // Aqui se prepara el borrador, se asegura un codigo si hace falta,
 // y se cargan en pantalla los datos que luego se podran guardar o versionar.
 async function openQuoteModal(eventId) {
+  ensureQuoteModalPortals();
   const ev = state.events.find(x => x.id === eventId);
   if (!ev) return;
   const series = getEventSeries(ev).sort((a, b) => a.date.localeCompare(b.date));
@@ -21117,6 +21978,10 @@ function saveEventFromForm() {
       return toast("Formato de hora invalido. Usa HH:mm.");
     }
     if (compareTime(s.endTime, s.startTime) <= 0) return toast("En cada bloque, la hora final debe ser mayor que inicio.");
+    const slotStatus = String(s.status || status || "").trim();
+    if (!slotStatus || !allowedStatuses.has(slotStatus)) {
+      return toast(`Estado invalido en el salon ${s.salon || ""}.`);
+    }
   }
 
   const replaceEvents = editingId
@@ -21147,6 +22012,14 @@ function saveEventFromForm() {
     for (const d of s.targetDates) {
       const key = `${d}|${s.salon}|${s.startTime}|${s.endTime}`;
       const existing = existingByKey.get(key);
+      const rawSlotStatus = String(s.status || status || "").trim();
+      const existingSlotStatus = String(existing?.status || editingCurrentStatus || "").trim();
+      let draftStatus = isAutoStatus(rawSlotStatus)
+        ? (editingId ? (existingSlotStatus || STATUS.RESERVA_SIN_COTIZACION) : STATUS.RESERVA_SIN_COTIZACION)
+        : (rawSlotStatus || STATUS.RESERVA_SIN_COTIZACION);
+      if (editingId && previousStatus === STATUS.PERDIDO && rangeEnd >= toISODate(new Date())) {
+        draftStatus = reservationStatusFromQuotePresence(existing || replaceEvents[0] || editingEvent);
+      }
       drafts.push({
         id: existing?.id || uid(),
         name,
@@ -21157,7 +22030,7 @@ function saveEventFromForm() {
         eventDateStart: rangeStart,
         eventDateEnd: rangeEnd,
         groupId: resultingGroupId,
-        status,
+        status: draftStatus,
         startTime: s.startTime,
         endTime: s.endTime,
         userId,
@@ -21188,7 +22061,7 @@ function saveEventFromForm() {
     }
   }
 
-  if (status === STATUS.MANTENIMIENTO) {
+  if (drafts.some((draft) => draft.status === STATUS.MANTENIMIENTO)) {
     const maintenanceHardBlocks = drafts.flatMap((draft) => findHardBlocks(draft, replaceIds));
     if (maintenanceHardBlocks.length) {
       return toast("No puedes poner en Mantenimiento: ya hay una reserva Confirmada o Pre reserva en ese horario.");
@@ -21334,7 +22207,7 @@ function getUsedSalonesForReports() {
 function uniqueSlotsFromSeries(series) {
   const map = new Map();
   for (const e of series) {
-    const key = `${e.salon}|${e.startTime}|${e.endTime}`;
+    const key = `${e.salon}|${e.startTime}|${e.endTime}|${e.status || ""}`;
     if (!map.has(key)) {
       map.set(key, {
         salon: e.salon,
@@ -21343,6 +22216,7 @@ function uniqueSlotsFromSeries(series) {
         dateEnd: e.date || "",
         startTime: e.startTime,
         endTime: e.endTime,
+        status: String(e.status || STATUS.RESERVA_SIN_COTIZACION).trim(),
       });
     } else {
       const slot = map.get(key);
@@ -22623,6 +23497,7 @@ function applyStatusOptionDisabling(draft, hardBlocks) {
   }
 
   // Estados automaticos quedan bloqueados para seleccion manual.
+  rebuildCustomTopbarSelectOptions(el.eventStatus);
 }
 
 function evaluateRules(draft, ignoreIds = null) {
@@ -23408,6 +24283,10 @@ function validateReservationRequiredFields() {
         visual.classList.toggle("req-missing", !ok);
         visual.classList.toggle("req-ok", !!ok);
       }
+      if (visual && visual.classList?.contains("cselect")) {
+        visual.classList.toggle("req-missing", !ok);
+        visual.classList.toggle("req-ok", !!ok);
+      }
     }
     if (!ok && !firstInvalidEl) firstInvalidEl = el;
   };
@@ -23445,6 +24324,7 @@ function validateReservationRequiredFields() {
     const slotDateEndEl = row?.querySelector(".slotDateEnd");
     const startEl = row?.querySelector(".slotStart");
     const endEl = row?.querySelector(".slotEnd");
+    const statusEl = row?.querySelector(".slotStatus");
     const okRoom = !!s.salon;
     mark(roomEl, okRoom);
     if (!okRoom) issues.push(`Bloque ${idx}: Salon`);
@@ -23481,6 +24361,9 @@ function validateReservationRequiredFields() {
         mark(endEl, false);
       }
     }
+    const okStatus = !!s.status && Object.values(STATUS).includes(s.status);
+    mark(statusEl, okStatus);
+    if (!okStatus) issues.push(`Bloque ${idx}: Estado`);
   }
 
   return { issues, firstInvalidEl };
@@ -23587,7 +24470,7 @@ function currentDraftFromForm() {
   const startTime = firstSlot.startTime || "";
   const endTime = firstSlot.endTime || "";
   const salon = firstSlot.salon || "";
-  const status = el.eventStatus.value;
+  const status = firstSlot.status || el.eventStatus.value;
   const id = el.eventId.value || "__draft__";
   if (!date || !startTime || !endTime || !salon || !status) return null;
   return { id, date, startTime, endTime, salon, status };

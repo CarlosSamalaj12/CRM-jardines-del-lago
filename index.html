@@ -290,6 +290,105 @@
 
         <div class="settingsDivider"></div>
 
+        <div class="settingsSectionTitle">Exportar al nuevo sistema</div>
+        <div class="settingsExportPanel" aria-label="Exportar datos por Excel">
+          <div class="settingsExportIntro">
+            <strong>Migracion por Excel</strong>
+            <span>Descarga eventos, empresas o encargados con las columnas sugeridas, una fila de ejemplo y los datos actuales del CRM.</span>
+          </div>
+          <div class="moduleActionGrid settingsActionGridEnhanced">
+            <button class="moduleActionBtn settingsHubBtn" id="btnSettingsExportEventsExcel" type="button">
+              <span class="actionCardInner">
+                <span class="actionCardIcon">
+                  <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                    <rect x="14" y="16" width="36" height="34" rx="8"></rect>
+                    <path d="M22 12v10M42 12v10M14 26h36M23 36h8M35 36h6M23 44h18"></path>
+                  </svg>
+                </span>
+                <span class="actionCardText">
+                  <span class="actionCardLabel">Exportar eventos</span>
+                  <span class="actionCardMeta">Reservas, salones, empresa, encargado y cotizacion</span>
+                </span>
+              </span>
+            </button>
+            <button class="moduleActionBtn settingsHubBtn" id="btnSettingsExportCompaniesExcel" type="button">
+              <span class="actionCardInner">
+                <span class="actionCardIcon">
+                  <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                    <path d="M18 48V24l14-8 14 8v24"></path>
+                    <path d="M14 48h36M26 30h2M36 30h2M26 38h2M36 38h2"></path>
+                  </svg>
+                </span>
+                <span class="actionCardText">
+                  <span class="actionCardLabel">Exportar empresas</span>
+                  <span class="actionCardMeta">Catalogo de clientes, facturacion y contacto</span>
+                </span>
+              </span>
+            </button>
+            <button class="moduleActionBtn settingsHubBtn" id="btnSettingsExportManagersExcel" type="button">
+              <span class="actionCardInner">
+                <span class="actionCardIcon">
+                  <svg class="actionCardSvg" viewBox="0 0 64 64" aria-hidden="true">
+                    <circle cx="32" cy="22" r="7"></circle>
+                    <path d="M24 34h16M22 46c2-6 7-9 10-9s8 3 10 9"></path>
+                  </svg>
+                </span>
+                <span class="actionCardText">
+                  <span class="actionCardLabel">Exportar encargados</span>
+                  <span class="actionCardMeta">Responsables relacionados a cada empresa</span>
+                </span>
+              </span>
+            </button>
+          </div>
+          <div class="settingsExportExample">
+            <strong>Ejemplo de columnas</strong>
+            <span>Eventos: evento_id, nombre_evento, fecha_inicio_evento, fecha_fin_evento, salon_principal, empresa_id, encargado_id, vendedor, pax_total, total_cotizacion.</span>
+            <span>Empresas: empresa_id, nombre_comercial, razon_social_facturar, nit, correo_empresa, telefono_empresa, direccion_empresa, tipo_evento_preferido.</span>
+            <span>Encargados: encargado_id, empresa_id, empresa_nombre, nombre_encargado, telefono, correo, direccion.</span>
+          </div>
+        </div>
+
+        <div class="settingsDivider"></div>
+
+        <div class="settingsSectionTitle">Importar al CRM</div>
+        <div class="settingsExportPanel" aria-label="Importar datos desde Excel">
+          <div class="settingsExportIntro">
+            <strong>Importacion por plantilla</strong>
+            <span>Descarga la plantilla, llenala en Excel y guardala como CSV UTF-8 para cargar eventos o encargados con su empresa.</span>
+          </div>
+          <div class="settingsImportGrid">
+            <section class="settingsImportCard">
+              <div>
+                <strong>Importar eventos</strong>
+                <span>Usa empresa_id/encargado_id o los nombres para relacionarlos. Si la empresa o encargado no existen, el CRM los crea.</span>
+              </div>
+              <div class="settingsImportActions">
+                <button class="btn" id="btnSettingsDownloadEventsTemplate" type="button">Descargar plantilla</button>
+                <button class="btnPrimary" id="btnSettingsImportEventsCsv" type="button">Importar CSV</button>
+                <input id="settingsImportEventsFile" type="file" accept=".csv,text/csv,text/plain" hidden />
+              </div>
+            </section>
+            <section class="settingsImportCard">
+              <div>
+                <strong>Importar encargados con empresa</strong>
+                <span>Cada fila puede crear o actualizar una empresa y agregar su encargado relacionado.</span>
+              </div>
+              <div class="settingsImportActions">
+                <button class="btn" id="btnSettingsDownloadManagersTemplate" type="button">Descargar plantilla</button>
+                <button class="btnPrimary" id="btnSettingsImportManagersCsv" type="button">Importar CSV</button>
+                <input id="settingsImportManagersFile" type="file" accept=".csv,text/csv,text/plain" hidden />
+              </div>
+            </section>
+          </div>
+          <div class="settingsExportExample">
+            <strong>Formato para importar</strong>
+            <span>Eventos: evento_id, nombre_evento, estado, fecha_inicio_evento, fecha_fin_evento, fecha_bloque, hora_inicio, hora_final, salon_principal, empresa_id, empresa, encargado_id, encargado, pax_total.</span>
+            <span>Encargados con empresa: empresa_id, nombre_comercial, razon_social_facturar, nit, correo_empresa, telefono_empresa, direccion_empresa, encargado_id, nombre_encargado, telefono_encargado, correo_encargado.</span>
+          </div>
+        </div>
+
+        <div class="settingsDivider"></div>
+
         <div class="settingsSectionTitle">Accesos rapidos</div>
         <div class="moduleActionGrid settingsActionGridEnhanced" id="quickAddGroup">
           <button class="moduleActionBtn settingsHubBtn" id="btnQuickAddUser" type="button">
@@ -501,7 +600,7 @@
 
       <nav class="lum-sideNav">
         <button class="lum-sideItem" id="btnOpenLeads" type="button"><span class="material-symbols-outlined" aria-hidden="true">group</span><span>Clientes potenciales</span></button>
-        <button class="lum-sideItem isActive" id="btnSideCalendar" type="button" aria-current="page"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span><span>Calendar</span></button>
+        <button class="lum-sideItem isActive" id="btnSideCalendar" type="button" aria-current="page"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span><span>Calendario</span></button>
         <button class="lum-sideItem" id="btnFindEvent" type="button"><span class="material-symbols-outlined" aria-hidden="true">search</span><span>Buscar evento</span></button>
         <button class="lum-sideItem" id="btnSideReports" type="button"><span class="material-symbols-outlined" aria-hidden="true">analytics</span><span>Reportes</span></button>
         <button class="lum-sideItem" id="btnSideSettings" type="button"><span class="material-symbols-outlined" aria-hidden="true">settings</span><span>Configuraciones</span></button>
@@ -644,6 +743,7 @@
                       <th>Hasta</th>
                       <th>Inicio</th>
                       <th>Fin</th>
+                      <th>Estado</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -845,7 +945,7 @@
         </div>
         <div class="modalBody">
           <label class="field">
-            <span>Buscar lead</span>
+            <span>Buscar Cliente Potencial</span>
             <input id="leadsSearch" type="text" placeholder="Ej: institucion, contacto, salon, fecha, estado..." />
           </label>
           <div class="row2">
@@ -1523,14 +1623,14 @@
       <div class="modal menuMontajeModal" role="dialog" aria-modal="true" aria-labelledby="menuMontajeSelectableTitle">
         <div class="modalHeader">
           <div>
-            <div class="modalTitle" id="menuMontajeSelectableTitle">Menú y Montaje</div>
-            <div class="modalSubtitle">Gestión intuitiva del menú, montaje y comanda por evento.</div>
+            <div class="modalTitle" id="menuMontajeSelectableTitle">Men&uacute; y Montaje</div>
+            <div class="modalSubtitle">Gesti&oacute;n intuitiva del men&uacute;, montaje y comanda por evento.</div>
           </div>
           <button class="iconBtn" id="btnMenuMontajeSelectableClose" type="button" title="Cerrar">&#10005;</button>
         </div>
         <div class="modalBody menuMontajeBody">
           <section class="quoteCard mmCard mmCardWide mmsFlatContextCard">
-            <div class="mmsFlatSectionHead"><div><div class="quoteCardTitle">Datos del evento</div><div class="mmsSectionLead">Selecciona versión, fecha y salón antes de armar la comanda.</div></div><div class="mmsFlatFlowStrip"><span class="isActive">1 Datos</span><span>2 Menú</span><span>3 Montaje</span><span>4 Guardar</span></div></div>
+            <div class="mmsFlatSectionHead"><div><div class="quoteCardTitle">Datos del evento</div><div class="mmsSectionLead">Selecciona versi&oacute;n, fecha y sal&oacute;n antes de armar la comanda.</div></div><div class="mmsFlatFlowStrip"><span class="isActive">1 Datos</span><span>2 Men&uacute;</span><span>3 Montaje</span><span>4 Guardar</span></div></div>
             <div class="mmGrid mmsFlatContextGrid">
               <label class="field">
                 <span>Version Menu &amp; Montaje</span>
@@ -1551,14 +1651,14 @@
           </section>
 
           <section class="quoteCard mmCard mmCardWide mmsFlatBuilderCard">
-            <div class="mmsFlatSectionHead"><div><div class="quoteCardTitle">Armar menú y montaje</div><div class="mmsSectionLead">Trabaja de izquierda a derecha: modo, categoría, opciones y resumen final.</div></div><div class="mmsFlatLegend"><span><b></b> Disponible</span><span><b></b> Seleccionado</span></div></div>
+            <div class="mmsFlatSectionHead"><div><div class="quoteCardTitle">Armar men&uacute; y montaje</div><div class="mmsSectionLead">Trabaja de izquierda a derecha: modo, categor&iacute;a, opciones y resumen final.</div></div><div class="mmsFlatLegend"><span><b></b> Disponible</span><span><b></b> Seleccionado</span></div></div>
             <div class="mmsPosLayout mmsFlatPosLayout">
               <div class="mmsPosLeft">
                 <div class="field">
                   <span>Paso 2: selecciona opciones</span>
-                  <div class="mmsFlowHint">Primero elige si trabajarás Menú o Montaje. Luego toca una categoría y agrega opciones con un clic.</div>
+                  <div class="mmsFlowHint">Primero elige si trabajar&aacute;s Men&uacute; o Montaje. Luego toca una categor&iacute;a y agrega opciones con un clic.</div>
                   <div class="mmsPrimaryTabs" id="mmsPrimaryTabs">
-                    <button class="btn mmsPrimaryTab" id="btnMmsPrimaryMenu" type="button" data-mms-primary="menu">Menu</button>
+                    <button class="btn mmsPrimaryTab" id="btnMmsPrimaryMenu" type="button" data-mms-primary="menu">Men&uacute;</button>
                     <button class="btn mmsPrimaryTab" id="btnMmsPrimaryMontaje" type="button" data-mms-primary="montaje">Montaje</button>
                   </div>
                   <div class="mmsStageTabs" id="mmsStageTabs">
@@ -1572,17 +1672,17 @@
                     <button class="btn mmsStageTab" id="btnMmsStageMontajeAdicional" type="button" data-mms-stage="montaje_adicional">Montaje adicional</button>
                   </div>
                   <div class="quoteServiceActions">
-                    <input id="mmsStageFilter" type="text" placeholder="Filtrar opcion..." />
+                    <input id="mmsStageFilter" type="text" placeholder="Filtrar opci&oacute;n..." />
                     <label class="mmsQuickQtyField" for="mmsMenuQtyVisible">
                       <span>Cantidad</span>
                       <input id="mmsMenuQtyVisible" type="number" min="1" step="1" value="1" />
                     </label>
-                    <button class="btn" id="btnMmsStageMoreOptions" type="button">Mas opciones</button>
+                    <button class="btn" id="btnMmsStageMoreOptions" type="button">M&aacute;s opciones</button>
                     <button class="btnDanger" id="btnMmsStageCancelSelection" type="button">Anular</button>
-                    <button class="btn btnCatalogAccent" id="btnMmsOpenCatalog" type="button">Gestionar catalogo</button>
+                    <button class="btn btnCatalogAccent" id="btnMmsOpenCatalog" type="button">Gestionar cat&aacute;logo</button>
                   </div>
                   <div class="mmsStageBoard">
-                    <div class="mmsStageTitle" id="mmsStageTitle">Elija una opcion</div>
+                    <div class="mmsStageTitle" id="mmsStageTitle">Elija una opci&oacute;n</div>
                     <div class="mmsQuickButtons mmsStageOptions" id="mmsStageOptions"></div>
                   </div>
                 </div>
@@ -1590,7 +1690,7 @@
               <div class="mmsPosRight">
                 <div class="field">
                   <span class="mmsPosLiveTitle">Resumen de comanda</span>
-                  <div class="mmsSummaryLead">Aquí se confirma todo lo agregado antes de guardar.</div>
+                  <div class="mmsSummaryLead">Aqu&iacute; se confirma todo lo agregado antes de guardar.</div>
                   <div class="mmsActivePlateHint" id="mmsActivePlateHint">Toca un plato para editarlo.</div>
                   <div class="mmsComanda" id="mmsComandaPreview">
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Plato fuerte</div><div class="mmsComandaItems" id="mmsComandaPlato"></div></div>
@@ -1601,10 +1701,10 @@
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Comentarios</div><div class="mmsComandaItems" id="mmsComandaComentarios"></div></div>
                     <div class="mmsComandaBlock"><div class="mmsComandaTitle">Montaje</div><div class="mmsComandaItems" id="mmsComandaMontaje"></div></div>
                   </div>
-                  <small class="hint">Puedes quitar cualquier opcion tocando la `x` en cada etiqueta.</small>
+                  <small class="hint">Puedes quitar cualquier opci&oacute;n tocando la `x` en cada etiqueta.</small>
                 </div>
                 <label class="field">
-                  <span>Descripcion del plato (opcional)</span>
+                  <span>Descripci&oacute;n del plato (opcional)</span>
                   <textarea id="mmsPlatoDescripcion" rows="3" placeholder="Ej: sin cebolla, servir primero, alergias..."></textarea>
                 </label>
               </div>
@@ -1653,7 +1753,7 @@
           </section>
 
           <section class="quoteCard mmCard mmCardWide mmsFlatSavedCard">
-            <div class="mmsFlatSectionHead"><div><div class="quoteCardTitle">Resumen guardado</div><div class="mmsSectionLead">Registros ya generados para esta cotización.</div></div></div>
+            <div class="mmsFlatSectionHead"><div><div class="quoteCardTitle">Resumen guardado</div><div class="mmsSectionLead">Registros ya generados para esta cotizaci&oacute;n.</div></div></div>
             <div class="quoteTableWrap">
               <table class="quoteTable">
                 <thead>
