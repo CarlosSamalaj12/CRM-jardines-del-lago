@@ -1161,7 +1161,7 @@ async function readStateFromTables() {
       conn.query("SELECT clave_evento, cambiado_en_iso, id_usuario_actor, nombre_actor, cambio_texto FROM historial_evento ORDER BY id DESC"),
       conn.query("SELECT id, clave_evento, fecha_recordatorio, hora_recordatorio, medio, notas, creado_en_iso, id_usuario_creador FROM recordatorios_evento ORDER BY id"),
       conn.query("SELECT id, nombre, activo FROM menu_bebidas ORDER BY nombre ASC"),
-      conn.query("SELECT clave, valor_json FROM app_state_kv WHERE clave IN ('quickTemplates','quoteServiceTemplates','disabledCompanies','disabledServices','disabledManagers','disabledSalones','globalMonthlyGoals','checklistTemplates','checklistTemplateItems','checklistTemplateSections','menuMontajeSections','menuMontajeBebidas','eventChecklists')"),
+      conn.query("SELECT clave, valor_json FROM app_state_kv WHERE clave IN ('quickTemplates','quoteServiceTemplates','disabledCompanies','disabledServices','disabledManagers','disabledSalones','globalMonthlyGoals','checklistTemplates','checklistTemplateItems','checklistTemplateSections','menuMontajeSections','menuMontajeBebidas','eventChecklists','occupancyWeeklyOps')"),
     ]);
 
     const hasData = salones.length || usuarios.length || empresas.length || servicios.length || eventos.length;
@@ -1252,6 +1252,7 @@ async function readStateFromTables() {
         activo: Number(b.activo) !== 0,
       })),
       eventChecklists: {},
+      occupancyWeeklyOps: {},
       changeHistory: {},
       reminders: {},
       events: eventos.map((e) => {
@@ -1323,6 +1324,7 @@ async function readStateFromTables() {
     const menuMontajeSectionsRow = appStateRows.find((r) => str(r.clave) === "menuMontajeSections");
     const menuMontajeBebidasRow = appStateRows.find((r) => str(r.clave) === "menuMontajeBebidas");
     const eventChecklistsRow = appStateRows.find((r) => str(r.clave) === "eventChecklists");
+    const occupancyWeeklyOpsRow = appStateRows.find((r) => str(r.clave) === "occupancyWeeklyOps");
 
     const parseArray = (row) => {
       if (!row?.valor_json) return [];
@@ -1403,6 +1405,12 @@ async function readStateFromTables() {
       state.eventChecklists = (parsed && typeof parsed === "object") ? parsed : {};
     } catch (_) {
       state.eventChecklists = {};
+    }
+    try {
+      const parsed = JSON.parse(str(occupancyWeeklyOpsRow?.valor_json) || "{}");
+      state.occupancyWeeklyOps = (parsed && typeof parsed === "object") ? parsed : {};
+    } catch (_) {
+      state.occupancyWeeklyOps = {};
     }
 
     for (const row of recordatorios) {
@@ -2230,6 +2238,7 @@ async function writeStateToTables(state) {
     const menuMontajeSections = Array.isArray(state.menuMontajeSections) ? state.menuMontajeSections : [];
     const menuMontajeBebidas = Array.isArray(state.menuMontajeBebidas) ? state.menuMontajeBebidas : [];
     const eventChecklists = (state.eventChecklists && typeof state.eventChecklists === "object") ? state.eventChecklists : {};
+    const occupancyWeeklyOps = (state.occupancyWeeklyOps && typeof state.occupancyWeeklyOps === "object") ? state.occupancyWeeklyOps : {};
     const events = Array.isArray(state.events)
       ? state.events.map((e) => ({ ...e, salon: e?.salon ?? "" }))
       : [];
@@ -2788,6 +2797,14 @@ async function writeStateToTables(state) {
       `,
       [JSON.stringify(eventChecklists)]
     );
+    await conn.query(
+      `
+        INSERT INTO app_state_kv (clave, valor_json)
+        VALUES ('occupancyWeeklyOps', ?)
+        ON DUPLICATE KEY UPDATE valor_json = VALUES(valor_json)
+      `,
+      [JSON.stringify(occupancyWeeklyOps)]
+    );
 
     await conn.commit();
   } catch (error) {
@@ -3107,4 +3124,3 @@ async function start() {
 }
 
 start();
-

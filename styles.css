@@ -7813,3 +7813,680 @@ body.quoteModeOpen #quoteBackdrop[hidden]{
   }
 }
 /* === END MENU MONTAJE FULLSCREEN UTILIZATION === */
+
+/* === MENU MONTAJE QTY OVERLAP FIX === */
+#menuMontajeSelectableBackdrop .quoteServiceActions:has(#mmsStageFilter){
+  column-gap:10px !important;
+  row-gap:10px !important;
+}
+#menuMontajeSelectableBackdrop #mmsStageFilter{
+  order:1;
+}
+#menuMontajeSelectableBackdrop .mmsQuickQtyField{
+  order:2;
+  flex:0 0 150px !important;
+  min-width:150px !important;
+  max-width:150px !important;
+}
+#menuMontajeSelectableBackdrop #mmsMenuQtyVisible{
+  width:100% !important;
+  min-width:0 !important;
+}
+#menuMontajeSelectableBackdrop #btnMmsStageMoreOptions{
+  order:3;
+  flex:0 0 auto !important;
+  min-width:126px !important;
+}
+#menuMontajeSelectableBackdrop #btnMmsStageCancelSelection{
+  order:4;
+}
+#menuMontajeSelectableBackdrop #btnMmsOpenCatalog{
+  order:5;
+}
+/* === END MENU MONTAJE QTY OVERLAP FIX === */
+
+/* === EVENT MODAL VERTICAL SCROLL FIX (EDITAR RESERVA) === */
+#modalBackdrop{
+  overflow: auto !important;
+  place-items: start center !important;
+  padding: 12px !important;
+}
+#modalBackdrop .modal{
+  width: min(1280px, 98vw) !important;
+  max-height: 94vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+#modalBackdrop .eventModalMain{
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  overflow: hidden !important;
+}
+#modalBackdrop #eventForm{
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-bottom: 16px !important;
+}
+#modalBackdrop #eventForm .modalFooter{
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 2 !important;
+}
+@media (max-width: 920px){
+  #modalBackdrop{
+    padding: 0 !important;
+  }
+  #modalBackdrop .modal{
+    width: 100vw !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
+}
+/* === END EVENT MODAL VERTICAL SCROLL FIX (EDITAR RESERVA) === */
+/* === EVENT MODAL COMPACT + FULL HEIGHT TUNING === */
+#modalBackdrop .modal{
+  width: min(1500px, 99vw) !important;
+  max-height: 98vh !important;
+}
+#modalBackdrop #eventForm{
+  padding: 10px 14px 12px !important;
+  gap: 10px !important;
+}
+#modalBackdrop #eventForm .eventMainRow > .field,
+#modalBackdrop #eventForm .eventMainRow > label.field{
+  justify-content: flex-start !important;
+  align-content: flex-start !important;
+  gap: 10px !important;
+}
+#modalBackdrop #eventForm .eventMainRow,
+#modalBackdrop #eventForm .eventDatesRow,
+#modalBackdrop #eventForm .eventActorRow,
+#modalBackdrop #eventForm .eventNotesRow{
+  margin: 0 !important;
+  gap: 10px !important;
+}
+#modalBackdrop #eventForm .quoteTableWrap{
+  overflow: auto !important;
+  max-height: clamp(300px, 50vh, 560px) !important;
+}
+#modalBackdrop #eventForm .modalFooter{
+  margin-top: 8px !important;
+  padding-top: 8px !important;
+}
+@media (max-width: 920px){
+  #modalBackdrop .modal{
+    max-height: 100vh !important;
+  }
+  #modalBackdrop #eventForm .quoteTableWrap{
+    max-height: 42vh !important;
+  }
+}
+/* === END EVENT MODAL COMPACT + FULL HEIGHT TUNING === */
+/* === EVENT MODAL SPACE UTILIZATION LAYOUT === */
+@media (min-width: 921px){
+  #modalBackdrop #eventForm{
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.9fr) minmax(360px, 1fr) !important;
+    grid-template-rows: auto auto auto auto auto !important;
+    gap: 10px 14px !important;
+    align-items: start !important;
+  }
+  #modalBackdrop #eventForm .eventMainRow{
+    grid-column: 1 !important;
+    grid-row: 1 / span 3 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    gap: 10px !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventMainRow > label.field,
+  #modalBackdrop #eventForm .eventMainRow > .field{
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventMainRow > .field{
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    min-height: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventMainRow > .field .quoteTableWrap{
+    flex: 1 1 auto !important;
+    min-height: 320px !important;
+    max-height: none !important;
+    overflow: auto !important;
+  }
+  #modalBackdrop #eventForm .eventDatesRow{
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventActorRow{
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventNotesRow{
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .conflictsBox{
+    grid-column: 1 / -1 !important;
+    grid-row: 4 !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .modalFooter{
+    grid-column: 1 / -1 !important;
+    grid-row: 5 !important;
+    margin-top: 6px !important;
+  }
+}
+/* === END EVENT MODAL SPACE UTILIZATION LAYOUT === */
+/* === EVENT MODAL FULL CANVAS UTILIZATION (DESKTOP) === */
+@media (min-width: 921px){
+  #modalBackdrop{
+    padding: 8px !important;
+  }
+  #modalBackdrop .modal{
+    width: calc(100vw - 16px) !important;
+    max-width: none !important;
+    height: calc(100vh - 16px) !important;
+    max-height: none !important;
+  }
+  #modalBackdrop .eventModalMain{
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  #modalBackdrop #eventForm{
+    height: 100% !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    grid-template-columns: minmax(0, 2.2fr) minmax(320px, 1fr) !important;
+    grid-template-rows: minmax(0,1fr) auto !important;
+    gap: 10px 14px !important;
+  }
+  #modalBackdrop #eventForm .eventMainRow{
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+  #modalBackdrop #eventForm .eventDatesRow,
+  #modalBackdrop #eventForm .eventActorRow,
+  #modalBackdrop #eventForm .eventNotesRow{
+    grid-column: 2 !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventDatesRow{ grid-row: 1 !important; align-self: start !important; }
+  #modalBackdrop #eventForm .eventActorRow{ grid-row: 1 !important; align-self: center !important; }
+  #modalBackdrop #eventForm .eventNotesRow{ grid-row: 1 !important; align-self: end !important; }
+  #modalBackdrop #eventForm .eventMainRow > .field .quoteTableWrap{
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  #modalBackdrop #eventForm .conflictsBox{
+    display: none !important;
+  }
+  #modalBackdrop #eventForm .modalFooter{
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    position: static !important;
+    margin: 0 !important;
+    padding-top: 8px !important;
+  }
+}
+/* === END EVENT MODAL FULL CANVAS UTILIZATION (DESKTOP) === */
+/* === EVENT MODAL RIGHT COLUMN COMPACT TUNING === */
+@media (min-width: 921px){
+  #modalBackdrop #eventForm{
+    grid-template-columns: minmax(0, 2.9fr) minmax(280px, 0.75fr) !important;
+  }
+  #modalBackdrop #eventForm .eventDatesRow,
+  #modalBackdrop #eventForm .eventActorRow,
+  #modalBackdrop #eventForm .eventNotesRow{
+    align-self: start !important;
+    gap: 8px !important;
+  }
+  #modalBackdrop #eventForm .eventNotesRow textarea{
+    min-height: 96px !important;
+    max-height: 140px !important;
+  }
+}
+/* === END EVENT MODAL RIGHT COLUMN COMPACT TUNING === */
+/* === EVENT MODAL RESTORE + FULL WIDTH USE (DESKTOP) === */
+@media (min-width: 921px){
+  #modalBackdrop{
+    padding: 8px !important;
+  }
+  #modalBackdrop .modal{
+    width: calc(100vw - 16px) !important;
+    max-width: none !important;
+    height: calc(100vh - 16px) !important;
+    max-height: none !important;
+  }
+  #modalBackdrop #eventForm{
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 10px 14px 12px !important;
+    gap: 10px !important;
+  }
+  #modalBackdrop #eventForm .eventMainRow,
+  #modalBackdrop #eventForm .eventDatesRow,
+  #modalBackdrop #eventForm .eventActorRow,
+  #modalBackdrop #eventForm .eventNotesRow,
+  #modalBackdrop #eventForm .conflictsBox,
+  #modalBackdrop #eventForm .modalFooter{
+    grid-column: auto !important;
+    grid-row: auto !important;
+    align-self: auto !important;
+  }
+  #modalBackdrop #eventForm .eventMainRow{
+    display: grid !important;
+    grid-template-columns: minmax(0, 2.35fr) minmax(320px, 1fr) !important;
+    gap: 12px !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventMainRow > .field{
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    min-height: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventMainRow > .field .quoteTableWrap{
+    flex: 1 1 auto !important;
+    min-height: 360px !important;
+    max-height: 58vh !important;
+    overflow: auto !important;
+  }
+  #modalBackdrop #eventForm .eventDatesRow{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventActorRow{
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventNotesRow{
+    display: block !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop #eventForm .eventNotesRow textarea{
+    min-height: 92px !important;
+  }
+  #modalBackdrop #eventForm .modalFooter{
+    position: sticky !important;
+    bottom: 0 !important;
+    margin-top: 6px !important;
+  }
+}
+/* === END EVENT MODAL RESTORE + FULL WIDTH USE (DESKTOP) === */
+/* === EVENT MODAL FINAL HARD FIX (FULL RIGHT USAGE) === */
+@media (min-width: 921px){
+  #modalBackdrop:not([hidden]){
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    padding: 8px !important;
+    display: block !important;
+    overflow: hidden !important;
+  }
+  #modalBackdrop:not([hidden]) .modal{
+    width: calc(100vw - 16px) !important;
+    max-width: none !important;
+    height: calc(100vh - 16px) !important;
+    max-height: none !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop:not([hidden]) .eventModalMain{
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm{
+    height: 100% !important;
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 2.5fr) minmax(420px, 1fr) !important;
+    grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+    gap: 10px 14px !important;
+    overflow: hidden !important;
+    padding: 10px 14px 12px !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm .eventMainRow{
+    grid-column: 1 !important;
+    grid-row: 1 / span 3 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    gap: 10px !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm .eventMainRow > .field{
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    gap: 8px !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm .eventMainRow > .field .quoteTableWrap{
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    height: 100% !important;
+    overflow: auto !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm .eventDatesRow{
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm .eventActorRow{
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm .eventNotesRow{
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm .eventNotesRow textarea{
+    min-height: 130px !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm .conflictsBox{
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    margin: 0 !important;
+  }
+  #modalBackdrop:not([hidden]) #eventForm .modalFooter{
+    grid-column: 1 / -1 !important;
+    grid-row: 4 !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    margin-top: 6px !important;
+  }
+}
+/* === END EVENT MODAL FINAL HARD FIX (FULL RIGHT USAGE) === */
+/* === OCCUPANCY REDESIGN (WEEK VIEW) === */
+#occupancyReportBackdrop .occupancyReportBody{
+  background:
+    radial-gradient(900px 500px at 12% -8%, rgba(37,99,235,0.11), transparent 56%),
+    radial-gradient(700px 420px at 88% 0%, rgba(56,189,248,0.12), transparent 54%),
+    #f6f8fc !important;
+}
+#occupancyReportBackdrop .occupancyHeroPanel{
+  border-radius:22px !important;
+  border:1px solid #d4deec !important;
+  background:linear-gradient(180deg,#fbfdff 0%,#f2f6fd 100%) !important;
+}
+#occupancyReportBackdrop .occupancySectionEyebrow{
+  background:#dce8f8 !important;
+  border-color:#c6d8ef !important;
+  color:#244a86 !important;
+}
+#occupancyReportBackdrop .occupancySectionTitle{
+  color:#102c63 !important;
+  font-weight:900 !important;
+  letter-spacing:.01em !important;
+}
+#occupancyReportBackdrop .occupancyToolbar{
+  border-radius:18px !important;
+  border:1px solid #cfdcee !important;
+  background:linear-gradient(180deg,#ffffff,#f4f8ff) !important;
+}
+#occupancyReportBackdrop .occupancyWeekNav{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:8px;
+  align-items:center;
+}
+#occupancyReportBackdrop .occupancyWeekNav .btn{
+  min-width:40px;
+  min-height:42px !important;
+  padding:0 12px !important;
+}
+#occupancyReportBackdrop .occupancySection{
+  border-radius:20px !important;
+  border:1px solid #d5e0ef !important;
+  box-shadow:0 12px 26px rgba(15,23,42,.05) !important;
+}
+#occupancyReportBackdrop .occupancySummary{
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+}
+#occupancyReportBackdrop .occupancySummaryCard{
+  min-height:162px !important;
+  border-radius:18px !important;
+  padding:18px !important;
+  border-color:#d8e3f1 !important;
+}
+#occupancyReportBackdrop .occupancySummaryCard strong{
+  color:#0f2f74 !important;
+  font-size:clamp(1.95rem,1vw + 1.35rem,2.6rem) !important;
+}
+#occupancyReportBackdrop .occupancySummaryCard--income{
+  background:linear-gradient(165deg,#0d2b83 0%,#123ea7 100%) !important;
+  border-color:#1f4ec0 !important;
+}
+#occupancyReportBackdrop .occupancySummaryCard--income strong,
+#occupancyReportBackdrop .occupancySummaryCard--income .occupancyCardKicker,
+#occupancyReportBackdrop .occupancySummaryCard--income .occupancyCardMeta,
+#occupancyReportBackdrop .occupancySummaryCard--income .occupancyCardHint{
+  color:#f8fbff !important;
+}
+#occupancyReportBackdrop .occupancyDaysStrip{
+  border-radius:20px !important;
+  border-color:#d4e0ef !important;
+}
+#occupancyReportBackdrop .occupancyWeekColumn{
+  min-height:500px;
+  padding:0 10px 12px;
+}
+#occupancyReportBackdrop .occupancyWeekDayHead{
+  min-height:68px;
+  border-bottom-color:#d6e1ef;
+}
+#occupancyReportBackdrop .occupancyWeekDayHead strong{
+  color:#102c63;
+}
+#occupancyReportBackdrop .occupancyWeekColumn.active{
+  background:linear-gradient(180deg,#eef5ff 0%,#e8f1ff 100%);
+  box-shadow:inset 0 0 0 2px rgba(30,64,175,.18);
+}
+#occupancyReportBackdrop .occupancyWeekEvent{
+  border-radius:14px;
+  box-shadow:0 10px 18px rgba(15,23,42,.08), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#occupancyReportBackdrop .occupancyWeekEvent:hover{
+  transform:translateY(-2px);
+}
+#occupancyReportBackdrop .occupancyDayDetail{
+  border:1px solid #d4dfef;
+  border-radius:18px;
+  background:linear-gradient(180deg,#f8fbff 0%,#f2f6fd 100%);
+}
+#occupancyReportBackdrop .occupancyDetailStats{
+  gap:10px !important;
+}
+#occupancyReportBackdrop .occupancyDetailStat{
+  border-radius:14px !important;
+  border:1px solid #d6e2f1 !important;
+  background:#ffffffcc !important;
+}
+#occupancyReportBackdrop .occupancyTableWrap{
+  border-radius:18px !important;
+}
+#occupancyReportBackdrop .occupancyTable thead th{
+  background:linear-gradient(180deg,#eff4fc 0%,#e5edf8 100%) !important;
+}
+@media (max-width: 1380px){
+  #occupancyReportBackdrop .occupancySummary{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  }
+}
+@media (max-width: 920px){
+  #occupancyReportBackdrop .occupancySummary{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+@media (max-width: 620px){
+  #occupancyReportBackdrop .occupancySummary{
+    grid-template-columns:1fr !important;
+  }
+}
+/* === END OCCUPANCY REDESIGN (WEEK VIEW) === */
+
+/* === OCCUPANCY PREMIUM LAYOUT + WEEK OPS === */
+#occupancyReportBackdrop .occupancyReportBody{
+  gap:20px !important;
+}
+#occupancyReportBackdrop .occupancySection,
+#occupancyReportBackdrop .occupancyHeroPanel,
+#occupancyReportBackdrop .occupancyTableWrap,
+#occupancyReportBackdrop .occupancyDayDetail,
+#occupancyReportBackdrop .occupancyToolbar{
+  box-shadow:0 18px 34px rgba(15,23,42,.06) !important;
+}
+#occupancyReportBackdrop .occupancyToolbar{
+  grid-template-columns:1fr auto !important;
+  align-items:end !important;
+  gap:14px !important;
+  padding:16px !important;
+}
+#occupancyReportBackdrop .occupancyField{
+  margin:0 !important;
+}
+#occupancyReportBackdrop .occupancyHeroActions{
+  grid-column:auto !important;
+  justify-content:flex-end !important;
+}
+#occupancyReportBackdrop .occupancyWeekDayStats{
+  gap:7px !important;
+}
+#occupancyReportBackdrop .occupancyWeekDayStats span{
+  min-height:30px;
+}
+#occupancyReportBackdrop .occupancyOpsPanel{
+  margin-top:14px;
+  border:1px solid #d8e2f1;
+  border-radius:18px;
+  padding:14px;
+  background:linear-gradient(180deg,#fafdff 0%,#f3f7fe 100%);
+}
+#occupancyReportBackdrop .occupancyOpsTitleRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+#occupancyReportBackdrop .occupancyOpsLegend{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.04em;
+  color:#425a7f;
+  text-transform:uppercase;
+}
+#occupancyReportBackdrop .occupancyOpsGrid{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:10px;
+}
+#occupancyReportBackdrop .occupancyOpsCard{
+  border:1px solid #cfdbed;
+  border-radius:14px;
+  padding:10px;
+  background:#ffffff;
+  display:grid;
+  grid-template-rows:auto auto auto;
+  gap:8px;
+  min-height:154px;
+}
+#occupancyReportBackdrop .occupancyOpsHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  border-bottom:1px solid #e3ebf7;
+  padding-bottom:6px;
+}
+#occupancyReportBackdrop .occupancyOpsHead strong{
+  color:#11356d;
+  font-size:12px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+#occupancyReportBackdrop .occupancyOpsHead span{
+  color:#274c85;
+  font-size:18px;
+  font-weight:900;
+}
+#occupancyReportBackdrop .occupancyOpsField{
+  display:grid;
+  gap:4px;
+}
+#occupancyReportBackdrop .occupancyOpsField span{
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  color:#4c6284;
+}
+#occupancyReportBackdrop .occupancyOpsField input{
+  height:38px !important;
+  border-radius:10px !important;
+  border:1px solid #c6d6ec !important;
+  padding:0 10px !important;
+  font-weight:800 !important;
+  color:#17355f !important;
+  background:#f8fbff !important;
+}
+#occupancyReportBackdrop .occupancySummaryCard--revenue{
+  background:linear-gradient(165deg,#0d2b83 0%,#123ea7 100%) !important;
+  border-color:#1f4ec0 !important;
+}
+#occupancyReportBackdrop .occupancySummaryCard--revenue strong,
+#occupancyReportBackdrop .occupancySummaryCard--revenue .occupancyCardKicker,
+#occupancyReportBackdrop .occupancySummaryCard--revenue .occupancyCardMeta,
+#occupancyReportBackdrop .occupancySummaryCard--revenue .occupancyCardHint{
+  color:#f8fbff !important;
+}
+@media (max-width: 1320px){
+  #occupancyReportBackdrop .occupancyOpsGrid{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+}
+@media (max-width: 980px){
+  #occupancyReportBackdrop .occupancyToolbar{ grid-template-columns:1fr !important; }
+  #occupancyReportBackdrop .occupancyHeroActions{ justify-content:flex-start !important; }
+  #occupancyReportBackdrop .occupancyOpsGrid{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width: 700px){
+  #occupancyReportBackdrop .occupancyOpsGrid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 480px){
+  #occupancyReportBackdrop .occupancyOpsGrid{ grid-template-columns:1fr; }
+}
+/* === END OCCUPANCY PREMIUM LAYOUT + WEEK OPS === */

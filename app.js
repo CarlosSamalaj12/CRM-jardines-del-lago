@@ -437,6 +437,7 @@ const el = {
   btnOccupancyReportExportExcel: document.getElementById("btnOccupancyReportExportExcel"),
   occupancyReportSummary: document.getElementById("occupancyReportSummary"),
   occupancyDaysStrip: document.getElementById("occupancyDaysStrip"),
+  occupancyOpsPanel: document.getElementById("occupancyOpsPanel"),
   occupancyDayDetail: document.getElementById("occupancyDayDetail"),
   occupancyReportBody: document.getElementById("occupancyReportBody"),
   dashboardReportBackdrop: document.getElementById("dashboardReportBackdrop"),
@@ -5671,6 +5672,23 @@ function weekInputFromDate(date) {
   return toISODate(startOfWeek(date));
 }
 
+function occupancyAllowedWeekBounds() {
+  const currentMonday = startOfWeek(new Date());
+  const nextMonday = addDays(currentMonday, 7);
+  return { currentMonday, nextMonday };
+}
+
+function clampOccupancyWeekToAllowed(monday) {
+  const safeMonday = startOfWeek(monday instanceof Date ? monday : new Date());
+  const { currentMonday, nextMonday } = occupancyAllowedWeekBounds();
+  const minMs = currentMonday.getTime();
+  const maxMs = nextMonday.getTime();
+  const candidate = safeMonday.getTime();
+  if (candidate < minMs) return { monday: currentMonday, clamped: true };
+  if (candidate > maxMs) return { monday: nextMonday, clamped: true };
+  return { monday: safeMonday, clamped: false };
+}
+
 function mondayFromWeekInput(value) {
   const raw = String(value || "").trim();
   if (!raw) return startOfWeek(new Date());
@@ -5697,13 +5715,74 @@ function getOccupancyWeekRange() {
   return { monday, sunday };
 }
 
-function updateOccupancyReportWeekUi() {
-  const { monday, sunday } = getOccupancyWeekRange();
+function sanitizeOccupancyWeeklyOpsData(candidate) {
+  const raw = candidate && typeof candidate === "object" ? candidate : {};
+  const cleaned = {};
+  for (const [weekIso, weekData] of Object.entries(raw)) {
+    const weekKey = String(weekIso || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey)) continue;
+    const weekObj = weekData && typeof weekData === "object" ? weekData : {};
+    const dayMap = {};
+    for (const [dayIso, dayData] of Object.entries(weekObj)) {
+      const dayKey = String(dayIso || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) continue;
+      const breakfasts = Math.max(0, Math.floor(Number(dayData?.breakfasts || 0)));
+      const rooms = Math.max(0, Math.floor(Number(dayData?.rooms || 0)));
+      dayMap[dayKey] = { breakfasts, rooms };
+    }
+    cleaned[weekKey] = dayMap;
+  }
+  return cleaned;
+}
+
+function getOccupancyOpsForDay(weekIso, dayIso) {
+  const weekKey = String(weekIso || "").trim();
+  const dayKey = String(dayIso || "").trim();
+  const weekMap = (state.occupancyWeeklyOps && typeof state.occupancyWeeklyOps === "object")
+    ? state.occupancyWeeklyOps
+    : {};
+  const dayData = weekMap?.[weekKey]?.[dayKey] || {};
+  return {
+    breakfasts: Math.max(0, Math.floor(Number(dayData.breakfasts || 0))),
+    rooms: Math.max(0, Math.floor(Number(dayData.rooms || 0))),
+  };
+}
+
+function setOccupancyOpsForDay(weekIso, dayIso, nextValues) {
+  const weekKey = String(weekIso || "").trim();
+  const dayKey = String(dayIso || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey) || !/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) return;
+  if (!state.occupancyWeeklyOps || typeof state.occupancyWeeklyOps !== "object") state.occupancyWeeklyOps = {};
+  if (!state.occupancyWeeklyOps[weekKey] || typeof state.occupancyWeeklyOps[weekKey] !== "object") {
+    state.occupancyWeeklyOps[weekKey] = {};
+  }
+  const current = getOccupancyOpsForDay(weekKey, dayKey);
+  const breakfasts = Math.max(0, Math.floor(Number(nextValues?.breakfasts ?? current.breakfasts ?? 0)));
+  const rooms = Math.max(0, Math.floor(Number(nextValues?.rooms ?? current.rooms ?? 0)));
+  state.occupancyWeeklyOps[weekKey][dayKey] = { breakfasts, rooms };
+}
+
+function syncOccupancyWeekNavButtons(monday) {
+  if (el.btnOccupancyReportPrevWeek) {
+    el.btnOccupancyReportPrevWeek.disabled = false;
+  }
+  if (el.btnOccupancyReportNextWeek) {
+    el.btnOccupancyReportNextWeek.disabled = false;
+  }
+}
+
+function updateOccupancyReportWeekUi(forcedMonday = null) {
+  const requested = (forcedMonday instanceof Date && !Number.isNaN(forcedMonday.getTime()))
+    ? forcedMonday
+    : mondayFromWeekInput(el.occupancyReportWeek?.value || "");
+  const monday = startOfWeek(requested);
+  const sunday = addDays(monday, 6);
   occupancySelectedDayIso = toISODate(monday);
   occupancySelectedEventId = "";
   if (el.occupancyReportWeek) {
     el.occupancyReportWeek.value = weekInputFromDate(monday);
   }
+  syncOccupancyWeekNavButtons(monday);
   if (el.occupancyReportSubtitle) {
     el.occupancyReportSubtitle.textContent = `Semana ${toISODate(monday)} a ${toISODate(sunday)} (Lunes a Domingo)`;
   }
@@ -5711,12 +5790,19 @@ function updateOccupancyReportWeekUi() {
 }
 
 function moveOccupancyReportWeek(deltaWeeks = 0) {
-  const { monday } = getOccupancyWeekRange();
+  const currentValue = mondayFromWeekInput(el.occupancyReportWeek?.value || "");
+  const monday = startOfWeek(currentValue);
   const nextMonday = addDays(monday, Number(deltaWeeks || 0) * 7);
   if (el.occupancyReportWeek) {
     el.occupancyReportWeek.value = weekInputFromDate(nextMonday);
   }
-  updateOccupancyReportWeekUi();
+  updateOccupancyReportWeekUi(nextMonday);
+}
+
+function occupancyOpsWeekEditable(monday) {
+  if (!(monday instanceof Date) || Number.isNaN(monday.getTime())) return false;
+  const { currentMonday } = occupancyAllowedWeekBounds();
+  return monday.getTime() >= currentMonday.getTime();
 }
 
 function getLatestQuoteSnapshotFromSeries(series) {
@@ -6022,6 +6108,8 @@ function renderOccupancyDayCards(rows) {
     const count = dayRows.length;
     const confirmedCount = dayRows.filter((r) => r.status === STATUS.CONFIRMADO).length;
     const preCount = dayRows.filter((r) => r.status === STATUS.PRERESERVA).length;
+    const weekIso = toISODate(monday);
+    const dayOps = getOccupancyOpsForDay(weekIso, d);
     const revenue = getOccupancyUniqueReservationTotal(dayRows, "totalEvent");
     const dateObj = new Date(`${d}T00:00:00`);
     const dayName = Number.isNaN(dateObj.getTime()) ? d : dateObj.toLocaleDateString("es-GT", { weekday: "long" });
@@ -6057,6 +6145,8 @@ function renderOccupancyDayCards(rows) {
         <span><b>${escapeHtml(String(count))}</b> eventos</span>
         <span><b>${escapeHtml(String(confirmedCount))}</b> conf.</span>
         <span><b>${escapeHtml(String(preCount))}</b> pre</span>
+        <span><b>${escapeHtml(String(dayOps.breakfasts || 0))}</b> desayunos</span>
+        <span><b>${escapeHtml(String(dayOps.rooms || 0))}</b> habitaciones</span>
       </div>
       <div class="occupancyWeekRevenue">${escapeHtml(count ? moneyGT(revenue) : "Sin monto")}</div>
       <div class="occupancyWeekEvents">${eventCards}</div>
@@ -6077,6 +6167,59 @@ function renderOccupancyDayCards(rows) {
     });
     el.occupancyDaysStrip.appendChild(card);
   }
+}
+
+function renderOccupancyOpsPanel() {
+  if (!el.occupancyOpsPanel) return;
+  const { monday } = getOccupancyWeekRange();
+  const weekIso = toISODate(monday);
+  const editable = occupancyOpsWeekEditable(monday);
+  const days = Array.from({ length: 7 }, (_, i) => toISODate(addDays(monday, i)));
+  const cards = days.map((isoDate) => {
+    const dateObj = new Date(`${isoDate}T00:00:00`);
+    const dayName = Number.isNaN(dateObj.getTime()) ? isoDate : dateObj.toLocaleDateString("es-GT", { weekday: "short" }).replace(".", "").toUpperCase();
+    const dayNumber = Number.isNaN(dateObj.getTime()) ? "" : String(dateObj.getDate()).padStart(2, "0");
+    const { breakfasts, rooms } = getOccupancyOpsForDay(weekIso, isoDate);
+    return `
+      <article class="occupancyOpsCard">
+        <header class="occupancyOpsHead">
+          <strong>${escapeHtml(dayName)}</strong>
+          <span>${escapeHtml(dayNumber)}</span>
+        </header>
+        <label class="occupancyOpsField">
+          <span>Desayunos</span>
+          <input type="number" min="0" step="1" value="${escapeHtml(String(breakfasts))}" data-occupancy-op-kind="breakfasts" data-occupancy-op-day="${escapeHtml(isoDate)}" ${editable ? "" : "disabled"} />
+        </label>
+        <label class="occupancyOpsField">
+          <span>Habitaciones</span>
+          <input type="number" min="0" step="1" value="${escapeHtml(String(rooms))}" data-occupancy-op-kind="rooms" data-occupancy-op-day="${escapeHtml(isoDate)}" ${editable ? "" : "disabled"} />
+        </label>
+      </article>
+    `;
+  }).join("");
+  el.occupancyOpsPanel.innerHTML = `
+    <div class="occupancyOpsTitleRow">
+      <div class="occupancySectionEyebrow">Operacion hotelera</div>
+      <div class="occupancyOpsLegend">${editable ? "Edicion habilitada" : "Semana pasada: solo lectura"}</div>
+    </div>
+    <div class="occupancyOpsGrid">${cards}</div>
+  `;
+  el.occupancyOpsPanel.querySelectorAll("[data-occupancy-op-kind]").forEach((inputEl) => {
+    inputEl.addEventListener("change", () => {
+      const dayIso = String(inputEl.getAttribute("data-occupancy-op-day") || "").trim();
+      const kind = String(inputEl.getAttribute("data-occupancy-op-kind") || "").trim();
+      const cleanValue = Math.max(0, Math.floor(Number(inputEl.value || 0)));
+      inputEl.value = String(cleanValue);
+      const current = getOccupancyOpsForDay(weekIso, dayIso);
+      setOccupancyOpsForDay(weekIso, dayIso, kind === "rooms"
+        ? { rooms: cleanValue, breakfasts: current.breakfasts }
+        : { breakfasts: cleanValue, rooms: current.rooms });
+      persist();
+      const refreshedRows = buildOccupancyReportRows();
+      renderOccupancyDayCards(refreshedRows);
+      renderOccupancyDayDetail(refreshedRows);
+    });
+  });
 }
 
 function renderOccupancyDayDetail(rows) {
@@ -6183,6 +6326,7 @@ function renderOccupancyReportTable() {
   el.occupancyReportBody.innerHTML = "";
   renderOccupancySummary(rows);
   renderOccupancyDayCards(rows);
+  renderOccupancyOpsPanel();
   renderOccupancyDayDetail(rows);
   if (!rows.length) {
     const tr = document.createElement("tr");
@@ -6312,6 +6456,7 @@ function exportOccupancyReportToExcel() {
 function setOccupancyCurrentWeek() {
   if (!el.occupancyReportWeek) return;
   el.occupancyReportWeek.value = weekInputFromDate(new Date());
+  syncOccupancyWeekNavButtons(startOfWeek(new Date()));
 }
 
 function openOccupancyReportModal() {
@@ -23830,6 +23975,7 @@ function normalizeState(candidate) {
     menuMontajeSections: Array.isArray(candidate.menuMontajeSections) ? candidate.menuMontajeSections : [],
     menuMontajeBebidas: Array.isArray(candidate.menuMontajeBebidas) ? candidate.menuMontajeBebidas : [],
     eventChecklists: (candidate.eventChecklists && typeof candidate.eventChecklists === "object") ? candidate.eventChecklists : {},
+    occupancyWeeklyOps: sanitizeOccupancyWeeklyOpsData(candidate.occupancyWeeklyOps),
     globalNotifications: Array.isArray(candidate.globalNotifications)
       ? candidate.globalNotifications.map(normalizeGlobalNotificationRecord)
       : [],
@@ -23860,6 +24006,7 @@ function buildInitialState() {
     menuMontajeSections: ["General"],
     menuMontajeBebidas: [],
     eventChecklists: {},
+    occupancyWeeklyOps: {},
     globalNotifications: [],
     events: [],
   };
